@@ -88,6 +88,57 @@ async function sendMessageToOffscreen(message, maxRetries = 3) {
   }
 }
 
+// 알림 설정 가져오기 (캐싱 포함)
+let cachedNotificationSettings = null;
+let settingsCacheTime = 0;
+const SETTINGS_CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+async function getNotificationSettings(userId) {
+  // 캐시 확인
+  const now = Date.now();
+  if (
+    cachedNotificationSettings !== null &&
+    now - settingsCacheTime < SETTINGS_CACHE_DURATION
+  ) {
+    return cachedNotificationSettings;
+  }
+
+  // 사용자가 없으면 기본값 반환
+  if (!userId) {
+    return { bookmarkNotifications: true };
+  }
+
+  try {
+    await setupOffscreen();
+    const settingsResult = await sendMessageToOffscreen({
+      target: "offscreen",
+      type: "GET_NOTIFICATION_SETTINGS",
+    });
+
+    if (
+      settingsResult?.type === "NOTIFICATION_SETTINGS_DATA" &&
+      settingsResult.bookmarkNotifications !== undefined
+    ) {
+      cachedNotificationSettings = {
+        bookmarkNotifications: settingsResult.bookmarkNotifications,
+      };
+      settingsCacheTime = now;
+      return cachedNotificationSettings;
+    }
+  } catch (error) {
+    console.error("알림 설정 확인 실패:", error);
+  }
+
+  // 기본값 반환
+  return { bookmarkNotifications: true };
+}
+
+// 알림 설정 캐시 무효화
+function invalidateNotificationSettingsCache() {
+  cachedNotificationSettings = null;
+  settingsCacheTime = 0;
+}
+
 async function closeOffscreen() {
   if (await hasOffscreen()) {
     await chrome.offscreen.closeDocument();
@@ -98,6 +149,8 @@ async function closeOffscreen() {
 chrome.runtime.onMessageExternal.addListener(
   (request, sender, sendResponse) => {
     if (request.type === "LOGIN_SUCCESS" && request.user) {
+      // 로그인 성공 시 알림 설정 캐시 무효화
+      invalidateNotificationSettingsCache();
       // Chrome Storage에 사용자 정보, 토큰, 컬렉션 저장
       if (chrome.storage && chrome.storage.local) {
         const dataToSave = {
@@ -251,6 +304,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
 
       if (msg?.type === "SAVE_BOOKMARK") {
+        // 사용자 정보 가져오기
+        const authResult = await chrome.storage.local.get(["currentUser"]);
+        if (!authResult?.currentUser?.uid) {
+          console.error("❌ [background] 사용자 정보 없음");
+          sendResponse({
+            type: "BOOKMARK_SAVE_ERROR",
+            code: "auth/not-authenticated",
+            message: "로그인이 필요합니다.",
+          });
+          return;
+        }
+
         // 컬렉션이 선택된 경우 존재 여부 검증
         const collectionId = msg.bookmarkData?.collection;
         console.log(
@@ -262,18 +327,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
         if (collectionId && collectionId.trim() !== "") {
           console.log("🔍 [background] 컬렉션 검증 시작:", collectionId);
-
-          // 사용자 정보 가져오기
-          const authResult = await chrome.storage.local.get(["currentUser"]);
-          if (!authResult?.currentUser?.uid) {
-            console.error("❌ [background] 사용자 정보 없음");
-            sendResponse({
-              type: "BOOKMARK_SAVE_ERROR",
-              code: "auth/not-authenticated",
-              message: "로그인이 필요합니다.",
-            });
-            return;
-          }
 
           // 캐시된 컬렉션 먼저 확인
           const cachedResult = await chrome.storage.local.get([
@@ -364,33 +417,52 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           bookmarkData: msg.bookmarkData,
         });
 
-        // 저장 성공 시 아이콘에 체크 표시
+        // 저장 성공 시 아이콘에 체크 표시 (비동기로 처리하여 저장 응답 지연 방지)
         if (result?.type === "BOOKMARK_SAVED") {
-          const [activeTab] = await chrome.tabs.query({
-            active: true,
-            currentWindow: true,
-          });
-          if (activeTab) {
-            chrome.action.setBadgeText({ text: "✓", tabId: activeTab.id });
-            chrome.action.setBadgeBackgroundColor({
-              color: "#10b981",
-              tabId: activeTab.id,
-            });
+          // 응답을 먼저 보내고 알림은 나중에 처리
+          sendResponse(result);
 
-            // 성공 알림
-            chrome.notifications.create({
-              type: "basic",
-              iconUrl: "public/bookmark.png",
-              title: "북마크 저장 완료",
-              message: `"${msg.bookmarkData.title}" 북마크가 저장되었습니다.`,
-              priority: 2,
-            });
+          // 비동기로 알림 처리
+          (async () => {
+            try {
+              const [activeTab] = await chrome.tabs.query({
+                active: true,
+                currentWindow: true,
+              });
+              if (activeTab) {
+                chrome.action.setBadgeText({ text: "✓", tabId: activeTab.id });
+                chrome.action.setBadgeBackgroundColor({
+                  color: "#10b981",
+                  tabId: activeTab.id,
+                });
 
-            // 3초 후 제거
-            setTimeout(() => {
-              chrome.action.setBadgeText({ text: "", tabId: activeTab.id });
-            }, 3000);
-          }
+                // 알림 설정 확인
+                const notificationSettings = await getNotificationSettings(
+                  authResult.currentUser.uid
+                );
+
+                // 성공 알림 (설정이 활성화된 경우만)
+                if (notificationSettings.bookmarkNotifications) {
+                  chrome.notifications.create({
+                    type: "basic",
+                    iconUrl: "public/bookmark.png",
+                    title: "북마크 저장 완료",
+                    message: `"${msg.bookmarkData.title}" 북마크가 저장되었습니다.`,
+                    priority: 2,
+                  });
+                }
+
+                // 3초 후 제거
+                setTimeout(() => {
+                  chrome.action.setBadgeText({ text: "", tabId: activeTab.id });
+                }, 3000);
+              }
+            } catch (error) {
+              console.error("알림 처리 중 오류:", error);
+            }
+          })();
+
+          return;
         }
 
         sendResponse(result);
@@ -810,6 +882,10 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     // offscreen 설정 및 저장
     await setupOffscreen();
+
+    // 알림 설정 가져오기
+    const notificationSettings = await getNotificationSettings(currentUser.uid);
+
     const saveResult = await sendMessageToOffscreen({
       target: "offscreen",
       type: "SAVE_BOOKMARK",
@@ -824,14 +900,16 @@ chrome.action.onClicked.addListener(async (tab) => {
         tabId: tab.id,
       });
 
-      // 성공 알림
-      chrome.notifications.create({
-        type: "basic",
-        iconUrl: "public/bookmark.png",
-        title: "⚡ 빠른 저장 완료",
-        message: `"${tab.title}" 북마크가 저장되었습니다.`,
-        priority: 2,
-      });
+      // 성공 알림 (설정이 활성화된 경우만)
+      if (notificationSettings.bookmarkNotifications) {
+        chrome.notifications.create({
+          type: "basic",
+          iconUrl: "public/bookmark.png",
+          title: "⚡ 빠른 저장 완료",
+          message: `"${tab.title}" 북마크가 저장되었습니다.`,
+          priority: 2,
+        });
+      }
       console.log("빠른 저장 완료:", saveResult.bookmarkId);
 
       // 3초 후 체크 표시 제거

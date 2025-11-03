@@ -167,6 +167,44 @@ export async function setUserDefaultPage(
   await setDoc(settingsRef, { defaultPage: value }, { merge: true });
 }
 
+// 알림 설정 가져오기
+export async function getUserNotificationSettings(uid: string): Promise<{
+  notifications?: boolean;
+  bookmarkNotifications?: boolean;
+}> {
+  const db = getFirestore();
+  const settingsRef = doc(db, "users", uid, "settings", "main");
+  const snap = await getDoc(settingsRef);
+  if (snap.exists()) {
+    const data = snap.data();
+    return {
+      notifications:
+        data.notifications !== undefined ? data.notifications : true,
+      bookmarkNotifications:
+        data.bookmarkNotifications !== undefined
+          ? data.bookmarkNotifications
+          : true,
+    };
+  }
+  return {
+    notifications: true,
+    bookmarkNotifications: true,
+  };
+}
+
+// 알림 설정 저장
+export async function setUserNotificationSettings(
+  uid: string,
+  settings: {
+    notifications?: boolean;
+    bookmarkNotifications?: boolean;
+  }
+): Promise<void> {
+  const db = getFirestore();
+  const settingsRef = doc(db, "users", uid, "settings", "main");
+  await setDoc(settingsRef, settings, { merge: true });
+}
+
 // 관리자 ID 목록 (환경 변수 또는 하드코딩)
 const ADMIN_EMAILS = [
   import.meta.env.VITE_ADMIN_EMAIL || "admin@bookmarkle.com",

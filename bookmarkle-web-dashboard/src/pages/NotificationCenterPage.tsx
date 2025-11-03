@@ -4,6 +4,12 @@ import { useAuthStore } from "../stores";
 import { useNotifications } from "../hooks/useNotifications";
 import { Drawer } from "../components/Drawer";
 import {
+  getUserNotificationSettings,
+  setUserNotificationSettings,
+  db,
+} from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
+import {
   Bell,
   Check,
   Trash2,
@@ -28,10 +34,65 @@ export const NotificationCenterPage: React.FC = () => {
     deleteAllNotifications,
   } = useNotifications(user?.uid || "");
 
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    const saved = localStorage.getItem("bookmarkNotifications");
-    return saved ? JSON.parse(saved) : true;
-  });
+  const [notificationsEnabled, setNotificationsEnabled] = useState<
+    boolean | null
+  >(null);
+
+  // Firestore에서 알림 설정 실시간 동기화
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    // 실시간 동기화 (onSnapshot의 첫 호출이 초기 로드 역할)
+    const settingsRef = doc(db, "users", user.uid, "settings", "main");
+
+    const unsubscribe = onSnapshot(
+      settingsRef,
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          // bookmarkNotifications가 명시적으로 false일 수 있으므로 undefined 체크 필요
+          const newValue =
+            data.bookmarkNotifications !== undefined
+              ? data.bookmarkNotifications
+              : true;
+
+          // 항상 Firestore 값으로 업데이트 (초기 로드 포함)
+          setNotificationsEnabled(newValue);
+          localStorage.setItem(
+            "bookmarkNotifications",
+            JSON.stringify(newValue)
+          );
+        } else {
+          // 문서가 없으면 기본값 사용
+          const defaultValue = true;
+          setNotificationsEnabled(defaultValue);
+          localStorage.setItem(
+            "bookmarkNotifications",
+            JSON.stringify(defaultValue)
+          );
+        }
+      },
+      (error) => {
+        console.error("알림 설정 실시간 동기화 실패:", error);
+        // 에러 발생 시 초기 로드 시도
+        getUserNotificationSettings(user.uid)
+          .then((settings) => {
+            if (settings.bookmarkNotifications !== undefined) {
+              setNotificationsEnabled(settings.bookmarkNotifications);
+              localStorage.setItem(
+                "bookmarkNotifications",
+                JSON.stringify(settings.bookmarkNotifications)
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("알림 설정 로드 실패:", err);
+          });
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
 
   // 설정 페이지에서 북마크 알림 상태 변경 감지
   useEffect(() => {
@@ -52,10 +113,31 @@ export const NotificationCenterPage: React.FC = () => {
     };
   }, []);
 
-  const handleNotificationToggle = () => {
+  const handleNotificationToggle = async () => {
+    if (notificationsEnabled === null) return; // 아직 로드되지 않았으면 무시
+
     const newValue = !notificationsEnabled;
     setNotificationsEnabled(newValue);
     localStorage.setItem("bookmarkNotifications", JSON.stringify(newValue));
+
+    // Firestore에 저장
+    if (user?.uid) {
+      try {
+        await setUserNotificationSettings(user.uid, {
+          bookmarkNotifications: newValue,
+        });
+      } catch (error) {
+        console.error("알림 설정 저장 실패:", error);
+        // 저장 실패 시 이전 값으로 복구
+        const previousValue = !newValue;
+        setNotificationsEnabled(previousValue);
+        localStorage.setItem(
+          "bookmarkNotifications",
+          JSON.stringify(previousValue)
+        );
+      }
+    }
+
     window.dispatchEvent(
       new CustomEvent("bookmarkNotificationsChanged", {
         detail: { enabled: newValue },
@@ -144,15 +226,22 @@ export const NotificationCenterPage: React.FC = () => {
                 </div>
                 <button
                   onClick={handleNotificationToggle}
+                  disabled={notificationsEnabled === null}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    notificationsEnabled
+                    notificationsEnabled === null
+                      ? "bg-gray-300 dark:bg-gray-600 opacity-50 cursor-not-allowed"
+                      : notificationsEnabled
                       ? "bg-brand-600"
                       : "bg-gray-200 dark:bg-gray-700"
                   }`}
                 >
                   <span
                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      notificationsEnabled ? "translate-x-6" : "translate-x-1"
+                      notificationsEnabled === null
+                        ? "translate-x-1"
+                        : notificationsEnabled
+                        ? "translate-x-6"
+                        : "translate-x-1"
                     }`}
                   />
                 </button>

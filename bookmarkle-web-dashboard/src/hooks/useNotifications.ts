@@ -10,7 +10,7 @@ import {
   doc,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, getUserNotificationSettings } from "../firebase";
 import type { Notification, NotificationType } from "../types";
 import i18n from "../i18n";
 
@@ -83,6 +83,26 @@ export const useNotifications = (userId: string) => {
     if (!userId) {
       console.error("알림 생성 실패: userId가 없습니다.");
       throw new Error("사용자가 로그인되지 않았습니다.");
+    }
+
+    // 북마크 관련 알림인 경우 설정 확인
+    const isBookmarkNotification =
+      type === "bookmark_added" ||
+      type === "bookmark_updated" ||
+      type === "bookmark_deleted";
+
+    if (isBookmarkNotification) {
+      try {
+        const settings = await getUserNotificationSettings(userId);
+
+        // bookmarkNotifications가 명시적으로 false인 경우에만 알림 생성하지 않음
+        // undefined나 true인 경우에는 알림 생성 (기본값은 활성화)
+        if (settings.bookmarkNotifications === false) {
+          return null;
+        }
+      } catch (error) {
+        // 설정 확인 실패 시 기본값(활성화)으로 처리하여 알림 생성 계속 진행
+      }
     }
 
     try {
