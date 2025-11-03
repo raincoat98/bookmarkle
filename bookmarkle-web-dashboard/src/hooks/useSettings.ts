@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../node_modules/react-i18next";
 import toast from "react-hot-toast";
@@ -7,7 +7,11 @@ import {
   requestNotificationPermission,
   showTestNotification,
 } from "../utils/browserNotifications";
-import { setUserDefaultPage } from "../firebase";
+import {
+  setUserDefaultPage,
+  getUserNotificationSettings,
+  setUserNotificationSettings,
+} from "../firebase";
 import {
   loadBackupSettings,
   saveBackupSettings,
@@ -58,6 +62,32 @@ export const useSettings = ({
     const saved = localStorage.getItem("bookmarkNotifications");
     return saved ? JSON.parse(saved) : true;
   });
+
+  // Firestore에서 알림 설정 로드
+  useEffect(() => {
+    if (user?.uid) {
+      getUserNotificationSettings(user.uid)
+        .then((settings) => {
+          if (settings.notifications !== undefined) {
+            setNotifications(settings.notifications);
+            localStorage.setItem(
+              "notifications",
+              JSON.stringify(settings.notifications)
+            );
+          }
+          if (settings.bookmarkNotifications !== undefined) {
+            setBookmarkNotifications(settings.bookmarkNotifications);
+            localStorage.setItem(
+              "bookmarkNotifications",
+              JSON.stringify(settings.bookmarkNotifications)
+            );
+          }
+        })
+        .catch((error) => {
+          console.error("알림 설정 로드 실패:", error);
+        });
+    }
+  }, [user?.uid]);
   const [browserNotificationPermission, setBrowserNotificationPermission] =
     useState(() => getNotificationPermission());
   const [backupSettings, setBackupSettings] = useState<BackupSettings>(() =>
@@ -103,6 +133,12 @@ export const useSettings = ({
         setNotifications(newValue);
         setBrowserNotificationPermission(getNotificationPermission());
         localStorage.setItem("notifications", JSON.stringify(newValue));
+        // Firestore에 저장
+        if (user?.uid) {
+          await setUserNotificationSettings(user.uid, {
+            notifications: newValue,
+          });
+        }
         toast.success("브라우저 알림이 활성화되었습니다.");
       } else {
         toast.error(
@@ -113,6 +149,12 @@ export const useSettings = ({
       const newValue = false;
       setNotifications(newValue);
       localStorage.setItem("notifications", JSON.stringify(newValue));
+      // Firestore에 저장
+      if (user?.uid) {
+        await setUserNotificationSettings(user.uid, {
+          notifications: newValue,
+        });
+      }
       toast.success("브라우저 알림이 비활성화되었습니다.");
     }
   };
@@ -134,10 +176,17 @@ export const useSettings = ({
   };
 
   // 북마크 알림 토글 핸들러
-  const handleBookmarkNotificationToggle = () => {
+  const handleBookmarkNotificationToggle = async () => {
     const newValue = !bookmarkNotifications;
     setBookmarkNotifications(newValue);
     localStorage.setItem("bookmarkNotifications", JSON.stringify(newValue));
+
+    // Firestore에 저장
+    if (user?.uid) {
+      await setUserNotificationSettings(user.uid, {
+        bookmarkNotifications: newValue,
+      });
+    }
 
     window.dispatchEvent(
       new CustomEvent("bookmarkNotificationsChanged", {
