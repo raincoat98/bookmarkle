@@ -6,20 +6,13 @@ service cloud.firestore {
   }
   
   function isAdmin() {
-    return signedIn() && (
-      request.auth.token.isAdmin == true ||
-      exists(/databases/$(database)/documents/admins/$(request.auth.uid))
-    );
+    return signedIn() && request.auth.token.isAdmin == true;
   }
   
   function isOwner(userId) {
     return signedIn() && request.auth.uid == userId;
   }
   
-  function isUserActive(userId) {
-    return get(/databases/$(database)/documents/users/$(userId)).data.isActive != false;
-  }
-
   match /databases/{database}/documents {
     // admins 컬렉션 - 관리자만 읽기/쓰기 가능
     match /admins/{adminId} {
@@ -31,29 +24,25 @@ service cloud.firestore {
     match /bookmarks/{bookmarkId} {
       // 인증된 사용자만 접근 가능 또는 관리자 접근 허용
       allow read, write: if isAdmin() || (signedIn() && 
-        (resource == null || request.auth.uid == resource.data.userId) && 
-        isUserActive(request.auth.uid));
+        (resource == null || request.auth.uid == resource.data.userId));
       // 삭제는 별도로 처리
       allow delete: if isAdmin() || (signedIn() && 
-        request.auth.uid == resource.data.userId && 
-        isUserActive(request.auth.uid));
+        request.auth.uid == resource.data.userId);
     }
     
     // 컬렉션 컬렉션 규칙
     match /collections/{collectionId} {
       // 인증된 사용자만 접근 가능 또는 관리자 접근 허용
       allow read, write: if isAdmin() || (signedIn() && 
-        (resource == null || request.auth.uid == resource.data.userId) && 
-        isUserActive(request.auth.uid));
+        (resource == null || request.auth.uid == resource.data.userId));
       // 삭제는 별도로 처리
       allow delete: if isAdmin() || (signedIn() && 
-        request.auth.uid == resource.data.userId && 
-        isUserActive(request.auth.uid));
+        request.auth.uid == resource.data.userId);
     }
     
     // 사용자별 설정(메인페이지 등) 규칙 추가
     match /users/{userId}/settings/{docId} {
-      allow read, write: if isAdmin() || (signedIn() && request.auth.uid == userId && isUserActive(request.auth.uid));
+      allow read, write: if isAdmin() || (signedIn() && request.auth.uid == userId);
     }
     
     // 사용자 문서는 모든 인증된 사용자가 읽을 수 있음 (관리자용)
@@ -63,12 +52,12 @@ service cloud.firestore {
       
       // 사용자의 북마크 (하위 컬렉션)
       match /bookmarks/{bookmarkId} {
-        allow read, write, delete: if isAdmin() || (signedIn() && request.auth.uid == userId && isUserActive(request.auth.uid));
+        allow read, write, delete: if isAdmin() || (signedIn() && request.auth.uid == userId);
       }
       
       // 사용자의 컬렉션 (하위 컬렉션)
       match /collections/{collectionId} {
-        allow read, write, delete: if isAdmin() || (signedIn() && request.auth.uid == userId && isUserActive(request.auth.uid));
+        allow read, write, delete: if isAdmin() || (signedIn() && request.auth.uid == userId);
       }
     }
     
@@ -76,18 +65,15 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       // 읽기: 자신의 알림만 읽기 가능
       allow read: if isAdmin() || (signedIn() && 
-        request.auth.uid == resource.data.userId && 
-        isUserActive(request.auth.uid));
+        request.auth.uid == resource.data.userId);
       
       // 생성: 자신의 userId로만 생성 가능
       allow create: if isAdmin() || (signedIn() && 
-        request.auth.uid == request.resource.data.userId && 
-        isUserActive(request.auth.uid));
+        request.auth.uid == request.resource.data.userId);
       
       // 수정/삭제: 자신의 알림만 수정/삭제 가능
       allow update, delete: if isAdmin() || (signedIn() && 
-        request.auth.uid == resource.data.userId && 
-        isUserActive(request.auth.uid));
+        request.auth.uid == resource.data.userId);
     }
     
     // 기본적으로 모든 접근 거부
