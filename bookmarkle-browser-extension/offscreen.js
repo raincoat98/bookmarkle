@@ -345,4 +345,49 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
     return true; // async 응답
   }
+
+  if (msg.type === "GET_NOTIFICATION_SETTINGS") {
+    // 알림 설정 요청
+    const origin = new URL(PUBLIC_POPUP_URL).origin;
+
+    function handleNotificationSettingsMessage(ev) {
+      // Firebase 내부 메시지 노이즈 필터
+      if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
+
+      try {
+        const data =
+          typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data;
+
+        // 알림 설정 응답만 처리
+        if (
+          data.type === "NOTIFICATION_SETTINGS_DATA" ||
+          data.type === "NOTIFICATION_SETTINGS_ERROR"
+        ) {
+          window.removeEventListener(
+            "message",
+            handleNotificationSettingsMessage
+          );
+          sendResponse(data);
+        }
+      } catch (e) {
+        window.removeEventListener("message", handleNotificationSettingsMessage);
+        sendResponse({
+          type: "NOTIFICATION_SETTINGS_ERROR",
+          name: "ParseError",
+          message: e.message,
+        });
+      }
+    }
+
+    window.addEventListener("message", handleNotificationSettingsMessage, false);
+    iframe.contentWindow.postMessage(
+      {
+        getNotificationSettings: true,
+        idToken: currentIdToken, // ID 토큰 함께 전달
+      },
+      origin
+    );
+
+    return true; // async 응답
+  }
 });
