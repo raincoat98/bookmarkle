@@ -18,6 +18,8 @@ import {
   getDocs,
   addDoc,
   serverTimestamp,
+  doc,
+  getDoc,
 } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { firebaseConfig } from "./config.js";
 
@@ -581,6 +583,72 @@ window.addEventListener("message", async (ev) => {
     }
   }
 
+  // 알림 설정 가져오기 요청
+  if (ev.data?.getNotificationSettings) {
+    console.log("Getting notification settings request received");
+    try {
+      let currentUser = auth.currentUser;
+
+      if (!currentUser && ev.data.idToken) {
+        currentUser = await new Promise((resolve) => {
+          const timeout = setTimeout(() => {
+            resolve(auth.currentUser);
+          }, 5000);
+
+          if (auth.currentUser) {
+            clearTimeout(timeout);
+            resolve(auth.currentUser);
+            return;
+          }
+
+          const unsubscribe = auth.onAuthStateChanged((user) => {
+            if (user) {
+              clearTimeout(timeout);
+              unsubscribe();
+              resolve(user);
+            }
+          });
+        });
+      }
+
+      if (!currentUser) {
+        send({
+          type: "NOTIFICATION_SETTINGS_ERROR",
+          name: "AuthError",
+          code: "auth/not-authenticated",
+          message: "User is not authenticated. Please sign in first.",
+        });
+        return;
+      }
+
+      // Firestore에서 알림 설정 가져오기
+      const settingsRef = doc(db, "users", currentUser.uid, "settings", "main");
+      const snap = await getDoc(settingsRef);
+
+      let bookmarkNotifications = true; // 기본값
+      if (snap.exists()) {
+        const data = snap.data();
+        bookmarkNotifications =
+          data.bookmarkNotifications !== undefined
+            ? data.bookmarkNotifications
+            : true;
+      }
+
+      send({
+        type: "NOTIFICATION_SETTINGS_DATA",
+        bookmarkNotifications: bookmarkNotifications,
+      });
+    } catch (e) {
+      console.error("Notification settings fetch error:", e);
+      send({
+        type: "NOTIFICATION_SETTINGS_ERROR",
+        name: e.name || "FirestoreError",
+        code: e.code,
+        message: e.message,
+      });
+    }
+  }
+
   // Firebase 로그아웃 요청 (Extension에서 로그아웃 시)
   if (ev.data?.logoutFirebase) {
     console.log("🔥 Firebase logout request received from extension");
@@ -800,6 +868,38 @@ async function createNotification(userId, type, message, bookmarkId = null) {
 
   if (!userId) {
     throw new Error("User ID is required for notification");
+  }
+
+  // 북마크 관련 알림인 경우 설정 확인
+  const isBookmarkNotification =
+    type === "bookmark_added" ||
+    type === "bookmark_updated" ||
+    type === "bookmark_deleted";
+
+  if (isBookmarkNotification) {
+    try {
+      const settingsRef = doc(db, "users", userId, "settings", "main");
+      const snap = await getDoc(settingsRef);
+
+      let bookmarkNotificationsEnabled = true; // 기본값
+      if (snap.exists()) {
+        const data = snap.data();
+        bookmarkNotificationsEnabled =
+          data.bookmarkNotifications !== undefined
+            ? data.bookmarkNotifications
+            : true;
+      }
+
+      if (!bookmarkNotificationsEnabled) {
+        console.log(
+          "🔔 북마크 알림이 비활성화되어 있어 알림을 생성하지 않습니다."
+        );
+        return null;
+      }
+    } catch (error) {
+      console.error("🔔 알림 설정 확인 실패:", error);
+      // 설정 확인 실패 시 기본값(활성화)으로 처리
+    }
   }
 
   try {
