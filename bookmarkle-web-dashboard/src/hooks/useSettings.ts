@@ -50,7 +50,10 @@ export const useSettings = ({
 
   // 상태 관리
   const [activeTab, setActiveTab] = useState("general");
-  const [notifications, setNotifications] = useState(true);
+  const [notifications, setNotifications] = useState(() => {
+    const saved = localStorage.getItem("notifications");
+    return saved ? JSON.parse(saved) : true;
+  });
   const [bookmarkNotifications, setBookmarkNotifications] = useState(() => {
     const saved = localStorage.getItem("bookmarkNotifications");
     return saved ? JSON.parse(saved) : true;
@@ -96,8 +99,10 @@ export const useSettings = ({
     if (!notifications) {
       const hasPermission = await requestNotificationPermission();
       if (hasPermission) {
-        setNotifications(true);
+        const newValue = true;
+        setNotifications(newValue);
         setBrowserNotificationPermission(getNotificationPermission());
+        localStorage.setItem("notifications", JSON.stringify(newValue));
         toast.success("브라우저 알림이 활성화되었습니다.");
       } else {
         toast.error(
@@ -105,7 +110,9 @@ export const useSettings = ({
         );
       }
     } else {
-      setNotifications(false);
+      const newValue = false;
+      setNotifications(newValue);
+      localStorage.setItem("notifications", JSON.stringify(newValue));
       toast.success("브라우저 알림이 비활성화되었습니다.");
     }
   };
