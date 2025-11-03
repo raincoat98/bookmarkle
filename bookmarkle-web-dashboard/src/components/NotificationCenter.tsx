@@ -13,6 +13,8 @@ import { useTranslation } from "../../node_modules/react-i18next";
 import { useNotifications } from "../hooks/useNotifications";
 import { useAuthStore } from "../stores";
 import type { Notification } from "../types";
+import { db, getUserNotificationSettings } from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export const NotificationCenter = () => {
   const { t } = useTranslation();
@@ -29,6 +31,94 @@ export const NotificationCenter = () => {
 
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  // 알림 설정 동기화 (다른 컴포넌트와의 동기화를 위해 유지)
+  const [, setNotificationsEnabled] = useState(() => {
+    const saved = localStorage.getItem("bookmarkNotifications");
+    return saved ? JSON.parse(saved) : true;
+  });
+
+  // Firestore에서 알림 설정 실시간 동기화
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    // 실시간 동기화 (onSnapshot의 첫 호출이 초기 로드 역할)
+    const settingsRef = doc(db, "users", user.uid, "settings", "main");
+
+    const unsubscribe = onSnapshot(
+      settingsRef,
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const newValue =
+            data.bookmarkNotifications !== undefined
+              ? data.bookmarkNotifications
+              : true;
+
+          // 값이 실제로 변경되었을 때만 업데이트
+          setNotificationsEnabled((prev: boolean) => {
+            if (prev !== newValue) {
+              localStorage.setItem(
+                "bookmarkNotifications",
+                JSON.stringify(newValue)
+              );
+              return newValue;
+            }
+            return prev;
+          });
+        } else {
+          // 문서가 없으면 기본값 사용
+          setNotificationsEnabled((prev: boolean) => {
+            if (prev !== true) {
+              localStorage.setItem(
+                "bookmarkNotifications",
+                JSON.stringify(true)
+              );
+              return true;
+            }
+            return prev;
+          });
+        }
+      },
+      (error) => {
+        console.error("알림 설정 실시간 동기화 실패:", error);
+        // 에러 발생 시 초기 로드 시도
+        getUserNotificationSettings(user.uid)
+          .then((settings) => {
+            if (settings.bookmarkNotifications !== undefined) {
+              setNotificationsEnabled(settings.bookmarkNotifications);
+              localStorage.setItem(
+                "bookmarkNotifications",
+                JSON.stringify(settings.bookmarkNotifications)
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("알림 설정 로드 실패:", err);
+          });
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
+
+  // 설정 페이지에서 북마크 알림 상태 변경 감지
+  useEffect(() => {
+    const handleBookmarkNotificationsChange = (event: CustomEvent) => {
+      setNotificationsEnabled(event.detail.enabled);
+    };
+
+    window.addEventListener(
+      "bookmarkNotificationsChanged",
+      handleBookmarkNotificationsChange as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "bookmarkNotificationsChanged",
+        handleBookmarkNotificationsChange as EventListener
+      );
+    };
+  }, []);
 
   // 외부 클릭 시 닫기
   useEffect(() => {

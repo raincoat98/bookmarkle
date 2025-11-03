@@ -28,6 +28,12 @@ import {
 } from "lucide-react";
 import type { Bookmark, Collection, SortOption } from "../types";
 import { sortBookmarks } from "../utils/sortBookmarks";
+import {
+  getUserNotificationSettings,
+  setUserNotificationSettings,
+  db,
+} from "../firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 import bibleVerses from "../data/bibleVerses.json";
 import { WeatherWidget } from "./WeatherWidget";
 import { useTranslation } from "../../node_modules/react-i18next";
@@ -637,6 +643,58 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     return saved ? JSON.parse(saved) : true;
   });
 
+  // Firestore에서 알림 설정 실시간 동기화
+  useEffect(() => {
+    if (!user?.uid) return;
+
+    // 실시간 동기화 (onSnapshot의 첫 호출이 초기 로드 역할)
+    const settingsRef = doc(db, "users", user.uid, "settings", "main");
+
+    const unsubscribe = onSnapshot(
+      settingsRef,
+      (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          const newValue =
+            data.bookmarkNotifications !== undefined
+              ? data.bookmarkNotifications
+              : true;
+
+          // 값이 실제로 변경되었을 때만 업데이트
+          setNotificationsEnabled((prev: boolean) => {
+            if (prev !== newValue) {
+              localStorage.setItem(
+                "bookmarkNotifications",
+                JSON.stringify(newValue)
+              );
+              return newValue;
+            }
+            return prev;
+          });
+        }
+      },
+      (error) => {
+        console.error("알림 설정 실시간 동기화 실패:", error);
+        // 에러 발생 시 초기 로드 시도
+        getUserNotificationSettings(user.uid)
+          .then((settings) => {
+            if (settings.bookmarkNotifications !== undefined) {
+              setNotificationsEnabled(settings.bookmarkNotifications);
+              localStorage.setItem(
+                "bookmarkNotifications",
+                JSON.stringify(settings.bookmarkNotifications)
+              );
+            }
+          })
+          .catch((err) => {
+            console.error("알림 설정 로드 실패:", err);
+          });
+      }
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid]);
+
   // 외부 클릭 감지로 알림 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -964,13 +1022,32 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                         </p>
                       </div>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
+                          if (!user?.uid) return;
+
                           const newValue = !notificationsEnabled;
                           setNotificationsEnabled(newValue);
                           localStorage.setItem(
                             "bookmarkNotifications",
                             JSON.stringify(newValue)
                           );
+
+                          // Firestore에 저장
+                          try {
+                            await setUserNotificationSettings(user.uid, {
+                              bookmarkNotifications: newValue,
+                            });
+                          } catch (error) {
+                            console.error("알림 설정 저장 실패:", error);
+                            // 저장 실패 시 이전 값으로 복구
+                            const previousValue = !newValue;
+                            setNotificationsEnabled(previousValue);
+                            localStorage.setItem(
+                              "bookmarkNotifications",
+                              JSON.stringify(previousValue)
+                            );
+                          }
+
                           window.dispatchEvent(
                             new CustomEvent("bookmarkNotificationsChanged", {
                               detail: { enabled: newValue },
