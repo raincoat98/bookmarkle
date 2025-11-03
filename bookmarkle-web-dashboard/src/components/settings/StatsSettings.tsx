@@ -32,25 +32,25 @@ export const StatsSettings: React.FC<StatsSettingsProps> = ({
     color: string;
     description?: string;
   }) => (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4 sm:p-5 md:p-6 hover:shadow-md transition-shadow">
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 sm:space-y-2 flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-400 truncate">
             {title}
           </p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white">
             {value.toLocaleString()}
           </p>
           {description && (
-            <p className="text-xs text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">
               {description}
             </p>
           )}
         </div>
         <div
-          className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl ${color}`}
+          className={`w-12 h-12 sm:w-14 sm:h-14 flex-shrink-0 rounded-xl sm:rounded-2xl flex items-center justify-center ${color}`}
         >
-          {icon}
+          <div className="w-5 h-5 sm:w-6 sm:h-6">{icon}</div>
         </div>
       </div>
     </div>
@@ -59,35 +59,35 @@ export const StatsSettings: React.FC<StatsSettingsProps> = ({
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
           {t("settings.bookmarkStatistics")}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           <StatsCard
             title={t("settings.totalBookmarks")}
             value={totalBookmarks}
-            icon={<BookOpen className="w-6 h-6" />}
+            icon={<BookOpen className="w-full h-full" />}
             color="bg-gradient-to-r from-blue-500 to-blue-600 text-white"
             description={t("settings.totalBookmarksDescription")}
           />
           <StatsCard
             title={t("collections.title")}
             value={totalCollections}
-            icon={<Folder className="w-6 h-6" />}
+            icon={<Folder className="w-full h-full" />}
             color="bg-gradient-to-r from-purple-500 to-purple-600 text-white"
             description={t("settings.totalCollectionsDescription")}
           />
           <StatsCard
             title={t("settings.favorites")}
             value={favoriteBookmarks}
-            icon={<Sparkles className="w-6 h-6" />}
+            icon={<Sparkles className="w-full h-full" />}
             color="bg-gradient-to-r from-yellow-500 to-orange-500 text-white"
             description={t("settings.favoritesDescription")}
           />
           <StatsCard
             title={t("settings.unassigned")}
             value={unassignedBookmarks}
-            icon={<FileText className="w-6 h-6" />}
+            icon={<FileText className="w-full h-full" />}
             color="bg-gradient-to-r from-gray-500 to-gray-600 text-white"
             description={t("settings.unassignedDescription")}
           />
