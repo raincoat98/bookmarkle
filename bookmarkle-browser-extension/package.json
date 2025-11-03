@@ -1,6 +1,6 @@
 {
   "name": "bookmarkle-browser-extension",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "북마클 브라우저 확장 프로그램",
   "main": "background.js",
   "dependencies": {
