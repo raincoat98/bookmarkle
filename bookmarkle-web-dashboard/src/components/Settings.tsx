@@ -275,7 +275,30 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 사이드바 */}
           <div className="lg:w-72 flex-shrink-0">
-            <nav className="space-y-1">
+            {/* 모바일: 가로 스크롤 */}
+            <nav className="block lg:hidden overflow-x-auto -mx-4 px-4 scrollbar-hide bg-white dark:bg-gray-800 rounded-lg py-2">
+              <div className="flex gap-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center space-x-3 px-4 py-3 whitespace-nowrap rounded-lg transition-colors flex-shrink-0 ${
+                        activeTab === tab.id
+                          ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+            {/* 데스크톱: 기존 세로 레이아웃 */}
+            <nav className="hidden lg:block space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
