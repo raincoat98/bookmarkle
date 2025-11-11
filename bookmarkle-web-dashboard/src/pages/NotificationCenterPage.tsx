@@ -463,6 +463,7 @@ export const NotificationCenterPage: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
+                      className="hidden px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       onClick={() =>
                         showTestNotification(
                           t("notifications.testNotificationTitle"),
@@ -473,7 +474,6 @@ export const NotificationCenterPage: React.FC = () => {
                         !systemNotificationsEnabled ||
                         browserNotificationPermission.denied
                       }
-                      className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {t("notifications.testNotification")}
                     </button>
