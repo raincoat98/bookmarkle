@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import type { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "../../node_modules/react-i18next";
 import toast from "react-hot-toast";
@@ -23,14 +24,41 @@ import {
 } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
 
+export interface ImportPreviewData {
+  version?: string;
+  exportedAt?: string;
+  bookmarks: Array<Record<string, unknown>>;
+  collections: Array<Record<string, unknown>>;
+}
+
+const sanitizeImportPreviewData = (data: unknown): ImportPreviewData | null => {
+  if (typeof data !== "object" || data === null) {
+    return null;
+  }
+
+  const record = data as Record<string, unknown>;
+
+  if (!Array.isArray(record.bookmarks) || !Array.isArray(record.collections)) {
+    return null;
+  }
+
+  return {
+    version: typeof record.version === "string" ? record.version : undefined,
+    exportedAt:
+      typeof record.exportedAt === "string" ? record.exportedAt : undefined,
+    bookmarks: record.bookmarks as Array<Record<string, unknown>>,
+    collections: record.collections as Array<Record<string, unknown>>,
+  };
+};
+
 interface UseSettingsProps {
-  user: any;
+  user: User | null;
   rawBookmarks: Bookmark[];
   collections: Collection[];
   theme: string;
   setTheme: (theme: "light" | "dark" | "auto") => void;
   logout: () => void;
-  onImportData?: (importData: any) => Promise<void>;
+  onImportData?: (importData: ImportPreviewData) => Promise<void>;
   onRestoreBackup?: (backupData: {
     bookmarks: Bookmark[];
     collections: Collection[];
@@ -54,33 +82,68 @@ export const useSettings = ({
 
   // 상태 관리
   const [activeTab, setActiveTab] = useState("general");
-  const [notifications, setNotifications] = useState(() => {
-    const saved = localStorage.getItem("notifications");
-    return saved ? JSON.parse(saved) : true;
-  });
-  const [bookmarkNotifications, setBookmarkNotifications] = useState(() => {
-    const saved = localStorage.getItem("bookmarkNotifications");
-    return saved ? JSON.parse(saved) : true;
-  });
+  const getInitialNotificationSetting = (
+    key: "notifications" | "systemNotifications",
+    fallback?: boolean
+  ) => {
+    const saved = localStorage.getItem(key);
+    if (saved !== null) return JSON.parse(saved);
+    if (fallback !== undefined) return fallback;
+    const legacy = localStorage.getItem("bookmarkNotifications");
+    if (legacy !== null) return JSON.parse(legacy);
+    return true;
+  };
+
+  const initialRecordNotifications =
+    getInitialNotificationSetting("notifications");
+  const initialSystemNotifications = getInitialNotificationSetting(
+    "systemNotifications",
+    initialRecordNotifications
+  );
+
+  const [notifications, setNotifications] = useState<boolean>(
+    initialRecordNotifications
+  );
+  const [systemNotifications, setSystemNotifications] = useState<boolean>(
+    initialSystemNotifications
+  );
+  const [browserNotificationPermission, setBrowserNotificationPermission] =
+    useState(() => getNotificationPermission());
 
   // Firestore에서 알림 설정 로드
   useEffect(() => {
     if (user?.uid) {
       getUserNotificationSettings(user.uid)
         .then((settings) => {
-          if (settings.notifications !== undefined) {
-            setNotifications(settings.notifications);
+          const firestoreValue =
+            settings.notifications !== undefined
+              ? settings.notifications
+              : settings.bookmarkNotifications;
+
+          const systemValue =
+            settings.systemNotifications !== undefined
+              ? settings.systemNotifications
+              : firestoreValue;
+
+          if (firestoreValue !== undefined) {
+            setNotifications(firestoreValue);
             localStorage.setItem(
               "notifications",
-              JSON.stringify(settings.notifications)
+              JSON.stringify(firestoreValue)
             );
-          }
-          if (settings.bookmarkNotifications !== undefined) {
-            setBookmarkNotifications(settings.bookmarkNotifications);
             localStorage.setItem(
               "bookmarkNotifications",
-              JSON.stringify(settings.bookmarkNotifications)
+              JSON.stringify(firestoreValue)
             );
+          }
+
+          if (systemValue !== undefined) {
+            setSystemNotifications(systemValue);
+            localStorage.setItem(
+              "systemNotifications",
+              JSON.stringify(systemValue)
+            );
+            setBrowserNotificationPermission(getNotificationPermission());
           }
         })
         .catch((error) => {
@@ -88,8 +151,42 @@ export const useSettings = ({
         });
     }
   }, [user?.uid]);
-  const [browserNotificationPermission, setBrowserNotificationPermission] =
-    useState(() => getNotificationPermission());
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      setBrowserNotificationPermission(getNotificationPermission());
+    };
+
+    window.addEventListener("focus", handleWindowFocus);
+    return () => {
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (browserNotificationPermission.denied && systemNotifications) {
+      setSystemNotifications(false);
+      localStorage.setItem("systemNotifications", JSON.stringify(false));
+
+      if (user?.uid) {
+        setUserNotificationSettings(user.uid, {
+          systemNotifications: false,
+        });
+      }
+
+      window.dispatchEvent(
+        new CustomEvent("systemNotificationsChanged", {
+          detail: { enabled: false },
+        })
+      );
+
+      toast.error(t("notifications.permissionDenied"));
+    }
+  }, [
+    browserNotificationPermission.denied,
+    systemNotifications,
+    user?.uid,
+    t,
+  ]);
   const [backupSettings, setBackupSettings] = useState<BackupSettings>(() =>
     loadBackupSettings()
   );
@@ -98,7 +195,7 @@ export const useSettings = ({
     () => localStorage.getItem("defaultPage") || "dashboard"
   );
   const [showImportModal, setShowImportModal] = useState(false);
-  const [importData, setImportData] = useState<any>(null);
+  const [importData, setImportData] = useState<ImportPreviewData | null>(null);
   const [restoreConfirm, setRestoreConfirm] = useState<{
     open: boolean;
     timestamp: string | null;
@@ -126,36 +223,82 @@ export const useSettings = ({
 
   // 알림 토글 핸들러
   const handleNotificationToggle = async () => {
+    const newValue = !notifications;
+    setNotifications(newValue);
+    localStorage.setItem("notifications", JSON.stringify(newValue));
+    localStorage.setItem("bookmarkNotifications", JSON.stringify(newValue));
+
+    const updates: {
+      notifications: boolean;
+      bookmarkNotifications: boolean;
+      systemNotifications?: boolean;
+    } = {
+      notifications: newValue,
+      bookmarkNotifications: newValue,
+    };
+
+    if (!newValue) {
+      setSystemNotifications(false);
+      localStorage.setItem("systemNotifications", JSON.stringify(false));
+      updates.systemNotifications = false;
+    }
+
+    if (user?.uid) {
+      await setUserNotificationSettings(user.uid, updates);
+    }
+
+    toast.success(
+      `북마크 알림이 ${newValue ? "활성화" : "비활성화"}되었습니다.`
+    );
+
+    window.dispatchEvent(
+      new CustomEvent("notificationsChanged", {
+        detail: { enabled: newValue },
+      })
+    );
+    window.dispatchEvent(
+      new CustomEvent("bookmarkNotificationsChanged", {
+        detail: { enabled: newValue },
+      })
+    );
+  };
+
+  const handleSystemNotificationToggle = async () => {
     if (!notifications) {
+      toast.error("북마크 알림을 먼저 활성화해주세요.");
+      return;
+    }
+
+    const newValue = !systemNotifications;
+
+    if (!systemNotifications) {
       const hasPermission = await requestNotificationPermission();
-      if (hasPermission) {
-        const newValue = true;
-        setNotifications(newValue);
-        setBrowserNotificationPermission(getNotificationPermission());
-        localStorage.setItem("notifications", JSON.stringify(newValue));
-        // Firestore에 저장
-        if (user?.uid) {
-          await setUserNotificationSettings(user.uid, {
-            notifications: newValue,
-          });
-        }
-        toast.success("브라우저 알림이 활성화되었습니다.");
-      } else {
+      const permission = getNotificationPermission();
+      setBrowserNotificationPermission(permission);
+
+      if (!hasPermission || permission.granted === false) {
         toast.error(
-          "브라우저 알림 권한이 필요합니다. 브라우저 설정에서 권한을 허용해주세요."
+          "시스템 알림 권한이 필요합니다. 브라우저 설정에서 권한을 허용해주세요."
         );
+        return;
       }
-    } else {
-      const newValue = false;
-      setNotifications(newValue);
-      localStorage.setItem("notifications", JSON.stringify(newValue));
-      // Firestore에 저장
-      if (user?.uid) {
-        await setUserNotificationSettings(user.uid, {
-          notifications: newValue,
-        });
-      }
-      toast.success("브라우저 알림이 비활성화되었습니다.");
+    }
+
+    setSystemNotifications(newValue);
+    localStorage.setItem("systemNotifications", JSON.stringify(newValue));
+
+    if (user?.uid) {
+      await setUserNotificationSettings(user.uid, {
+        systemNotifications: newValue,
+      });
+    }
+
+    if (!newValue) {
+      window.dispatchEvent(
+        new CustomEvent("systemNotificationsChanged", {
+          detail: { enabled: false },
+        })
+      );
     }
   };
 
@@ -173,30 +316,6 @@ export const useSettings = ({
     } else {
       toast.error(t("notifications.permissionDenied"));
     }
-  };
-
-  // 북마크 알림 토글 핸들러
-  const handleBookmarkNotificationToggle = async () => {
-    const newValue = !bookmarkNotifications;
-    setBookmarkNotifications(newValue);
-    localStorage.setItem("bookmarkNotifications", JSON.stringify(newValue));
-
-    // Firestore에 저장
-    if (user?.uid) {
-      await setUserNotificationSettings(user.uid, {
-        bookmarkNotifications: newValue,
-      });
-    }
-
-    window.dispatchEvent(
-      new CustomEvent("bookmarkNotificationsChanged", {
-        detail: { enabled: newValue },
-      })
-    );
-
-    toast.success(
-      `북마크 알림이 ${newValue ? "활성화" : "비활성화"}되었습니다.`
-    );
   };
 
   // 자동 백업 토글 핸들러
@@ -378,9 +497,9 @@ export const useSettings = ({
 
     try {
       const text = await file.text();
-      const parsedData = JSON.parse(text);
+      const parsedData = sanitizeImportPreviewData(JSON.parse(text));
 
-      if (!parsedData.bookmarks || !parsedData.collections) {
+      if (!parsedData) {
         toast.error("잘못된 파일 형식입니다.");
         return;
       }
@@ -437,7 +556,7 @@ export const useSettings = ({
     activeTab,
     setActiveTab,
     notifications,
-    bookmarkNotifications,
+    systemNotifications,
     browserNotificationPermission,
     backupSettings,
     backupStatus,
@@ -455,8 +574,8 @@ export const useSettings = ({
     // 핸들러
     handleThemeChange,
     handleNotificationToggle,
+    handleSystemNotificationToggle,
     handleTestNotification,
-    handleBookmarkNotificationToggle,
     handleAutoBackupToggle,
     handleBackupFrequencyChange,
     handleManualBackup,

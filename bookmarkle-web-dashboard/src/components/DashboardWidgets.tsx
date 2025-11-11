@@ -59,6 +59,7 @@ import type { WidgetId, WidgetConfig } from "../hooks/useWidgetOrder";
 import { useAuthStore } from "../stores";
 import { useNotifications } from "../hooks/useNotifications";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 interface BookmarksWidgetProps {
   bookmarks: Bookmark[];
@@ -638,16 +639,23 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    const saved = localStorage.getItem("bookmarkNotifications");
-    return saved ? JSON.parse(saved) : true;
-  });
+  const getInitialNotificationsSetting = () => {
+    const saved = localStorage.getItem("notifications");
+    if (saved !== null) return JSON.parse(saved);
+    const legacy = localStorage.getItem("bookmarkNotifications");
+    if (legacy !== null) return JSON.parse(legacy);
+    return true;
+  };
+
+  const initialNotificationsEnabled = getInitialNotificationsSetting();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    initialNotificationsEnabled
+  );
 
   // Firestore에서 알림 설정 실시간 동기화
   useEffect(() => {
     if (!user?.uid) return;
 
-    // 실시간 동기화 (onSnapshot의 첫 호출이 초기 로드 역할)
     const settingsRef = doc(db, "users", user.uid, "settings", "main");
 
     const unsubscribe = onSnapshot(
@@ -655,34 +663,43 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       (snap) => {
         if (snap.exists()) {
           const data = snap.data();
-          const newValue =
-            data.bookmarkNotifications !== undefined
+          const recordValue =
+            data.notifications !== undefined
+              ? data.notifications
+              : data.bookmarkNotifications !== undefined
               ? data.bookmarkNotifications
               : true;
 
-          // 값이 실제로 변경되었을 때만 업데이트
-          setNotificationsEnabled((prev: boolean) => {
-            if (prev !== newValue) {
-              localStorage.setItem(
-                "bookmarkNotifications",
-                JSON.stringify(newValue)
-              );
-              return newValue;
-            }
-            return prev;
-          });
+          setNotificationsEnabled(recordValue);
+          localStorage.setItem("notifications", JSON.stringify(recordValue));
+          localStorage.setItem(
+            "bookmarkNotifications",
+            JSON.stringify(recordValue)
+          );
+        } else {
+          setNotificationsEnabled(true);
+          localStorage.setItem("notifications", JSON.stringify(true));
+          localStorage.setItem("bookmarkNotifications", JSON.stringify(true));
         }
       },
       (error) => {
         console.error("알림 설정 실시간 동기화 실패:", error);
-        // 에러 발생 시 초기 로드 시도
         getUserNotificationSettings(user.uid)
           .then((settings) => {
-            if (settings.bookmarkNotifications !== undefined) {
-              setNotificationsEnabled(settings.bookmarkNotifications);
+            const recordValue =
+              settings.notifications !== undefined
+                ? settings.notifications
+                : settings.bookmarkNotifications;
+
+            if (recordValue !== undefined) {
+              setNotificationsEnabled(recordValue);
+              localStorage.setItem(
+                "notifications",
+                JSON.stringify(recordValue)
+              );
               localStorage.setItem(
                 "bookmarkNotifications",
-                JSON.stringify(settings.bookmarkNotifications)
+                JSON.stringify(recordValue)
               );
             }
           })
@@ -735,21 +752,29 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     }
   }, [notificationsEnabled]);
 
-  // 설정 페이지에서 북마크 알림 상태 변경 감지
+  // 설정 페이지에서 알림 상태 변경 감지
   useEffect(() => {
-    const handleBookmarkNotificationsChange = (event: CustomEvent) => {
+    const handleNotificationsChange = (event: CustomEvent) => {
       setNotificationsEnabled(event.detail.enabled);
     };
 
     window.addEventListener(
+      "notificationsChanged",
+      handleNotificationsChange as EventListener
+    );
+    window.addEventListener(
       "bookmarkNotificationsChanged",
-      handleBookmarkNotificationsChange as EventListener
+      handleNotificationsChange as EventListener
     );
 
     return () => {
       window.removeEventListener(
+        "notificationsChanged",
+        handleNotificationsChange as EventListener
+      );
+      window.removeEventListener(
         "bookmarkNotificationsChanged",
-        handleBookmarkNotificationsChange as EventListener
+        handleNotificationsChange as EventListener
       );
     };
   }, []);
@@ -1018,7 +1043,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           {t("notifications.bookmarkNotifications")}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {t("notifications.browserNotificationsDescription")}
+                          {t("settings.browserNotificationsDescription")}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {t("notifications.bookmarkNotificationsDescription")}
                         </p>
                       </div>
                       <button
@@ -1028,20 +1056,27 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           const newValue = !notificationsEnabled;
                           setNotificationsEnabled(newValue);
                           localStorage.setItem(
+                            "notifications",
+                            JSON.stringify(newValue)
+                          );
+                          localStorage.setItem(
                             "bookmarkNotifications",
                             JSON.stringify(newValue)
                           );
 
-                          // Firestore에 저장
                           try {
                             await setUserNotificationSettings(user.uid, {
+                              notifications: newValue,
                               bookmarkNotifications: newValue,
                             });
                           } catch (error) {
                             console.error("알림 설정 저장 실패:", error);
-                            // 저장 실패 시 이전 값으로 복구
                             const previousValue = !newValue;
                             setNotificationsEnabled(previousValue);
+                            localStorage.setItem(
+                              "notifications",
+                              JSON.stringify(previousValue)
+                            );
                             localStorage.setItem(
                               "bookmarkNotifications",
                               JSON.stringify(previousValue)
@@ -1049,9 +1084,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           }
 
                           window.dispatchEvent(
+                            new CustomEvent("notificationsChanged", {
+                              detail: { enabled: newValue },
+                            })
+                          );
+                          window.dispatchEvent(
                             new CustomEvent("bookmarkNotificationsChanged", {
                               detail: { enabled: newValue },
                             })
+                          );
+
+                          toast.success(
+                            `${t("settings.browserNotifications")} ${
+                              newValue
+                                ? t("notifications.enable")
+                                : t("notifications.disable")
+                            }`
                           );
                         }}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${

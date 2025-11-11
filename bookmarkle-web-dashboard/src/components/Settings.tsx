@@ -16,7 +16,7 @@ import {
   Bell,
   Shield,
 } from "lucide-react";
-import { useSettings } from "../hooks/useSettings";
+import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { AccountSettings } from "./settings/AccountSettings";
 import { AppearanceSettings } from "./settings/AppearanceSettings";
@@ -26,13 +26,14 @@ import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { getUserDefaultPage } from "../firebase";
 import { performBackup, shouldBackup } from "../utils/backup";
+import type { Bookmark, Collection } from "../types";
 
 interface SettingsProps {
   onBack: () => void;
-  onImportData?: (importData: any) => Promise<void>;
+  onImportData?: (importData: ImportPreviewData) => Promise<void>;
   onRestoreBackup?: (backupData: {
-    bookmarks: any[];
-    collections: any[];
+    bookmarks: Bookmark[];
+    collections: Collection[];
   }) => Promise<void>;
   isRestoring?: boolean;
 }
@@ -54,7 +55,7 @@ export const Settings: React.FC<SettingsProps> = ({
     activeTab,
     setActiveTab,
     notifications,
-    bookmarkNotifications,
+    systemNotifications,
     browserNotificationPermission,
     backupSettings,
     backupStatus,
@@ -72,8 +73,8 @@ export const Settings: React.FC<SettingsProps> = ({
     // 핸들러
     handleThemeChange,
     handleNotificationToggle,
+    handleSystemNotificationToggle,
     handleTestNotification,
-    handleBookmarkNotificationToggle,
     handleAutoBackupToggle,
     handleBackupFrequencyChange,
     handleManualBackup,
@@ -225,10 +226,10 @@ export const Settings: React.FC<SettingsProps> = ({
         return (
           <NotificationSettings
             notifications={notifications}
-            bookmarkNotifications={bookmarkNotifications}
+            systemNotifications={systemNotifications}
             browserNotificationPermission={browserNotificationPermission}
             onNotificationToggle={handleNotificationToggle}
-            onBookmarkNotificationToggle={handleBookmarkNotificationToggle}
+            onSystemNotificationToggle={handleSystemNotificationToggle}
             onTestNotification={handleTestNotification}
             onNavigateToNotifications={handleNavigateToNotifications}
           />
@@ -350,7 +351,9 @@ export const Settings: React.FC<SettingsProps> = ({
                   <li>• 컬렉션: {importData.collections.length}개</li>
                   <li>
                     • 내보내기 날짜:{" "}
-                    {new Date(importData.exportedAt).toLocaleDateString()}
+                    {importData.exportedAt
+                      ? new Date(importData.exportedAt).toLocaleDateString()
+                      : "정보 없음"}
                   </li>
                 </ul>
               </div>
