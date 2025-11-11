@@ -902,7 +902,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           onClick={deleteAllNotifications}
                           className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-1 sm:px-0"
                         >
-                          모두 삭제
+                          {t("notifications.deleteAll")}
                         </button>
                       )}
                       {unreadCount > 0 && (

@@ -372,6 +372,7 @@
     "markAllAsRead": "Mark All as Read",
     "markAsRead": "Mark as Read",
     "deleteNotification": "Delete",
+    "deleteAll": "Delete All",
     "deleteAllRead": "Delete All Read Notifications",
     "unreadCount": "{{count}} unread notifications",
     "justNow": "Just now",

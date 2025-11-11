@@ -521,7 +521,7 @@ export const NotificationCenterPage: React.FC = () => {
                       onClick={deleteAllNotifications}
                       className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 sm:px-3 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                      모두 삭제
+                      {t("notifications.deleteAll")}
                     </button>
                   )}
                   {unreadCount > 0 && (

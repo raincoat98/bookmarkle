@@ -372,6 +372,7 @@
     "markAllAsRead": "모두 읽음",
     "markAsRead": "읽음 처리",
     "deleteNotification": "삭제",
+    "deleteAll": "모두 삭제",
     "deleteAllRead": "읽은 알림 모두 삭제",
     "unreadCount": "읽지 않은 알림 {{count}}개",
     "justNow": "방금 전",
