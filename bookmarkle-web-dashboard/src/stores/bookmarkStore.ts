@@ -18,6 +18,14 @@ import {
   getNotificationPermission,
 } from "../utils/browserNotifications";
 
+const isSystemNotificationEnabled = () => {
+  const saved = localStorage.getItem("systemNotifications");
+  if (saved !== null) return JSON.parse(saved);
+  const fallback = localStorage.getItem("notifications");
+  if (fallback !== null) return JSON.parse(fallback);
+  return true;
+};
+
 interface BookmarkState {
   rawBookmarks: Bookmark[];
   loading: boolean;
@@ -300,7 +308,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
 
         // 브라우저 알림 표시
         const permission = getNotificationPermission();
-        if (permission.granted) {
+        if (permission.granted && isSystemNotificationEnabled()) {
           showBookmarkNotification("added", bookmarkData.title);
         }
 
@@ -339,7 +347,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
 
       // 브라우저 알림 표시
       const permission = getNotificationPermission();
-      if (permission.granted) {
+      if (permission.granted && isSystemNotificationEnabled()) {
         showBookmarkNotification("updated", bookmarkData.title);
       }
     },
@@ -356,7 +364,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
       // 브라우저 알림 표시
       if (bookmarkToDelete) {
         const permission = getNotificationPermission();
-        if (permission.granted) {
+        if (permission.granted && isSystemNotificationEnabled()) {
           showBookmarkNotification("deleted", bookmarkToDelete.title);
         }
       }

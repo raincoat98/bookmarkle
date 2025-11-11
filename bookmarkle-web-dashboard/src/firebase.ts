@@ -171,6 +171,7 @@ export async function setUserDefaultPage(
 export async function getUserNotificationSettings(uid: string): Promise<{
   notifications?: boolean;
   bookmarkNotifications?: boolean;
+  systemNotifications?: boolean;
 }> {
   const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
@@ -184,11 +185,18 @@ export async function getUserNotificationSettings(uid: string): Promise<{
         data.bookmarkNotifications !== undefined
           ? data.bookmarkNotifications
           : true,
+      systemNotifications:
+        data.systemNotifications !== undefined
+          ? data.systemNotifications
+          : data.notifications !== undefined
+          ? data.notifications
+          : true,
     };
   }
   return {
     notifications: true,
     bookmarkNotifications: true,
+    systemNotifications: true,
   };
 }
 
@@ -198,6 +206,7 @@ export async function setUserNotificationSettings(
   settings: {
     notifications?: boolean;
     bookmarkNotifications?: boolean;
+    systemNotifications?: boolean;
   }
 ): Promise<void> {
   const db = getFirestore();

@@ -625,18 +625,28 @@ window.addEventListener("message", async (ev) => {
       const settingsRef = doc(db, "users", currentUser.uid, "settings", "main");
       const snap = await getDoc(settingsRef);
 
+      let notificationsEnabled = true; // 기본값
+      let systemNotificationsEnabled = true; // 기본값
       let bookmarkNotifications = true; // 기본값
       if (snap.exists()) {
         const data = snap.data();
+        notificationsEnabled =
+          data.notifications !== undefined ? data.notifications : true;
+        systemNotificationsEnabled =
+          data.systemNotifications !== undefined
+            ? data.systemNotifications
+            : notificationsEnabled;
         bookmarkNotifications =
           data.bookmarkNotifications !== undefined
             ? data.bookmarkNotifications
-            : true;
+            : notificationsEnabled;
       }
 
       send({
         type: "NOTIFICATION_SETTINGS_DATA",
+        notifications: notificationsEnabled,
         bookmarkNotifications: bookmarkNotifications,
+        systemNotifications: systemNotificationsEnabled,
       });
     } catch (e) {
       console.error("Notification settings fetch error:", e);
@@ -870,36 +880,40 @@ async function createNotification(userId, type, message, bookmarkId = null) {
     throw new Error("User ID is required for notification");
   }
 
-  // 북마크 관련 알림인 경우 설정 확인
   const isBookmarkNotification =
     type === "bookmark_added" ||
     type === "bookmark_updated" ||
     type === "bookmark_deleted";
 
-  if (isBookmarkNotification) {
-    try {
-      const settingsRef = doc(db, "users", userId, "settings", "main");
-      const snap = await getDoc(settingsRef);
+  let notificationsEnabled = true;
+  let bookmarkNotificationsEnabled = true;
 
-      let bookmarkNotificationsEnabled = true; // 기본값
-      if (snap.exists()) {
-        const data = snap.data();
-        bookmarkNotificationsEnabled =
-          data.bookmarkNotifications !== undefined
-            ? data.bookmarkNotifications
-            : true;
-      }
+  try {
+    const settingsRef = doc(db, "users", userId, "settings", "main");
+    const snap = await getDoc(settingsRef);
 
-      if (!bookmarkNotificationsEnabled) {
-        console.log(
-          "🔔 북마크 알림이 비활성화되어 있어 알림을 생성하지 않습니다."
-        );
-        return null;
-      }
-    } catch (error) {
-      console.error("🔔 알림 설정 확인 실패:", error);
-      // 설정 확인 실패 시 기본값(활성화)으로 처리
+    if (snap.exists()) {
+      const data = snap.data();
+      notificationsEnabled =
+        data.notifications !== undefined ? data.notifications : true;
+      bookmarkNotificationsEnabled =
+        data.bookmarkNotifications !== undefined
+          ? data.bookmarkNotifications
+          : notificationsEnabled;
     }
+  } catch (error) {
+    console.error("🔔 알림 설정 확인 실패:", error);
+    // 설정 확인 실패 시 기본값(활성화)으로 처리
+  }
+
+  if (!notificationsEnabled) {
+    console.log("🔔 전체 알림이 비활성화되어 있어 알림을 생성하지 않습니다.");
+    return null;
+  }
+
+  if (isBookmarkNotification && !bookmarkNotificationsEnabled) {
+    console.log("🔔 북마크 알림이 비활성화되어 있어 알림을 생성하지 않습니다.");
+    return null;
   }
 
   try {
