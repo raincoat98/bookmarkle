@@ -1043,7 +1043,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           {t("notifications.bookmarkNotifications")}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {t("settings.browserNotificationsDescription")}
+                          {t("notifications.bookmarkNotificationsDescription")}
                         </p>
                       </div>
                       <button
@@ -1092,7 +1092,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                           );
 
                           toast.success(
-                            `${t("settings.browserNotifications")} ${
+                            `${t("notifications.bookmarkNotifications")} ${
                               newValue
                                 ? t("notifications.enable")
                                 : t("notifications.disable")

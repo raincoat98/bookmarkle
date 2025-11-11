@@ -39,7 +39,7 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
                 {t("notifications.bookmarkNotifications")}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("settings.browserNotificationsDescription")}
+                {t("notifications.bookmarkNotificationsDescription")}
               </p>
             </div>
             <button
@@ -58,14 +58,14 @@ export const NotificationSettings: React.FC<NotificationSettingsProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">
-                {t("settings.systemNotifications")}
+                {t("notifications.systemNotifications")}
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("settings.systemNotificationsDescription")}
+                {t("notifications.systemNotificationsDescription")}
               </p>
               {systemDisabled && (
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  {t("settings.enableBookmarkFirst")}
+                  {t("notifications.enableBookmarkFirst")}
                 </p>
               )}
               {browserNotificationPermission.denied && (
