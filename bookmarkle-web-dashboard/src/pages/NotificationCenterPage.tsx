@@ -421,9 +421,6 @@ export const NotificationCenterPage: React.FC = () => {
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {t("settings.browserNotificationsDescription")}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {t("notifications.bookmarkNotificationsDescription")}
-                    </p>
                   </div>
                   <button
                     onClick={handleNotificationToggle}
