@@ -163,6 +163,50 @@ export const useSettings = ({
   }, []);
 
   useEffect(() => {
+    const syncNotificationsState = (event: CustomEvent<{ enabled: boolean }>) => {
+      if (typeof event.detail?.enabled !== "boolean") {
+        return;
+      }
+
+      const enabled = event.detail.enabled;
+      setNotifications(enabled);
+      localStorage.setItem("notifications", JSON.stringify(enabled));
+      localStorage.setItem("bookmarkNotifications", JSON.stringify(enabled));
+
+      if (!enabled) {
+        setSystemNotifications(false);
+        localStorage.setItem("systemNotifications", JSON.stringify(false));
+      }
+    };
+
+    const syncSystemNotificationsState = (
+      event: CustomEvent<{ enabled: boolean }>
+    ) => {
+      if (typeof event.detail?.enabled !== "boolean") {
+        return;
+      }
+
+      const enabled = event.detail.enabled;
+      setSystemNotifications(enabled);
+      localStorage.setItem("systemNotifications", JSON.stringify(enabled));
+      setBrowserNotificationPermission(getNotificationPermission());
+    };
+
+    const notificationsListener = syncNotificationsState as EventListener;
+    const systemListener = syncSystemNotificationsState as EventListener;
+
+    window.addEventListener("notificationsChanged", notificationsListener);
+    window.addEventListener("bookmarkNotificationsChanged", notificationsListener);
+    window.addEventListener("systemNotificationsChanged", systemListener);
+
+    return () => {
+      window.removeEventListener("notificationsChanged", notificationsListener);
+      window.removeEventListener("bookmarkNotificationsChanged", notificationsListener);
+      window.removeEventListener("systemNotificationsChanged", systemListener);
+    };
+  }, []);
+
+  useEffect(() => {
     if (browserNotificationPermission.denied && systemNotifications) {
       setSystemNotifications(false);
       localStorage.setItem("systemNotifications", JSON.stringify(false));
