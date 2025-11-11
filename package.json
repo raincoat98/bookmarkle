@@ -1,6 +1,6 @@
 {
   "name": "bookmark-hub",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "📚 북마클 - 통합 북마크 관리 시스템",
   "scripts": {
     "setup": "./setup-env.sh",
