@@ -1045,9 +1045,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {t("settings.browserNotificationsDescription")}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {t("notifications.bookmarkNotificationsDescription")}
-                        </p>
                       </div>
                       <button
                         onClick={async () => {
