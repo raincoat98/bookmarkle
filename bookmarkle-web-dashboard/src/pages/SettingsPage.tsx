@@ -3,6 +3,7 @@ import { Settings } from "../components/Settings";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
 import type { Bookmark, Collection } from "../types";
 import { Drawer } from "../components/Drawer";
+import type { ImportPreviewData } from "../hooks/useSettings";
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuthStore();
@@ -40,12 +41,7 @@ export const SettingsPage: React.FC = () => {
   }, [user?.uid, subscribeToBookmarks]);
 
   // 데이터 가져오기 함수
-  const handleImportData = async (importData: {
-    version: string;
-    exportedAt: string;
-    bookmarks: Record<string, unknown>[];
-    collections: Record<string, unknown>[];
-  }) => {
+  const handleImportData = async (importData: ImportPreviewData) => {
     try {
       // 북마크 데이터 가져오기
       if (importData.bookmarks && Array.isArray(importData.bookmarks)) {

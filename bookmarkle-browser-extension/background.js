@@ -91,7 +91,12 @@ async function sendMessageToOffscreen(message, maxRetries = 3) {
 // 알림 설정 가져오기 (캐싱 포함)
 let cachedNotificationSettings = null;
 let settingsCacheTime = 0;
-const SETTINGS_CACHE_DURATION = 5 * 60 * 1000; // 5분
+const SETTINGS_CACHE_DURATION = 0; // 항상 최신 값 사용 (캐시는 실패 시 대비용)
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  notifications: true,
+  bookmarkNotifications: true,
+  systemNotifications: true,
+};
 
 async function getNotificationSettings(userId) {
   // 캐시 확인
@@ -105,7 +110,7 @@ async function getNotificationSettings(userId) {
 
   // 사용자가 없으면 기본값 반환
   if (!userId) {
-    return { bookmarkNotifications: true };
+    return DEFAULT_NOTIFICATION_SETTINGS;
   }
 
   try {
@@ -115,12 +120,22 @@ async function getNotificationSettings(userId) {
       type: "GET_NOTIFICATION_SETTINGS",
     });
 
-    if (
-      settingsResult?.type === "NOTIFICATION_SETTINGS_DATA" &&
-      settingsResult.bookmarkNotifications !== undefined
-    ) {
+    if (settingsResult?.type === "NOTIFICATION_SETTINGS_DATA") {
       cachedNotificationSettings = {
-        bookmarkNotifications: settingsResult.bookmarkNotifications,
+        notifications:
+          settingsResult.notifications !== undefined
+            ? settingsResult.notifications
+            : true,
+        bookmarkNotifications:
+          settingsResult.bookmarkNotifications !== undefined
+            ? settingsResult.bookmarkNotifications
+            : true,
+        systemNotifications:
+          settingsResult.systemNotifications !== undefined
+            ? settingsResult.systemNotifications
+            : settingsResult.notifications !== undefined
+            ? settingsResult.notifications
+            : true,
       };
       settingsCacheTime = now;
       return cachedNotificationSettings;
@@ -130,7 +145,7 @@ async function getNotificationSettings(userId) {
   }
 
   // 기본값 반환
-  return { bookmarkNotifications: true };
+  return DEFAULT_NOTIFICATION_SETTINGS;
 }
 
 // 알림 설정 캐시 무효화
@@ -442,7 +457,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
                 );
 
                 // 성공 알림 (설정이 활성화된 경우만)
-                if (notificationSettings.bookmarkNotifications) {
+                if (
+                  notificationSettings.notifications &&
+                  notificationSettings.systemNotifications
+                ) {
                   chrome.notifications.create({
                     type: "basic",
                     iconUrl: "public/bookmark.png",
@@ -901,7 +919,10 @@ chrome.action.onClicked.addListener(async (tab) => {
       });
 
       // 성공 알림 (설정이 활성화된 경우만)
-      if (notificationSettings.bookmarkNotifications) {
+      if (
+        notificationSettings.notifications &&
+        notificationSettings.systemNotifications
+      ) {
         chrome.notifications.create({
           type: "basic",
           iconUrl: "public/bookmark.png",

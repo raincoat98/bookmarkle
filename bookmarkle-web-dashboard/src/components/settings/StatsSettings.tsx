@@ -62,7 +62,7 @@ export const StatsSettings: React.FC<StatsSettingsProps> = ({
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
           {t("settings.bookmarkStatistics")}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
+        <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
           <StatsCard
             title={t("settings.totalBookmarks")}
             value={totalBookmarks}

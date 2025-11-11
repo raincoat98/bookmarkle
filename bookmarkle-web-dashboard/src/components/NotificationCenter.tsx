@@ -32,10 +32,15 @@ export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   // 알림 설정 동기화 (다른 컴포넌트와의 동기화를 위해 유지)
-  const [, setNotificationsEnabled] = useState(() => {
-    const saved = localStorage.getItem("bookmarkNotifications");
-    return saved ? JSON.parse(saved) : true;
-  });
+  const getInitialNotificationsSetting = () => {
+    const saved = localStorage.getItem("notifications");
+    if (saved !== null) return JSON.parse(saved);
+    const legacy = localStorage.getItem("bookmarkNotifications");
+    if (legacy !== null) return JSON.parse(legacy);
+    return true;
+  };
+
+  const [, setNotificationsEnabled] = useState(getInitialNotificationsSetting);
 
   // Firestore에서 알림 설정 실시간 동기화
   useEffect(() => {
@@ -50,13 +55,16 @@ export const NotificationCenter = () => {
         if (snap.exists()) {
           const data = snap.data();
           const newValue =
-            data.bookmarkNotifications !== undefined
+            data.notifications !== undefined
+              ? data.notifications
+              : data.bookmarkNotifications !== undefined
               ? data.bookmarkNotifications
               : true;
 
           // 값이 실제로 변경되었을 때만 업데이트
           setNotificationsEnabled((prev: boolean) => {
             if (prev !== newValue) {
+              localStorage.setItem("notifications", JSON.stringify(newValue));
               localStorage.setItem(
                 "bookmarkNotifications",
                 JSON.stringify(newValue)
@@ -69,6 +77,7 @@ export const NotificationCenter = () => {
           // 문서가 없으면 기본값 사용
           setNotificationsEnabled((prev: boolean) => {
             if (prev !== true) {
+              localStorage.setItem("notifications", JSON.stringify(true));
               localStorage.setItem(
                 "bookmarkNotifications",
                 JSON.stringify(true)
@@ -84,11 +93,16 @@ export const NotificationCenter = () => {
         // 에러 발생 시 초기 로드 시도
         getUserNotificationSettings(user.uid)
           .then((settings) => {
-            if (settings.bookmarkNotifications !== undefined) {
-              setNotificationsEnabled(settings.bookmarkNotifications);
+            const fallback =
+              settings.notifications !== undefined
+                ? settings.notifications
+                : settings.bookmarkNotifications;
+            if (fallback !== undefined) {
+              setNotificationsEnabled(fallback);
+              localStorage.setItem("notifications", JSON.stringify(fallback));
               localStorage.setItem(
                 "bookmarkNotifications",
-                JSON.stringify(settings.bookmarkNotifications)
+                JSON.stringify(fallback)
               );
             }
           })
@@ -103,20 +117,18 @@ export const NotificationCenter = () => {
 
   // 설정 페이지에서 북마크 알림 상태 변경 감지
   useEffect(() => {
-    const handleBookmarkNotificationsChange = (event: CustomEvent) => {
+    const handleNotificationsChange = (event: CustomEvent) => {
       setNotificationsEnabled(event.detail.enabled);
     };
 
-    window.addEventListener(
-      "bookmarkNotificationsChanged",
-      handleBookmarkNotificationsChange as EventListener
-    );
+    const listener = handleNotificationsChange as EventListener;
+
+    window.addEventListener("notificationsChanged", listener);
+    window.addEventListener("bookmarkNotificationsChanged", listener);
 
     return () => {
-      window.removeEventListener(
-        "bookmarkNotificationsChanged",
-        handleBookmarkNotificationsChange as EventListener
-      );
+      window.removeEventListener("notificationsChanged", listener);
+      window.removeEventListener("bookmarkNotificationsChanged", listener);
     };
   }, []);
 

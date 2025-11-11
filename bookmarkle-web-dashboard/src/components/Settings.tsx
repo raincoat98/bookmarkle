@@ -16,7 +16,7 @@ import {
   Bell,
   Shield,
 } from "lucide-react";
-import { useSettings } from "../hooks/useSettings";
+import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { AccountSettings } from "./settings/AccountSettings";
 import { AppearanceSettings } from "./settings/AppearanceSettings";
@@ -26,13 +26,14 @@ import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { getUserDefaultPage } from "../firebase";
 import { performBackup, shouldBackup } from "../utils/backup";
+import type { Bookmark, Collection } from "../types";
 
 interface SettingsProps {
   onBack: () => void;
-  onImportData?: (importData: any) => Promise<void>;
+  onImportData?: (importData: ImportPreviewData) => Promise<void>;
   onRestoreBackup?: (backupData: {
-    bookmarks: any[];
-    collections: any[];
+    bookmarks: Bookmark[];
+    collections: Collection[];
   }) => Promise<void>;
   isRestoring?: boolean;
 }
@@ -54,7 +55,7 @@ export const Settings: React.FC<SettingsProps> = ({
     activeTab,
     setActiveTab,
     notifications,
-    bookmarkNotifications,
+    systemNotifications,
     browserNotificationPermission,
     backupSettings,
     backupStatus,
@@ -72,8 +73,8 @@ export const Settings: React.FC<SettingsProps> = ({
     // 핸들러
     handleThemeChange,
     handleNotificationToggle,
+    handleSystemNotificationToggle,
     handleTestNotification,
-    handleBookmarkNotificationToggle,
     handleAutoBackupToggle,
     handleBackupFrequencyChange,
     handleManualBackup,
@@ -225,10 +226,10 @@ export const Settings: React.FC<SettingsProps> = ({
         return (
           <NotificationSettings
             notifications={notifications}
-            bookmarkNotifications={bookmarkNotifications}
+            systemNotifications={systemNotifications}
             browserNotificationPermission={browserNotificationPermission}
             onNotificationToggle={handleNotificationToggle}
-            onBookmarkNotificationToggle={handleBookmarkNotificationToggle}
+            onSystemNotificationToggle={handleSystemNotificationToggle}
             onTestNotification={handleTestNotification}
             onNavigateToNotifications={handleNavigateToNotifications}
           />
@@ -275,7 +276,30 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 사이드바 */}
           <div className="lg:w-72 flex-shrink-0">
-            <nav className="space-y-1">
+            {/* 모바일: 가로 스크롤 */}
+            <nav className="block lg:hidden overflow-x-auto -mx-4 px-4 scrollbar-hide bg-white dark:bg-gray-800 rounded-lg py-2">
+              <div className="flex gap-2">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center space-x-3 px-4 py-3 whitespace-nowrap rounded-lg transition-colors flex-shrink-0 ${
+                        activeTab === tab.id
+                          ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="font-medium">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </nav>
+            {/* 데스크톱: 기존 세로 레이아웃 */}
+            <nav className="hidden lg:block space-y-1">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 return (
@@ -327,7 +351,9 @@ export const Settings: React.FC<SettingsProps> = ({
                   <li>• 컬렉션: {importData.collections.length}개</li>
                   <li>
                     • 내보내기 날짜:{" "}
-                    {new Date(importData.exportedAt).toLocaleDateString()}
+                    {importData.exportedAt
+                      ? new Date(importData.exportedAt).toLocaleDateString()
+                      : "정보 없음"}
                   </li>
                 </ul>
               </div>
