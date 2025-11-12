@@ -3,6 +3,7 @@ import type { Collection } from "../types";
 import { renderCollectionIcon } from "../utils/iconRenderer";
 import { useTranslation } from "../../node_modules/react-i18next";
 import { PinIcon } from "lucide-react";
+import { Skeleton } from "./ui/Skeleton";
 interface CollectionListProps {
   collections: Collection[];
   loading: boolean;
@@ -257,44 +258,55 @@ export const CollectionList = ({
           </button>
 
           {/* 최상위 컬렉션들만 표시 */}
-          {collections
-            .filter((col) => !col.parentId)
-            .sort((a, b) => {
-              // 핀된 컬렉션이 먼저 오도록 정렬
-              if (a.isPinned && !b.isPinned) return -1;
-              if (!a.isPinned && b.isPinned) return 1;
-              return a.name.localeCompare(b.name);
-            })
-            .map((collection) => (
-              <div key={collection.id} className="relative">
-                <button
-                  onClick={() => onCollectionChange(collection.id)}
-                  className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
-                    selectedCollection === collection.id
-                      ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  }`}
-                  title={collection.name}
-                >
-                  {renderCollectionIcon(collection.icon, "w-5 h-5")}
-                </button>
-                {collection.isPinned && (
-                  <div className="absolute -top-1 -right-1">
-                    <div className="inline-flex items-center justify-center w-4 h-4 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                      <svg
-                        className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        strokeWidth={2}
-                      >
-                        <path d="M12 2l-2 2H6a2 2 0 0 0 0 4h2l-1 8H8a2 2 0 0 0 0 4h8a2 2 0 0 0 0-4h-1l-1-8h2a2 2 0 0 0 0-4h-4l-2-2z" />
-                      </svg>
+          {loading ? (
+            <div className="space-y-2 mt-1">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <Skeleton
+                  key={`collection-collapsed-skeleton-${idx}`}
+                  className="h-10 w-full rounded-lg"
+                />
+              ))}
+            </div>
+          ) : (
+            collections
+              .filter((col) => !col.parentId)
+              .sort((a, b) => {
+                // 핀된 컬렉션이 먼저 오도록 정렬
+                if (a.isPinned && !b.isPinned) return -1;
+                if (!a.isPinned && b.isPinned) return 1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((collection) => (
+                <div key={collection.id} className="relative">
+                  <button
+                    onClick={() => onCollectionChange(collection.id)}
+                    className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
+                      selectedCollection === collection.id
+                        ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
+                    title={collection.name}
+                  >
+                    {renderCollectionIcon(collection.icon, "w-5 h-5")}
+                  </button>
+                  {collection.isPinned && (
+                    <div className="absolute -top-1 -right-1">
+                      <div className="inline-flex items-center justify-center w-4 h-4 rounded-md bg-blue-100 dark:bg-blue-900/30">
+                        <svg
+                          className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                        >
+                          <path d="M12 2l-2 2H6a2 2 0 0 0 0 4h2l-1 8H8a2 2 0 0 0 0 4h8a2 2 0 0 0 0-4h-1l-1-8h2a2 2 0 0 0 0-4h-4l-2-2z" />
+                        </svg>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))}
+                  )}
+                </div>
+              ))
+          )}
         </div>
 
         {/* 새 컬렉션 추가 버튼 */}
@@ -375,22 +387,29 @@ export const CollectionList = ({
             </span>
           </button>
 
-          {collections.length === 0 && !loading && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <p>{t("collections.noCollectionsFound")}</p>
-              <p className="text-sm mt-1">
-                {t("collections.createNewCollection")}
-              </p>
+          {loading ? (
+            <div className="mt-2 space-y-2">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <Skeleton
+                  key={`collection-skeleton-${idx}`}
+                  className="h-10 w-full rounded-lg"
+                />
+              ))}
             </div>
-          )}
+          ) : (
+            <>
+              {collections.length === 0 && (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <p>{t("collections.noCollectionsFound")}</p>
+                  <p className="text-sm mt-1">
+                    {t("collections.createNewCollection")}
+                  </p>
+                </div>
+              )}
 
-          {/* 트리 구조 컬렉션 렌더링 */}
-          {!loading && renderCollectionTree(null, 0)}
-
-          {loading && (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-brand-500"></div>
-            </div>
+              {/* 트리 구조 컬렉션 렌더링 */}
+              {renderCollectionTree(null, 0)}
+            </>
           )}
         </nav>
       </div>

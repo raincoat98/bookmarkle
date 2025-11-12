@@ -25,6 +25,7 @@ import {
 import { BookOpen, Folder, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "../../node_modules/react-i18next";
+import { Skeleton } from "./ui/Skeleton";
 
 interface BookmarkListProps {
   bookmarks: Bookmark[];
@@ -50,6 +51,7 @@ interface BookmarkListProps {
       bookmarks: Bookmark[];
     }[];
   };
+  loading?: boolean;
 }
 
 export const BookmarkList: React.FC<BookmarkListProps> = ({
@@ -65,6 +67,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   currentSort,
   onSortChange,
   groupedBookmarks,
+  loading = false,
 }) => {
   const { t } = useTranslation();
   const [faviconLoadingStates, setFaviconLoadingStates] = useState<
@@ -128,6 +131,70 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  if (loading) {
+    const skeletonCount = viewMode === "grid" ? 8 : 6;
+    const skeletonItems = Array.from({ length: skeletonCount });
+
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-32" />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-10 w-10 rounded-lg" />
+            <Skeleton className="h-10 w-28 rounded-lg" />
+          </div>
+        </div>
+        <div
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6"
+              : "space-y-4"
+          }
+        >
+          {skeletonItems.map((_, idx) =>
+            viewMode === "grid" ? (
+              <div
+                key={`bookmark-skeleton-grid-${idx}`}
+                className="rounded-2xl border border-slate-200/70 dark:border-slate-700/60 bg-white/90 dark:bg-slate-800/90 p-5 shadow-sm"
+              >
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-12 w-12 rounded-xl" />
+                  <div className="flex-1 space-y-3">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                  <Skeleton className="h-8 w-8 rounded-lg" />
+                </div>
+                <Skeleton className="h-3 w-full mt-6" />
+                <Skeleton className="h-3 w-5/6 mt-2" />
+                <div className="mt-6 flex gap-2">
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                </div>
+              </div>
+            ) : (
+              <div
+                key={`bookmark-skeleton-list-${idx}`}
+                className="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/90 dark:bg-slate-800/90 p-4 flex items-center gap-4 shadow-sm"
+              >
+                <Skeleton className="h-12 w-12 rounded-xl" />
+                <div className="flex-1 space-y-3">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-5/6" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-8 w-20 rounded-lg" />
+                  <Skeleton className="h-8 w-16 rounded-lg" />
+                </div>
+              </div>
+            )
+          )}
+        </div>
+      </div>
+    );
+  }
 
   // 드래그 종료 핸들러
   const handleDragEnd = (event: DragEndEvent) => {

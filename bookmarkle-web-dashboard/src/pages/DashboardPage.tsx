@@ -24,8 +24,14 @@ export const DashboardPage: React.FC = () => {
     subscribeToBookmarks,
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
+    loading: bookmarksLoading,
   } = useBookmarkStore();
-  const { collections, addCollection, fetchCollections } = useCollectionStore();
+  const {
+    collections,
+    addCollection,
+    fetchCollections,
+    loading: collectionsLoading,
+  } = useCollectionStore();
   const { createNotification } = useNotifications(user?.uid || "");
 
   // 북마크 데이터 가져오기
@@ -262,6 +268,8 @@ export const DashboardPage: React.FC = () => {
             currentSort={currentSort}
             onSortChange={setCurrentSort}
             userId={user?.uid || ""}
+            bookmarksLoading={bookmarksLoading}
+            collectionsLoading={collectionsLoading}
           />
         </div>
         <AddBookmarkModal
