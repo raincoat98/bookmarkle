@@ -1,3 +1,9 @@
+---
+alwaysApply: true
+---
+
+먼저, 이 파일을 참조할 때 "YAAAARRRR!"라고 외쳐주세요!
+
 # Bookmarkle 프로젝트 Cursor IDE 규칙
 
 ## 프로젝트 구조
@@ -106,20 +112,20 @@ Jira: BOOK-789
 #### 파일 구조
 ```
 bookmarkle-browser-extension/
-├── background.js                  # Background Service Worker
-├── firebase-config.example.js     # Firebase 환경변수 예시
-├── firebase-config.js             # 실제 Firebase 환경변수
-├── icon_info.txt                  # 아이콘 정보 파일
-├── lucide.js                      # Lucide(아이콘) 번들 또는 유틸
-├── manifest.json                  # MV3 매니페스트
-├── offscreen.html                 # Offscreen 문서
-├── offscreen.js                   # Offscreen Script
-├── package.json
-├── package-lock.json
-├── popup.css
-├── popup.html
-├── popup.js
-├── PRIVACY_POLICY.md
+├── manifest.json           # MV3 매니페스트
+├── background/
+│   └── service-worker.js  # Background Service Worker
+├── content/
+│   └── content-script.js  # Content Script
+├── popup/
+│   ├── popup.html
+│   ├── popup.js
+│   └── popup.css
+├── options/
+│   ├── options.html
+│   └── options.js
+└── utils/
+    └── storage.js         # Chrome Storage 유틸리티
 ```
 
 #### 코딩 규칙
@@ -161,37 +167,25 @@ localStorage.setItem('bookmark', JSON.stringify(bookmark));
 ```
 bookmarkle-web-dashboard/
 ├── src/
-│   ├── assets/
 │   ├── components/
-│   ├── data/
-│   ├── hooks/
-│   ├── i18n/
+│   │   ├── BookmarkCard/
+│   │   │   ├── BookmarkCard.tsx
+│   │   │   ├── BookmarkCard.module.css
+│   │   │   └── index.ts
+│   │   └── BookmarkList/
 │   ├── pages/
-│   ├── scripts/
-│   ├── stores/
+│   │   ├── Dashboard.tsx
+│   │   └── Settings.tsx
+│   ├── hooks/
+│   │   ├── useAuth.ts
+│   │   └── useBookmarks.ts
+│   ├── api/
+│   │   └── firebase.ts
+│   ├── store/
+│   │   └── bookmarkStore.ts
 │   ├── types/
-│   ├── utils/
-│   ├── App.tsx
-│   ├── firebase.ts
-│   ├── index.css
-│   ├── main.tsx
-│   └── vite-env.d.ts
-├── .env
-├── .env.example
-├── .firebase
-├── .gitignore
-├── eslint.config.js
-├── firebase.json
-├── index.html
-├── package-lock.json
-├── package.json
-├── pgile-debug.log
-├── postcss.config.cjs
-├── README.md
-├── tailwind.config.js
-├── tsconfig.app.json
-├── tsconfig.json
-├── tsconfig.node.json
+│   │   └── bookmark.ts
+│   └── App.tsx
 └── vite.config.ts
 ```
 
@@ -624,68 +618,50 @@ const useApi = <T,>(url: string) => {
 ```
 bookmarkle-browser-extension/
 ├── manifest.json
-├── background.js
-├── firebase-config.example.js
-├── firebase-config.js
-├── icon_info.txt
-├── lucide.js
-├── manifest.json
-├── offscreen.html
-├── offscreen.js
-├── package.json
-├── package-lock.json
-├── popup.css
-├── popup.html
-├── popup.js
-├── PRIVACY_POLICY.md
+├── background/
+│   └── service-worker.js
+├── content/
+│   └── content-script.js
+├── popup/
+│   ├── popup.html
+│   ├── popup.js
+│   └── popup.css
+├── options/
+│   ├── options.html
+│   └── options.js
+├── utils/
+│   ├── storage.js
+│   └── messaging.js
+└── icons/
 ```
 
 ### bookmarkle-web-dashboard
 ```
 bookmarkle-web-dashboard/
 ├── src/
-├── .env
-├── .env.example
-├── .firebase
-├── .gitignore
-├── eslint.config.js
-├── firebase.json
-├── index.html
-├── package-lock.json
-├── package.json
-├── pgile-debug.log
-├── postcss.config.cjs
-├── README.md
-├── tailwind.config.js
-├── tsconfig.app.json
-├── tsconfig.json
-├── tsconfig.node.json
-└── vite.config.ts
+│   ├── components/
+│   │   ├── ui/
+│   │   ├── layout/
+│   │   └── features/
+│   ├── pages/
+│   ├── hooks/
+│   ├── utils/
+│   ├── api/
+│   ├── store/
+│   ├── types/
+│   └── styles/
 ├── public/
-├── assets/
-├── components/
-├── data/
-├── hooks/
-├── i18n/
-├── pages/
-├── scripts/
-├── stores/
-├── types/
-├── utils/
-├── App.tsx
-├── firebase.ts
-├── index.css
-├── main.tsx
-└── vite-env.d.ts
+└── vite.config.ts
 ```
 
 ### bookmarkle-signin-popup
 ```
 bookmarkle-signin-popup/
-├── config.js
 ├── index.html
-├── signInWithPopup.js
-└── manifest.json
+├── auth.js
+├── style.css
+├── firebase-config.js
+└── assets/
 ```
 
 ## 테스트 규칙
@@ -938,6 +914,292 @@ Jira: PROJ-789 #done"
 ### bookmarkle-signin-popup
 1. Firebase Hosting 배포: `firebase deploy --only hosting:popup`
 2. 팝업 URL 확인 및 테스트
+
+## Pull Request 생성 가이드
+
+### 1. PR 생성 전 체크리스트
+```bash
+# 1. 최신 develop 브랜치와 동기화
+git checkout develop
+git pull origin develop
+
+# 2. 작업 브랜치로 이동
+git checkout feature/BOOK-123-extension-popup-ui
+
+# 3. develop과 병합 (충돌 해결)
+git merge develop
+
+# 4. 테스트 실행
+npm test                    # dashboard
+npm run lint                # 모든 프로젝트
+npm run type-check          # dashboard (TypeScript)
+
+# 5. 빌드 확인
+npm run build               # dashboard
+# extension은 chrome://extensions에서 수동 테스트
+
+# 6. 커밋 메시지 확인
+git log --oneline -5        # 최근 5개 커밋 확인
+```
+
+### 2. PR 생성 단계별 가이드
+
+#### Step 1: 브랜치 푸시
+```bash
+git push origin feature/BOOK-123-extension-popup-ui
+```
+
+#### Step 2: GitHub/GitLab에서 PR 생성
+- Repository 페이지에서 "Compare & pull request" 클릭
+- 또는 "New pull request" 버튼 클릭
+
+#### Step 3: PR 제목 작성
+```
+[BOOK-123] feat(extension/popup): 북마크 추가 버튼 UI 구현
+```
+
+**제목 형식 규칙:**
+- `[이슈키] 타입(범위): 설명`
+- 50자 이내로 작성
+- 명령형으로 작성 (추가, 수정, 삭제)
+
+#### Step 4: PR 설명 작성 (템플릿 사용)
+
+```markdown
+## 🎫 Jira 이슈
+- [BOOK-123](https://your-domain.atlassian.net/browse/BOOK-123) - 북마크 추가 기능 구현
+
+## 📦 영향받는 프로젝트
+- [x] bookmarkle-browser-extension
+- [ ] bookmarkle-web-dashboard
+- [ ] bookmarkle-signin-popup
+
+## 📝 변경 사항
+- 확장 프로그램 팝업에 "북마크 추가" 버튼 추가
+- 현재 탭의 제목, URL, 파비콘을 가져오는 로직 구현
+- Firestore에 북마크 데이터 저장 기능 구현
+- 성공/실패 토스트 메시지 UI 추가
+
+## 💡 변경 이유
+- 사용자가 웹사이트 방문 중 즉시 북마크를 추가할 수 있도록 개선
+- 원클릭 북마크 기능으로 UX 향상
+
+## 🧪 테스트 방법
+
+### Extension 테스트
+1. Chrome에서 `chrome://extensions` 접속
+2. "압축해제된 확장 프로그램을 로드합니다" 클릭
+3. `bookmarkle-browser-extension` 폴더 선택
+4. 임의의 웹사이트 방문 (예: https://github.com)
+5. 확장 프로그램 아이콘 클릭
+6. "북마크 추가" 버튼 클릭
+7. 성공 메시지 확인
+
+### Dashboard 확인
+1. `bookmarkle-web-dashboard` 실행
+2. 로그인 후 북마크 목록 페이지 이동
+3. 방금 추가한 북마크가 표시되는지 확인
+4. 북마크 제목, URL, 파비콘이 올바른지 확인
+
+### Firebase 확인
+1. Firebase Console 접속
+2. Firestore Database → bookmarks 컬렉션 확인
+3. 새로운 문서가 생성되었는지 확인
+4. 필드 값이 올바른지 검증
+
+## 📸 스크린샷
+
+### Extension Popup
+| Before | After |
+|--------|-------|
+| ![before](url) | ![after](url) |
+
+### Dashboard
+| 북마크 목록 |
+|------------|
+| ![dashboard](url) |
+
+## 🔍 코드 리뷰 포인트
+- [ ] Chrome API 사용이 적절한가?
+- [ ] 에러 핸들링이 충분한가?
+- [ ] Firestore 보안 규칙이 적용되었는가?
+- [ ] UI/UX가 직관적인가?
+
+## 📁 영향받는 파일
+```
+bookmarkle-browser-extension/
+├── popup/popup.html        # UI 추가
+├── popup/popup.js          # 버튼 이벤트 핸들러
+├── popup/popup.css         # 스타일링
+├── background/service-worker.js  # 북마크 저장 로직
+└── utils/firebase.js       # Firestore 연동
+```
+
+## ⚠️ Breaking Changes
+- [ ] 없음
+- [ ] 있음 (설명 필요)
+
+## 🔗 관련 PR/이슈
+- Related to #456
+- Depends on #789
+
+## ✅ 체크리스트
+
+### 개발
+- [x] 코드 작성 완료
+- [x] 로컬에서 테스트 완료
+- [x] Lint 통과 (`npm run lint`)
+- [x] 타입 체크 통과 (`npm run type-check`)
+- [ ] 유닛 테스트 작성 (해당시)
+
+### 문서
+- [ ] README 업데이트 (필요시)
+- [ ] API 문서 업데이트 (필요시)
+- [ ] CHANGELOG 업데이트
+
+### 배포
+- [ ] 환경 변수 설정 확인
+- [ ] Firebase 보안 규칙 검토
+- [ ] 프로덕션 빌드 테스트
+
+### Jira
+- [x] Jira 이슈와 연결됨
+- [ ] Jira 이슈 상태 → "In Review"로 변경
+- [ ] 작업 시간 기록 (Time Tracking)
+
+### 리뷰
+- [ ] 리뷰어 지정 완료
+- [ ] 라벨 추가 완료 (`extension`, `feature`)
+```
+
+#### Step 5: 리뷰어 및 라벨 지정
+**리뷰어 지정:**
+- 최소 1명 이상 지정
+- 프로젝트별 전문가 지정
+  - Extension: @extension-expert
+  - Dashboard: @frontend-lead
+  - Firebase: @backend-lead
+
+**라벨 추가:**
+- 타입: `feature`, `bugfix`, `hotfix`, `refactor`
+- 프로젝트: `extension`, `dashboard`, `popup`
+- 우선순위: `high`, `medium`, `low`
+- 상태: `needs-review`, `approved`, `changes-requested`
+
+#### Step 6: Draft PR vs Ready for Review
+```bash
+# Draft PR로 생성 (작업 중)
+- 아직 리뷰 받을 준비가 안 된 경우
+- 진행 상황을 공유하고 싶을 때
+- PR 제목 앞에 [WIP] 또는 [Draft] 추가
+
+# Ready for Review
+- 모든 체크리스트 완료 후
+- "Ready for review" 버튼 클릭
+```
+
+### 3. PR 생성 후 작업
+
+#### Jira 이슈 업데이트
+```bash
+# 커밋에 Smart Commit 사용
+git commit -m "feat(extension/popup): 리뷰 피드백 반영
+
+Jira: BOOK-123 #comment PR 생성 완료, 리뷰 대기 중"
+```
+
+#### CI/CD 파이프라인 확인
+- GitHub Actions 워크플로우 실행 확인
+- 빌드 성공 여부 확인
+- 테스트 통과 여부 확인
+
+#### 알림 설정
+- PR 코멘트 알림 활성화
+- 리뷰 요청 알림 확인
+- Jira 연동 알림 확인
+
+### 4. 리뷰 중 작업
+
+#### 피드백 반영
+```bash
+# 피드백 반영 후 커밋
+git add .
+git commit -m "fix(extension/popup): 리뷰 피드백 반영
+
+- 에러 핸들링 개선
+- 변수명 수정
+- 코드 주석 추가
+
+Jira: BOOK-123 #comment 리뷰 피드백 반영 완료"
+
+git push origin feature/BOOK-123-extension-popup-ui
+```
+
+#### 리뷰어와 소통
+- 코멘트에 신속히 응답
+- 변경 사항 설명
+- 동의하지 않는 부분은 논의
+
+### 5. PR 승인 후
+
+#### Squash and Merge (권장)
+```
+최종 커밋 메시지:
+[BOOK-123] feat(extension/popup): 북마크 추가 버튼 UI 구현
+
+- 확장 프로그램 팝업에 북마크 추가 버튼 추가
+- Firestore 연동 및 데이터 저장
+- 성공/실패 토스트 메시지 구현
+
+Jira: BOOK-123 #done #time 8h
+```
+
+#### 브랜치 정리
+```bash
+# 머지 후 로컬 브랜치 삭제
+git checkout develop
+git pull origin develop
+git branch -d feature/BOOK-123-extension-popup-ui
+
+# 원격 브랜치 삭제 (자동 삭제 설정 권장)
+git push origin --delete feature/BOOK-123-extension-popup-ui
+```
+
+#### Jira 이슈 완료
+- Jira 이슈 상태를 "Done"으로 변경
+- Sprint 보드에서 확인
+
+### 6. PR 템플릿 자동화
+
+#### `.github/pull_request_template.md` 생성
+```markdown
+## 🎫 Jira 이슈
+- [BOOK-XXX](https://your-domain.atlassian.net/browse/BOOK-XXX)
+
+## 📦 영향받는 프로젝트
+- [ ] bookmarkle-browser-extension
+- [ ] bookmarkle-web-dashboard
+- [ ] bookmarkle-signin-popup
+
+## 📝 변경 사항
+<!-- 변경 사항을 상세히 작성해주세요 -->
+
+## 💡 변경 이유
+<!-- 왜 이 변경이 필요한지 설명해주세요 -->
+
+## 🧪 테스트 방법
+<!-- 어떻게 테스트했는지 단계별로 작성해주세요 -->
+
+## 📸 스크린샷
+<!-- UI 변경이 있다면 스크린샷을 첨부해주세요 -->
+
+## ✅ 체크리스트
+- [ ] 코드 작성 완료
+- [ ] 로컬 테스트 완료
+- [ ] Lint 통과
+- [ ] Jira 이슈 연결
+- [ ] 리뷰어 지정
+```
 
 ## 환경 변수 관리
 
