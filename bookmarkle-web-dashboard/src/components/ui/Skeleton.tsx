@@ -1,11 +1,16 @@
 import React from "react";
 
-interface SkeletonProps {
-  className?: string;
-}
+type SkeletonProps = React.HTMLAttributes<HTMLDivElement>;
 
-export const Skeleton: React.FC<SkeletonProps> = ({ className = "" }) => {
-  const baseClass =
-    "animate-pulse rounded-md bg-slate-200/80 dark:bg-slate-700/60";
-  return <div className={`${baseClass} ${className}`.trim()} />;
-};
+export const Skeleton = React.forwardRef<HTMLDivElement, SkeletonProps>(
+  ({ className = "", ...props }, ref) => {
+    const classes = ["skeleton-base", "skeleton-shimmer", className]
+      .filter(Boolean)
+      .join(" ")
+      .trim();
+
+    return <div ref={ref} className={classes} {...props} />;
+  }
+);
+
+Skeleton.displayName = "Skeleton";
