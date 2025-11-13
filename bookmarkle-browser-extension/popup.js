@@ -96,6 +96,11 @@ const translations = {
 };
 
 let currentLanguage = "ko";
+const isStartPageContext = window.location.hash === "#start";
+
+if (isStartPageContext && document?.body) {
+  document.body.classList.add("start-page");
+}
 
 // 다국어 지원 함수 (개선된 버전)
 function initI18n() {
@@ -430,8 +435,10 @@ $btn.addEventListener("click", async () => {
   const loginUrl = `https://bookmarkhub-5ea6c-sign.web.app?source=extension&extensionId=${chrome.runtime.id}`;
   chrome.tabs.create({ url: loginUrl });
 
-  // 팝업 창 닫기
-  window.close();
+  // 팝업 창 닫기 (시작 페이지에서는 유지)
+  if (!isStartPageContext) {
+    window.close();
+  }
 });
 
 // 로그인 UI 표시

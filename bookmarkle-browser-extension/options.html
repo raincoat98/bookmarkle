@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>북마클 옵션</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: "Inter", "Spoqa Han Sans", "Apple SD Gothic Neo",
+          sans-serif;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.9);
+        border-radius: 24px;
+        padding: 32px;
+        width: min(480px, calc(100% - 32px));
+        box-shadow: 0 20px 45px rgba(79, 70, 229, 0.15);
+        backdrop-filter: blur(12px);
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 24px;
+        color: #312e81;
+      }
+
+      p.description {
+        margin: 0 0 24px;
+        font-size: 14px;
+        color: #4c1d95;
+        line-height: 1.6;
+      }
+
+      label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #4338ca;
+        margin-bottom: 8px;
+      }
+
+      .url-input-container {
+        position: relative;
+      }
+
+      input[type="url"] {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        border: 1px solid #c7d2fe;
+        border-radius: 12px;
+        font-size: 14px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        background: rgba(255, 255, 255, 0.95);
+      }
+
+      input[type="url"]:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        background: rgba(243, 244, 246, 0.85);
+        border-color: #d1d5db;
+        box-shadow: none;
+        color: #6b7280;
+      }
+
+      input[type="url"]:focus {
+        outline: none;
+        border-color: #6366f1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
+      }
+
+      .helper {
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 6px;
+        line-height: 1.5;
+      }
+
+      .url-label {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .url-label-default {
+        font-size: 12px;
+        font-weight: 500;
+        color: #4338ca;
+      }
+
+      .url-label-default a {
+        color: inherit;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 480px) {
+        .url-label {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 4px;
+        }
+      }
+
+      .status {
+        margin-top: 20px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        font-size: 13px;
+        line-height: 1.5;
+        display: none;
+      }
+
+      .status.show {
+        display: block;
+      }
+
+      .status.success {
+        background: rgba(16, 185, 129, 0.12);
+        color: #047857;
+        border: 1px solid rgba(16, 185, 129, 0.3);
+      }
+
+      .status.error {
+        background: rgba(239, 68, 68, 0.12);
+        color: #b91c1c;
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      .status.info {
+        background: rgba(59, 130, 246, 0.12);
+        color: #1d4ed8;
+        border: 1px solid rgba(59, 130, 246, 0.3);
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 8px;
+      }
+
+      #startPageForm {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .toggles {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 4px;
+      }
+
+      .toggle {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(129, 140, 248, 0.35);
+        background: rgba(255, 255, 255, 0.85);
+        transition: border-color 0.2s ease, box-shadow 0.2s ease,
+          transform 0.15s ease;
+      }
+
+      .toggle:hover {
+        border-color: #818cf8;
+        box-shadow: 0 12px 24px rgba(129, 140, 248, 0.18);
+        transform: translateY(-1px);
+      }
+
+      .toggle input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        margin-top: 2px;
+        accent-color: #6366f1;
+        cursor: pointer;
+      }
+
+      .toggle-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .toggle-label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #312e81;
+      }
+
+      .toggle-helper {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        color: #6b7280;
+        line-height: 1.5;
+      }
+
+      button {
+        flex: 1;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      button.primary {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #fff;
+        box-shadow: 0 12px 24px rgba(99, 102, 241, 0.25);
+      }
+
+      button.secondary {
+        background: rgba(99, 102, 241, 0.1);
+        color: #4338ca;
+        box-shadow: 0 12px 24px rgba(129, 140, 248, 0.15);
+      }
+
+      button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(99, 102, 241, 0.28);
+      }
+
+      .current-url {
+        margin-top: 16px;
+        font-size: 13px;
+        color: #4338ca;
+        word-break: break-all;
+      }
+
+      a.current-link {
+        color: inherit;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 480px) {
+        .card {
+          padding: 24px;
+        }
+
+        .actions {
+          flex-direction: column;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>시작 / 새 탭 페이지 설정</h1>
+      <p class="description">
+        새 탭 전환 토글은 언제나 아래에 입력한 URL을 불러옵니다.<br />
+        허용 가능한 주소는 <strong>http://</strong> 또는
+        <strong>https://</strong>로 시작하는 공개 웹 주소이며,<br />
+        비워두면 기본 북마클 화면이 사용됩니다.
+      </p>
+
+      <form id="startPageForm">
+        <div class="toggles">
+          <label class="toggle">
+            <input type="checkbox" id="newTabToggle" />
+            <span class="toggle-content">
+              <span class="toggle-label">새 탭을 이 페이지로 열기</span>
+              <span class="toggle-helper">
+                기본 북마클 대시보드 대신 아래에 입력한 URL로 열립니다.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div class="url-input-container" id="urlInputContainer">
+          <label for="startPageUrl" class="url-label">
+            사용할 URL
+            <span class="url-label-default" aria-label="기본 URL">
+              기본:
+              <span
+                tabindex="0"
+                role="button"
+                class="copy-trigger"
+                style="
+                  cursor: pointer;
+                  color: #6366f1;
+                  border-radius: 6px;
+                  padding: 0 3px;
+                "
+                data-copy-text="https://bookmarkhub-5ea6c.web.app/dashboard"
+                data-copied-text="복사됨!"
+                >https://bookmarkhub-5ea6c.web.app/dashboard</span
+              >
+              <button
+                type="button"
+                class="copy-trigger"
+                style="
+                  margin-left: 4px;
+                  font-size: 12px;
+                  padding: 2px 8px;
+                  border-radius: 8px;
+                  border: none;
+                  background: #eef2ff;
+                  color: #6366f1;
+                  cursor: pointer;
+                "
+                data-copy-text="https://bookmarkhub-5ea6c.web.app/dashboard"
+                data-copied-text="복사됨!"
+              >
+                복사
+              </button>
+            </span>
+          </label>
+          <input
+            type="url"
+            id="startPageUrl"
+            name="startPageUrl"
+            placeholder="https://example.com"
+            autocomplete="off"
+            spellcheck="false"
+          />
+        </div>
+        <p class="helper">
+          • 프로토콜을 포함해 정확한 주소를 입력하세요.<br />
+          • 새 탭 전환을 사용 중이라면 새 탭에서도 이 주소가 열립니다.
+        </p>
+        <div class="actions">
+          <button type="submit" class="primary">저장</button>
+          <button type="button" class="secondary" id="resetButton">
+            기본값 사용
+          </button>
+        </div>
+      </form>
+
+      <p class="current-url">
+        현재 적용 URL:
+        <a
+          id="currentUrlLink"
+          class="current-link"
+          href="#"
+          target="_blank"
+          rel="noopener"
+          >-</a
+        >
+      </p>
+
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
