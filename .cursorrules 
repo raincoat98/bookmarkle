@@ -1,9 +1,17 @@
-# React 프로젝트 Cursor IDE 규칙
+# Bookmarkle 프로젝트 Cursor IDE 규칙
+
+## 프로젝트 구조
+```
+/bookmarkle-browser-extension   # Chrome MV3 확장 프로그램 (JavaScript)
+/bookmarkle-web-dashboard       # Vite + React + TypeScript 웹 대시보드
+/bookmarkle-signin-popup        # Firebase 로그인 팝업 (정적 HTML/JS)
+```
 
 ## 프로젝트 개요
-- React 18+ 기반 프로젝트
-- TypeScript 사용 필수
-- 함수형 컴포넌트와 Hooks 사용
+- **확장 프로그램**: Chrome Manifest V3, Vanilla JS
+- **웹 대시보드**: React 18+ + TypeScript + Vite
+- **로그인 팝업**: Firebase Auth, 정적 HTML/JS
+- 모든 프로젝트는 Firebase 연동
 
 ## 커밋 메시지 규칙
 
@@ -28,41 +36,166 @@ Jira: <이슈키>
 - `build`: 빌드 설정 변경
 
 ### 범위 예시
-- `components`: 컴포넌트 관련
-- `pages`: 페이지 관련
-- `hooks`: 커스텀 훅
-- `utils`: 유틸리티 함수
+**공통:**
+- `firebase`: Firebase 관련 (Auth, Firestore 등)
 - `api`: API 통신
-- `store`: 상태 관리 (Redux, Zustand 등)
+- `utils`: 유틸리티 함수
+- `types`: 타입 정의
+- `config`: 설정 파일
+
+**bookmarkle-browser-extension:**
+- `background`: Service Worker (background script)
+- `content`: Content Script
+- `popup`: 확장 프로그램 팝업
+- `options`: 옵션 페이지
+- `manifest`: manifest.json 관련
+
+**bookmarkle-web-dashboard:**
+- `components`: React 컴포넌트
+- `pages`: 페이지 컴포넌트
+- `hooks`: 커스텀 훅
+- `store`: 상태 관리
 - `router`: 라우팅
 - `styles`: 스타일링
 
+**bookmarkle-signin-popup:**
+- `auth`: 인증 로직
+- `ui`: UI 요소
+
 ### 커밋 예시 (Jira 연동)
 ```
-feat(components): Button 컴포넌트에 loading 상태 추가
+feat(extension/popup): 북마크 추가 버튼 구현
 
-로딩 중일 때 스피너를 표시하고 클릭을 비활성화합니다.
-사용자 경험 개선을 위해 추가했습니다.
+확장 프로그램 팝업에서 현재 탭을 북마크로 저장하는 기능 추가
+Firestore에 북마크 데이터 저장
 
-Jira: PROJ-123
+Project: bookmarkle-browser-extension
+Jira: BOOK-123
 ```
 
 ```
-fix(hooks): useDebounce 훅의 메모리 누수 문제 해결
+fix(dashboard/components): BookmarkCard 렌더링 오류 수정
 
-컴포넌트 언마운트 시 타이머를 정리하도록 수정했습니다.
+북마크 데이터가 없을 때 발생하던 에러 수정
+null 체크 로직 추가
 
-Jira: PROJ-456
+Project: bookmarkle-web-dashboard
+Jira: BOOK-456
+```
+
+```
+feat(popup/auth): Google 로그인 버튼 추가
+
+Firebase Auth를 이용한 Google 소셜 로그인 구현
+팝업 창에서 로그인 처리
+
+Project: bookmarkle-signin-popup
+Jira: BOOK-789
 ```
 
 ### Jira 이슈 참조 규칙
+- 푸터에 `Project: <프로젝트명>` 명시
 - 푸터에 `Jira: 이슈키` 형식으로 작성
-- 여러 이슈 관련 시: `Jira: PROJ-123, PROJ-456`
+- 여러 프로젝트 관련 시: `Project: bookmarkle-browser-extension, bookmarkle-web-dashboard`
 - 브랜치명에도 Jira 이슈 포함
 
-## React 코드 작성 규칙
+## 프로젝트별 코드 작성 규칙
 
-### 컴포넌트 구조
+### 1. bookmarkle-browser-extension (Chrome MV3)
+
+#### 파일 구조
+```
+bookmarkle-browser-extension/
+├── background.js                  # Background Service Worker
+├── firebase-config.example.js     # Firebase 환경변수 예시
+├── firebase-config.js             # 실제 Firebase 환경변수
+├── icon_info.txt                  # 아이콘 정보 파일
+├── lucide.js                      # Lucide(아이콘) 번들 또는 유틸
+├── manifest.json                  # MV3 매니페스트
+├── offscreen.html                 # Offscreen 문서
+├── offscreen.js                   # Offscreen Script
+├── package.json
+├── package-lock.json
+├── popup.css
+├── popup.html
+├── popup.js
+├── PRIVACY_POLICY.md
+```
+
+#### 코딩 규칙
+```javascript
+// ✅ Good - Chrome API 사용
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'ADD_BOOKMARK') {
+    handleAddBookmark(message.data)
+      .then(result => sendResponse({ success: true, data: result }))
+      .catch(error => sendResponse({ success: false, error: error.message }));
+    return true; // 비동기 응답을 위해 true 반환
+  }
+});
+
+// ✅ Good - Storage 사용
+const saveBookmark = async (bookmark) => {
+  try {
+    await chrome.storage.sync.set({ [`bookmark_${bookmark.id}`]: bookmark });
+  } catch (error) {
+    console.error('Storage save error:', error);
+  }
+};
+
+// ❌ Bad - localStorage 사용 (MV3에서 제한적)
+localStorage.setItem('bookmark', JSON.stringify(bookmark));
+```
+
+#### MV3 주의사항
+- Service Worker는 이벤트 기반, 항상 실행되지 않음
+- `chrome.storage` API 사용 (`localStorage` 대신)
+- Content Security Policy 준수
+- Background에서 DOM 접근 불가
+
+---
+
+### 2. bookmarkle-web-dashboard (React + TypeScript)
+
+#### 파일 구조
+```
+bookmarkle-web-dashboard/
+├── src/
+│   ├── assets/
+│   ├── components/
+│   ├── data/
+│   ├── hooks/
+│   ├── i18n/
+│   ├── pages/
+│   ├── scripts/
+│   ├── stores/
+│   ├── types/
+│   ├── utils/
+│   ├── App.tsx
+│   ├── firebase.ts
+│   ├── index.css
+│   ├── main.tsx
+│   └── vite-env.d.ts
+├── .env
+├── .env.example
+├── .firebase
+├── .gitignore
+├── eslint.config.js
+├── firebase.json
+├── index.html
+├── package-lock.json
+├── package.json
+├── pgile-debug.log
+├── postcss.config.cjs
+├── README.md
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+```
+
+#### React 컴포넌트 구조 (Dashboard)
 ```typescript
 // 1. Import 순서
 import React, { useState, useEffect } from 'react'; // React 관련
@@ -112,7 +245,122 @@ export const UserProfile: React.FC<UserProfileProps> = ({
 };
 ```
 
-### 네이밍 규칙
+---
+
+### 3. bookmarkle-signin-popup (정적 HTML/JS)
+
+#### 파일 구조
+```
+bookmarkle-signin-popup/
+├── index.html
+├── auth.js              # Firebase Auth 로직
+├── style.css
+└── firebase-config.js   # Firebase 설정
+```
+
+#### 코딩 규칙
+```javascript
+// ✅ Good - 정적 페이지 Firebase Auth
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js';
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js';
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+
+document.getElementById('googleSignIn').addEventListener('click', async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const result = await signInWithPopup(auth, provider);
+    
+    // 부모 창에 결과 전달
+    if (window.opener) {
+      window.opener.postMessage({
+        type: 'AUTH_SUCCESS',
+        user: result.user
+      }, '*');
+      window.close();
+    }
+  } catch (error) {
+    console.error('Auth error:', error);
+    showError(error.message);
+  }
+});
+
+// ✅ Good - 간단하고 명확한 DOM 조작
+const showError = (message) => {
+  const errorEl = document.getElementById('error');
+  errorEl.textContent = message;
+  errorEl.style.display = 'block';
+};
+```
+
+#### 정적 페이지 주의사항
+- CDN에서 Firebase SDK import
+- Vanilla JavaScript 사용 (프레임워크 없음)
+- 팝업 창 postMessage로 부모 창과 통신
+- 최소한의 파일 크기 유지
+
+---
+
+## 공통 코딩 규칙
+
+### Firebase 연동
+```javascript
+// ✅ Good - 공통 Firebase 초기화
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  // ...
+};
+
+// ✅ Good - Firestore 북마크 저장
+const addBookmark = async (bookmark) => {
+  const bookmarkRef = doc(db, 'bookmarks', bookmark.id);
+  await setDoc(bookmarkRef, {
+    ...bookmark,
+    createdAt: serverTimestamp(),
+    userId: auth.currentUser.uid
+  });
+};
+
+// ✅ Good - 에러 처리
+try {
+  await addBookmark(newBookmark);
+} catch (error) {
+  if (error.code === 'permission-denied') {
+    console.error('Permission denied');
+  } else {
+    console.error('Firestore error:', error);
+  }
+}
+```
+
+### 프로젝트 간 통신
+```javascript
+// Extension → Dashboard: Chrome Message
+chrome.runtime.sendMessage({
+  type: 'SYNC_BOOKMARKS',
+  data: bookmarks
+});
+
+// Popup → Extension: postMessage
+window.opener.postMessage({
+  type: 'AUTH_SUCCESS',
+  user: userData
+}, '*');
+
+// Dashboard → Firebase: Realtime sync
+onSnapshot(query(collection(db, 'bookmarks')), (snapshot) => {
+  const bookmarks = snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...doc.data()
+  }));
+  updateBookmarkList(bookmarks);
+});
+```
+
+### 네이밍 규칙 (전체 프로젝트 공통)
 - **컴포넌트**: PascalCase (예: `UserProfile`, `LoginForm`)
 - **컴포넌트 파일**: PascalCase.tsx (예: `UserProfile.tsx`)
 - **훅**: use로 시작하는 camelCase (예: `useAuth`, `useFetch`)
@@ -372,42 +620,123 @@ const useApi = <T,>(url: string) => {
 
 ## 폴더 구조
 
+### bookmarkle-browser-extension
 ```
-src/
-├── components/          # 재사용 가능한 컴포넌트
-│   ├── ui/             # 기본 UI 컴포넌트
-│   ├── layout/         # 레이아웃 컴포넌트
-│   └── common/         # 공통 컴포넌트
-├── pages/              # 페이지 컴포넌트
-├── hooks/              # 커스텀 훅
-├── utils/              # 유틸리티 함수
-├── api/                # API 통신
-├── store/              # 상태 관리
-├── types/              # 타입 정의
-├── constants/          # 상수
-├── styles/             # 전역 스타일
-└── assets/             # 정적 파일
+bookmarkle-browser-extension/
+├── manifest.json
+├── background.js
+├── firebase-config.example.js
+├── firebase-config.js
+├── icon_info.txt
+├── lucide.js
+├── manifest.json
+├── offscreen.html
+├── offscreen.js
+├── package.json
+├── package-lock.json
+├── popup.css
+├── popup.html
+├── popup.js
+├── PRIVACY_POLICY.md
+```
+
+### bookmarkle-web-dashboard
+```
+bookmarkle-web-dashboard/
+├── src/
+├── .env
+├── .env.example
+├── .firebase
+├── .gitignore
+├── eslint.config.js
+├── firebase.json
+├── index.html
+├── package-lock.json
+├── package.json
+├── pgile-debug.log
+├── postcss.config.cjs
+├── README.md
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+├── public/
+├── assets/
+├── components/
+├── data/
+├── hooks/
+├── i18n/
+├── pages/
+├── scripts/
+├── stores/
+├── types/
+├── utils/
+├── App.tsx
+├── firebase.ts
+├── index.css
+├── main.tsx
+└── vite-env.d.ts
+```
+
+### bookmarkle-signin-popup
+```
+bookmarkle-signin-popup/
+├── config.js
+├── index.html
+├── signInWithPopup.js
+└── manifest.json
 ```
 
 ## 테스트 규칙
 
+### bookmarkle-browser-extension
+```javascript
+// Chrome Extension 테스트는 수동 테스트 위주
+// 체크리스트:
+// - [ ] Service Worker가 정상 작동하는가?
+// - [ ] Content Script가 올바르게 주입되는가?
+// - [ ] Chrome Storage 읽기/쓰기가 작동하는가?
+// - [ ] Message passing이 정상 작동하는가?
+// - [ ] 권한(permissions)이 올바르게 설정되었는가?
+```
+
+### bookmarkle-web-dashboard (React Testing Library)
 ```typescript
 // ✅ Good - React Testing Library 사용
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 
-describe('Button Component', () => {
-  it('renders with correct text', () => {
-    render(<Button text="Click me" onClick={() => {}} />);
-    expect(screen.getByText('Click me')).toBeInTheDocument();
+describe('BookmarkCard Component', () => {
+  it('renders bookmark data correctly', () => {
+    const bookmark = {
+      id: '1',
+      title: 'Test Bookmark',
+      url: 'https://example.com'
+    };
+    
+    render(<BookmarkCard bookmark={bookmark} />);
+    expect(screen.getByText('Test Bookmark')).toBeInTheDocument();
+    expect(screen.getByText('https://example.com')).toBeInTheDocument();
   });
 
-  it('calls onClick when clicked', () => {
-    const handleClick = jest.fn();
-    render(<Button text="Click" onClick={handleClick} />);
-    fireEvent.click(screen.getByText('Click'));
-    expect(handleClick).toHaveBeenCalledTimes(1);
+  it('calls onDelete when delete button clicked', async () => {
+    const handleDelete = jest.fn();
+    render(<BookmarkCard bookmark={mockBookmark} onDelete={handleDelete} />);
+    
+    fireEvent.click(screen.getByRole('button', { name: /delete/i }));
+    await waitFor(() => expect(handleDelete).toHaveBeenCalledTimes(1));
   });
 });
+```
+
+### bookmarkle-signin-popup
+```javascript
+// 정적 페이지는 브라우저 수동 테스트
+// 체크리스트:
+// - [ ] Firebase Auth 초기화가 정상적으로 되는가?
+// - [ ] Google 로그인 버튼 클릭 시 팝업이 열리는가?
+// - [ ] 로그인 성공 시 부모 창에 메시지가 전달되는가?
+// - [ ] 에러 발생 시 에러 메시지가 표시되는가?
 ```
 
 ## Git 브랜치 전략 (Jira 연동)
@@ -415,89 +744,143 @@ describe('Button Component', () => {
 ### 브랜치 네이밍
 - `main`: 프로덕션 배포
 - `develop`: 개발 통합
-- `feature/PROJ-123-button-loading`: 새 기능 (Jira 이슈키 포함)
-- `fix/PROJ-456-debounce-memory-leak`: 버그 수정
-- `refactor/PROJ-789-user-component`: 리팩토링
-- `hotfix/PROJ-999-payment-error`: 긴급 수정
+- `feature/BOOK-123-extension-popup-ui`: 새 기능 (Jira 이슈키 + 프로젝트 포함)
+- `fix/BOOK-456-dashboard-rendering-bug`: 버그 수정
+- `refactor/BOOK-789-popup-auth-flow`: 리팩토링
+- `hotfix/BOOK-999-extension-crash`: 긴급 수정
 
-### 예시
+### 프로젝트별 브랜치 예시
 ```
-feature/PROJ-123-user-authentication
-fix/PROJ-456-login-validation-error
-refactor/PROJ-789-api-service
-hotfix/PROJ-999-payment-gateway-issue
+# 확장 프로그램
+feature/BOOK-123-extension-background-sync
+fix/BOOK-456-extension-content-script-error
+
+# 웹 대시보드
+feature/BOOK-234-dashboard-bookmark-list
+fix/BOOK-567-dashboard-login-redirect
+
+# 로그인 팝업
+feature/BOOK-345-popup-google-auth
+fix/BOOK-678-popup-firebase-error
+
+# 여러 프로젝트 동시 작업
+feature/BOOK-456-cross-project-auth-sync
 ```
 
 ### 규칙
 - 브랜치명에 Jira 이슈 키 필수 포함
-- 이슈 키 다음 하이픈(-)으로 구분하여 설명 추가
+- 이슈 키 다음 프로젝트 구분자 포함 (extension/dashboard/popup)
 - 설명은 kebab-case로 작성
+- 여러 프로젝트 관련 시 cross-project 사용
 
 ## PR (Pull Request) 규칙
 
 ### PR 제목 형식
 ```
-[PROJ-123] feat(components): Button 컴포넌트에 loading 상태 추가
+[BOOK-123] feat(extension/popup): 북마크 추가 버튼 구현
+[BOOK-456] fix(dashboard/components): BookmarkCard 렌더링 오류 수정
+[BOOK-789] feat(popup/auth): Google 로그인 구현
 ```
 
 ### PR 설명 템플릿
 ```markdown
 ## Jira 이슈
-- [PROJ-123](https://your-domain.atlassian.net/browse/PROJ-123)
+- [BOOK-123](https://your-domain.atlassian.net/browse/BOOK-123)
+
+## 영향받는 프로젝트
+- [x] bookmarkle-browser-extension
+- [ ] bookmarkle-web-dashboard
+- [ ] bookmarkle-signin-popup
 
 ## 변경 사항
-- Button 컴포넌트에 loading prop 추가
-- 로딩 중 스피너 표시 기능 구현
-- 로딩 중 클릭 비활성화 처리
+- 확장 프로그램 팝업에 북마크 추가 버튼 구현
+- 현재 탭 정보를 가져와 Firestore에 저장
+- 성공/실패 토스트 메시지 표시
 
 ## 변경 이유
-- 사용자가 버튼 클릭 후 로딩 상태를 명확히 인지할 수 있도록 개선
-- 중복 클릭 방지로 불필요한 API 호출 감소
+- 사용자가 웹사이트를 방문하면서 즉시 북마크할 수 있도록 개선
+- 확장 프로그램에서 원클릭 북마크 기능 제공
 
 ## 테스트 방법
-1. 로그인 버튼 클릭
-2. API 호출 중 스피너가 표시되는지 확인
-3. 로딩 중 버튼 클릭이 비활성화되는지 확인
+1. Chrome에서 확장 프로그램 로드
+2. 임의의 웹사이트 방문
+3. 확장 프로그램 아이콘 클릭
+4. "북마크 추가" 버튼 클릭
+5. Firestore에 데이터가 저장되는지 확인
+6. Dashboard에서 북마크가 표시되는지 확인
 
 ## 스크린샷 (UI 변경 시)
-| Before | After |
-|--------|-------|
+| Extension Popup | Dashboard |
+|-----------------|-----------|
 | [이미지] | [이미지] |
 
 ## 영향 범위
-- 영향받는 컴포넌트: Button, LoginForm, SignupForm
+- 영향받는 파일: 
+  - `popup/popup.js`
+  - `background/service-worker.js`
+  - `utils/storage.js`
 - Breaking Change: 없음
+- Firebase 스키마 변경: 없음
 
 ## 체크리스트
 - [ ] Jira 이슈와 연결됨
+- [ ] 모든 영향받는 프로젝트 테스트 완료
+- [ ] Chrome Extension 테스트 완료
+- [ ] Firebase 연동 테스트 완료
 - [ ] 코드 리뷰 준비 완료
-- [ ] 테스트 통과
-- [ ] 문서 업데이트 완료
-- [ ] 브레이킹 체인지 확인
+- [ ] 문서 업데이트 완료 (필요시)
 - [ ] Jira 이슈 상태 업데이트 (In Review)
 ```
 
 ### PR 라벨 규칙
+**타입:**
 - `feature`: 새 기능
 - `bugfix`: 버그 수정
 - `hotfix`: 긴급 수정
 - `refactor`: 리팩토링
 - `performance`: 성능 개선
+
+**프로젝트:**
+- `extension`: browser-extension 관련
+- `dashboard`: web-dashboard 관련
+- `popup`: signin-popup 관련
+- `cross-project`: 여러 프로젝트 관련
+
+**상태:**
 - `needs-review`: 리뷰 필요
 - `approved`: 승인됨
 - `blocked`: 차단됨
+- `wip`: 작업 중
 
 ## 권장 도구
 
+### bookmarkle-browser-extension
+- **Linter**: ESLint
+- **Formatter**: Prettier
+- **Testing**: 수동 테스트 + Chrome Extension Test Framework
+- **Build**: Webpack (필요시)
+- **Version**: Chrome MV3 최신 사양 준수
+
+### bookmarkle-web-dashboard
 - **Linter**: ESLint (with react, typescript plugins)
 - **Formatter**: Prettier
 - **Testing**: Vitest, React Testing Library
-- **State**: Zustand, Redux Toolkit, Jotai
-- **Styling**: Tailwind CSS, CSS Modules, Styled-components
-- **Build**: Vite, Create React App
+- **State**: Zustand / Jotai (추천)
+- **Styling**: Tailwind CSS / CSS Modules
+- **Build**: Vite
 - **Type Check**: TypeScript strict mode
-- **Git Hook**: Husky (commit message에 Jira 이슈 자동 검증)
-- **CI/CD**: GitHub Actions, GitLab CI (Jira 자동 연동)
+- **Router**: React Router v6
+
+### bookmarkle-signin-popup
+- **Linter**: ESLint (기본 설정)
+- **Formatter**: Prettier
+- **Build**: 빌드 불필요 (정적 파일)
+
+### 공통
+- **Firebase**: Firebase SDK (Auth, Firestore)
+- **Git Hook**: Husky (commit message 검증)
+- **CI/CD**: GitHub Actions (Jira 자동 연동)
+- **Package Manager**: npm / yarn / pnpm (프로젝트 통일)
 
 ## Jira 워크플로우 연동
 
@@ -531,3 +914,53 @@ Jira: PROJ-789 #done"
 - `#in-progress`: 이슈를 In Progress로 전환
 - `#done`: 이슈를 Done으로 전환
 - `#close`: 이슈 닫기
+
+### 프로젝트별 Jira 라벨 활용
+- `extension`: browser-extension 관련 이슈
+- `dashboard`: web-dashboard 관련 이슈
+- `popup`: signin-popup 관련 이슈
+- `firebase`: Firebase 관련 이슈
+- `cross-project`: 여러 프로젝트에 걸친 이슈
+
+## 배포 전략
+
+### bookmarkle-browser-extension
+1. `manifest.json` 버전 업데이트
+2. Chrome Web Store에 수동 업로드
+3. 리뷰 승인 대기
+4. 프로덕션 배포
+
+### bookmarkle-web-dashboard
+1. Vite 빌드: `npm run build`
+2. Firebase Hosting 배포: `firebase deploy --only hosting`
+3. 배포 후 동작 확인
+
+### bookmarkle-signin-popup
+1. Firebase Hosting 배포: `firebase deploy --only hosting:popup`
+2. 팝업 URL 확인 및 테스트
+
+## 환경 변수 관리
+
+### bookmarkle-browser-extension
+```javascript
+// 환경 변수는 manifest.json에서 관리하지 않음
+// Firebase config는 코드에 직접 포함 (공개 키이므로 안전)
+```
+
+### bookmarkle-web-dashboard
+```env
+# .env.local (Git에 커밋하지 않음)
+VITE_FIREBASE_API_KEY=your_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your_domain
+VITE_FIREBASE_PROJECT_ID=your_project_id
+```
+
+### bookmarkle-signin-popup
+```javascript
+// firebase-config.js
+export const firebaseConfig = {
+  apiKey: "your_api_key", // 공개 키
+  authDomain: "your_domain",
+  projectId: "your_project_id"
+};
+```
