@@ -1,10 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   DndContext,
   KeyboardSensor,
@@ -40,11 +34,7 @@ import { QuickActions } from "./QuickActions";
 import { BookmarksWidget } from "./BookmarksWidget";
 import { ClockWidget } from "./ClockWidget";
 import { BibleVerseWidget } from "./BibleVerseWidget";
-import {
-  useWidgetOrder,
-  type WidgetConfig,
-  type WidgetId,
-} from "../../hooks/useWidgetOrder";
+import { useWidgetOrder, type WidgetConfig } from "../../hooks/useWidgetOrder";
 import type { Bookmark, Collection, SortOption } from "../../types";
 import { useAuthStore } from "../../stores";
 import { useNotifications } from "../../hooks/useNotifications";
