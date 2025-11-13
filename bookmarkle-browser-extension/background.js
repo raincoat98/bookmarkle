@@ -510,6 +510,60 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 // serializeUser 함수는 offscreen.js에서 처리
 
+const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app/dashboard";
+
+let overrideNewTabEnabled = false;
+let cachedStartPageUrl = DEFAULT_START_PAGE_URL;
+let startPageSettingsInitialized = false;
+let startPageSettingsReadyPromise = null;
+
+function updateCachedStartPageUrl(rawValue) {
+  if (typeof rawValue === "string" && rawValue.trim().length) {
+    if (isAllowedStartUrl(rawValue)) {
+      cachedStartPageUrl = rawValue;
+      return;
+    }
+    console.warn(
+      "허용되지 않은 시작 페이지 URL이 저장되어 기본값으로 대체됩니다:",
+      rawValue
+    );
+  }
+  cachedStartPageUrl = DEFAULT_START_PAGE_URL;
+}
+
+async function initializeStartPageSettings() {
+  try {
+    const { customStartUrl, overrideNewTab } = await chrome.storage.local.get([
+      "customStartUrl",
+      "overrideNewTab",
+    ]);
+    overrideNewTabEnabled = Boolean(overrideNewTab);
+    updateCachedStartPageUrl(customStartUrl);
+  } catch (error) {
+    console.warn("시작 페이지 설정 초기화 실패 - 기본값 사용:", error);
+    overrideNewTabEnabled = false;
+    cachedStartPageUrl = DEFAULT_START_PAGE_URL;
+  } finally {
+    startPageSettingsInitialized = true;
+  }
+}
+
+startPageSettingsReadyPromise = initializeStartPageSettings();
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") {
+    return;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(changes, "overrideNewTab")) {
+    overrideNewTabEnabled = Boolean(changes.overrideNewTab.newValue);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(changes, "customStartUrl")) {
+    updateCachedStartPageUrl(changes.customStartUrl.newValue);
+  }
+});
+
 // 확장 프로그램 설치 시 컨텍스트 메뉴 생성
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log("확장 프로그램 설치/업데이트됨:", details.reason);
@@ -517,9 +571,89 @@ chrome.runtime.onInstalled.addListener(async (details) => {
 });
 
 // 확장 프로그램 시작 시 컨텍스트 메뉴 생성
+
+function isAllowedStartUrl(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return true;
+    }
+
+    if (
+      parsed.protocol === "chrome-extension:" &&
+      parsed.origin === `chrome-extension://${chrome.runtime.id}`
+    ) {
+      return true;
+    }
+  } catch (error) {
+    return false;
+  }
+
+  return false;
+}
+
+async function resolveStartPageUrl() {
+  if (!startPageSettingsInitialized && startPageSettingsReadyPromise) {
+    try {
+      await startPageSettingsReadyPromise;
+    } catch (error) {
+      console.warn("시작 페이지 URL 준비 중 오류 - 기본값 사용:", error);
+    }
+  }
+  return cachedStartPageUrl;
+}
+
 chrome.runtime.onStartup.addListener(async () => {
   console.log("확장 프로그램 시작됨");
   await createContextMenus();
+});
+
+chrome.tabs.onCreated.addListener(async (tab) => {
+  try {
+    if (!tab.pendingUrl && !tab.url) {
+      return;
+    }
+
+    const targetUrl = tab.pendingUrl || tab.url;
+    if (!targetUrl) return;
+
+    // 확장에서 생성한 탭은 무시
+    if (targetUrl.startsWith(`chrome-extension://${chrome.runtime.id}`)) {
+      return;
+    }
+
+    if (!startPageSettingsInitialized && startPageSettingsReadyPromise) {
+      try {
+        await startPageSettingsReadyPromise;
+      } catch (error) {
+        console.warn("새 탭 전환 설정 준비 실패:", error);
+      }
+    }
+
+    if (!overrideNewTabEnabled) {
+      return;
+    }
+
+    // 새 탭 페이지인지 확인
+    if (
+      targetUrl === "chrome://newtab/" ||
+      targetUrl === "chrome://new-tab-page/"
+    ) {
+      const startPageUrl = await resolveStartPageUrl();
+      if (!startPageUrl) {
+        return;
+      }
+
+      if (tab.pendingUrl === startPageUrl || tab.url === startPageUrl) {
+        return;
+      }
+
+      await chrome.tabs.update(tab.id, { url: startPageUrl });
+      console.log("새 탭을 설정된 페이지로 전환했습니다.");
+    }
+  } catch (error) {
+    console.error("새 탭 전환 처리 실패:", error);
+  }
 });
 
 // 서비스 워커가 활성화될 때도 메뉴 생성 (MV3에서 중요)

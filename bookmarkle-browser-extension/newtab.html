@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>북마클 시작 페이지</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: light dark;
+      }
+      body {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: #0e0f10;
+        color: #f2f3f4;
+      }
+      .status {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+      }
+      .status__title {
+        font-size: 18px;
+        font-weight: 600;
+      }
+      .status__desc {
+        font-size: 14px;
+        opacity: 0.7;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="status" role="status" aria-live="polite">
+      <div class="status__title">북마클 시작 페이지로 이동 중...</div>
+      <div class="status__desc">
+        잠시만 기다려주세요. 연결을 확인하고 있습니다.
+      </div>
+    </div>
+    <script src="newtab.js" defer></script>
+  </body>
+</html>
+
