@@ -720,31 +720,32 @@ describe('BookmarkCard Component', () => {
 ### 브랜치 네이밍
 - `main`: 프로덕션 배포
 - `develop`: 개발 통합
-- `feature/BOOK-123-extension-popup-ui`: 새 기능 (Jira 이슈키 + 프로젝트 포함)
-- `fix/BOOK-456-dashboard-rendering-bug`: 버그 수정
-- `refactor/BOOK-789-popup-auth-flow`: 리팩토링
-- `hotfix/BOOK-999-extension-crash`: 긴급 수정
+- `feature/BMK-123-extension-popup-ui`: 새 기능 (Jira 이슈키 권장)
+- `fix/BMK-456-dashboard-rendering-bug`: 버그 수정
+- `refactor/BMK-789-popup-auth-flow`: 리팩토링
+- `hotfix/BMK-999-extension-crash`: 긴급 수정
 
 ### 프로젝트별 브랜치 예시
 ```
-# 확장 프로그램
-feature/BOOK-123-extension-background-sync
-fix/BOOK-456-extension-content-script-error
+# Jira 이슈 키 포함 (권장)
+feature/BMK-123-extension-background-sync
+fix/BMK-456-extension-content-script-error
 
-# 웹 대시보드
-feature/BOOK-234-dashboard-bookmark-list
-fix/BOOK-567-dashboard-login-redirect
+# Jira 이슈 키 없이도 가능 (커밋 시 수동 입력)
+feature/dashboard-bookmark-list
+fix/dashboard-login-redirect
 
 # 로그인 팝업
-feature/BOOK-345-popup-google-auth
-fix/BOOK-678-popup-firebase-error
+feature/BMK-345-popup-google-auth
+fix/popup-firebase-error
 
 # 여러 프로젝트 동시 작업
-feature/BOOK-456-cross-project-auth-sync
+feature/BMK-456-cross-project-auth-sync
 ```
 
 ### 규칙
-- 브랜치명에 Jira 이슈 키 필수 포함
+- 브랜치명에 Jira 이슈 키 포함 권장 (예: `BMK-123`)
+  - **있으면**: 커밋 메시지에 자동 추출
 - 이슈 키 다음 프로젝트 구분자 포함 (extension/dashboard/popup)
 - 설명은 kebab-case로 작성
 - 여러 프로젝트 관련 시 cross-project 사용
@@ -753,15 +754,22 @@ feature/BOOK-456-cross-project-auth-sync
 
 ### PR 제목 형식
 ```
-[BOOK-123] feat(extension/popup): 북마크 추가 버튼 구현
-[BOOK-456] fix(dashboard/components): BookmarkCard 렌더링 오류 수정
-[BOOK-789] feat(popup/auth): Google 로그인 구현
+[BMK-123] feat(extension/popup): 북마크 추가 버튼 구현
+[BMK-456] fix(dashboard/components): BookmarkCard 렌더링 오류 수정
+[BMK-789] feat(popup/auth): Google 로그인 구현
+```
+
+**브랜치명에 Jira 키가 없는 경우:**
+```
+feat(dashboard/ui): 대시보드 UI 개선
+# Jira 키는 PR 본문에서 수동으로 입력
 ```
 
 ### PR 설명 템플릿
 ```markdown
 ## Jira 이슈
-- [BOOK-123](https://your-domain.atlassian.net/browse/BOOK-123)
+- [BMK-123](https://your-domain.atlassian.net/browse/BMK-123)
+<!-- 브랜치명에 Jira 키가 없으면 여기서 수동으로 입력 -->
 
 ## 영향받는 프로젝트
 - [x] bookmarkle-browser-extension
@@ -868,21 +876,31 @@ feature/BOOK-456-cross-project-auth-sync
 
 ### Git Commit으로 Jira 이슈 자동 전환
 ```bash
+# 브랜치: feature/BMK-123-login-feature
+# → Jira 키 자동 추출
+
 # 이슈를 In Progress로 전환
 git commit -m "feat(auth): 로그인 기능 구현
 
-Jira: PROJ-123 #in-progress"
+Jira: BMK-123 #in-progress"
+
+# 브랜치: feature/dashboard-ui-update
+# → Jira 키 없음, 수동 입력
 
 # 이슈에 작업 시간 기록
 git commit -m "fix(api): API 에러 처리 개선
 
-Jira: PROJ-456 #time 1h 30m #comment API 에러 핸들링 개선 완료"
+Jira: BMK-456 #time 1h 30m #comment API 에러 핸들링 개선 완료"
 
 # 이슈를 완료로 전환
 git commit -m "feat(dashboard): 대시보드 UI 완성
 
-Jira: PROJ-789 #done"
+Jira: BMK-789 #done"
 ```
+
+**중요:** 
+- 브랜치명에 `BMK-XXX` 패턴이 있으면 Cursor가 자동으로 감지
+- 브랜치명에 없으면 `Jira: BMK-` 프리픽스 사용하고 번호는 수동 입력
 
 ### Smart Commit 명령어
 - `#comment <텍스트>`: 이슈에 코멘트 추가
@@ -946,7 +964,11 @@ git log --oneline -5        # 최근 5개 커밋 확인
 
 #### Step 1: 브랜치 푸시
 ```bash
-git push origin feature/BOOK-123-extension-popup-ui
+# 브랜치명에 Jira 키가 있는 경우
+git push origin feature/BMK-123-extension-popup-ui
+
+# 브랜치명에 Jira 키가 없는 경우 (가능)
+git push origin feature/dashboard-ui-update
 ```
 
 #### Step 2: GitHub/GitLab에서 PR 생성
@@ -955,11 +977,17 @@ git push origin feature/BOOK-123-extension-popup-ui
 
 #### Step 3: PR 제목 작성
 ```
-[BOOK-123] feat(extension/popup): 북마크 추가 버튼 UI 구현
+# 브랜치에 Jira 키가 있는 경우
+[BMK-123] feat(extension/popup): 북마크 추가 버튼 UI 구현
+
+# 브랜치에 Jira 키가 없는 경우
+feat(dashboard/ui): 대시보드 UI 개선
+# PR 본문에 Jira 이슈 링크 추가
 ```
 
 **제목 형식 규칙:**
-- `[이슈키] 타입(범위): 설명`
+- `[이슈키] 타입(범위): 설명` (Jira 키가 있는 경우)
+- `타입(범위): 설명` (Jira 키가 없는 경우, 본문에서 연결)
 - 50자 이내로 작성
 - 명령형으로 작성 (추가, 수정, 삭제)
 
@@ -967,7 +995,8 @@ git push origin feature/BOOK-123-extension-popup-ui
 
 ```markdown
 ## 🎫 Jira 이슈
-- [BOOK-123](https://your-domain.atlassian.net/browse/BOOK-123) - 북마크 추가 기능 구현
+- [BMK-123](https://your-domain.atlassian.net/browse/BMK-123) - 북마크 추가 기능 구현
+<!-- 브랜치명에서 자동 추출 또는 수동 입력 -->
 
 ## 📦 영향받는 프로젝트
 - [x] bookmarkle-browser-extension
@@ -1102,10 +1131,20 @@ bookmarkle-browser-extension/
 
 #### Jira 이슈 업데이트
 ```bash
+# 브랜치: feature/BMK-123-extension-popup
+# → Jira 키 자동 추출됨
+
 # 커밋에 Smart Commit 사용
 git commit -m "feat(extension/popup): 리뷰 피드백 반영
 
-Jira: BOOK-123 #comment PR 생성 완료, 리뷰 대기 중"
+Jira: BMK-123 #comment PR 생성 완료, 리뷰 대기 중"
+
+# 브랜치: feature/dashboard-update
+# → Jira 키 수동 입력 필요
+
+git commit -m "feat(dashboard/ui): 리뷰 피드백 반영
+
+Jira: BMK-456 #comment PR 생성 완료"
 ```
 
 #### CI/CD 파이프라인 확인
@@ -1130,9 +1169,9 @@ git commit -m "fix(extension/popup): 리뷰 피드백 반영
 - 변수명 수정
 - 코드 주석 추가
 
-Jira: BOOK-123 #comment 리뷰 피드백 반영 완료"
+Jira: BMK-123 #comment 리뷰 피드백 반영 완료"
 
-git push origin feature/BOOK-123-extension-popup-ui
+git push origin feature/BMK-123-extension-popup-ui
 ```
 
 #### 리뷰어와 소통
@@ -1145,13 +1184,13 @@ git push origin feature/BOOK-123-extension-popup-ui
 #### Squash and Merge (권장)
 ```
 최종 커밋 메시지:
-[BOOK-123] feat(extension/popup): 북마크 추가 버튼 UI 구현
+[BMK-123] feat(extension/popup): 북마크 추가 버튼 UI 구현
 
 - 확장 프로그램 팝업에 북마크 추가 버튼 추가
 - Firestore 연동 및 데이터 저장
 - 성공/실패 토스트 메시지 구현
 
-Jira: BOOK-123 #done #time 8h
+Jira: BMK-123 #done #time 8h
 ```
 
 #### 브랜치 정리
@@ -1159,10 +1198,10 @@ Jira: BOOK-123 #done #time 8h
 # 머지 후 로컬 브랜치 삭제
 git checkout develop
 git pull origin develop
-git branch -d feature/BOOK-123-extension-popup-ui
+git branch -d feature/BMK-123-extension-popup-ui
 
 # 원격 브랜치 삭제 (자동 삭제 설정 권장)
-git push origin --delete feature/BOOK-123-extension-popup-ui
+git push origin --delete feature/BMK-123-extension-popup-ui
 ```
 
 #### Jira 이슈 완료
@@ -1174,7 +1213,8 @@ git push origin --delete feature/BOOK-123-extension-popup-ui
 #### `.github/pull_request_template.md` 생성
 ```markdown
 ## 🎫 Jira 이슈
-- [BOOK-XXX](https://your-domain.atlassian.net/browse/BOOK-XXX)
+- [BMK-XXX](https://your-domain.atlassian.net/browse/BMK-XXX)
+<!-- 브랜치명에서 자동 추출 또는 수동 입력 -->
 
 ## 📦 영향받는 프로젝트
 - [ ] bookmarkle-browser-extension
@@ -1205,24 +1245,40 @@ git push origin --delete feature/BOOK-123-extension-popup-ui
 
 ### bookmarkle-browser-extension
 ```javascript
-// 환경 변수는 manifest.json에서 관리하지 않음
-// Firebase config는 코드에 직접 포함 (공개 키이므로 안전)
-```
+// firebase-config.js 파일에서 관리 (Git에 커밋하지 않음)
+export const firebaseConfig = {
+    apiKey: "your_api_key", 
+    authDomain: "your_domain",
+    projectId: "your_project_id"
+    appId: "your_app_id",
+    messagingSenderId: "your_sender_id",
+  };
 
+
+
+```
 ### bookmarkle-web-dashboard
-```env
-# .env.local (Git에 커밋하지 않음)
+```env 
+# .env (Git에 커밋하지 않음)
+VITE_OPENWEATHER_API_KEY=your_openweather_api_key
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_domain
 VITE_FIREBASE_PROJECT_ID=your_project_id
+VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_ADMIN_EMAIL=your_admin_email
 ```
 
 ### bookmarkle-signin-popup
 ```javascript
-// firebase-config.js
+// firebase-config.js (Git에 커밋하지 않음)
 export const firebaseConfig = {
-  apiKey: "your_api_key", // 공개 키
+  apiKey: "your_api_key",
   authDomain: "your_domain",
-  projectId: "your_project_id"
+  projectId: "your_project_id",
+  appId: "your_app_id",
+  messagingSenderId: "your_sender_id",
 };
+
 ```
