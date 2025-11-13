@@ -24,7 +24,7 @@ import {
 } from "@dnd-kit/sortable";
 import { BookOpen, Folder, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { Skeleton } from "./ui/Skeleton";
 
 interface BookmarkListProps {

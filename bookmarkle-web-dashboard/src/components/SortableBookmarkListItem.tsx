@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Bookmark, Collection } from "../types";
 import { renderCollectionIcon } from "../utils/iconRenderer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 interface SortableBookmarkListItemProps {
   bookmark: Bookmark;

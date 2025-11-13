@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { CollectionList } from "./CollectionList";
 import type { Collection } from "../types";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 interface DrawerProps {
   children: React.ReactNode;

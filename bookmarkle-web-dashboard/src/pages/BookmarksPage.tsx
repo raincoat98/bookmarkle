@@ -17,7 +17,7 @@ import type {
 import toast from "react-hot-toast";
 import { Search, Grid3X3, List, Plus, FolderPlus } from "lucide-react";
 import { Drawer } from "../components/Drawer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 export const BookmarksPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();

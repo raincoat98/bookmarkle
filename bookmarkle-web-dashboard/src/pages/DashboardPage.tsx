@@ -10,7 +10,7 @@ import { EditBookmarkModal } from "../components/EditBookmarkModal";
 import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
 import { AddCollectionModal } from "../components/AddCollectionModal";
 import { Drawer } from "../components/Drawer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();

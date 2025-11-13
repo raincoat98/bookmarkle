@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import type { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import {
   getNotificationPermission,
@@ -163,7 +163,9 @@ export const useSettings = ({
   }, []);
 
   useEffect(() => {
-    const syncNotificationsState = (event: CustomEvent<{ enabled: boolean }>) => {
+    const syncNotificationsState = (
+      event: CustomEvent<{ enabled: boolean }>
+    ) => {
       if (typeof event.detail?.enabled !== "boolean") {
         return;
       }
@@ -196,12 +198,18 @@ export const useSettings = ({
     const systemListener = syncSystemNotificationsState as EventListener;
 
     window.addEventListener("notificationsChanged", notificationsListener);
-    window.addEventListener("bookmarkNotificationsChanged", notificationsListener);
+    window.addEventListener(
+      "bookmarkNotificationsChanged",
+      notificationsListener
+    );
     window.addEventListener("systemNotificationsChanged", systemListener);
 
     return () => {
       window.removeEventListener("notificationsChanged", notificationsListener);
-      window.removeEventListener("bookmarkNotificationsChanged", notificationsListener);
+      window.removeEventListener(
+        "bookmarkNotificationsChanged",
+        notificationsListener
+      );
       window.removeEventListener("systemNotificationsChanged", systemListener);
     };
   }, []);
@@ -225,12 +233,7 @@ export const useSettings = ({
 
       toast.error(t("notifications.permissionDenied"));
     }
-  }, [
-    browserNotificationPermission.denied,
-    systemNotifications,
-    user?.uid,
-    t,
-  ]);
+  }, [browserNotificationPermission.denied, systemNotifications, user?.uid, t]);
   const [backupSettings, setBackupSettings] = useState<BackupSettings>(() =>
     loadBackupSettings()
   );

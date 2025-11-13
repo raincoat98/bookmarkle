@@ -3,7 +3,7 @@ import type { Bookmark } from "../types";
 import { Settings, Edit, Trash2, Heart, ExternalLink, X } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import {
   DndContext,
   closestCenter,

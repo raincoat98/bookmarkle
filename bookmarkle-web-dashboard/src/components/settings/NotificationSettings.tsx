@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useTranslation } from "../../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { Bell } from "lucide-react";
 import type { NotificationPermission } from "../../utils/browserNotifications";
 

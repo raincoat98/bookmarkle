@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Collection } from "../types";
 import { renderCollectionIcon } from "../utils/iconRenderer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import { PinIcon } from "lucide-react";
 import { Skeleton } from "./ui/Skeleton";
 interface CollectionListProps {
