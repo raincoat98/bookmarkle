@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { DashboardOverview } from "../components/DashboardWidgets";
+import { DashboardOverview } from "../components/dashboard/DashboardOverview";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
 import { DisabledUserMessage } from "../components/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";

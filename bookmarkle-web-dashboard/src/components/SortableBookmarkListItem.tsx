@@ -144,7 +144,7 @@ export const SortableBookmarkListItem = ({
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-3 left-3 sm:top-4 sm:left-4 hidden sm:block opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-grab active:cursor-grabbing z-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1.5 shadow-sm min-w-[36px] min-h-[36px] flex items-center justify-center"
+        className="absolute top-3 left-3 sm:top-4 sm:left-4 hidden sm:flex opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-grab active:cursor-grabbing z-20 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1.5 shadow-sm min-w-[36px] min-h-[36px] items-center justify-center"
       >
         <svg
           className="w-5 h-5 sm:w-4 sm:h-4 text-gray-500"
