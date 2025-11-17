@@ -15,6 +15,7 @@ import {
   Palette,
   Bell,
   Shield,
+  Crown,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -24,6 +25,7 @@ import { NotificationSettings } from "./settings/NotificationSettings";
 import { StatsSettings } from "./settings/StatsSettings";
 import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
+import { SubscriptionSettings } from "./settings/SubscriptionSettings";
 import { getUserDefaultPage } from "../firebase";
 import { performBackup, shouldBackup } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
@@ -170,6 +172,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const tabs = [
     { id: "general", label: t("settings.general"), icon: SettingsIcon },
+    { id: "subscription", label: t("premium.subscription"), icon: Crown },
     { id: "stats", label: t("admin.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },
     { id: "account", label: t("settings.account"), icon: User },
@@ -189,6 +192,8 @@ export const Settings: React.FC<SettingsProps> = ({
             onImportData={handleImportData}
           />
         );
+      case "subscription":
+        return <SubscriptionSettings />;
       case "stats":
         return (
           <StatsSettings bookmarks={rawBookmarks} collections={collections} />
