@@ -1,4 +1,9 @@
-import { useAuthStore, useThemeStore, useDrawerStore } from "../stores";
+import {
+  useAuthStore,
+  useThemeStore,
+  useDrawerStore,
+  useSubscriptionStore,
+} from "../stores";
 import { Link } from "react-router-dom";
 import {
   Menu,
@@ -9,6 +14,7 @@ import {
   LogOut,
   Globe,
   Shield,
+  Crown,
 } from "lucide-react";
 import { isAdminUser } from "../firebase";
 import { useState, useEffect } from "react";
@@ -22,6 +28,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const { setIsDrawerOpen } = useDrawerStore();
+  const { isPremium } = useSubscriptionStore();
   const [isAdmin, setIsAdmin] = useState(false);
 
   const toggleTheme = () => {
@@ -84,6 +91,25 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
           <div className="flex items-center space-x-2">
             {/* 알림 센터 */}
             {user && <NotificationCenter />}
+
+            {/* 구독 관리 링크 */}
+            {user && (
+              <Link
+                to="/subscription"
+                className={`relative p-2 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm ${
+                  isPremium
+                    ? "text-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400"
+                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                }`}
+                aria-label="구독 관리"
+                title={isPremium ? "프리미엄 구독 관리" : "구독 관리"}
+              >
+                <Crown className="w-5 h-5" />
+                {isPremium && (
+                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full border-2 border-white dark:border-gray-800"></span>
+                )}
+              </Link>
+            )}
 
             {/* 테마 토글 */}
             <button
