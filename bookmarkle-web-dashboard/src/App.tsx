@@ -17,6 +17,8 @@ import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
 import { BetaBanner } from "./components/BetaBanner";
+import { BetaAnnouncementModal } from "./components/BetaAnnouncementModal";
+import { betaUtils } from "./utils/betaFlags";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
@@ -39,6 +41,7 @@ function App() {
   const { collections } = useCollectionStore();
   const { subscribeToSubscription } = useSubscriptionStore();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
+  const [showBetaModal, setShowBetaModal] = useState(false);
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 인증 및 테마 초기화
@@ -69,6 +72,39 @@ function App() {
         .catch(() => setDefaultPage("dashboard"));
     }
   }, [user?.uid]);
+
+  // 베타 모달 표시 (로그인된 사용자에게)
+  useEffect(() => {
+    if (user && betaUtils.shouldShowModal()) {
+      setShowBetaModal(true);
+    }
+  }, [user]);
+
+  // 로컬 스토리지 변경 감지 (베타 설정 초기화 시 모달 다시 표시)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      if (user && betaUtils.shouldShowModal()) {
+        setShowBetaModal(true);
+      }
+    };
+
+    // storage 이벤트는 다른 탭에서만 발생하므로 직접 체크
+    const checkBetaModal = () => {
+      if (user && betaUtils.shouldShowModal()) {
+        setShowBetaModal(true);
+      }
+    };
+
+    // 초기 체크
+    checkBetaModal();
+
+    // 주기적으로 체크 (베타 설정 초기화 후 감지)
+    const interval = setInterval(checkBetaModal, 500);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [user]);
 
   // 자동 백업 체크
   useEffect(() => {
@@ -153,6 +189,12 @@ function App() {
     <Router>
       <ExtensionBridge />
       {user && <BetaBanner />}
+      {user && (
+        <BetaAnnouncementModal
+          isOpen={showBetaModal}
+          onClose={() => setShowBetaModal(false)}
+        />
+      )}
       {!user ? (
         <LoginScreen />
       ) : (

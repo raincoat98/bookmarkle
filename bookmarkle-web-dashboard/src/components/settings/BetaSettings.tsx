@@ -58,10 +58,8 @@ export const BetaSettings: React.FC = () => {
       alert(t("beta.settings.resetSuccess"));
       // 대시보드로 이동하여 베타 배너와 모달이 다시 표시되도록 함
       navigate("/dashboard");
-      // 페이지 리로드하여 로컬 스토리지 변경사항 반영
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // 로컬 스토리지 변경 이벤트 발생시켜 App.tsx에서 감지하도록 함
+      window.dispatchEvent(new Event("storage"));
     }
   };
 
