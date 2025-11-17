@@ -278,8 +278,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               onEdit={onEdit}
               onDelete={onDelete}
               onToggleFavorite={onToggleFavorite}
-              currentSort={currentSort}
-              onSortChange={onSortChange}
               loading={bookmarksLoading}
             />
           );
