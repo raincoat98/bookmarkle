@@ -63,7 +63,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
   if (!isOpen || (!forceShow && !betaUtils.shouldShowModal())) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* 배경 오버레이 */}
       <div
         className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-sm"
@@ -71,8 +71,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
       />
 
       {/* 모달 컨테이너 */}
-      <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="relative w-full max-w-2xl max-h-[calc(100vh-2rem)] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
           {/* 닫기 버튼 */}
           <button
             onClick={handleClose}
@@ -142,8 +141,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
               {t("beta.modal.getStarted")}
             </button>
           </div>
-        </div>
-      </div>
-    </div>
+        </div> {/* 모달 컨테이너 끝 */}
+    </div> {/* 전체 모달 컨테이너 끝 */}
   );
 };
