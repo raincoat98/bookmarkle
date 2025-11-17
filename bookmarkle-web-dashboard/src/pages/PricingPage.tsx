@@ -89,27 +89,27 @@ export const PricingPage: React.FC = () => {
 
         {/* 결제 주기 선택 */}
         <div className="flex justify-center mb-8">
-          <div className="inline-flex items-center bg-white dark:bg-gray-800 rounded-xl p-1 shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="inline-flex items-center bg-white dark:bg-gray-800 rounded-xl p-1 shadow-lg border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-xl">
             <button
               onClick={() => setBillingCycle("monthly")}
-              className={`px-6 py-2 rounded-lg font-medium transition-all ${
+              className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 relative ${
                 billingCycle === "monthly"
-                  ? "bg-brand-500 text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-brand-500 text-white shadow-md scale-105"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}
             >
               {t("premium.monthly")}
             </button>
             <button
               onClick={() => setBillingCycle("yearly")}
-              className={`px-6 py-2 rounded-lg font-medium transition-all relative ${
+              className={`px-6 py-2 rounded-lg font-medium transition-all duration-200 relative ${
                 billingCycle === "yearly"
-                  ? "bg-brand-500 text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                  ? "bg-brand-500 text-white shadow-md scale-105"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
               }`}
             >
               {t("premium.yearly")}
-              <span className="absolute -top-2 -right-2 bg-accent-500 text-white text-xs px-2 py-0.5 rounded-full">
+              <span className="absolute -top-2 -right-2 bg-accent-500 text-white text-xs px-2 py-0.5 rounded-full shadow-md transition-all duration-200 hover:scale-110 hover:shadow-lg animate-pulse">
                 {t("premium.save", { percent: savings })}
               </span>
             </button>
@@ -119,9 +119,9 @@ export const PricingPage: React.FC = () => {
         {/* 플랜 카드 */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* 무료 플랜 */}
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8">
+          <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-gray-300 dark:hover:border-gray-600">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
                 {t("premium.freePlan")}
               </h3>
               <div className="flex items-baseline justify-center">
@@ -135,8 +135,12 @@ export const PricingPage: React.FC = () => {
             </div>
             <ul className="space-y-4 mb-8">
               {freeFeatures.map((feature, index) => (
-                <li key={index} className="flex items-start space-x-3">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <li
+                  key={index}
+                  className="flex items-start space-x-3 transition-all duration-200 group-hover:translate-x-1"
+                  style={{ transitionDelay: `${index * 50}ms` }}
+                >
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110" />
                   <span className="text-gray-700 dark:text-gray-300">
                     {feature}
                   </span>
@@ -146,14 +150,14 @@ export const PricingPage: React.FC = () => {
             {plan === "free" ? (
               <button
                 disabled
-                className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl font-medium cursor-not-allowed"
+                className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all"
               >
                 {t("premium.currentPlan")}
               </button>
             ) : (
               <button
                 onClick={() => navigate("/subscription")}
-                className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium transition-all duration-200 hover:bg-gray-200 dark:hover:bg-gray-600 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0"
               >
                 {t("premium.downgrade")}
               </button>
@@ -161,25 +165,31 @@ export const PricingPage: React.FC = () => {
           </div>
 
           {/* 프리미엄 플랜 */}
-          <div className="bg-gradient-to-br from-brand-500 to-accent-500 rounded-2xl shadow-2xl border-2 border-brand-400 p-8 relative overflow-hidden">
+          <div className="group relative bg-brand-500 dark:bg-brand-600 rounded-2xl shadow-2xl border-2 border-brand-400 dark:border-brand-500 p-8 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-[1.02] hover:border-brand-300 dark:hover:border-brand-400">
             {/* 인기 배지 */}
             {isPremium && (
-              <div className="absolute top-4 right-4 bg-white text-brand-600 px-3 py-1 rounded-full text-xs font-semibold">
+              <div className="absolute top-4 right-4 bg-white text-brand-600 px-3 py-1 rounded-full text-xs font-semibold shadow-md animate-pulse">
                 {t("premium.currentPlan")}
               </div>
             )}
             {!isPremium && (
-              <div className="absolute top-4 right-4 bg-white text-brand-600 px-3 py-1 rounded-full text-xs font-semibold">
+              <div className="absolute top-4 right-4 bg-white text-brand-600 px-3 py-1 rounded-full text-xs font-semibold shadow-md animate-pulse">
                 {t("premium.popular")}
               </div>
             )}
 
-            <div className="text-center mb-8 text-white">
-              <h3 className="text-2xl font-bold mb-2">
+            {/* 배경 장식 */}
+            <div className="absolute inset-0 opacity-10">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-white rounded-full -mr-16 -mt-16"></div>
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-white rounded-full -ml-12 -mb-12"></div>
+            </div>
+
+            <div className="relative text-center mb-8 text-white">
+              <h3 className="text-2xl font-bold mb-2 transition-transform duration-300 group-hover:scale-105">
                 {t("premium.premiumPlan")}
               </h3>
               <div className="flex items-baseline justify-center">
-                <span className="text-4xl font-bold">
+                <span className="text-4xl font-bold transition-transform duration-300 group-hover:scale-110">
                   $
                   {billingCycle === "monthly"
                     ? monthlyPrice
@@ -193,25 +203,29 @@ export const PricingPage: React.FC = () => {
                 </p>
               )}
             </div>
-            <ul className="space-y-4 mb-8 text-white">
+            <ul className="relative space-y-4 mb-8 text-white">
               {premiumFeatures.map((feature, index) => (
-                <li key={index} className="flex items-start space-x-3">
-                  <Check className="w-5 h-5 text-white flex-shrink-0 mt-0.5" />
-                  <span>{feature}</span>
+                <li
+                  key={index}
+                  className="flex items-start space-x-3 transition-all duration-200 group-hover:translate-x-1"
+                  style={{ transitionDelay: `${index * 50}ms` }}
+                >
+                  <Check className="w-5 h-5 text-white flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
+                  <span className="transition-colors duration-200">{feature}</span>
                 </li>
               ))}
             </ul>
             {isPremium ? (
               <button
                 onClick={() => navigate("/subscription")}
-                className="w-full px-6 py-3 bg-white text-brand-600 rounded-xl font-medium hover:bg-gray-100 transition-all shadow-lg"
+                className="relative w-full px-6 py-3 bg-white text-brand-600 rounded-xl font-medium transition-all duration-200 shadow-lg hover:bg-gray-50 hover:shadow-xl hover:-translate-y-1 hover:scale-105 active:translate-y-0 active:scale-100"
               >
                 {t("premium.manageSubscription")}
               </button>
             ) : (
               <button
                 onClick={() => handleSubscribe("premium", billingCycle)}
-                className="w-full px-6 py-3 bg-white text-brand-600 rounded-xl font-medium hover:bg-gray-100 transition-all shadow-lg hover:shadow-xl"
+                className="relative w-full px-6 py-3 bg-white text-brand-600 rounded-xl font-medium transition-all duration-200 shadow-lg hover:bg-gray-50 hover:shadow-xl hover:-translate-y-1 hover:scale-105 active:translate-y-0 active:scale-100"
               >
                 {t("premium.upgradeNow")}
               </button>
@@ -225,24 +239,24 @@ export const PricingPage: React.FC = () => {
             {t("premium.faq")}
           </h2>
           <div className="space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-300 dark:hover:border-brand-600">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
                 {t("premium.faq1.question")}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 {t("premium.faq1.answer")}
               </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-300 dark:hover:border-brand-600">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
                 {t("premium.faq2.question")}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
                 {t("premium.faq2.answer")}
               </p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md border border-gray-200 dark:border-gray-700 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-brand-300 dark:hover:border-brand-600">
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2 transition-colors duration-200">
                 {t("premium.faq3.question")}
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
