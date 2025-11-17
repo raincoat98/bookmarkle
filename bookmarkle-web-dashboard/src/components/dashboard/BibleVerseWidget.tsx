@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { BookOpen } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import bibleVerses from "../../data/bibleVerses.json";
+import bibleVersesKo from "../../data/bibleVerses.json";
+import bibleVersesEn from "../../data/bibleVerses.en.json";
 
 interface BibleVerseEntry {
   verse: string;
@@ -49,10 +50,22 @@ const backgrounds = [
   "bg-gradient-to-r from-orange-900/90 via-red-900/90 to-rose-900/90",
 ];
 
-const bibleVersesData = bibleVerses as BibleVersesData;
-
 export const BibleVerseWidget: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  // 언어에 따라 적절한 성경 구절 데이터 선택
+  const bibleVersesData = useMemo(() => {
+    const lang = i18n.language.toLowerCase();
+    const isEnglishOrJapanese =
+      lang === "en" ||
+      lang.startsWith("en") ||
+      lang === "ja" ||
+      lang.startsWith("ja");
+    return (
+      isEnglishOrJapanese ? bibleVersesEn : bibleVersesKo
+    ) as BibleVersesData;
+  }, [i18n.language]);
+
   const [currentVerse, setCurrentVerse] = useState<BibleVerseEntry>(() => {
     const randomIndex = Math.floor(
       Math.random() * bibleVersesData.verses.length
@@ -114,11 +127,19 @@ export const BibleVerseWidget: React.FC = () => {
       Math.random() * bibleVersesData.verses.length
     );
     setCurrentVerse(bibleVersesData.verses[randomIndex]);
-  }, []);
+  }, [bibleVersesData]);
 
   const renderVerseWithBreaks = () => {
     const verse = currentVerse.verse;
-    const breakPatterns = [
+    const lang = i18n.language.toLowerCase();
+    const isEnglishOrJapanese =
+      lang === "en" ||
+      lang.startsWith("en") ||
+      lang === "ja" ||
+      lang.startsWith("ja");
+
+    // 한국어 구절 분리 패턴
+    const koreanBreakPatterns = [
       " 그리하면 ",
       " 그러므로 ",
       " 하지만 ",
@@ -126,6 +147,21 @@ export const BibleVerseWidget: React.FC = () => {
       " 왜냐하면 ",
       " 그리고 ",
     ];
+
+    // 영어 구절 분리 패턴
+    const englishBreakPatterns = [
+      " so that ",
+      " therefore ",
+      " but ",
+      " however ",
+      " because ",
+      " and ",
+      " for ",
+    ];
+
+    const breakPatterns = isEnglishOrJapanese
+      ? englishBreakPatterns
+      : koreanBreakPatterns;
 
     for (const pattern of breakPatterns) {
       if (verse.includes(pattern)) {
