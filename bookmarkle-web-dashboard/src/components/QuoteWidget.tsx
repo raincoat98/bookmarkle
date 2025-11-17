@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { BookOpen } from "lucide-react";
-import bibleVersesData from "../data/bibleVerses.json";
+import { useTranslation } from "react-i18next";
+import bibleVersesKo from "../data/bibleVerses.json";
+import bibleVersesEn from "../data/bibleVerses.en.json";
 
 interface BibleVerse {
   verse: string;
@@ -36,17 +38,29 @@ const gradientBackgrounds = [
 ];
 
 export const BibleVerseWidget: React.FC = () => {
+  const { i18n } = useTranslation();
   const [verse, setVerse] = useState<BibleVerse | null>(null);
   const [loading, setLoading] = useState(true);
   const [backgroundGradient, setBackgroundGradient] = useState<string>("");
   const [copied, setCopied] = useState(false);
+
+  // 언어에 따라 적절한 성경 구절 데이터 선택
+  const bibleVersesData = useMemo(() => {
+    const lang = i18n.language.toLowerCase();
+    const isEnglishOrJapanese = 
+      lang === "en" || 
+      lang.startsWith("en") || 
+      lang === "ja" || 
+      lang.startsWith("ja");
+    return (isEnglishOrJapanese ? bibleVersesEn : bibleVersesKo) as BibleData;
+  }, [i18n.language]);
 
   // 마운트 시에만 실행되는 랜덤 구절 선택 함수 (메모이제이션)
   const getRandomVerse = useCallback((): BibleVerse => {
     const data = bibleVersesData as BibleData;
     const index = Math.floor(Math.random() * data.verses.length);
     return data.verses[index];
-  }, []); // 빈 dependency로 마운트 시에만 생성
+  }, [bibleVersesData]); // bibleVersesData를 dependency로 추가
 
   // 마운트 시에만 실행되는 랜덤 배경 그라데이션 선택 함수 (메모이제이션)
   const getRandomGradient = useCallback((): string => {
@@ -113,7 +127,7 @@ export const BibleVerseWidget: React.FC = () => {
     setVerse(getRandomVerse());
     setBackgroundGradient(getRandomGradient());
     setLoading(false);
-  }, [getRandomVerse, getRandomGradient]); // 메모이제이션된 함수들을 dependency로 사용
+  }, [getRandomVerse, getRandomGradient, bibleVersesData]); // bibleVersesData도 dependency로 추가
 
   if (loading) {
     return (
