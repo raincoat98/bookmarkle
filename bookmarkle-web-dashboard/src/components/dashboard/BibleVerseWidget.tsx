@@ -220,7 +220,7 @@ export const BibleVerseWidget: React.FC = () => {
         boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
       }}
       whileTap={{ scale: 0.98 }}
-      className={`relative overflow-hidden rounded-2xl md:rounded-3xl ${backgrounds[backgroundIndex]} backdrop-blur-xl border border-white/20 shadow-2xl min-h-[280px] sm:min-h-[320px] md:min-h-[400px] flex items-center cursor-pointer`}
+      className={`relative overflow-hidden rounded-2xl md:rounded-3xl ${backgrounds[backgroundIndex]} backdrop-blur-xl border border-white/20 shadow-2xl min-h-[320px] sm:min-h-[360px] md:min-h-[400px] flex items-center cursor-pointer`}
       onClick={handleCopyVerse}
       title={copied ? t("dashboard.copied") : t("dashboard.clickToCopyVerse")}
       role="button"
@@ -367,7 +367,7 @@ export const BibleVerseWidget: React.FC = () => {
               transition={{ delay: 1.5, duration: 1 }}
             ></motion.div>
             <motion.div
-              className="text-sm sm:text-base md:text-xl lg:text-2xl xl:text-3xl font-light text-white leading-relaxed tracking-wide px-2 sm:px-3 md:px-4 relative"
+              className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-white leading-relaxed tracking-wide px-2 sm:px-3 md:px-4 relative"
               style={{
                 zIndex: 200,
                 textShadow:

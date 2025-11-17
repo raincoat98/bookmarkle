@@ -38,9 +38,9 @@ export const ClockWidget: React.FC = () => {
   });
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 sm:gap-4">
-      <div className="sm:col-span-2 card-glass p-3 sm:p-4 flex flex-col items-center justify-center text-center min-h-[120px] sm:min-h-[140px]">
-        <div className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text tracking-wider mb-1">
+    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 sm:gap-4">
+      <div className="sm:col-span-2 card-glass p-2 sm:p-4 flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[140px]">
+        <div className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text tracking-wider mb-0.5 sm:mb-1">
           {timeStr}
         </div>
         <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
