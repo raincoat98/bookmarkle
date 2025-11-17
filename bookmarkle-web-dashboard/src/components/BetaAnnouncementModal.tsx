@@ -10,11 +10,13 @@ import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
 interface BetaAnnouncementModalProps {
   isOpen: boolean;
   onClose: () => void;
+  forceShow?: boolean; // 수동으로 열 때 사용
 }
 
 export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
   isOpen,
   onClose,
+  forceShow = false,
 }) => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
@@ -51,12 +53,14 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
   };
 
   const handleClose = () => {
-    betaUtils.markModalShown();
+    if (!forceShow) {
+      betaUtils.markModalShown();
+    }
     onClose();
   };
 
-  // 베타 모달을 표시하지 않는 경우
-  if (!isOpen || !betaUtils.shouldShowModal()) return null;
+  // 베타 모달을 표시하지 않는 경우 (수동으로 열 때는 체크 우회)
+  if (!isOpen || (!forceShow && !betaUtils.shouldShowModal())) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
