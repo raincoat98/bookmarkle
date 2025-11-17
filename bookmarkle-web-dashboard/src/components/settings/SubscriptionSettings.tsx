@@ -50,33 +50,42 @@ export const SubscriptionSettings: React.FC = () => {
                 🚀 베타 기간 - 모든 기능 무료!
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                현재 베타 기간으로 모든 프리미엄 기능을 무료로 사용할 수 있습니다.
-                정식 오픈 후 일부 기능이 프리미엄으로 전환될 예정이며, 
-                베타 기간 중 가입한 얼리 유저는 기존 기능을 계속 무료로 이용하실 수 있습니다.
+                현재 베타 기간으로 모든 프리미엄 기능을 무료로 사용할 수
+                있습니다. 정식 오픈 후 일부 기능이 프리미엄으로 전환될 예정이며,
+                베타 기간 중 가입한 얼리 유저는 기존 기능을 계속 무료로 이용하실
+                수 있습니다.
               </p>
-              
+
               {/* 현재 사용량 */}
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>북마크</span>
-                    <span className="font-medium">{rawBookmarks?.length || 0}</span>
+                    <span className="text-gray-700 dark:text-gray-300">북마크</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {rawBookmarks?.length || 0}
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div className="bg-gradient-to-r from-brand-500 to-accent-500 h-2 rounded-full w-full"></div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">무제한 사용 가능</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    무제한 사용 가능
+                  </p>
                 </div>
-                
+
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>컬렉션</span>
-                    <span className="font-medium">{collections?.length || 0}</span>
+                    <span className="text-gray-700 dark:text-gray-300">컬렉션</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {collections?.length || 0}
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div className="bg-gradient-to-r from-brand-500 to-accent-500 h-2 rounded-full w-full"></div>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">무제한 사용 가능</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    무제한 사용 가능
+                  </p>
                 </div>
               </div>
             </div>
