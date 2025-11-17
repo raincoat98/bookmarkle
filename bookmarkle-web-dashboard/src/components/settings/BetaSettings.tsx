@@ -19,11 +19,13 @@ import {
 } from "../../utils/betaFlags";
 import { isEarlyUser } from "../../utils/earlyUser";
 import { BetaAnnouncementModal } from "../BetaAnnouncementModal";
+import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 
 export const BetaSettings: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
+  const navigate = useNavigate();
   const [userIsEarly, setUserIsEarly] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showBetaModal, setShowBetaModal] = useState(false);
@@ -54,7 +56,12 @@ export const BetaSettings: React.FC = () => {
     if (confirm(t("beta.settings.resetConfirm"))) {
       betaUtils.resetBetaSettings();
       alert(t("beta.settings.resetSuccess"));
-      window.location.reload();
+      // 대시보드로 이동하여 베타 배너와 모달이 다시 표시되도록 함
+      navigate("/dashboard");
+      // 페이지 리로드하여 로컬 스토리지 변경사항 반영
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     }
   };
 
