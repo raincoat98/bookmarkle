@@ -55,28 +55,28 @@ export function AdminUserList({
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
                 전체 사용자
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.length}
               </p>
             </div>
-            <UserIcon className="h-12 w-12 text-brand-500" />
+            <UserIcon className="h-8 w-8 md:h-12 md:w-12 text-brand-500 flex-shrink-0" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
                 프리미엄 사용자
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.filter(
                   (user) =>
                     user.subscription?.plan === "premium" &&
@@ -85,35 +85,35 @@ export function AdminUserList({
                 ).length}
               </p>
             </div>
-            <Crown className="h-12 w-12 text-yellow-500" />
+            <Crown className="h-8 w-8 md:h-12 md:w-12 text-yellow-500 flex-shrink-0" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
                 총 북마크
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.reduce((sum, user) => sum + user.bookmarkCount, 0)}
               </p>
             </div>
-            <Bookmark className="h-12 w-12 text-blue-500" />
+            <Bookmark className="h-8 w-8 md:h-12 md:w-12 text-blue-500 flex-shrink-0" />
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
                 총 컬렉션
               </p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.reduce((sum, user) => sum + user.collectionCount, 0)}
               </p>
             </div>
-            <Folder className="h-12 w-12 text-green-500" />
+            <Folder className="h-8 w-8 md:h-12 md:w-12 text-green-500 flex-shrink-0" />
           </div>
         </div>
       </div>
