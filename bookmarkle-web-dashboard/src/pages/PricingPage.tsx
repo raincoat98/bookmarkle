@@ -50,8 +50,8 @@ export const PricingPage: React.FC = () => {
     t("premium.features.shareBookmarks"),
   ];
 
-  const monthlyPrice = 3.99;
-  const yearlyPrice = 39.99;
+  const monthlyPrice = 4.99;
+  const yearlyPrice = 49.99;
   const yearlyMonthlyEquivalent = yearlyPrice / 12;
   const savings = Math.round(
     ((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100
@@ -211,7 +211,9 @@ export const PricingPage: React.FC = () => {
                   style={{ transitionDelay: `${index * 50}ms` }}
                 >
                   <Check className="w-5 h-5 text-white flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12" />
-                  <span className="transition-colors duration-200">{feature}</span>
+                  <span className="transition-colors duration-200">
+                    {feature}
+                  </span>
                 </li>
               ))}
             </ul>

@@ -149,7 +149,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
               <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20 rounded-xl p-4 border border-brand-200 dark:border-brand-800">
                 <div className="flex items-baseline justify-center space-x-2">
                   <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                    $3.99
+                    $4.99
                   </span>
                   <span className="text-gray-600 dark:text-gray-400">
                     / {t("premium.month")}
@@ -157,7 +157,7 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
                 </div>
                 <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
                   {t("premium.or")}{" "}
-                  <span className="font-semibold">$39.99</span> /{" "}
+                  <span className="font-semibold">$49.99</span> /{" "}
                   {t("premium.year")} ({t("premium.save17")})
                 </p>
               </div>
