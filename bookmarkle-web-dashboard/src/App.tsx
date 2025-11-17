@@ -10,6 +10,8 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ExtensionLoginSuccessPage } from "./pages/ExtensionLoginSuccessPage";
 import { NotificationCenterPage } from "./pages/NotificationCenterPage";
+import { PricingPage } from "./pages/PricingPage";
+import { SubscriptionPage } from "./pages/SubscriptionPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
@@ -25,6 +27,7 @@ import {
   useAuthStore,
   useBookmarkStore,
   useCollectionStore,
+  useSubscriptionStore,
   initializeTheme,
 } from "./stores";
 
@@ -32,6 +35,7 @@ function App() {
   const { user, loading, initializeAuth } = useAuthStore();
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
+  const { subscribeToSubscription } = useSubscriptionStore();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -45,6 +49,16 @@ function App() {
       unsubscribeTheme();
     };
   }, [initializeAuth]);
+
+  // 구독 정보 초기화
+  useEffect(() => {
+    if (user?.uid) {
+      const unsubscribeSubscription = subscribeToSubscription(user.uid);
+      return () => {
+        unsubscribeSubscription();
+      };
+    }
+  }, [user?.uid, subscribeToSubscription]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -153,6 +167,8 @@ function App() {
           <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/notifications" element={<NotificationCenterPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/subscription" element={<SubscriptionPage />} />
           <Route
             path="/admin"
             element={

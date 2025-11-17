@@ -5,7 +5,12 @@ import { EditBookmarkModal } from "../components/EditBookmarkModal";
 import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
 import { AddCollectionModal } from "../components/AddCollectionModal";
 import { EditCollectionModal } from "../components/EditCollectionModal";
-import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
+import {
+  useAuthStore,
+  useBookmarkStore,
+  useCollectionStore,
+  useSubscriptionStore,
+} from "../stores";
 import { DisabledUserMessage } from "../components/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";
 import type {
@@ -18,13 +23,23 @@ import toast from "react-hot-toast";
 import { Search, Grid3X3, List, Plus, FolderPlus } from "lucide-react";
 import { Drawer } from "../components/Drawer";
 import { useTranslation } from "react-i18next";
+import { UpgradeModal } from "../components/UpgradeModal";
+import {
+  checkBookmarkLimit,
+  checkCollectionLimit,
+} from "../utils/subscriptionLimits";
 
 export const BookmarksPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
+  const { plan, limits } = useSubscriptionStore();
   const { t } = useTranslation();
 
   // 상태 관리
   const [selectedCollection, setSelectedCollection] = useState("all");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<
+    "bookmark_limit" | "collection_limit" | "premium_feature"
+  >("bookmark_limit");
 
   // 정렬 상태 관리
   const [currentSort, setCurrentSort] = useState<SortOption>({
@@ -187,6 +202,14 @@ export const BookmarksPage: React.FC = () => {
       return;
     }
 
+    // 컬렉션 제한 체크
+    const collectionLimit = checkCollectionLimit(collections.length, plan);
+    if (!collectionLimit.allowed) {
+      setUpgradeReason("collection_limit");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       const collectionId = await addCollection(
         {
@@ -291,6 +314,14 @@ export const BookmarksPage: React.FC = () => {
 
   // 이벤트 핸들러들
   const handleAddBookmark = async (bookmarkData: BookmarkFormData) => {
+    // 북마크 제한 체크
+    const bookmarkLimit = checkBookmarkLimit(bookmarks.length, plan);
+    if (!bookmarkLimit.allowed) {
+      setUpgradeReason("bookmark_limit");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       console.log("BookmarksPage - 북마크 추가 시도:", bookmarkData);
 
@@ -836,6 +867,26 @@ export const BookmarksPage: React.FC = () => {
         }}
         onAdd={handleAddCollection}
         parentId={subCollectionParentId}
+      />
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason={upgradeReason}
+        currentCount={
+          upgradeReason === "bookmark_limit"
+            ? bookmarks.length
+            : upgradeReason === "collection_limit"
+            ? collections.length
+            : undefined
+        }
+        limit={
+          upgradeReason === "bookmark_limit"
+            ? limits.maxBookmarks
+            : upgradeReason === "collection_limit"
+            ? limits.maxCollections
+            : undefined
+        }
       />
     </Drawer>
   );

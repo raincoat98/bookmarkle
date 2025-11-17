@@ -29,7 +29,8 @@
     "apply": "적용",
     "optional": "선택사항",
     "adding": "추가 중...",
-    "updating": "수정 중..."
+    "updating": "수정 중...",
+    "processing": "처리 중..."
   },
   "auth": {
     "login": "로그인",
@@ -390,6 +391,83 @@
       "bookmarkUpdated": "북마크가 수정되었습니다",
       "bookmarkDeleted": "북마크가 삭제되었습니다",
       "systemUpdate": "시스템이 업데이트되었습니다"
+    }
+  },
+  "premium": {
+    "upgradeToPremium": "프리미엄으로 업그레이드",
+    "unlockAllFeatures": "모든 기능을 잠금 해제하세요",
+    "upgradeNow": "지금 업그레이드",
+    "maybeLater": "나중에",
+    "currentPlan": "현재 플랜",
+    "freePlan": "무료",
+    "premiumPlan": "프리미엄",
+    "active": "활성",
+    "free": "무료",
+    "month": "월",
+    "year": "년",
+    "monthly": "월간",
+    "yearly": "연간",
+    "or": "또는",
+    "save17": "17% 절약",
+    "popular": "인기",
+    "billedAs": "연간 결제 시",
+    "perYear": "연간",
+    "chooseYourPlan": "플랜을 선택하세요",
+    "pricingDescription": "필요에 맞는 플랜을 선택하고 북마크 관리를 더욱 효율적으로 만들어보세요",
+    "bookmarkLimitReached": "북마크 제한에 도달했습니다 ({{current}}/{{limit}})",
+    "collectionLimitReached": "컬렉션 제한에 도달했습니다 ({{current}}/{{limit}})",
+    "premiumFeatureRequired": "이 기능은 프리미엄 플랜에서만 사용할 수 있습니다",
+    "premiumFeatures": "프리미엄 기능",
+    "features": {
+      "unlimitedBookmarks": "무제한 북마크",
+      "unlimitedCollections": "무제한 컬렉션",
+      "advancedSearch": "고급 검색 (태그/도메인/기간)",
+      "dailyBackup": "자동 백업 (일 1회)",
+      "bookmarkStats": "북마크 통계 및 분석",
+      "exportData": "데이터 내보내기 (JSON/HTML/CSV)",
+      "customTheme": "커스텀 테마",
+      "restoreDeleted": "삭제된 북마크 복구",
+      "shareBookmarks": "북마크 공유 기능",
+      "free": {
+        "bookmarks": "북마크 {{count}}개",
+        "collections": "컬렉션 {{count}}개",
+        "basicSearch": "기본 검색",
+        "weeklyBackup": "기본 백업 (주 1회)",
+        "basicWidgets": "기본 위젯"
+      }
+    },
+    "bookmarks": "북마크",
+    "collections": "컬렉션",
+    "subscriptionManagement": "구독 관리",
+    "manageYourSubscription": "구독을 관리하고 설정을 변경하세요",
+    "activeSubscription": "활성 구독",
+    "freeAccount": "무료 계정",
+    "billingCycle": "결제 주기",
+    "renewsOn": "갱신일",
+    "cancelsOn": "취소일",
+    "currentUsage": "현재 사용량",
+    "cancelSubscription": "구독 취소",
+    "changePlan": "플랜 변경",
+    "cancellationScheduled": "취소 예정",
+    "cancellationMessage": "구독이 {{date}}에 종료됩니다",
+    "confirmCancel": "구독을 취소하시겠습니까?",
+    "cancelPending": "구독 취소가 처리 중입니다",
+    "cancelError": "구독 취소 중 오류가 발생했습니다",
+    "manageSubscription": "구독 관리",
+    "downgrade": "다운그레이드",
+    "stripeIntegrationPending": "Stripe 결제 연동이 준비 중입니다",
+    "faq": "자주 묻는 질문",
+    "faq1": {
+      "question": "무료 플랜에서 프리미엄으로 언제든지 업그레이드할 수 있나요?",
+      "answer": "네, 언제든지 업그레이드할 수 있습니다. 업그레이드 시 즉시 모든 프리미엄 기능을 사용할 수 있습니다."
+    },
+    "faq2": {
+      "question": "프리미엄 플랜을 취소하면 데이터가 삭제되나요?",
+      "answer": "아니요, 데이터는 그대로 유지됩니다. 다만 프리미엄 기능은 사용할 수 없게 되고 무료 플랜의 제한이 적용됩니다."
+    },
+    "faq3": {
+      "question": "연간 구독과 월간 구독의 차이는 무엇인가요?",
+      "answer": "연간 구독은 월간 구독 대비 17% 할인된 가격으로 제공되며, 연간 결제 시 추가 혜택을 받을 수 있습니다."
     }
   }
 }
