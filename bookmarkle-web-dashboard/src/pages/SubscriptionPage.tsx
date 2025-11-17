@@ -1,20 +1,61 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useSubscriptionStore } from "../stores";
+import {
+  useSubscriptionStore,
+  useBookmarkStore,
+  useCollectionStore,
+} from "../stores";
 import { Header } from "../components/Header";
 import { ArrowLeft, Check, Calendar, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import {
+  checkBookmarkLimit,
+  checkCollectionLimit,
+} from "../utils/subscriptionLimits";
 
 export const SubscriptionPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan, isPremium, subscription, limits } = useSubscriptionStore();
+  const { rawBookmarks } = useBookmarkStore();
+  const { collections } = useCollectionStore();
   const [isCanceling, setIsCanceling] = useState(false);
 
   const handleCancelSubscription = async () => {
-    if (!confirm(t("premium.confirmCancel"))) {
+    // 현재 북마크/컬렉션 개수 확인
+    const currentBookmarkCount = rawBookmarks.length;
+    const currentCollectionCount = collections.length;
+    const freeBookmarkLimit = 100;
+    const freeCollectionLimit = 10;
+
+    // 무료 플랜으로 다운그레이드 시 제한 초과 여부 확인
+    const bookmarkLimit = checkBookmarkLimit(currentBookmarkCount, "free");
+    const collectionLimit = checkCollectionLimit(
+      currentCollectionCount,
+      "free"
+    );
+
+    // 제한 초과 시 경고 메시지
+    let warningMessage = t("premium.confirmCancel");
+    if (!bookmarkLimit.allowed || !collectionLimit.allowed) {
+      warningMessage += "\n\n";
+      warningMessage += t("premium.cancelWarning");
+      if (!bookmarkLimit.allowed) {
+        warningMessage += `\n- ${t(
+          "premium.bookmarks"
+        )}: ${currentBookmarkCount}개 (제한: ${freeBookmarkLimit}개)`;
+      }
+      if (!collectionLimit.allowed) {
+        warningMessage += `\n- ${t(
+          "premium.collections"
+        )}: ${currentCollectionCount}개 (제한: ${freeCollectionLimit}개)`;
+      }
+      warningMessage += `\n\n${t("premium.cancelWarningNote")}`;
+    }
+
+    if (!confirm(warningMessage)) {
       return;
     }
 
@@ -28,6 +69,16 @@ export const SubscriptionPage: React.FC = () => {
       // 1. Stripe API로 구독 취소
       // 2. 웹훅으로 구독 상태 업데이트
       // 3. 사용자에게 확인 메시지 표시
+
+      // 제한 초과 시 추가 안내
+      if (!bookmarkLimit.allowed || !collectionLimit.allowed) {
+        setTimeout(() => {
+          toast(t("premium.cancelLimitExceeded"), {
+            duration: 6000,
+            icon: "⚠️",
+          });
+        }, 2000);
+      }
     } catch (error) {
       console.error("구독 취소 실패:", error);
       toast.error(t("premium.cancelError"));
@@ -143,20 +194,37 @@ export const SubscriptionPage: React.FC = () => {
                     {t("premium.bookmarks")}
                   </span>
                   <span className="text-gray-900 dark:text-white font-medium">
-                    {/* TODO: 실제 북마크 개수 가져오기 */}
                     {limits.maxBookmarks === Infinity
-                      ? "∞"
-                      : `0 / ${limits.maxBookmarks}`}
+                      ? `∞ (${rawBookmarks.length}개)`
+                      : `${rawBookmarks.length} / ${limits.maxBookmarks}`}
                   </span>
                 </div>
                 {limits.maxBookmarks !== Infinity && (
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
-                      className="bg-brand-500 h-2 rounded-full"
-                      style={{ width: "0%" }}
+                      className={`h-2 rounded-full ${
+                        rawBookmarks.length > limits.maxBookmarks
+                          ? "bg-red-500"
+                          : "bg-brand-500"
+                      }`}
+                      style={{
+                        width: `${Math.min(
+                          (rawBookmarks.length / limits.maxBookmarks) * 100,
+                          100
+                        )}%`,
+                      }}
                     />
                   </div>
                 )}
+                {limits.maxBookmarks !== Infinity &&
+                  rawBookmarks.length > limits.maxBookmarks && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {t("premium.limitExceeded", {
+                        current: rawBookmarks.length,
+                        limit: limits.maxBookmarks,
+                      })}
+                    </p>
+                  )}
               </div>
               <div>
                 <div className="flex justify-between text-sm mb-1">
@@ -165,18 +233,36 @@ export const SubscriptionPage: React.FC = () => {
                   </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {limits.maxCollections === Infinity
-                      ? "∞"
-                      : `0 / ${limits.maxCollections}`}
+                      ? `∞ (${collections.length}개)`
+                      : `${collections.length} / ${limits.maxCollections}`}
                   </span>
                 </div>
                 {limits.maxCollections !== Infinity && (
                   <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                     <div
-                      className="bg-brand-500 h-2 rounded-full"
-                      style={{ width: "0%" }}
+                      className={`h-2 rounded-full ${
+                        collections.length > limits.maxCollections
+                          ? "bg-red-500"
+                          : "bg-brand-500"
+                      }`}
+                      style={{
+                        width: `${Math.min(
+                          (collections.length / limits.maxCollections) * 100,
+                          100
+                        )}%`,
+                      }}
                     />
                   </div>
                 )}
+                {limits.maxCollections !== Infinity &&
+                  collections.length > limits.maxCollections && (
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {t("premium.limitExceeded", {
+                        current: collections.length,
+                        limit: limits.maxCollections,
+                      })}
+                    </p>
+                  )}
               </div>
             </div>
           </div>
