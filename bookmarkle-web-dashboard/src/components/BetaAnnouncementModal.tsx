@@ -72,7 +72,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
 
       {/* 모달 컨테이너 */}
       <div className="flex min-h-full items-center justify-center p-4">
-        <div className="relative w-full max-w-lg bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+        <div className="relative w-full max-w-2xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
           {/* 닫기 버튼 */}
           <button
             onClick={handleClose}
@@ -82,7 +82,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
           </button>
 
           {/* 헤더 */}
-          <div className="bg-gradient-to-r from-brand-500 to-accent-500 p-6 text-white">
+          <div className="bg-gradient-to-r from-brand-500 to-accent-500 p-6 text-white flex-shrink-0">
             <div className="flex items-center space-x-3">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
                 <Sparkles className="w-6 h-6" />
@@ -94,7 +94,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
           </div>
 
           {/* 내용 */}
-          <div className="p-6 space-y-4">
+          <div className="p-6 space-y-4 flex-1 overflow-y-auto">
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
               {t("beta.modal.currentBeta")}
             </p>
@@ -134,7 +134,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
           </div>
 
           {/* 버튼 */}
-          <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+          <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <button
               onClick={handleGetStarted}
               className="w-full px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"

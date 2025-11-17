@@ -280,7 +280,7 @@ export const BetaSettings: React.FC = () => {
       </div>
 
       {/* 베타 모달 */}
-      <BetaAnnouncementModal 
+      <BetaAnnouncementModal
         isOpen={showBetaModal}
         onClose={() => setShowBetaModal(false)}
         forceShow={true}
