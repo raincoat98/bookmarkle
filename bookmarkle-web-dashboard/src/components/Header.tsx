@@ -79,7 +79,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
   }, [isUserMenuOpen]);
 
   return (
-    <header className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-glass">
+    <header className="relative z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-glass">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* 왼쪽: 로고 및 메뉴 버튼 */}
@@ -175,7 +175,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
 
                 {/* 드롭다운 메뉴 */}
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[100]">
                     {/* 사용자 정보 */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -197,9 +197,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       }`}
                     >
                       <Crown className="w-4 h-4" />
-                      <span>
-                        {isPremium ? "프리미엄 구독" : "구독 관리"}
-                      </span>
+                      <span>{isPremium ? "프리미엄 구독" : "구독 관리"}</span>
                     </Link>
 
                     {/* 관리자 페이지 */}
