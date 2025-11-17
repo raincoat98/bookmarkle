@@ -2,8 +2,10 @@ import React from "react";
 import { Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useSubscriptionStore } from "../stores";
-import { isBetaPeriod } from "../utils/betaFlags";
+import { useSubscriptionStore, useAuthStore } from "../stores";
+import { isBetaPeriod, BETA_END_DATE } from "../utils/betaFlags";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase";
 
 interface UpgradeBannerProps {
   onDismiss?: () => void;
@@ -13,10 +15,42 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({ onDismiss }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan, isPremium } = useSubscriptionStore();
+  const { user } = useAuthStore();
   const [isDismissed, setIsDismissed] = React.useState(false);
+  const [isEarlyUser, setIsEarlyUser] = React.useState(false);
 
-  // 베타 기간 중이거나 프리미엄 사용자이면 표시하지 않음
-  if (isBetaPeriod() || isPremium || plan === "premium" || isDismissed)
+  // 얼리유저 확인
+  React.useEffect(() => {
+    if (user) {
+      checkEarlyUser();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const checkEarlyUser = async () => {
+    if (!user) return;
+    try {
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        const createdAt = userData.createdAt?.toDate();
+        if (createdAt && createdAt < BETA_END_DATE) {
+          setIsEarlyUser(true);
+        }
+      }
+    } catch (error) {
+      console.error("얼리유저 확인 실패:", error);
+    }
+  };
+
+  // 베타 기간 중이거나 프리미엄 사용자이거나 얼리유저이면 표시하지 않음
+  if (
+    isBetaPeriod() ||
+    isPremium ||
+    plan === "premium" ||
+    isDismissed ||
+    isEarlyUser
+  )
     return null;
 
   const handleDismiss = () => {

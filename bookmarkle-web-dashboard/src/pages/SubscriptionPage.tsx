@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,6 +14,7 @@ import {
   checkBookmarkLimit,
   checkCollectionLimit,
 } from "../utils/subscriptionLimits";
+import { isBetaPeriod } from "../utils/betaFlags";
 
 export const SubscriptionPage: React.FC = () => {
   const { t } = useTranslation();
@@ -22,6 +23,13 @@ export const SubscriptionPage: React.FC = () => {
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
   const [isCanceling, setIsCanceling] = useState(false);
+
+  // 베타 기간 중 접근 차단
+  useEffect(() => {
+    if (isBetaPeriod()) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const handleCancelSubscription = async () => {
     // 현재 북마크/컬렉션 개수 확인

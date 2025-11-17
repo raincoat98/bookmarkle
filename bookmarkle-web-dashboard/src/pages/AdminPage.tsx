@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Header } from "../components/Header";
 import { AdminUserManagement } from "../components/admin/AdminUserManagement";
 import { useAdminUsers } from "../hooks/useAdminUsers";
-import { BetaFeatureSettings } from "../components/settings/BetaFeatureSettings";
+import { SubscriptionFeatureSettings } from "../components/settings/SubscriptionFeatureSettings";
 import { ShieldCheck, Users, Settings } from "lucide-react";
 
 export function AdminPage() {
   const { users, loading, error, refetch, toggleUserStatus } = useAdminUsers();
-  const [activeTab, setActiveTab] = useState<"users" | "beta">("users");
+  const [activeTab, setActiveTab] = useState<"users" | "subscription">("users");
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -41,15 +41,15 @@ export function AdminPage() {
               <span>사용자 관리</span>
             </button>
             <button
-              onClick={() => setActiveTab("beta")}
+              onClick={() => setActiveTab("subscription")}
               className={`flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-t-lg transition-all duration-200 ${
-                activeTab === "beta"
+                activeTab === "subscription"
                   ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400 -mb-px"
                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
               }`}
             >
               <Settings className="w-4 h-4" />
-              <span>베타 기능 설정</span>
+              <span>구독 기능 설정</span>
             </button>
           </nav>
         </div>
@@ -66,9 +66,9 @@ export function AdminPage() {
             />
           )}
 
-          {activeTab === "beta" && (
+          {activeTab === "subscription" && (
             <div className="p-4 sm:p-6">
-              <BetaFeatureSettings />
+              <SubscriptionFeatureSettings />
             </div>
           )}
         </div>

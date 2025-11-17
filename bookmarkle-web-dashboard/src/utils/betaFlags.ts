@@ -8,95 +8,152 @@ export const BETA_END_DATE = new Date("2099-12-31"); // 베타 기간 미정, �
 
 // 환경 변수 기반 베타 플래그들
 export const BETA_FLAGS = {
-  // 베타 배너 표시 여부
-  SHOW_BETA_BANNER: import.meta.env.VITE_SHOW_BETA_BANNER !== "false",
+  // 베타 모드 여부 (true면 베타 모드, false면 정식 오픈)
+  IS_BETA: import.meta.env.VITE_IS_BETA === "true",
 
-  // 베타 공지 모달 표시 여부 (첫 로그인 시)
-  SHOW_BETA_MODAL: import.meta.env.VITE_SHOW_BETA_MODAL !== "false",
+  // 구독 알림 배너 표시 여부 (베타가 아닐 때만 적용, 정식 오픈 시 구독 안내)
+  SHOW_SUBSCRIPTION_BANNER:
+    import.meta.env.VITE_SHOW_SUBSCRIPTION_BANNER === "true",
 
-  // 얼리유저 혜택 표시 여부
+  // 구독 알림 모달 표시 여부 (베타가 아닐 때만 적용, 정식 오픈 시 구독 안내)
+  SHOW_SUBSCRIPTION_MODAL:
+    import.meta.env.VITE_SHOW_SUBSCRIPTION_MODAL === "true",
+
+  // 얼리유저 혜택 표시 여부 (베타가 아닐 때만 적용)
   SHOW_EARLY_USER_BENEFITS:
-    import.meta.env.VITE_SHOW_EARLY_USER_BENEFITS !== "false",
-
-  // 프리미엄 기능 Soft Lock 예고 표시 여부
-  SHOW_PREMIUM_PREVIEW: import.meta.env.VITE_SHOW_PREMIUM_PREVIEW !== "false",
-
-  // 설정에서 베타 정보 표시 여부
-  SHOW_BETA_SETTINGS: import.meta.env.VITE_SHOW_BETA_SETTINGS !== "false",
-
-  // 베타 피드백 기능 활성화 여부
-  ENABLE_BETA_FEEDBACK: import.meta.env.VITE_ENABLE_BETA_FEEDBACK !== "false",
+    import.meta.env.VITE_SHOW_EARLY_USER_BENEFITS === "true",
 } as const;
+
+// 디버깅: 환경 변수 값 확인
+if (typeof window !== "undefined") {
+  console.log("[BetaFlags] 환경 변수:", {
+    VITE_IS_BETA: import.meta.env.VITE_IS_BETA,
+    VITE_SHOW_SUBSCRIPTION_BANNER: import.meta.env
+      .VITE_SHOW_SUBSCRIPTION_BANNER,
+    VITE_SHOW_SUBSCRIPTION_MODAL: import.meta.env.VITE_SHOW_SUBSCRIPTION_MODAL,
+    VITE_SHOW_EARLY_USER_BENEFITS: import.meta.env
+      .VITE_SHOW_EARLY_USER_BENEFITS,
+  });
+  console.log("[BetaFlags] 플래그 값:", BETA_FLAGS);
+}
 
 // 로컬 스토리지 키들
 export const BETA_STORAGE_KEYS = {
-  BANNER_DISMISSED: "betaBannerDismissed",
-  MODAL_SHOWN: "betaModalShown",
+  SUBSCRIPTION_BANNER_DISMISSED: "subscriptionBannerDismissed",
+  SUBSCRIPTION_MODAL_SHOWN: "subscriptionModalShown",
+  BANNER_DISMISSED: "betaBannerDismissed", // 하위 호환성 유지
+  MODAL_SHOWN: "betaModalShown", // 하위 호환성 유지
   FEEDBACK_SENT: "betaFeedbackSent",
 } as const;
 
 // 베타 기능 상태 확인 함수들
 export const betaUtils = {
   /**
-   * 베타 배너를 표시할지 여부 확인
+   * 구독 알림 배너를 표시할지 여부 확인
+   * 베타 모드일 때는 항상 false 반환
+   * 베타가 아닐 때만 VITE_SHOW_SUBSCRIPTION_BANNER 플래그 적용
    */
   shouldShowBanner(): boolean {
-    if (!BETA_FLAGS.SHOW_BETA_BANNER) return false;
+    // 베타 모드면 구독 배너 숨김 (베타일 때는 이 플래그 무시)
+    if (BETA_FLAGS.IS_BETA) {
+      console.log("[BetaFlags] 배너 숨김: 베타 모드 활성화됨");
+      return false;
+    }
 
-    const dismissed = localStorage.getItem(BETA_STORAGE_KEYS.BANNER_DISMISSED);
-    return dismissed !== "true";
+    // 베타가 아닐 때만 플래그 체크
+    if (!BETA_FLAGS.SHOW_SUBSCRIPTION_BANNER) {
+      console.log(
+        "[BetaFlags] 배너 숨김: VITE_SHOW_SUBSCRIPTION_BANNER가 false"
+      );
+      return false;
+    }
+
+    const dismissed = localStorage.getItem(
+      BETA_STORAGE_KEYS.SUBSCRIPTION_BANNER_DISMISSED
+    );
+    const oldDismissed = localStorage.getItem(
+      BETA_STORAGE_KEYS.BANNER_DISMISSED
+    ); // 하위 호환성
+
+    const shouldShow = dismissed !== "true" && oldDismissed !== "true";
+    console.log("[BetaFlags] 배너 표시 여부:", {
+      IS_BETA: BETA_FLAGS.IS_BETA,
+      SHOW_SUBSCRIPTION_BANNER: BETA_FLAGS.SHOW_SUBSCRIPTION_BANNER,
+      dismissed,
+      oldDismissed,
+      shouldShow,
+    });
+
+    return shouldShow;
   },
 
   /**
-   * 베타 모달을 표시할지 여부 확인
+   * 구독 알림 모달을 표시할지 여부 확인
+   * 베타 모드일 때는 항상 false 반환
+   * 베타가 아닐 때만 VITE_SHOW_SUBSCRIPTION_MODAL 플래그 적용
    */
   shouldShowModal(): boolean {
-    if (!BETA_FLAGS.SHOW_BETA_MODAL) return false;
+    // 베타 모드면 구독 모달 숨김 (베타일 때는 이 플래그 무시)
+    if (BETA_FLAGS.IS_BETA) {
+      console.log("[BetaFlags] 모달 숨김: 베타 모드 활성화됨");
+      return false;
+    }
 
-    const shown = localStorage.getItem(BETA_STORAGE_KEYS.MODAL_SHOWN);
-    return shown !== "true";
+    // 베타가 아닐 때만 플래그 체크
+    if (!BETA_FLAGS.SHOW_SUBSCRIPTION_MODAL) {
+      console.log(
+        "[BetaFlags] 모달 숨김: VITE_SHOW_SUBSCRIPTION_MODAL이 false"
+      );
+      return false;
+    }
+
+    const shown = localStorage.getItem(
+      BETA_STORAGE_KEYS.SUBSCRIPTION_MODAL_SHOWN
+    );
+    const oldShown = localStorage.getItem(BETA_STORAGE_KEYS.MODAL_SHOWN); // 하위 호환성
+
+    const shouldShow = shown !== "true" && oldShown !== "true";
+    console.log("[BetaFlags] 모달 표시 여부:", {
+      IS_BETA: BETA_FLAGS.IS_BETA,
+      SHOW_SUBSCRIPTION_MODAL: BETA_FLAGS.SHOW_SUBSCRIPTION_MODAL,
+      shown,
+      oldShown,
+      shouldShow,
+    });
+
+    return shouldShow;
   },
 
   /**
-   * 베타 배너 닫기
+   * 구독 알림 배너 닫기
    */
   dismissBanner(): void {
-    localStorage.setItem(BETA_STORAGE_KEYS.BANNER_DISMISSED, "true");
+    localStorage.setItem(
+      BETA_STORAGE_KEYS.SUBSCRIPTION_BANNER_DISMISSED,
+      "true"
+    );
+    localStorage.setItem(BETA_STORAGE_KEYS.BANNER_DISMISSED, "true"); // 하위 호환성
   },
 
   /**
-   * 베타 모달 표시 완료 기록
+   * 구독 알림 모달 표시 완료 기록
    */
   markModalShown(): void {
-    localStorage.setItem(BETA_STORAGE_KEYS.MODAL_SHOWN, "true");
+    localStorage.setItem(BETA_STORAGE_KEYS.SUBSCRIPTION_MODAL_SHOWN, "true");
+    localStorage.setItem(BETA_STORAGE_KEYS.MODAL_SHOWN, "true"); // 하위 호환성
   },
 
   /**
    * 얼리유저 혜택 표시 여부 확인
+   * 베타 모드일 때는 항상 false 반환
+   * 베타가 아닐 때만 VITE_SHOW_EARLY_USER_BENEFITS 플래그 적용
    */
   shouldShowEarlyUserBenefits(): boolean {
+    // 베타 모드면 얼리유저 혜택 숨김 (베타일 때는 이 플래그 무시)
+    if (BETA_FLAGS.IS_BETA) return false;
+
+    // 베타가 아닐 때만 플래그 체크
     return BETA_FLAGS.SHOW_EARLY_USER_BENEFITS;
-  },
-
-  /**
-   * 프리미엄 미리보기 표시 여부 확인
-   */
-  shouldShowPremiumPreview(): boolean {
-    return BETA_FLAGS.SHOW_PREMIUM_PREVIEW;
-  },
-
-  /**
-   * 설정에서 베타 정보 표시 여부 확인
-   */
-  shouldShowBetaSettings(): boolean {
-    return BETA_FLAGS.SHOW_BETA_SETTINGS;
-  },
-
-  /**
-   * 베타 피드백 기능 활성화 여부 확인
-   */
-  isFeedbackEnabled(): boolean {
-    return BETA_FLAGS.ENABLE_BETA_FEEDBACK;
   },
 
   /**
@@ -116,8 +173,13 @@ export const betaUtils = {
       flags: BETA_FLAGS,
       storage: {
         bannerDismissed:
+          localStorage.getItem(
+            BETA_STORAGE_KEYS.SUBSCRIPTION_BANNER_DISMISSED
+          ) === "true" ||
           localStorage.getItem(BETA_STORAGE_KEYS.BANNER_DISMISSED) === "true",
         modalShown:
+          localStorage.getItem(BETA_STORAGE_KEYS.SUBSCRIPTION_MODAL_SHOWN) ===
+            "true" ||
           localStorage.getItem(BETA_STORAGE_KEYS.MODAL_SHOWN) === "true",
         feedbackSent:
           localStorage.getItem(BETA_STORAGE_KEYS.FEEDBACK_SENT) === "true",
@@ -127,8 +189,13 @@ export const betaUtils = {
   },
 };
 
-// 베타 기간 여부 확인
+// 베타 기간 여부 확인 (환경 변수 우선, 없으면 날짜 기반)
 export const isBetaPeriod = (): boolean => {
+  // 환경 변수가 설정되어 있으면 환경 변수 값 사용
+  if (import.meta.env.VITE_IS_BETA !== undefined) {
+    return import.meta.env.VITE_IS_BETA === "true";
+  }
+  // 환경 변수가 없으면 날짜 기반 체크
   return new Date() < BETA_END_DATE;
 };
 

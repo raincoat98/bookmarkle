@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BookmarksPage } from "./pages/BookmarksPage";
@@ -16,10 +17,9 @@ import { EarlyBirdPolicyPage } from "./pages/EarlyBirdPolicyPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
-import { BetaBanner } from "./components/BetaBanner";
-import { BetaAnnouncementModal } from "./components/BetaAnnouncementModal";
-import { betaUtils } from "./utils/betaFlags";
-import { isAdminUser } from "./firebase";
+import { SubscriptionBanner } from "./components/SubscriptionBanner";
+import { SubscriptionAnnouncementModal } from "./components/SubscriptionAnnouncementModal";
+import { betaUtils, isBetaPeriod } from "./utils/betaFlags";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
@@ -36,14 +36,101 @@ import {
   initializeTheme,
 } from "./stores";
 
+function AppContent() {
+  const { user } = useAuthStore();
+  const location = useLocation();
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
+  // 관리자 페이지인지 확인
+  const isAdminPage = location.pathname === "/admin";
+
+  // 구독 알림 모달 표시 (로그인된 사용자에게, 관리자 페이지 제외)
+  useEffect(() => {
+    if (user && !isAdminPage && betaUtils.shouldShowModal()) {
+      setShowSubscriptionModal(true);
+    }
+  }, [user, isAdminPage]);
+
+  // 로컬 스토리지 변경 감지 (구독 설정 초기화 시 모달 다시 표시)
+  useEffect(() => {
+    const checkSubscriptionModal = () => {
+      if (user && !isAdminPage && betaUtils.shouldShowModal()) {
+        setShowSubscriptionModal(true);
+      }
+    };
+
+    checkSubscriptionModal();
+    const interval = setInterval(checkSubscriptionModal, 500);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [user, isAdminPage]);
+
+  return (
+    <>
+      {/* 관리자 페이지가 아닐 때만 배너 표시 */}
+      {user && !isAdminPage && <SubscriptionBanner />}
+      {user && !isAdminPage && (
+        <SubscriptionAnnouncementModal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
+        />
+      )}
+      {!user ? (
+        <LoginScreen />
+      ) : (
+        <Routes>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/notifications" element={<NotificationCenterPage />} />
+          <Route
+            path="/pricing"
+            element={
+              isBetaPeriod() ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <PricingPage />
+              )
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              isBetaPeriod() ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <SubscriptionPage />
+              )
+            }
+          />
+          <Route path="/early-bird-policy" element={<EarlyBirdPolicyPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtected>
+                <AdminPage />
+              </AdminProtected>
+            }
+          />
+          <Route
+            path="/extension-login-success"
+            element={<ExtensionLoginSuccessPage />}
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      )}
+    </>
+  );
+}
+
 function App() {
   const { user, loading, initializeAuth } = useAuthStore();
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
   const { subscribeToSubscription } = useSubscriptionStore();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
-  const [showBetaModal, setShowBetaModal] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 인증 및 테마 초기화
@@ -74,50 +161,6 @@ function App() {
         .catch(() => setDefaultPage("dashboard"));
     }
   }, [user?.uid]);
-
-  // 관리자 여부 확인
-  useEffect(() => {
-    if (user) {
-      isAdminUser(user)
-        .then(setIsAdmin)
-        .catch(() => setIsAdmin(false));
-    } else {
-      setIsAdmin(false);
-    }
-  }, [user]);
-
-  // 베타 모달 표시 (로그인된 사용자에게, 관리자 제외)
-  useEffect(() => {
-    if (user && !isAdmin && betaUtils.shouldShowModal()) {
-      setShowBetaModal(true);
-    }
-  }, [user, isAdmin]);
-
-  // 로컬 스토리지 변경 감지 (베타 설정 초기화 시 모달 다시 표시)
-  useEffect(() => {
-    const handleStorageChange = () => {
-      if (user && !isAdmin && betaUtils.shouldShowModal()) {
-        setShowBetaModal(true);
-      }
-    };
-
-    // storage 이벤트는 다른 탭에서만 발생하므로 직접 체크
-    const checkBetaModal = () => {
-      if (user && !isAdmin && betaUtils.shouldShowModal()) {
-        setShowBetaModal(true);
-      }
-    };
-
-    // 초기 체크
-    checkBetaModal();
-
-    // 주기적으로 체크 (베타 설정 초기화 후 감지)
-    const interval = setInterval(checkBetaModal, 500);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [user, isAdmin]);
 
   // 자동 백업 체크
   useEffect(() => {
@@ -201,48 +244,18 @@ function App() {
   return (
     <Router>
       <ExtensionBridge />
-      {user && !isAdmin && <BetaBanner />}
-      {user && !isAdmin && (
-        <BetaAnnouncementModal
-          isOpen={showBetaModal}
-          onClose={() => setShowBetaModal(false)}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
+              replace
+            />
+          }
         />
-      )}
-      {!user ? (
-        <LoginScreen />
-      ) : (
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Navigate
-                to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
-                replace
-              />
-            }
-          />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/notifications" element={<NotificationCenterPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/subscription" element={<SubscriptionPage />} />
-          <Route path="/early-bird-policy" element={<EarlyBirdPolicyPage />} />
-          <Route
-            path="/admin"
-            element={
-              <AdminProtected>
-                <AdminPage />
-              </AdminProtected>
-            }
-          />
-          <Route
-            path="/extension-login-success"
-            element={<ExtensionLoginSuccessPage />}
-          />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      )}
+        <Route path="*" element={<AppContent />} />
+      </Routes>
       <Toaster
         position="top-right"
         toastOptions={{

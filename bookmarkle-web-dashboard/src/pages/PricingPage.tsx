@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSubscriptionStore } from "../stores";
 import { Header } from "../components/Header";
 import { Check, Sparkles, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
+import { isBetaPeriod } from "../utils/betaFlags";
 
 export const PricingPage: React.FC = () => {
   const { t } = useTranslation();
@@ -13,6 +14,13 @@ export const PricingPage: React.FC = () => {
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly"
   );
+
+  // 베타 모드일 때 접근 차단
+  useEffect(() => {
+    if (isBetaPeriod()) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [navigate]);
 
   const handleSubscribe = async (
     planType: "premium",
@@ -83,20 +91,17 @@ export const PricingPage: React.FC = () => {
           <span>{t("common.back")}</span>
         </Link>
 
-        {/* Soft Lock 예고 */}
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-8 max-w-3xl mx-auto">
+        {/* 정식 오픈 안내 */}
+        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-8 max-w-3xl mx-auto">
           <div className="flex items-start space-x-3">
-            <div className="text-yellow-600 dark:text-yellow-400 text-xl">
-              🔒
-            </div>
+            <div className="text-blue-600 dark:text-blue-400 text-xl">✨</div>
             <div>
-              <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1">
-                곧 프리미엄 플랜이 출시됩니다!
+              <p className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                프리미엄 플랜이 출시되었습니다!
               </p>
-              <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                현재 모든 기능은 무료이며, 정식 오픈 시 일부 고급 기능이
-                프리미엄으로 전환될 예정입니다. 지금 가입하신 분들은 기존 기능을
-                계속 무료로 사용하실 수 있습니다.
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                정식 오픈을 기념하여 특별한 가격으로 제공됩니다. 얼리유저는 기존
+                기능을 계속 무료로 사용하실 수 있습니다.
               </p>
             </div>
           </div>

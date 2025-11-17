@@ -16,7 +16,6 @@ import {
   Bell,
   Shield,
   Crown,
-  Sparkles,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -27,9 +26,8 @@ import { StatsSettings } from "./settings/StatsSettings";
 import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
-import { BetaSettings } from "./settings/BetaSettings";
 import { getUserDefaultPage } from "../firebase";
-import { betaUtils } from "../utils/betaFlags";
+import { betaUtils, isBetaPeriod } from "../utils/betaFlags";
 import { performBackup, shouldBackup } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
 
@@ -175,9 +173,9 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const tabs = [
     { id: "general", label: t("settings.general"), icon: SettingsIcon },
-    { id: "subscription", label: t("premium.subscription"), icon: Crown },
-    ...(betaUtils.shouldShowBetaSettings()
-      ? [{ id: "beta", label: t("beta.settings.title"), icon: Sparkles }]
+    // 베타 모드일 때는 구독 탭 숨김
+    ...(!isBetaPeriod()
+      ? [{ id: "subscription", label: t("premium.subscription"), icon: Crown }]
       : []),
     { id: "stats", label: t("admin.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },
@@ -200,8 +198,6 @@ export const Settings: React.FC<SettingsProps> = ({
         );
       case "subscription":
         return <SubscriptionSettings />;
-      case "beta":
-        return <BetaSettings />;
       case "stats":
         return (
           <StatsSettings bookmarks={rawBookmarks} collections={collections} />

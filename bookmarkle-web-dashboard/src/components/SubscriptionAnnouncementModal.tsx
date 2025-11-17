@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Sparkles, Gift } from "lucide-react";
+import { X, Crown, Gift } from "lucide-react";
 import { useAuthStore } from "../stores";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
@@ -7,17 +7,15 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
 
-interface BetaAnnouncementModalProps {
+interface SubscriptionAnnouncementModalProps {
   isOpen: boolean;
   onClose: () => void;
   forceShow?: boolean; // 수동으로 열 때 사용
 }
 
-export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
-  isOpen,
-  onClose,
-  forceShow = false,
-}) => {
+export const SubscriptionAnnouncementModal: React.FC<
+  SubscriptionAnnouncementModalProps
+> = ({ isOpen, onClose, forceShow = false }) => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
   const navigate = useNavigate();
@@ -46,10 +44,10 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isOpen]);
 
-  const handleGetStarted = () => {
+  const handleSubscribe = () => {
     betaUtils.markModalShown();
     onClose();
-    navigate("/dashboard");
+    navigate("/pricing");
   };
 
   const handleClose = () => {
@@ -59,7 +57,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
     onClose();
   };
 
-  // 베타 모달을 표시하지 않는 경우 (수동으로 열 때는 체크 우회)
+  // 구독 알림 모달을 표시하지 않는 경우 (수동으로 열 때는 체크 우회)
   if (!isOpen || (!forceShow && !betaUtils.shouldShowModal())) return null;
 
   return (
@@ -85,10 +83,14 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
           <div className="bg-gradient-to-r from-brand-500 to-accent-500 p-6 text-white flex-shrink-0">
             <div className="flex items-center space-x-3">
               <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Sparkles className="w-6 h-6" />
+                <Crown className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">{t("beta.modal.title")}</h2>
+                <h2 className="text-2xl font-bold">
+                  {t("subscription.modal.title", {
+                    defaultValue: "프리미엄 구독으로 업그레이드하세요!",
+                  })}
+                </h2>
               </div>
             </div>
           </div>
@@ -96,13 +98,16 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
           {/* 내용 */}
           <div className="p-6 space-y-4 flex-1 overflow-y-auto">
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("beta.modal.currentBeta")}
+              {t("subscription.modal.description", {
+                defaultValue:
+                  "Bookmarkle이 정식 오픈되었습니다! 프리미엄 구독으로 더 많은 기능을 이용하실 수 있습니다.",
+              })}
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("beta.modal.allFree")}
-            </p>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("beta.modal.premiumTransition")}
+              {t("subscription.modal.features", {
+                defaultValue:
+                  "프리미엄 구독으로 무제한 북마크, 고급 검색 기능, 커스텀 테마 등 다양한 기능을 이용하세요.",
+              })}
             </p>
             {betaUtils.shouldShowEarlyUserBenefits() && (
               <>
@@ -112,10 +117,16 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
                       <Gift className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1">
-                          {t("beta.modal.earlyUserBenefitApplied")}
+                          {t("subscription.modal.earlyUserBenefitApplied", {
+                            defaultValue:
+                              "얼리유저 특별 혜택이 적용되었습니다!",
+                          })}
                         </p>
                         <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                          {t("beta.modal.earlyUserBenefitDesc")}
+                          {t("subscription.modal.earlyUserBenefitDesc", {
+                            defaultValue:
+                              "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
+                          })}
                         </p>
                       </div>
                     </div>
@@ -123,23 +134,29 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
                 )}
                 {!isEarlyUser && (
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {t("beta.modal.earlyUserBenefitDesc")}
+                    {t("subscription.modal.earlyUserBenefitDesc", {
+                      defaultValue:
+                        "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
+                    })}
                   </p>
                 )}
               </>
             )}
             <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
-              {t("beta.modal.betterService")}
+              {t("subscription.modal.betterService", {
+                defaultValue:
+                  "더 나은 서비스를 제공하기 위해 계속 노력하겠습니다.",
+              })}
             </p>
           </div>
 
           {/* 버튼 */}
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
             <button
-              onClick={handleGetStarted}
+              onClick={handleSubscribe}
               className="w-full px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
             >
-              {t("beta.modal.getStarted")}
+              {t("subscription.modal.subscribe", { defaultValue: "구독하기" })}
             </button>
           </div>
         </div>

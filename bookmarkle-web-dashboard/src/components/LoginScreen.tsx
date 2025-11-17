@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
 import { BrowserCompatibilityWarning } from "./BrowserCompatibilityWarning";
-import { BetaAnnouncementModal } from "./BetaAnnouncementModal";
+import { SubscriptionAnnouncementModal } from "./SubscriptionAnnouncementModal";
 import { isAdminUser } from "../firebase";
 import {
   detectBrowser,
@@ -15,7 +15,7 @@ export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showBetaModal, setShowBetaModal] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,13 +41,16 @@ export const LoginScreen = () => {
     }
   }, [user]);
 
-  // 최초 로그인 시 베타 공지 모달 표시 (관리자 제외)
+  // 최초 로그인 시 구독 알림 모달 표시 (관리자 제외)
   useEffect(() => {
     if (user && !isAdmin) {
-      const hasSeenBetaModal = localStorage.getItem("hasSeenBetaModal");
-      if (!hasSeenBetaModal) {
-        setShowBetaModal(true);
-        localStorage.setItem("hasSeenBetaModal", "true");
+      const hasSeenSubscriptionModal = localStorage.getItem(
+        "hasSeenSubscriptionModal"
+      );
+      const hasSeenBetaModal = localStorage.getItem("hasSeenBetaModal"); // 하위 호환성
+      if (!hasSeenSubscriptionModal && !hasSeenBetaModal) {
+        setShowSubscriptionModal(true);
+        localStorage.setItem("hasSeenSubscriptionModal", "true");
       }
     }
   }, [user, isAdmin]);
@@ -366,9 +369,9 @@ export const LoginScreen = () => {
         </div>
       </div>
       {!isAdmin && (
-        <BetaAnnouncementModal
-          isOpen={showBetaModal}
-          onClose={() => setShowBetaModal(false)}
+        <SubscriptionAnnouncementModal
+          isOpen={showSubscriptionModal}
+          onClose={() => setShowSubscriptionModal(false)}
         />
       )}
     </div>
