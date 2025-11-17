@@ -186,12 +186,9 @@ export const betaUtils = {
   },
 };
 
-// 베타 기간 여부 확인 (환경 변수 우선, 없으면 날짜 기반)
+// 베타 기간 여부 확인 (환경 변수 우선, 없으면 false)
 export const isBetaPeriod = (): boolean => {
-  // 환경 변수가 설정되어 있으면 환경 변수 값 사용
-  if (import.meta.env.VITE_IS_BETA !== undefined) {
-    return import.meta.env.VITE_IS_BETA === "true";
-  }
-  // 환경 변수가 없으면 날짜 기반 체크
-  return new Date() < BETA_END_DATE;
+  // 명시적으로 "true"일 때만 베타 모드
+  // null, undefined, "false" 등은 모두 false로 처리
+  return import.meta.env.VITE_IS_BETA === "true";
 };
