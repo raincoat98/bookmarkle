@@ -27,7 +27,6 @@ export const SubscriptionSettings: React.FC = () => {
     t("premium.features.unlimitedBookmarks"),
     t("premium.features.unlimitedCollections"),
     t("premium.features.advancedSearch"),
-    t("premium.features.dailyBackup"),
     t("premium.features.bookmarkStats"),
     t("premium.features.exportData"),
     t("premium.features.customTheme"),

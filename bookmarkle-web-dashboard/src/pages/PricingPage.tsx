@@ -42,7 +42,6 @@ export const PricingPage: React.FC = () => {
   const premiumFeatures = [
     "북마크 무제한",
     "컬렉션 무제한",
-    "자동 백업(일 1회)",
     "고급 검색(태그, 날짜, 도메인)",
     "북마크 통계",
     "삭제 북마크 복구",
