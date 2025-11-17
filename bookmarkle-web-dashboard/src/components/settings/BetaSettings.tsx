@@ -64,8 +64,7 @@ export const BetaSettings: React.FC = () => {
   };
 
   const handleFeedback = () => {
-    // 피드백 제출 로직 (추후 구현)
-    window.open("https://github.com/your-repo/issues", "_blank");
+    window.open("https://github.com/raincoat98/bookmarkle/issues/new", "_blank");
   };
 
   if (!betaUtils.shouldShowBetaSettings()) {
