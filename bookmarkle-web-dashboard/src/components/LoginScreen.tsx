@@ -5,6 +5,7 @@ import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
 import { BrowserCompatibilityWarning } from "./BrowserCompatibilityWarning";
 import { BetaAnnouncementModal } from "./BetaAnnouncementModal";
+import { isAdminUser } from "../firebase";
 import {
   detectBrowser,
   getBrowserCompatibilityMessage,
@@ -15,6 +16,7 @@ export const LoginScreen = () => {
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showBetaModal, setShowBetaModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -28,16 +30,27 @@ export const LoginScreen = () => {
     }
   }, [user, navigate, location.search]);
 
-  // 최초 로그인 시 베타 공지 모달 표시
+  // 관리자 여부 확인
   useEffect(() => {
     if (user) {
+      isAdminUser(user)
+        .then(setIsAdmin)
+        .catch(() => setIsAdmin(false));
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
+
+  // 최초 로그인 시 베타 공지 모달 표시 (관리자 제외)
+  useEffect(() => {
+    if (user && !isAdmin) {
       const hasSeenBetaModal = localStorage.getItem("hasSeenBetaModal");
       if (!hasSeenBetaModal) {
         setShowBetaModal(true);
         localStorage.setItem("hasSeenBetaModal", "true");
       }
     }
-  }, [user]);
+  }, [user, isAdmin]);
 
   // 폼 데이터
   const [formData, setFormData] = useState({
@@ -352,10 +365,12 @@ export const LoginScreen = () => {
           </div>
         </div>
       </div>
-      <BetaAnnouncementModal
-        isOpen={showBetaModal}
-        onClose={() => setShowBetaModal(false)}
-      />
+      {!isAdmin && (
+        <BetaAnnouncementModal
+          isOpen={showBetaModal}
+          onClose={() => setShowBetaModal(false)}
+        />
+      )}
     </div>
   );
 };

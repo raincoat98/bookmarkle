@@ -4,12 +4,9 @@ import {
   Sparkles,
   Gift,
   Calendar,
-  Settings as SettingsIcon,
   Info,
-  RotateCcw,
   MessageSquare,
   ExternalLink,
-  Eye,
 } from "lucide-react";
 import { useAuthStore } from "../../stores";
 import {
@@ -18,17 +15,13 @@ import {
   getDaysUntilLaunch,
 } from "../../utils/betaFlags";
 import { isEarlyUser } from "../../utils/earlyUser";
-import { BetaAnnouncementModal } from "../BetaAnnouncementModal";
-import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useCallback } from "react";
 
 export const BetaSettings: React.FC = () => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const navigate = useNavigate();
   const [userIsEarly, setUserIsEarly] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showBetaModal, setShowBetaModal] = useState(false);
 
   const checkUserStatus = useCallback(async () => {
     if (!user) return;
@@ -51,17 +44,6 @@ export const BetaSettings: React.FC = () => {
 
   const betaStatus = betaUtils.getBetaStatus();
   const daysUntilLaunch = getDaysUntilLaunch();
-
-  const handleResetBetaSettings = () => {
-    if (confirm(t("beta.settings.resetConfirm"))) {
-      betaUtils.resetBetaSettings();
-      alert(t("beta.settings.resetSuccess"));
-      // 대시보드로 이동하여 베타 배너와 모달이 다시 표시되도록 함
-      navigate("/dashboard");
-      // 로컬 스토리지 변경 이벤트 발생시켜 App.tsx에서 감지하도록 함
-      window.dispatchEvent(new Event("storage"));
-    }
-  };
 
   const handleFeedback = () => {
     window.open("https://github.com/raincoat98/bookmarkle/issues/new", "_blank");
@@ -172,74 +154,6 @@ export const BetaSettings: React.FC = () => {
         </div>
       )}
 
-      {/* 베타 기능 설정 */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center space-x-3 mb-4">
-          <SettingsIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          <h4 className="font-semibold text-gray-900 dark:text-white">
-            {t("beta.settings.betaFeatureSettings")}
-          </h4>
-        </div>
-
-        <div className="space-y-4">
-          {/* 현재 상태 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">
-                {t("beta.settings.betaBanner")}
-              </span>
-              <span
-                className={`font-medium ${
-                  betaStatus.storage.bannerDismissed
-                    ? "text-gray-500"
-                    : "text-green-600 dark:text-green-400"
-                }`}
-              >
-                {betaStatus.storage.bannerDismissed
-                  ? t("beta.settings.hidden")
-                  : t("beta.settings.showing")}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600 dark:text-gray-400">
-                {t("beta.settings.betaModal")}
-              </span>
-              <span
-                className={`font-medium ${
-                  betaStatus.storage.modalShown
-                    ? "text-gray-500"
-                    : "text-green-600 dark:text-green-400"
-                }`}
-              >
-                {betaStatus.storage.modalShown
-                  ? t("beta.settings.showCompleted")
-                  : t("beta.settings.waiting")}
-              </span>
-            </div>
-          </div>
-
-          {/* 베타 모달 보기 및 설정 초기화 버튼 */}
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
-            <button
-              onClick={() => setShowBetaModal(true)}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-            >
-              <Eye className="w-4 h-4" />
-              <span>{t("beta.settings.showBetaModal")}</span>
-            </button>
-            <button
-              onClick={handleResetBetaSettings}
-              className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>{t("beta.settings.resetSettings")}</span>
-            </button>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-              {t("beta.settings.resetDescription")}
-            </p>
-          </div>
-        </div>
-      </div>
 
       {/* 피드백 섹션 */}
       {betaUtils.isFeedbackEnabled() && (
@@ -282,13 +196,6 @@ export const BetaSettings: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* 베타 모달 */}
-      <BetaAnnouncementModal
-        isOpen={showBetaModal}
-        onClose={() => setShowBetaModal(false)}
-        forceShow={true}
-      />
     </div>
   );
 };

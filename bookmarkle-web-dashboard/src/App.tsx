@@ -19,6 +19,7 @@ import ExtensionBridge from "./components/ExtensionBridge";
 import { BetaBanner } from "./components/BetaBanner";
 import { BetaAnnouncementModal } from "./components/BetaAnnouncementModal";
 import { betaUtils } from "./utils/betaFlags";
+import { isAdminUser } from "./firebase";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
@@ -42,6 +43,7 @@ function App() {
   const { subscribeToSubscription } = useSubscriptionStore();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
   const [showBetaModal, setShowBetaModal] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 인증 및 테마 초기화
@@ -73,24 +75,35 @@ function App() {
     }
   }, [user?.uid]);
 
-  // 베타 모달 표시 (로그인된 사용자에게)
+  // 관리자 여부 확인
   useEffect(() => {
-    if (user && betaUtils.shouldShowModal()) {
-      setShowBetaModal(true);
+    if (user) {
+      isAdminUser(user)
+        .then(setIsAdmin)
+        .catch(() => setIsAdmin(false));
+    } else {
+      setIsAdmin(false);
     }
   }, [user]);
+
+  // 베타 모달 표시 (로그인된 사용자에게, 관리자 제외)
+  useEffect(() => {
+    if (user && !isAdmin && betaUtils.shouldShowModal()) {
+      setShowBetaModal(true);
+    }
+  }, [user, isAdmin]);
 
   // 로컬 스토리지 변경 감지 (베타 설정 초기화 시 모달 다시 표시)
   useEffect(() => {
     const handleStorageChange = () => {
-      if (user && betaUtils.shouldShowModal()) {
+      if (user && !isAdmin && betaUtils.shouldShowModal()) {
         setShowBetaModal(true);
       }
     };
 
     // storage 이벤트는 다른 탭에서만 발생하므로 직접 체크
     const checkBetaModal = () => {
-      if (user && betaUtils.shouldShowModal()) {
+      if (user && !isAdmin && betaUtils.shouldShowModal()) {
         setShowBetaModal(true);
       }
     };
@@ -104,7 +117,7 @@ function App() {
     return () => {
       clearInterval(interval);
     };
-  }, [user]);
+  }, [user, isAdmin]);
 
   // 자동 백업 체크
   useEffect(() => {
@@ -188,8 +201,8 @@ function App() {
   return (
     <Router>
       <ExtensionBridge />
-      {user && <BetaBanner />}
-      {user && (
+      {user && !isAdmin && <BetaBanner />}
+      {user && !isAdmin && (
         <BetaAnnouncementModal
           isOpen={showBetaModal}
           onClose={() => setShowBetaModal(false)}

@@ -20,6 +20,7 @@ import {
 import { isAdminUser } from "../firebase";
 import { useState, useEffect, useRef } from "react";
 import { NotificationCenter } from "./NotificationCenter";
+import { isBetaPeriod } from "../utils/betaFlags";
 
 interface HeaderProps {
   showMenuButton?: boolean;
@@ -112,8 +113,8 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
             {/* 알림 센터 */}
             {user && <NotificationCenter />}
 
-            {/* 구독 관리 링크 - 모바일에서 숨김 */}
-            {user && (
+            {/* 구독 관리 링크 - 모바일에서 숨김, 베타 기간 중 숨김 */}
+            {user && !isBetaPeriod() && (
               <Link
                 to="/subscription"
                 className={`hidden sm:flex relative p-2 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm ${
@@ -186,19 +187,21 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       </p>
                     </div>
 
-                    {/* 구독 관리 - 모바일 전용 */}
-                    <Link
-                      to="/subscription"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className={`flex items-center space-x-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                        isPremium
-                          ? "text-yellow-600 dark:text-yellow-400"
-                          : "text-gray-700 dark:text-gray-300"
-                      }`}
-                    >
-                      <Crown className="w-4 h-4" />
-                      <span>{isPremium ? "프리미엄 구독" : "구독 관리"}</span>
-                    </Link>
+                    {/* 구독 관리 - 모바일 전용, 베타 기간 중 숨김 */}
+                    {!isBetaPeriod() && (
+                      <Link
+                        to="/subscription"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className={`flex items-center space-x-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                          isPremium
+                            ? "text-yellow-600 dark:text-yellow-400"
+                            : "text-gray-700 dark:text-gray-300"
+                        }`}
+                      >
+                        <Crown className="w-4 h-4" />
+                        <span>{isPremium ? "프리미엄 구독" : "구독 관리"}</span>
+                      </Link>
+                    )}
 
                     {/* 관리자 페이지 */}
                     {isAdmin && (
