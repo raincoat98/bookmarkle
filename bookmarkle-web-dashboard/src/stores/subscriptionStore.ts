@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Subscription, SubscriptionPlan, UserLimits } from "../types";
-import { getUserLimits } from "../utils/subscriptionLimits";
+import { getUserLimits, getUserLimitsSync } from "../utils/subscriptionLimits";
 
 interface SubscriptionState {
   subscription: Subscription | null;
@@ -13,7 +13,10 @@ interface SubscriptionState {
 }
 
 interface SubscriptionActions {
-  setSubscription: (subscription: Subscription | null) => void;
+  setSubscription: (
+    subscription: Subscription | null,
+    userId?: string
+  ) => Promise<void>;
   setLoading: (loading: boolean) => void;
   fetchSubscription: (userId: string) => Promise<void>;
   subscribeToSubscription: (userId: string) => () => void;
@@ -29,14 +32,14 @@ export const useSubscriptionStore = create<
   // State
   subscription: null,
   loading: true,
-  limits: getUserLimits("free"),
+  limits: getUserLimitsSync("free"),
   plan: "free",
   isPremium: false,
 
   // Actions
-  setSubscription: (subscription) => {
+  setSubscription: async (subscription, userId) => {
     const plan = subscription?.plan || "free";
-    const limits = getUserLimits(plan);
+    const limits = await getUserLimits(plan, userId);
     const isPremium = plan === "premium" && get().checkSubscriptionStatus();
 
     set({
@@ -72,17 +75,17 @@ export const useSubscriptionStore = create<
             trialEndDate: subscriptionData.trialEndDate?.toDate(),
           };
 
-          get().setSubscription(subscription);
+          await get().setSubscription(subscription, userId);
         } else {
           // 구독 정보가 없으면 무료 플랜으로 설정
-          get().setSubscription(null);
+          await get().setSubscription(null, userId);
         }
       } else {
-        get().setSubscription(null);
+        await get().setSubscription(null, userId);
       }
     } catch (error) {
       console.error("구독 정보 가져오기 실패:", error);
-      get().setSubscription(null);
+      await get().setSubscription(null, userId);
     } finally {
       set({ loading: false });
     }
@@ -92,7 +95,7 @@ export const useSubscriptionStore = create<
   subscribeToSubscription: (userId: string) => {
     const unsubscribe = onSnapshot(
       doc(db, "users", userId),
-      (docSnapshot) => {
+      async (docSnapshot) => {
         if (docSnapshot.exists()) {
           const userData = docSnapshot.data();
           const subscriptionData = userData.subscription;
@@ -110,12 +113,12 @@ export const useSubscriptionStore = create<
               trialEndDate: subscriptionData.trialEndDate?.toDate(),
             };
 
-            get().setSubscription(subscription);
+            await get().setSubscription(subscription, userId);
           } else {
-            get().setSubscription(null);
+            await get().setSubscription(null, userId);
           }
         } else {
-          get().setSubscription(null);
+          await get().setSubscription(null, userId);
         }
       },
       (error) => {

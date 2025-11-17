@@ -1,4 +1,5 @@
 import type { SubscriptionPlan, UserLimits } from "../types";
+import { EARLY_USER_LIMITS, isEarlyUser } from "./earlyUser";
 
 /**
  * 플랜별 제한 설정
@@ -30,8 +31,27 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, UserLimits> = {
 
 /**
  * 사용자의 현재 플랜에 따른 제한 반환
+ * @param plan 구독 플랜
+ * @param userId 사용자 ID (얼리유저 확인용, 선택적)
  */
-export function getUserLimits(plan: SubscriptionPlan = "free"): UserLimits {
+export async function getUserLimits(
+  plan: SubscriptionPlan = "free",
+  userId?: string
+): Promise<UserLimits> {
+  // 얼리유저는 영구 무료 혜택 (프리미엄과 동일한 제한)
+  if (userId) {
+    const earlyUser = await isEarlyUser(userId);
+    if (earlyUser) {
+      return EARLY_USER_LIMITS;
+    }
+  }
+  return PLAN_LIMITS[plan];
+}
+
+/**
+ * 동기 버전 (얼리유저 확인 없이)
+ */
+export function getUserLimitsSync(plan: SubscriptionPlan = "free"): UserLimits {
   return PLAN_LIMITS[plan];
 }
 
@@ -42,7 +62,7 @@ export function checkBookmarkLimit(
   currentCount: number,
   plan: SubscriptionPlan = "free"
 ): { allowed: boolean; limit: number; remaining: number } {
-  const limits = getUserLimits(plan);
+  const limits = getUserLimitsSync(plan);
   const limit = limits.maxBookmarks;
   const remaining = limit === Infinity ? Infinity : limit - currentCount;
 
@@ -60,7 +80,7 @@ export function checkCollectionLimit(
   currentCount: number,
   plan: SubscriptionPlan = "free"
 ): { allowed: boolean; limit: number; remaining: number } {
-  const limits = getUserLimits(plan);
+  const limits = getUserLimitsSync(plan);
   const limit = limits.maxCollections;
   const remaining = limit === Infinity ? Infinity : limit - currentCount;
 
@@ -81,6 +101,6 @@ export function canUsePremiumFeature(
   >,
   plan: SubscriptionPlan = "free"
 ): boolean {
-  const limits = getUserLimits(plan);
+  const limits = getUserLimitsSync(plan);
   return limits[feature] === true;
 }

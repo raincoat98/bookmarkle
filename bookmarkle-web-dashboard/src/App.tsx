@@ -15,6 +15,7 @@ import { SubscriptionPage } from "./pages/SubscriptionPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
+import { BetaBanner } from "./components/BetaBanner";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
@@ -150,6 +151,7 @@ function App() {
   return (
     <Router>
       <ExtensionBridge />
+      {user && <BetaBanner />}
       {!user ? (
         <LoginScreen />
       ) : (
