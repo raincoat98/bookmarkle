@@ -8,6 +8,7 @@ import {
   Calendar,
   UserX,
   UserCheck,
+  Crown,
 } from "lucide-react";
 
 interface AdminUserListProps {
@@ -54,7 +55,7 @@ export function AdminUserList({
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -66,6 +67,25 @@ export function AdminUserList({
               </p>
             </div>
             <UserIcon className="h-12 w-12 text-brand-500" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                프리미엄 사용자
+              </p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {users.filter(
+                  (user) =>
+                    user.subscription?.plan === "premium" &&
+                    (user.subscription?.status === "active" ||
+                      user.subscription?.status === "trialing")
+                ).length}
+              </p>
+            </div>
+            <Crown className="h-12 w-12 text-yellow-500" />
           </div>
         </div>
 
@@ -117,6 +137,9 @@ export function AdminUserList({
                   컬렉션
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  구독
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   가입일
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -131,7 +154,7 @@ export function AdminUserList({
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={8}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     {searchTerm
@@ -176,6 +199,28 @@ export function AdminUserList({
                         <Folder className="h-4 w-4 mr-1 text-green-500" />
                         {user.collectionCount}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.subscription &&
+                      user.subscription.plan === "premium" &&
+                      (user.subscription.status === "active" ||
+                        user.subscription.status === "trialing") ? (
+                        <div className="flex items-center space-x-2">
+                          <Crown className="h-4 w-4 text-yellow-500" />
+                          <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
+                            프리미엄
+                          </span>
+                          {user.subscription.billingCycle === "yearly" && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              (연간)
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          무료
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
@@ -310,6 +355,38 @@ export function AdminUserList({
                   <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
                     {selectedUser.collectionCount}
                   </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  구독 상태
+                </label>
+                <div className="mt-1 flex items-center space-x-2">
+                  {selectedUser.subscription &&
+                  selectedUser.subscription.plan === "premium" &&
+                  (selectedUser.subscription.status === "active" ||
+                    selectedUser.subscription.status === "trialing") ? (
+                    <>
+                      <Crown className="h-5 w-5 text-yellow-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
+                          프리미엄
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          {selectedUser.subscription.billingCycle === "monthly"
+                            ? "월간 구독"
+                            : "연간 구독"}
+                          {selectedUser.subscription.endDate &&
+                            ` · 만료일: ${selectedUser.subscription.endDate.toLocaleDateString("ko-KR")}`}
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      무료
+                    </span>
+                  )}
                 </div>
               </div>
 

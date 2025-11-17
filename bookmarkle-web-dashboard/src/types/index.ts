@@ -135,6 +135,7 @@ export interface AdminUser {
   collectionCount: number;
   lastLoginAt?: Date;
   isActive: boolean; // 사용자 활성화 상태
+  subscription?: Subscription; // 구독 정보
 }
 
 // 알림 관련 타입

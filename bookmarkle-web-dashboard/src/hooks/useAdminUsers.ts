@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import type { AdminUser } from "../types";
+import type { AdminUser, Subscription } from "../types";
 
 export function useAdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -100,6 +100,23 @@ export function useAdminUsers() {
           });
         }
 
+        // 구독 정보 파싱
+        let subscription = undefined;
+        if (userData.subscription) {
+          const subData = userData.subscription;
+          subscription = {
+            plan: subData.plan || "free",
+            status: subData.status || "expired",
+            billingCycle: subData.billingCycle || "monthly",
+            startDate: subData.startDate?.toDate() || new Date(),
+            endDate: subData.endDate?.toDate(),
+            cancelAtPeriodEnd: subData.cancelAtPeriodEnd || false,
+            subscriptionId: subData.subscriptionId,
+            customerId: subData.customerId,
+            trialEndDate: subData.trialEndDate?.toDate(),
+          };
+        }
+
         usersData.push({
           uid,
           email: userData.email || null,
@@ -109,6 +126,7 @@ export function useAdminUsers() {
           collectionCount,
           lastLoginAt: userData.lastLoginAt?.toDate(),
           isActive: userData.isActive !== false, // 기본값은 true (기존 사용자 호환성)
+          subscription,
         });
       }
 
