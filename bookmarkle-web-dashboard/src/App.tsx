@@ -12,6 +12,7 @@ import { ExtensionLoginSuccessPage } from "./pages/ExtensionLoginSuccessPage";
 import { NotificationCenterPage } from "./pages/NotificationCenterPage";
 import { PricingPage } from "./pages/PricingPage";
 import { SubscriptionPage } from "./pages/SubscriptionPage";
+import { EarlyBirdPolicyPage } from "./pages/EarlyBirdPolicyPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
@@ -171,6 +172,7 @@ function App() {
           <Route path="/notifications" element={<NotificationCenterPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/subscription" element={<SubscriptionPage />} />
+          <Route path="/early-bird-policy" element={<EarlyBirdPolicyPage />} />
           <Route
             path="/admin"
             element={

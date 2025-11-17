@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
 import { BrowserCompatibilityWarning } from "./BrowserCompatibilityWarning";
+import { BetaAnnouncementModal } from "./BetaAnnouncementModal";
 import {
   detectBrowser,
   getBrowserCompatibilityMessage,
@@ -13,6 +14,7 @@ export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [showBetaModal, setShowBetaModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,6 +27,17 @@ export const LoginScreen = () => {
       navigate("/extension-login-success" + location.search);
     }
   }, [user, navigate, location.search]);
+
+  // 최초 로그인 시 베타 공지 모달 표시
+  useEffect(() => {
+    if (user) {
+      const hasSeenBetaModal = localStorage.getItem("hasSeenBetaModal");
+      if (!hasSeenBetaModal) {
+        setShowBetaModal(true);
+        localStorage.setItem("hasSeenBetaModal", "true");
+      }
+    }
+  }, [user]);
 
   // 폼 데이터
   const [formData, setFormData] = useState({
@@ -339,6 +352,10 @@ export const LoginScreen = () => {
           </div>
         </div>
       </div>
+      <BetaAnnouncementModal
+        isOpen={showBetaModal}
+        onClose={() => setShowBetaModal(false)}
+      />
     </div>
   );
 };

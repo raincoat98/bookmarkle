@@ -31,28 +31,41 @@ export const PricingPage: React.FC = () => {
   };
 
   const freeFeatures = [
-    t("premium.features.free.bookmarks", { count: 100 }),
-    t("premium.features.free.collections", { count: 10 }),
-    t("premium.features.free.basicSearch"),
-    t("premium.features.free.weeklyBackup"),
-    t("premium.features.free.basicWidgets"),
+    "북마크 100개",
+    "컬렉션 10개",
+    "기본 검색",
+    "기본 백업(주 1회)",
+    "기본 위젯",
+    "광고 없음",
   ];
 
   const premiumFeatures = [
-    t("premium.features.unlimitedBookmarks"),
-    t("premium.features.unlimitedCollections"),
-    t("premium.features.advancedSearch"),
-    t("premium.features.dailyBackup"),
-    t("premium.features.bookmarkStats"),
-    t("premium.features.exportData"),
-    t("premium.features.customTheme"),
-    t("premium.features.restoreDeleted"),
-    t("premium.features.shareBookmarks"),
+    "북마크 무제한",
+    "컬렉션 무제한",
+    "자동 백업(일 1회)",
+    "고급 검색(태그, 날짜, 도메인)",
+    "북마크 통계",
+    "삭제 북마크 복구",
+    "전체 위젯 unlocked",
+    "고급 테마",
+    "프리미엄 고객지원",
+  ];
+
+  const businessFeatures = [
+    "프리미엄 기능 전체 포함",
+    "팀 공유 기능",
+    "팀 컬렉션",
+    "팀 분석 리포트",
+    "API Access",
+    "커스텀 브랜딩",
   ];
 
   const monthlyPrice = 4.99;
   const yearlyPrice = 49.99;
+  const businessMonthlyPrice = 9.99;
+  const businessYearlyPrice = 99.99;
   const yearlyMonthlyEquivalent = yearlyPrice / 12;
+  const businessYearlyMonthlyEquivalent = businessYearlyPrice / 12;
   const savings = Math.round(
     ((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100
   );
@@ -117,7 +130,7 @@ export const PricingPage: React.FC = () => {
         </div>
 
         {/* 플랜 카드 */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* 무료 플랜 */}
           <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-gray-300 dark:hover:border-gray-600">
             <div className="text-center mb-8">
@@ -232,6 +245,51 @@ export const PricingPage: React.FC = () => {
                 {t("premium.upgradeNow")}
               </button>
             )}
+          </div>
+
+          {/* 비즈니스 플랜 */}
+          <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-gray-300 dark:hover:border-gray-600">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
+                비즈니스
+              </h3>
+              <div className="flex items-baseline justify-center">
+                <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                  $
+                  {billingCycle === "monthly"
+                    ? businessMonthlyPrice
+                    : businessYearlyMonthlyEquivalent.toFixed(2)}
+                </span>
+                <span className="text-gray-600 dark:text-gray-400 ml-2">
+                  /{t("premium.month")}
+                </span>
+              </div>
+              {billingCycle === "yearly" && (
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                  {t("premium.billedAs")} ${businessYearlyPrice} {t("premium.perYear")}
+                </p>
+              )}
+            </div>
+            <ul className="space-y-4 mb-8">
+              {businessFeatures.map((feature, index) => (
+                <li
+                  key={index}
+                  className="flex items-start space-x-3 transition-all duration-200 group-hover:translate-x-1"
+                  style={{ transitionDelay: `${index * 50}ms` }}
+                >
+                  <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5 transition-transform duration-200 group-hover:scale-110" />
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {feature}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              disabled
+              className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all"
+            >
+              곧 출시 예정
+            </button>
           </div>
         </div>
 
