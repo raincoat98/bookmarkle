@@ -230,10 +230,11 @@ export const BookmarksPage: React.FC = () => {
       return matchesSearch && matchesTag;
     });
 
-    // 하위 컬렉션이 있는 경우 그룹화
+    // 하위 컬렉션이 있는 경우 그룹화 (즐겨찾기는 제외)
     if (
       selectedCollection !== "all" &&
       selectedCollection !== "none" &&
+      selectedCollection !== "favorites" &&
       selectedCollection
     ) {
       const childCollectionIds = getChildCollectionIds(selectedCollection);

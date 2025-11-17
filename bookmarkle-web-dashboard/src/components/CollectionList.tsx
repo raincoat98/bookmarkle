@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Collection } from "../types";
 import { renderCollectionIcon } from "../utils/iconRenderer";
 import { useTranslation } from "react-i18next";
-import { PinIcon } from "lucide-react";
+import { PinIcon, Star } from "lucide-react";
 import { Skeleton } from "./ui/Skeleton";
 interface CollectionListProps {
   collections: Collection[];
@@ -244,6 +244,19 @@ export const CollectionList = ({
             <span className="text-lg">📚</span>
           </button>
 
+          {/* 즐겨찾기 */}
+          <button
+            onClick={() => onCollectionChange("favorites")}
+            className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
+              selectedCollection === "favorites"
+                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+            title={t("bookmarks.favorites")}
+          >
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+          </button>
+
           {/* 컬렉션 없음 */}
           <button
             onClick={() => onCollectionChange("none")}
@@ -369,6 +382,21 @@ export const CollectionList = ({
             <span className="text-lg">📚</span>
             <span className="font-medium transition-all duration-300">
               {t("collections.all")}
+            </span>
+          </button>
+
+          {/* 즐겨찾기 */}
+          <button
+            onClick={() => onCollectionChange("favorites")}
+            className={`w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-left transition-colors duration-200 ${
+              selectedCollection === "favorites"
+                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            }`}
+          >
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+            <span className="font-medium transition-all duration-300">
+              {t("bookmarks.favorites")}
             </span>
           </button>
 
