@@ -53,21 +53,23 @@ export const BetaBanner = () => {
   return (
     <div className="relative bg-gradient-to-r from-brand-500 to-accent-500 text-white px-4 py-3 shadow-lg">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 min-w-0 flex-1">
           <Sparkles className="w-5 h-5 flex-shrink-0" />
-          <div className="flex-1">
-            <p className="text-sm font-medium">{t("beta.banner.title")}</p>
+          <div className="flex items-center space-x-2 min-w-0 flex-1">
+            <span className="text-sm font-medium truncate">{t("beta.banner.title")}</span>
             {betaUtils.shouldShowEarlyUserBenefits() && (
               <>
                 {isEarlyUser ? (
-                  <p className="text-xs opacity-90 mt-1 flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 flex-shrink-0">
                     <Gift className="w-3 h-3" />
-                    <span>{t("beta.banner.earlyUserBenefit")}</span>
-                  </p>
+                    <span className="text-xs opacity-90 hidden md:inline">
+                      {t("beta.banner.earlyUserBenefit")}
+                    </span>
+                  </div>
                 ) : (
-                  <p className="text-xs opacity-90 mt-1">
+                  <span className="text-xs opacity-90 hidden md:inline">
                     {t("beta.banner.earlyUserBenefit")}
-                  </p>
+                  </span>
                 )}
               </>
             )}
