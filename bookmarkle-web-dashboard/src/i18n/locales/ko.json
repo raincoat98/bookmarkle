@@ -482,6 +482,52 @@
     "earlyUserLifetime": "영구 무료 혜택 적용 중",
     "earlyUserBadge": "얼리유저",
     "betaEndDate": "베타 종료일",
-    "earlyUserInfo": "베타 기간 중 가입하신 얼리유저는 정식 오픈 후에도 모든 기능을 무료로 사용하실 수 있습니다."
+    "earlyUserInfo": "베타 기간 중 가입하신 얼리유저는 정식 오픈 후에도 모든 기능을 무료로 사용하실 수 있습니다.",
+    "settings": {
+      "title": "베타 정보",
+      "betaVersionInfo": "베타 버전 정보",
+      "description": "현재 베타 기간 중이며, 모든 기능을 무료로 사용할 수 있습니다.",
+      "betaStatus": "베타 기간 현황",
+      "betaActive": "베타 진행 중",
+      "daysRemaining": "정식 오픈까지 약 {{days}}일 남음",
+      "allFreeFeatures": "모든 기능을 무료로 사용할 수 있습니다.",
+      "officialLaunch": "정식 오픈 완료",
+      "earlyUserStatus": "얼리유저 상태",
+      "earlyUserVerified": "🎉 얼리유저 인증됨",
+      "earlyUserSpecialBenefit": "특별 혜택: 정식 오픈 후에도 현재 사용 중인 모든 기능을 계속 무료로 이용할 수 있습니다.",
+      "notEarlyUser": "얼리유저 혜택 대상이 아닙니다.",
+      "betaFeatureSettings": "베타 기능 설정",
+      "currentStatus": "현재 상태",
+      "betaBanner": "베타 배너",
+      "betaModal": "베타 모달",
+      "hidden": "숨김",
+      "showing": "표시 중",
+      "showCompleted": "표시 완료",
+      "waiting": "대기 중",
+      "resetSettings": "베타 설정 초기화",
+      "resetDescription": "베타 배너와 모달을 다시 표시합니다.",
+      "resetConfirm": "베타 설정을 초기화하시겠습니까? 베타 배너와 모달이 다시 표시됩니다.",
+      "resetSuccess": "베타 설정이 초기화되었습니다.",
+      "betaFeedback": "베타 피드백",
+      "feedbackDescription": "베타 버전을 사용하시면서 불편한 점이나 개선 아이디어가 있으시면 언제든 피드백을 보내주세요.",
+      "sendFeedback": "피드백 보내기",
+      "developerInfo": "개발자 정보",
+      "devModeDescription": "개발 모드: 환경 변수를 통해 베타 기능들을 개별적으로 제어할 수 있습니다.",
+      "betaEndDateInfo": "베타 종료일: {{date}}"
+    },
+    "banner": {
+      "title": "🚀 Beta Free Access! 지금 북마클의 모든 기능을 무료로 사용하세요.",
+      "earlyUserBenefit": "얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로 유지됩니다."
+    },
+    "modal": {
+      "title": "Bookmarkle 베타 안내",
+      "currentBeta": "현재 북마클은 베타 기간으로",
+      "allFree": "모든 기능을 무료로 제한 없이 사용할 수 있습니다.",
+      "premiumTransition": "정식 오픈 이후 일부 기능은 프리미엄으로 전환될 수 있으나,",
+      "earlyUserBenefitApplied": "🎉 얼리유저 혜택 적용 중!",
+      "earlyUserBenefitDesc": "지금 가입한 얼리유저는 기존 기능을 계속 무료로 이용할 수 있습니다.",
+      "betterService": "더 나은 서비스를 위해 언제든 피드백을 보내주세요!",
+      "getStarted": "지금 바로 시작하기"
+    }
   }
 }

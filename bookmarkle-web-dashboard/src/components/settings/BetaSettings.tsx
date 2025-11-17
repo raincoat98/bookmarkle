@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import {
   Sparkles,
   Gift,
@@ -19,6 +20,7 @@ import { isEarlyUser } from "../../utils/earlyUser";
 import { useState, useEffect, useCallback } from "react";
 
 export const BetaSettings: React.FC = () => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const [userIsEarly, setUserIsEarly] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,13 +48,9 @@ export const BetaSettings: React.FC = () => {
   const daysUntilLaunch = getDaysUntilLaunch();
 
   const handleResetBetaSettings = () => {
-    if (
-      confirm(
-        "베타 설정을 초기화하시겠습니까? 베타 배너와 모달이 다시 표시됩니다."
-      )
-    ) {
+    if (confirm(t("beta.settings.resetConfirm"))) {
       betaUtils.resetBetaSettings();
-      alert("베타 설정이 초기화되었습니다.");
+      alert(t("beta.settings.resetSuccess"));
       window.location.reload();
     }
   };
@@ -75,10 +73,10 @@ export const BetaSettings: React.FC = () => {
         </div>
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-            베타 버전 정보
+            {t("beta.settings.betaVersionInfo")}
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            현재 베타 기간 중이며, 모든 기능을 무료로 사용할 수 있습니다.
+            {t("beta.settings.description")}
           </p>
         </div>
       </div>
@@ -91,24 +89,25 @@ export const BetaSettings: React.FC = () => {
           </div>
           <div className="flex-1">
             <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-              베타 기간 현황
+              {t("beta.settings.betaStatus")}
             </h4>
             {isBetaPeriod() ? (
               <div className="space-y-2">
                 <p className="text-sm text-gray-700 dark:text-gray-300">
                   <span className="font-medium text-green-600 dark:text-green-400">
-                    베타 진행 중
+                    {t("beta.settings.betaActive")}
                   </span>
-                  {" • "}정식 오픈까지 약 {daysUntilLaunch}일 남음
+                  {" • "}
+                  {t("beta.settings.daysRemaining", { days: daysUntilLaunch })}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  모든 기능을 무료로 사용할 수 있습니다.
+                  {t("beta.settings.allFreeFeatures")}
                 </p>
               </div>
             ) : (
               <p className="text-sm text-gray-700 dark:text-gray-300">
                 <span className="font-medium text-blue-600 dark:text-blue-400">
-                  정식 오픈 완료
+                  {t("beta.settings.officialLaunch")}
                 </span>
               </p>
             )}
@@ -137,25 +136,24 @@ export const BetaSettings: React.FC = () => {
             </div>
             <div className="flex-1">
               <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                얼리유저 상태
+                {t("beta.settings.earlyUserStatus")}
               </h4>
               {userIsEarly ? (
                 <div className="space-y-2">
                   <p className="text-sm text-gray-700 dark:text-gray-300">
                     <span className="font-medium text-yellow-600 dark:text-yellow-400">
-                      🎉 얼리유저 인증됨
+                      {t("beta.settings.earlyUserVerified")}
                     </span>
                   </p>
                   <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3">
                     <p className="text-xs text-yellow-800 dark:text-yellow-300">
-                      <strong>특별 혜택:</strong> 정식 오픈 후에도 현재 사용
-                      중인 모든 기능을 계속 무료로 이용할 수 있습니다.
+                      {t("beta.settings.earlyUserSpecialBenefit")}
                     </p>
                   </div>
                 </div>
               ) : (
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  얼리유저 혜택 대상이 아닙니다.
+                  {t("beta.settings.notEarlyUser")}
                 </p>
               )}
             </div>
@@ -168,7 +166,7 @@ export const BetaSettings: React.FC = () => {
         <div className="flex items-center space-x-3 mb-4">
           <SettingsIcon className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           <h4 className="font-semibold text-gray-900 dark:text-white">
-            베타 기능 설정
+            {t("beta.settings.betaFeatureSettings")}
           </h4>
         </div>
 
@@ -177,7 +175,7 @@ export const BetaSettings: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">
-                베타 배너
+                {t("beta.settings.betaBanner")}
               </span>
               <span
                 className={`font-medium ${
@@ -186,12 +184,12 @@ export const BetaSettings: React.FC = () => {
                     : "text-green-600 dark:text-green-400"
                 }`}
               >
-                {betaStatus.storage.bannerDismissed ? "숨김" : "표시 중"}
+                {betaStatus.storage.bannerDismissed ? t("beta.settings.hidden") : t("beta.settings.showing")}
               </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600 dark:text-gray-400">
-                베타 모달
+                {t("beta.settings.betaModal")}
               </span>
               <span
                 className={`font-medium ${
@@ -200,7 +198,7 @@ export const BetaSettings: React.FC = () => {
                     : "text-green-600 dark:text-green-400"
                 }`}
               >
-                {betaStatus.storage.modalShown ? "표시 완료" : "대기 중"}
+                {betaStatus.storage.modalShown ? t("beta.settings.showCompleted") : t("beta.settings.waiting")}
               </span>
             </div>
           </div>
@@ -212,10 +210,10 @@ export const BetaSettings: React.FC = () => {
               className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <RotateCcw className="w-4 h-4" />
-              <span>베타 설정 초기화</span>
+              <span>{t("beta.settings.resetSettings")}</span>
             </button>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-6">
-              베타 배너와 모달을 다시 표시합니다.
+              {t("beta.settings.resetDescription")}
             </p>
           </div>
         </div>
@@ -227,14 +225,13 @@ export const BetaSettings: React.FC = () => {
           <div className="flex items-center space-x-3 mb-4">
             <MessageSquare className="w-5 h-5 text-gray-600 dark:text-gray-400" />
             <h4 className="font-semibold text-gray-900 dark:text-white">
-              베타 피드백
+              {t("beta.settings.betaFeedback")}
             </h4>
           </div>
 
           <div className="space-y-3">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              베타 버전을 사용하시면서 불편한 점이나 개선 아이디어가 있으시면
-              언제든 피드백을 보내주세요.
+              {t("beta.settings.feedbackDescription")}
             </p>
 
             <button
@@ -242,7 +239,7 @@ export const BetaSettings: React.FC = () => {
               className="flex items-center space-x-2 px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg transition-colors"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>피드백 보내기</span>
+              <span>{t("beta.settings.sendFeedback")}</span>
               <ExternalLink className="w-3 h-3" />
             </button>
           </div>
@@ -255,11 +252,12 @@ export const BetaSettings: React.FC = () => {
           <Info className="w-4 h-4 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
             <p>
-              <strong>개발 모드:</strong> 환경 변수를 통해 베타 기능들을
-              개별적으로 제어할 수 있습니다.
+              {t("beta.settings.devModeDescription")}
             </p>
             <p>
-              베타 종료일: {betaStatus.betaEndDate.toLocaleDateString("ko-KR")}
+              {t("beta.settings.betaEndDateInfo", { 
+                date: betaStatus.betaEndDate.toLocaleDateString("ko-KR") 
+              })}
             </p>
           </div>
         </div>

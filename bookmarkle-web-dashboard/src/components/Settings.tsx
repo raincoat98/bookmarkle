@@ -177,7 +177,7 @@ export const Settings: React.FC<SettingsProps> = ({
     { id: "general", label: t("settings.general"), icon: SettingsIcon },
     { id: "subscription", label: t("premium.subscription"), icon: Crown },
     ...(betaUtils.shouldShowBetaSettings()
-      ? [{ id: "beta", label: "베타 정보", icon: Sparkles }]
+      ? [{ id: "beta", label: t("beta.settings.title"), icon: Sparkles }]
       : []),
     { id: "stats", label: t("admin.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },

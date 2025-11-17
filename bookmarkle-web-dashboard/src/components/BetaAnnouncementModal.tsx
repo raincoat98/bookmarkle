@@ -4,6 +4,7 @@ import { useAuthStore } from "../stores";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
 
 interface BetaAnnouncementModalProps {
@@ -15,6 +16,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useTranslation();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const [isEarlyUser, setIsEarlyUser] = useState(false);
@@ -82,7 +84,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
                 <Sparkles className="w-6 h-6" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold">Bookmarkle 베타 안내</h2>
+                <h2 className="text-2xl font-bold">{t("beta.modal.title")}</h2>
               </div>
             </div>
           </div>
@@ -90,21 +92,13 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
           {/* 내용 */}
           <div className="p-6 space-y-4">
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              현재 북마클은{" "}
-              <strong className="text-brand-600 dark:text-brand-400">
-                베타 기간
-              </strong>
-              으로
+              {t("beta.modal.currentBeta")}
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              모든 기능을{" "}
-              <strong className="text-brand-600 dark:text-brand-400">
-                무료로 제한 없이
-              </strong>{" "}
-              사용할 수 있습니다.
+              {t("beta.modal.allFree")}
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              정식 오픈 이후 일부 기능은 프리미엄으로 전환될 수 있으나,
+              {t("beta.modal.premiumTransition")}
             </p>
             {betaUtils.shouldShowEarlyUserBenefits() && (
               <>
@@ -114,11 +108,10 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
                       <Gift className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1">
-                          🎉 얼리유저 혜택 적용 중!
+                          {t("beta.modal.earlyUserBenefitApplied")}
                         </p>
                         <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                          지금 가입한 얼리유저는 기존 기능을 계속 무료로 이용할
-                          수 있습니다.
+                          {t("beta.modal.earlyUserBenefitDesc")}
                         </p>
                       </div>
                     </div>
@@ -126,14 +119,13 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
                 )}
                 {!isEarlyUser && (
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    지금 가입한 얼리유저는 기존 기능을 계속 무료로 이용할 수
-                    있습니다.
+                    {t("beta.modal.earlyUserBenefitDesc")}
                   </p>
                 )}
               </>
             )}
             <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
-              더 나은 서비스를 위해 언제든 피드백을 보내주세요!
+              {t("beta.modal.betterService")}
             </p>
           </div>
 
@@ -143,7 +135,7 @@ export const BetaAnnouncementModal: React.FC<BetaAnnouncementModalProps> = ({
               onClick={handleGetStarted}
               className="w-full px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
             >
-              지금 바로 시작하기
+              {t("beta.modal.getStarted")}
             </button>
           </div>
         </div>

@@ -57,7 +57,7 @@ export const BetaBanner = () => {
           <Sparkles className="w-5 h-5 flex-shrink-0" />
           <div className="flex-1">
             <p className="text-sm font-medium">
-              🚀 Beta Free Access! 지금 북마클의 모든 기능을 무료로 사용하세요.
+              {t("beta.banner.title")}
             </p>
             {betaUtils.shouldShowEarlyUserBenefits() && (
               <>
@@ -65,14 +65,12 @@ export const BetaBanner = () => {
                   <p className="text-xs opacity-90 mt-1 flex items-center space-x-1">
                     <Gift className="w-3 h-3" />
                     <span>
-                      얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로
-                      유지됩니다.
+                      {t("beta.banner.earlyUserBenefit")}
                     </span>
                   </p>
                 ) : (
                   <p className="text-xs opacity-90 mt-1">
-                    얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로
-                    유지됩니다.
+                    {t("beta.banner.earlyUserBenefit")}
                   </p>
                 )}
               </>
