@@ -15,7 +15,7 @@ import {
 export const SubscriptionSettings: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { plan, isPremium, subscription, limits } = useSubscriptionStore();
+  const { plan, isPremium, limits } = useSubscriptionStore();
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
 

@@ -1,12 +1,8 @@
 import { create } from "zustand";
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "../firebase";
-import type {
-  Subscription,
-  SubscriptionPlan,
-  SubscriptionStatus,
-} from "../types";
-import { getUserLimits, type UserLimits } from "../utils/subscriptionLimits";
+import type { Subscription, SubscriptionPlan, UserLimits } from "../types";
+import { getUserLimits } from "../utils/subscriptionLimits";
 
 interface SubscriptionState {
   subscription: Subscription | null;

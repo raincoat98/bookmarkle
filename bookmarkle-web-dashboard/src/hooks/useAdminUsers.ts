@@ -8,7 +8,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { db, auth } from "../firebase";
-import type { AdminUser, Subscription } from "../types";
+import type { AdminUser } from "../types";
 
 export function useAdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);

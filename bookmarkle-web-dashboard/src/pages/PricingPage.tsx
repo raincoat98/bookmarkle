@@ -9,16 +9,23 @@ import { Link } from "react-router-dom";
 export const PricingPage: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { plan, isPremium, subscription } = useSubscriptionStore();
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const { plan, isPremium } = useSubscriptionStore();
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly"
+  );
 
-  const handleSubscribe = async (planType: "premium", cycle: "monthly" | "yearly") => {
+  const handleSubscribe = async (
+    planType: "premium",
+    cycle: "monthly" | "yearly"
+  ) => {
     // TODO: Stripe 결제 연동
     // 현재는 임시로 알림만 표시
+    // planType과 cycle은 실제 구현 시 사용됨
+    console.log("구독 요청:", { planType, cycle });
     alert(t("premium.stripeIntegrationPending"));
-    
+
     // 실제 구현 시:
-    // 1. Stripe Checkout 세션 생성
+    // 1. Stripe Checkout 세션 생성 (planType, cycle 사용)
     // 2. 결제 페이지로 리다이렉트
     // 3. 웹훅으로 구독 상태 업데이트
   };
@@ -46,12 +53,14 @@ export const PricingPage: React.FC = () => {
   const monthlyPrice = 3.99;
   const yearlyPrice = 39.99;
   const yearlyMonthlyEquivalent = yearlyPrice / 12;
-  const savings = ((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100;
+  const savings = Math.round(
+    ((monthlyPrice * 12 - yearlyPrice) / (monthlyPrice * 12)) * 100
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Header />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* 뒤로가기 버튼 */}
         <Link
@@ -66,7 +75,9 @@ export const PricingPage: React.FC = () => {
         <div className="text-center mb-12">
           <div className="inline-flex items-center space-x-2 bg-brand-100 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 px-4 py-2 rounded-full mb-4">
             <Sparkles className="w-4 h-4" />
-            <span className="text-sm font-medium">{t("premium.upgradeToPremium")}</span>
+            <span className="text-sm font-medium">
+              {t("premium.upgradeToPremium")}
+            </span>
           </div>
           <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
             {t("premium.chooseYourPlan")}
@@ -99,7 +110,7 @@ export const PricingPage: React.FC = () => {
             >
               {t("premium.yearly")}
               <span className="absolute -top-2 -right-2 bg-accent-500 text-white text-xs px-2 py-0.5 rounded-full">
-                {t("premium.save17")}
+                {t("premium.save", { percent: savings })}
               </span>
             </button>
           </div>
@@ -114,15 +125,21 @@ export const PricingPage: React.FC = () => {
                 {t("premium.freePlan")}
               </h3>
               <div className="flex items-baseline justify-center">
-                <span className="text-4xl font-bold text-gray-900 dark:text-white">$0</span>
-                <span className="text-gray-600 dark:text-gray-400 ml-2">/{t("premium.month")}</span>
+                <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                  $0
+                </span>
+                <span className="text-gray-600 dark:text-gray-400 ml-2">
+                  /{t("premium.month")}
+                </span>
               </div>
             </div>
             <ul className="space-y-4 mb-8">
               {freeFeatures.map((feature, index) => (
                 <li key={index} className="flex items-start space-x-3">
                   <Check className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                  <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                  <span className="text-gray-700 dark:text-gray-300">
+                    {feature}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -158,10 +175,15 @@ export const PricingPage: React.FC = () => {
             )}
 
             <div className="text-center mb-8 text-white">
-              <h3 className="text-2xl font-bold mb-2">{t("premium.premiumPlan")}</h3>
+              <h3 className="text-2xl font-bold mb-2">
+                {t("premium.premiumPlan")}
+              </h3>
               <div className="flex items-baseline justify-center">
                 <span className="text-4xl font-bold">
-                  ${billingCycle === "monthly" ? monthlyPrice : yearlyMonthlyEquivalent.toFixed(2)}
+                  $
+                  {billingCycle === "monthly"
+                    ? monthlyPrice
+                    : yearlyMonthlyEquivalent.toFixed(2)}
                 </span>
                 <span className="ml-2 opacity-90">/{t("premium.month")}</span>
               </div>
@@ -233,4 +255,3 @@ export const PricingPage: React.FC = () => {
     </div>
   );
 };
-

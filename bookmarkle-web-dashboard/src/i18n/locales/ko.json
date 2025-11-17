@@ -409,6 +409,7 @@
     "yearly": "연간",
     "or": "또는",
     "save17": "17% 절약",
+    "save": "{{percent}}% 절약",
     "popular": "인기",
     "billedAs": "연간 결제 시",
     "perYear": "연간",
