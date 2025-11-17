@@ -43,7 +43,6 @@ export const BETA_STORAGE_KEYS = {
   SUBSCRIPTION_MODAL_SHOWN: "subscriptionModalShown",
   BANNER_DISMISSED: "betaBannerDismissed", // 하위 호환성 유지
   MODAL_SHOWN: "betaModalShown", // 하위 호환성 유지
-  FEEDBACK_SENT: "betaFeedbackSent",
 } as const;
 
 // 베타 기능 상태 확인 함수들
@@ -181,8 +180,6 @@ export const betaUtils = {
           localStorage.getItem(BETA_STORAGE_KEYS.SUBSCRIPTION_MODAL_SHOWN) ===
             "true" ||
           localStorage.getItem(BETA_STORAGE_KEYS.MODAL_SHOWN) === "true",
-        feedbackSent:
-          localStorage.getItem(BETA_STORAGE_KEYS.FEEDBACK_SENT) === "true",
       },
       betaEndDate: BETA_END_DATE,
     };
@@ -197,11 +194,4 @@ export const isBetaPeriod = (): boolean => {
   }
   // 환경 변수가 없으면 날짜 기반 체크
   return new Date() < BETA_END_DATE;
-};
-
-// 정식 오픈까지 남은 일수 계산
-export const getDaysUntilLaunch = (): number => {
-  const now = new Date();
-  const timeDiff = BETA_END_DATE.getTime() - now.getTime();
-  return Math.ceil(timeDiff / (1000 * 3600 * 24));
 };
