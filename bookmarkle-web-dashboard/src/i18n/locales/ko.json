@@ -505,6 +505,7 @@
       "showing": "표시 중",
       "showCompleted": "표시 완료",
       "waiting": "대기 중",
+      "showBetaModal": "베타 모달 보기",
       "resetSettings": "베타 설정 초기화",
       "resetDescription": "베타 배너와 모달을 다시 표시합니다.",
       "resetConfirm": "베타 설정을 초기화하시겠습니까? 베타 배너와 모달이 다시 표시됩니다.",

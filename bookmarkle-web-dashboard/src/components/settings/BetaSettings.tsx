@@ -9,6 +9,7 @@ import {
   RotateCcw,
   MessageSquare,
   ExternalLink,
+  Eye,
 } from "lucide-react";
 import { useAuthStore } from "../../stores";
 import {
@@ -17,6 +18,7 @@ import {
   getDaysUntilLaunch,
 } from "../../utils/betaFlags";
 import { isEarlyUser } from "../../utils/earlyUser";
+import { BetaAnnouncementModal } from "../BetaAnnouncementModal";
 import { useState, useEffect, useCallback } from "react";
 
 export const BetaSettings: React.FC = () => {
@@ -24,6 +26,7 @@ export const BetaSettings: React.FC = () => {
   const { user } = useAuthStore();
   const [userIsEarly, setUserIsEarly] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showBetaModal, setShowBetaModal] = useState(false);
 
   const checkUserStatus = useCallback(async () => {
     if (!user) return;
@@ -211,8 +214,15 @@ export const BetaSettings: React.FC = () => {
             </div>
           </div>
 
-          {/* 설정 초기화 버튼 */}
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          {/* 베타 모달 보기 및 설정 초기화 버튼 */}
+          <div className="pt-4 border-t border-gray-200 dark:border-gray-700 space-y-3">
+            <button
+              onClick={() => setShowBetaModal(true)}
+              className="flex items-center space-x-2 px-4 py-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+            >
+              <Eye className="w-4 h-4" />
+              <span>{t("beta.settings.showBetaModal")}</span>
+            </button>
             <button
               onClick={handleResetBetaSettings}
               className="flex items-center space-x-2 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
@@ -268,6 +278,11 @@ export const BetaSettings: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* 베타 모달 */}
+      {showBetaModal && (
+        <BetaAnnouncementModal onClose={() => setShowBetaModal(false)} />
+      )}
     </div>
   );
 };
