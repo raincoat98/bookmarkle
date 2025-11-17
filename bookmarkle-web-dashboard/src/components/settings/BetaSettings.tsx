@@ -98,7 +98,11 @@ export const BetaSettings: React.FC = () => {
                     {t("beta.settings.betaActive")}
                   </span>
                   {" • "}
-                  {t("beta.settings.daysRemaining", { days: daysUntilLaunch })}
+                  {daysUntilLaunch > 1000
+                    ? t("beta.settings.launchDateTBD")
+                    : t("beta.settings.daysRemaining", {
+                        days: daysUntilLaunch,
+                      })}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {t("beta.settings.allFreeFeatures")}

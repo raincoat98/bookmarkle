@@ -60,7 +60,9 @@ export const SubscriptionSettings: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-700 dark:text-gray-300">북마크</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      북마크
+                    </span>
                     <span className="font-medium text-gray-900 dark:text-white">
                       {rawBookmarks?.length || 0}
                     </span>
@@ -75,7 +77,9 @@ export const SubscriptionSettings: React.FC = () => {
 
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-700 dark:text-gray-300">컬렉션</span>
+                    <span className="text-gray-700 dark:text-gray-300">
+                      컬렉션
+                    </span>
                     <span className="font-medium text-gray-900 dark:text-white">
                       {collections?.length || 0}
                     </span>

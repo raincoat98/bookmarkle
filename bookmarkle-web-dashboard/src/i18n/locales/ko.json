@@ -490,6 +490,7 @@
       "betaStatus": "베타 기간 현황",
       "betaActive": "베타 진행 중",
       "daysRemaining": "정식 오픈까지 약 {{days}}일 남음",
+      "launchDateTBD": "정식 오픈일 미정",
       "allFreeFeatures": "모든 기능을 무료로 사용할 수 있습니다.",
       "officialLaunch": "정식 오픈 완료",
       "earlyUserStatus": "얼리유저 상태",
