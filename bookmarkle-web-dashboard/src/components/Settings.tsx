@@ -27,7 +27,7 @@ import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
 import { getUserDefaultPage } from "../firebase";
-import { betaUtils, isBetaPeriod } from "../utils/betaFlags";
+import { isBetaPeriod } from "../utils/betaFlags";
 import { performBackup, shouldBackup } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
 
