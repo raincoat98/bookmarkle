@@ -184,7 +184,9 @@ export const BetaSettings: React.FC = () => {
                     : "text-green-600 dark:text-green-400"
                 }`}
               >
-                {betaStatus.storage.bannerDismissed ? t("beta.settings.hidden") : t("beta.settings.showing")}
+                {betaStatus.storage.bannerDismissed
+                  ? t("beta.settings.hidden")
+                  : t("beta.settings.showing")}
               </span>
             </div>
             <div className="flex justify-between">
@@ -198,7 +200,9 @@ export const BetaSettings: React.FC = () => {
                     : "text-green-600 dark:text-green-400"
                 }`}
               >
-                {betaStatus.storage.modalShown ? t("beta.settings.showCompleted") : t("beta.settings.waiting")}
+                {betaStatus.storage.modalShown
+                  ? t("beta.settings.showCompleted")
+                  : t("beta.settings.waiting")}
               </span>
             </div>
           </div>
@@ -251,12 +255,10 @@ export const BetaSettings: React.FC = () => {
         <div className="flex items-start space-x-3">
           <Info className="w-4 h-4 text-gray-500 dark:text-gray-400 mt-0.5 flex-shrink-0" />
           <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+            <p>{t("beta.settings.devModeDescription")}</p>
             <p>
-              {t("beta.settings.devModeDescription")}
-            </p>
-            <p>
-              {t("beta.settings.betaEndDateInfo", { 
-                date: betaStatus.betaEndDate.toLocaleDateString("ko-KR") 
+              {t("beta.settings.betaEndDateInfo", {
+                date: betaStatus.betaEndDate.toLocaleDateString("ko-KR"),
               })}
             </p>
           </div>

@@ -6,11 +6,12 @@ import {
   useBookmarkStore,
   useCollectionStore,
 } from "../../stores";
-import { Crown, Check, AlertCircle, ArrowRight } from "lucide-react";
+import { Crown, Check, AlertCircle, ArrowRight, Sparkles } from "lucide-react";
 import {
   checkBookmarkLimit,
   checkCollectionLimit,
 } from "../../utils/subscriptionLimits";
+import { isBetaPeriod } from "../../utils/betaFlags";
 
 export const SubscriptionSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -33,6 +34,75 @@ export const SubscriptionSettings: React.FC = () => {
     t("premium.features.restoreDeleted"),
     t("premium.features.shareBookmarks"),
   ];
+
+  // 베타 기간 중에는 베타 전용 UI 표시
+  if (isBetaPeriod()) {
+    return (
+      <div className="space-y-6">
+        {/* 베타 기간 안내 */}
+        <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20 rounded-lg shadow-sm border border-brand-200 dark:border-brand-800 p-6">
+          <div className="flex items-start space-x-4">
+            <div className="p-3 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+              <Sparkles className="w-6 h-6 text-brand-600 dark:text-brand-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                🚀 베타 기간 - 모든 기능 무료!
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                현재 베타 기간으로 모든 프리미엄 기능을 무료로 사용할 수 있습니다.
+                정식 오픈 후 일부 기능이 프리미엄으로 전환될 예정이며, 
+                베타 기간 중 가입한 얼리 유저는 기존 기능을 계속 무료로 이용하실 수 있습니다.
+              </p>
+              
+              {/* 현재 사용량 */}
+              <div className="space-y-3">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>북마크</span>
+                    <span className="font-medium">{rawBookmarks?.length || 0}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-brand-500 to-accent-500 h-2 rounded-full w-full"></div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">무제한 사용 가능</p>
+                </div>
+                
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>컬렉션</span>
+                    <span className="font-medium">{collections?.length || 0}</span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="bg-gradient-to-r from-brand-500 to-accent-500 h-2 rounded-full w-full"></div>
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">무제한 사용 가능</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 베타 기간 혜택 */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-4">
+            베타 기간 혜택
+          </h4>
+          <ul className="space-y-2">
+            {premiumFeatures.map((feature, index) => (
+              <li
+                key={index}
+                className="flex items-center space-x-3 text-sm text-gray-700 dark:text-gray-300"
+              >
+                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                <span>{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

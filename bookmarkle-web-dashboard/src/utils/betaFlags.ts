@@ -3,8 +3,8 @@
  * 환경 변수와 로컬 설정을 통해 베타 기능들을 제어합니다.
  */
 
-// 베타 종료일 (정식 오픈 예정일)
-export const BETA_END_DATE = new Date("2025-12-31"); // 실제 날짜로 변경 필요
+// 베타 종료일 (정식 오픈 예정일) - 미정
+export const BETA_END_DATE = new Date("2099-12-31"); // 베타 기간 미정, 매우 먼 미래로 설정
 
 // 환경 변수 기반 베타 플래그들
 export const BETA_FLAGS = {

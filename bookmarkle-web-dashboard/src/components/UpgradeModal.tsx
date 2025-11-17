@@ -3,6 +3,7 @@ import { X, Sparkles, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSubscriptionStore } from "../stores";
+import { isBetaPeriod } from "../utils/betaFlags";
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -23,7 +24,8 @@ export const UpgradeModal: React.FC<UpgradeModalProps> = ({
   const navigate = useNavigate();
   const { plan, limits } = useSubscriptionStore();
 
-  if (!isOpen) return null;
+  // 베타 기간 중이거나 모달이 열리지 않았으면 표시하지 않음
+  if (!isOpen || isBetaPeriod()) return null;
 
   const handleUpgrade = () => {
     onClose();

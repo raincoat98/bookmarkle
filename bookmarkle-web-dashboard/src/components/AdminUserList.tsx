@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { AdminUser } from "../types";
 import {
   Search,
@@ -9,7 +9,9 @@ import {
   UserX,
   UserCheck,
   Crown,
+  Gift,
 } from "lucide-react";
+import { isEarlyUser } from "../utils/earlyUser";
 
 interface AdminUserListProps {
   users: AdminUser[];
@@ -24,6 +26,30 @@ export function AdminUserList({
 }: AdminUserListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [earlyUserMap, setEarlyUserMap] = useState<Record<string, boolean>>({});
+
+  // 얼리 유저 상태 확인
+  useEffect(() => {
+    const checkEarlyUsers = async () => {
+      const earlyUserStatus: Record<string, boolean> = {};
+
+      for (const user of users) {
+        try {
+          const isEarly = await isEarlyUser(user.uid);
+          earlyUserStatus[user.uid] = isEarly;
+        } catch (error) {
+          console.error(`얼리 유저 확인 실패 - ${user.uid}:`, error);
+          earlyUserStatus[user.uid] = false;
+        }
+      }
+
+      setEarlyUserMap(earlyUserStatus);
+    };
+
+    if (users.length > 0) {
+      checkEarlyUsers();
+    }
+  }, [users]);
 
   // 검색 필터링
   const filteredUsers = users.filter(
@@ -55,7 +81,7 @@ export function AdminUserList({
       </div>
 
       {/* 통계 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -77,15 +103,31 @@ export function AdminUserList({
                 프리미엄 사용자
               </p>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                {users.filter(
-                  (user) =>
-                    user.subscription?.plan === "premium" &&
-                    (user.subscription?.status === "active" ||
-                      user.subscription?.status === "trialing")
-                ).length}
+                {
+                  users.filter(
+                    (user) =>
+                      user.subscription?.plan === "premium" &&
+                      (user.subscription?.status === "active" ||
+                        user.subscription?.status === "trialing")
+                  ).length
+                }
               </p>
             </div>
             <Crown className="h-8 w-8 md:h-12 md:w-12 text-yellow-500 flex-shrink-0" />
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
+                얼리 유저
+              </p>
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                {Object.values(earlyUserMap).filter(Boolean).length}
+              </p>
+            </div>
+            <Gift className="h-8 w-8 md:h-12 md:w-12 text-orange-500 flex-shrink-0" />
           </div>
         </div>
 
@@ -140,6 +182,9 @@ export function AdminUserList({
                   구독
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  얼리 유저
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   가입일
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -154,7 +199,7 @@ export function AdminUserList({
               {filteredUsers.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={8}
+                    colSpan={9}
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     {searchTerm
@@ -219,6 +264,20 @@ export function AdminUserList({
                       ) : (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
                           무료
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {earlyUserMap[user.uid] ? (
+                        <div className="flex items-center space-x-2">
+                          <Gift className="h-4 w-4 text-orange-500" />
+                          <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
+                            얼리 유저
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500 dark:text-gray-400">
+                          -
                         </span>
                       )}
                     </td>
@@ -378,13 +437,40 @@ export function AdminUserList({
                             ? "월간 구독"
                             : "연간 구독"}
                           {selectedUser.subscription.endDate &&
-                            ` · 만료일: ${selectedUser.subscription.endDate.toLocaleDateString("ko-KR")}`}
+                            ` · 만료일: ${selectedUser.subscription.endDate.toLocaleDateString(
+                              "ko-KR"
+                            )}`}
                         </p>
                       </div>
                     </>
                   ) : (
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       무료
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  얼리 유저 상태
+                </label>
+                <div className="mt-1 flex items-center space-x-2">
+                  {earlyUserMap[selectedUser.uid] ? (
+                    <>
+                      <Gift className="h-5 w-5 text-orange-500" />
+                      <div>
+                        <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
+                          얼리 유저
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          베타 기간 중 가입한 사용자입니다
+                        </p>
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      일반 사용자
                     </span>
                   )}
                 </div>

@@ -3,6 +3,7 @@ import { Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSubscriptionStore } from "../stores";
+import { isBetaPeriod } from "../utils/betaFlags";
 
 interface UpgradeBannerProps {
   onDismiss?: () => void;
@@ -14,8 +15,9 @@ export const UpgradeBanner: React.FC<UpgradeBannerProps> = ({ onDismiss }) => {
   const { plan, isPremium } = useSubscriptionStore();
   const [isDismissed, setIsDismissed] = React.useState(false);
 
-  // 프리미엄 사용자이면 표시하지 않음
-  if (isPremium || plan === "premium" || isDismissed) return null;
+  // 베타 기간 중이거나 프리미엄 사용자이면 표시하지 않음
+  if (isBetaPeriod() || isPremium || plan === "premium" || isDismissed)
+    return null;
 
   const handleDismiss = () => {
     setIsDismissed(true);
