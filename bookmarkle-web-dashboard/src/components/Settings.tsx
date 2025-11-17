@@ -5,7 +5,7 @@ import {
   useCollectionStore,
   useThemeStore,
 } from "../stores";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import {
   Settings as SettingsIcon,
   X,

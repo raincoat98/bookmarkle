@@ -101,7 +101,10 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
       const { rawBookmarks, selectedCollection, getChildCollectionIds } = get();
       let filtered = rawBookmarks;
 
-      if (selectedCollection === "none") {
+      if (selectedCollection === "favorites") {
+        // 즐겨찾기한 북마크들만
+        filtered = rawBookmarks.filter((bookmark) => bookmark.isFavorite === true);
+      } else if (selectedCollection === "none") {
         // 컬렉션이 없는 북마크들
         filtered = rawBookmarks.filter(
           (bookmark) =>

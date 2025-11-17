@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Bookmark, Collection } from "../types";
 import { renderCollectionIcon } from "../utils/iconRenderer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 interface SortableBookmarkCardProps {
   bookmark: Bookmark;
@@ -147,7 +147,7 @@ export const SortableBookmarkCard = ({
       <div
         {...attributes}
         {...listeners}
-        className="absolute top-2 left-2 sm:top-3 sm:left-3 hidden sm:block opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-grab active:cursor-grabbing z-40 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1.5 shadow-sm min-w-[36px] min-h-[36px] flex items-center justify-center"
+        className="absolute top-2 left-2 sm:top-3 sm:left-3 hidden sm:flex opacity-0 group-hover:opacity-100 transition-all duration-300 cursor-grab active:cursor-grabbing z-40 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg p-1.5 shadow-sm min-w-[36px] min-h-[36px] items-center justify-center"
       >
         <svg
           className="w-6 h-6 sm:w-5 sm:h-5 text-gray-700 dark:text-gray-200"
@@ -166,7 +166,7 @@ export const SortableBookmarkCard = ({
         <button
           onClick={handleMoveUp}
           disabled={isFirst}
-          className="block sm:hidden md:hidden lg:hidden xl:hidden 2xl:hidden p-1 min-w-[32px] min-h-[32px] text-gray-700 hover:text-green-600 dark:text-gray-200 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-sm hover:shadow-md active:scale-95 touch-manipulation flex-shrink-0 border border-gray-300 dark:border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent flex items-center justify-center"
+          className="sm:hidden md:hidden lg:hidden xl:hidden 2xl:hidden p-1 min-w-[32px] min-h-[32px] text-gray-700 hover:text-green-600 dark:text-gray-200 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-sm hover:shadow-md active:scale-95 touch-manipulation flex-shrink-0 border border-gray-300 dark:border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent flex items-center justify-center"
           title={t("common.moveUp")}
         >
           <svg
@@ -186,7 +186,7 @@ export const SortableBookmarkCard = ({
         <button
           onClick={handleMoveDown}
           disabled={isLast}
-          className="block sm:hidden md:hidden lg:hidden xl:hidden 2xl:hidden p-1 min-w-[32px] min-h-[32px] text-gray-700 hover:text-green-600 dark:text-gray-200 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-sm hover:shadow-md active:scale-95 touch-manipulation flex-shrink-0 border border-gray-300 dark:border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent flex items-center justify-center"
+          className="sm:hidden md:hidden lg:hidden xl:hidden 2xl:hidden p-1 min-w-[32px] min-h-[32px] text-gray-700 hover:text-green-600 dark:text-gray-200 dark:hover:text-green-400 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 transition-all duration-200 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-sm hover:shadow-md active:scale-95 touch-manipulation flex-shrink-0 border border-gray-300 dark:border-gray-600 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:bg-transparent flex items-center justify-center"
           title={t("common.moveDown")}
         >
           <svg

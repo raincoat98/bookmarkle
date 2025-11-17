@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { DashboardOverview } from "../components/DashboardWidgets";
+import { DashboardOverview } from "../components/dashboard/DashboardOverview";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
 import { DisabledUserMessage } from "../components/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";
@@ -10,7 +10,7 @@ import { EditBookmarkModal } from "../components/EditBookmarkModal";
 import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
 import { AddCollectionModal } from "../components/AddCollectionModal";
 import { Drawer } from "../components/Drawer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
@@ -24,8 +24,14 @@ export const DashboardPage: React.FC = () => {
     subscribeToBookmarks,
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
+    loading: bookmarksLoading,
   } = useBookmarkStore();
-  const { collections, addCollection, fetchCollections } = useCollectionStore();
+  const {
+    collections,
+    addCollection,
+    fetchCollections,
+    loading: collectionsLoading,
+  } = useCollectionStore();
   const { createNotification } = useNotifications(user?.uid || "");
 
   // 북마크 데이터 가져오기
@@ -262,6 +268,8 @@ export const DashboardPage: React.FC = () => {
             currentSort={currentSort}
             onSortChange={setCurrentSort}
             userId={user?.uid || ""}
+            bookmarksLoading={bookmarksLoading}
+            collectionsLoading={collectionsLoading}
           />
         </div>
         <AddBookmarkModal

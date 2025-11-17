@@ -1,7 +1,7 @@
 import { useState } from "react";
 import * as LucideIcons from "lucide-react";
 import EmojiPicker from "emoji-picker-react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 // 자주 사용되는 아이콘들만 선별
 const POPULAR_ICONS = [

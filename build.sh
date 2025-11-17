@@ -298,7 +298,9 @@ case $PROJECT in
         echo -e "${BLUE}📋 빌드 결과 요약:${NC}"
         [ -d "bookmarkle-signin-popup" ] && echo "• 북마클 로그인 팝업: 정적 파일 (배포 준비됨)"
         [ -d "bookmarkle-web-dashboard/dist" ] && echo "• 북마클 웹 대시보드: bookmarkle-web-dashboard/dist/ (호스팅 준비됨)"
-        [ -f "build/bookmarkle-browser-extension-"*.zip ] && echo "• 북마클 브라우저 확장: build/bookmarkle-browser-extension-*.zip (스토어 업로드 준비됨)"
+        if compgen -G "build/bookmarkle-browser-extension-*.zip" > /dev/null; then
+            echo "• 북마클 브라우저 확장: build/bookmarkle-browser-extension-*.zip (스토어 업로드 준비됨)"
+        fi
         ;;
     *)
         log_error "알 수 없는 프로젝트: $PROJECT"

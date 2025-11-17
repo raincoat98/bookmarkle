@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../stores";
 import { useNotifications } from "../hooks/useNotifications";
@@ -337,7 +337,7 @@ export const NotificationCenterPage: React.FC = () => {
     );
 
     toast.success(
-      `${t("settings.systemNotifications")} ${
+      `${t("notifications.systemNotifications")} ${
         newValue ? t("notifications.enable") : t("notifications.disable")
       }`
     );
@@ -419,7 +419,7 @@ export const NotificationCenterPage: React.FC = () => {
                       {t("notifications.bookmarkNotifications")}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t("settings.browserNotificationsDescription")}
+                      {t("notifications.bookmarkNotificationsDescription")}
                     </p>
                   </div>
                   <button
@@ -447,10 +447,10 @@ export const NotificationCenterPage: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
-                      {t("settings.systemNotifications")}
+                      {t("notifications.systemNotifications")}
                     </p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t("settings.systemNotificationsDescription")}
+                      {t("notifications.systemNotificationsDescription")}
                     </p>
                     {browserNotificationPermission.denied && (
                       <p className="text-xs text-red-500 dark:text-red-400 mt-1">
@@ -521,7 +521,7 @@ export const NotificationCenterPage: React.FC = () => {
                       onClick={deleteAllNotifications}
                       className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 sm:px-3 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                      모두 삭제
+                      {t("notifications.deleteAll")}
                     </button>
                   )}
                   {unreadCount > 0 && (

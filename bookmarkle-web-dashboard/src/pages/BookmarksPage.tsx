@@ -17,7 +17,7 @@ import type {
 import toast from "react-hot-toast";
 import { Search, Grid3X3, List, Plus, FolderPlus } from "lucide-react";
 import { Drawer } from "../components/Drawer";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 export const BookmarksPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
@@ -39,6 +39,8 @@ export const BookmarksPage: React.FC = () => {
     updateCollection,
     deleteCollection,
     setPinned,
+    loading: collectionsLoading,
+    fetchCollections,
   } = useCollectionStore();
 
   const {
@@ -52,6 +54,7 @@ export const BookmarksPage: React.FC = () => {
     subscribeToBookmarks,
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
+    loading: bookmarksLoading,
   } = useBookmarkStore();
 
   // 핀된 컬렉션을 기본 탭으로 설정
@@ -85,10 +88,9 @@ export const BookmarksPage: React.FC = () => {
   // 컬렉션 데이터 가져오기
   React.useEffect(() => {
     if (user?.uid) {
-      const { fetchCollections } = useCollectionStore.getState();
       fetchCollections(user.uid);
     }
-  }, [user?.uid]);
+  }, [user?.uid, fetchCollections]);
 
   // 북마크 구독 설정
   React.useEffect(() => {
@@ -228,10 +230,11 @@ export const BookmarksPage: React.FC = () => {
       return matchesSearch && matchesTag;
     });
 
-    // 하위 컬렉션이 있는 경우 그룹화
+    // 하위 컬렉션이 있는 경우 그룹화 (즐겨찾기는 제외)
     if (
       selectedCollection !== "all" &&
       selectedCollection !== "none" &&
+      selectedCollection !== "favorites" &&
       selectedCollection
     ) {
       const childCollectionIds = getChildCollectionIds(selectedCollection);
@@ -514,7 +517,7 @@ export const BookmarksPage: React.FC = () => {
   return (
     <Drawer
       collections={collections}
-      collectionsLoading={false}
+      collectionsLoading={collectionsLoading}
       selectedCollection={selectedCollection}
       onCollectionChange={setSelectedCollection}
       onDeleteCollectionRequest={(id, name) => {
@@ -668,6 +671,7 @@ export const BookmarksPage: React.FC = () => {
                     ? filteredBookmarksData
                     : undefined
                 }
+                loading={bookmarksLoading}
               />
             );
           })()}

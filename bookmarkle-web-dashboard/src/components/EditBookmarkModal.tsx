@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import type { Bookmark, BookmarkFormData, Collection } from "../types";
 import { getFaviconUrl, findFaviconFromWebsite } from "../utils/favicon";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 interface EditBookmarkModalProps {
   isOpen: boolean;

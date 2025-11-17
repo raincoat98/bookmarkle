@@ -2,7 +2,7 @@ import { useState } from "react";
 import { IconPicker } from "./IconPicker";
 import * as LucideIcons from "lucide-react";
 import { PinIcon } from "lucide-react";
-import { useTranslation } from "../../node_modules/react-i18next";
+import { useTranslation } from "react-i18next";
 
 interface AddCollectionModalProps {
   isOpen: boolean;
