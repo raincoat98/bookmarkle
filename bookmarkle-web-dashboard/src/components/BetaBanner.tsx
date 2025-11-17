@@ -1,13 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Sparkles, Gift } from "lucide-react";
 import { useAuthStore } from "../stores";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
-import { useEffect } from "react";
-
-// 베타 종료일 (정식 오픈 예정일)
-const BETA_END_DATE = new Date("2025-12-31"); // 예시 날짜, 실제 날짜로 변경 필요
+import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
 
 export const BetaBanner = () => {
   const { t } = useTranslation();
@@ -38,20 +35,20 @@ export const BetaBanner = () => {
     }
   };
 
-  // 로컬 스토리지에서 닫힘 상태 확인
+  // 베타 배너 표시 상태 확인
   useEffect(() => {
-    const dismissed = localStorage.getItem("betaBannerDismissed");
-    if (dismissed === "true") {
+    if (!betaUtils.shouldShowBanner()) {
       setIsDismissed(true);
     }
   }, []);
 
   const handleDismiss = () => {
     setIsDismissed(true);
-    localStorage.setItem("betaBannerDismissed", "true");
+    betaUtils.dismissBanner();
   };
 
-  if (isDismissed || !user) return null;
+  // 베타 배너를 표시하지 않는 경우 또는 사용자가 로그인하지 않은 경우
+  if (isDismissed || !user || !betaUtils.shouldShowBanner()) return null;
 
   return (
     <div className="relative bg-gradient-to-r from-brand-500 to-accent-500 text-white px-4 py-3 shadow-lg">
@@ -62,18 +59,23 @@ export const BetaBanner = () => {
             <p className="text-sm font-medium">
               🚀 Beta Free Access! 지금 북마클의 모든 기능을 무료로 사용하세요.
             </p>
-            {isEarlyUser ? (
-              <p className="text-xs opacity-90 mt-1 flex items-center space-x-1">
-                <Gift className="w-3 h-3" />
-                <span>
-                  얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로
-                  유지됩니다.
-                </span>
-              </p>
-            ) : (
-              <p className="text-xs opacity-90 mt-1">
-                얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로 유지됩니다.
-              </p>
+            {betaUtils.shouldShowEarlyUserBenefits() && (
+              <>
+                {isEarlyUser ? (
+                  <p className="text-xs opacity-90 mt-1 flex items-center space-x-1">
+                    <Gift className="w-3 h-3" />
+                    <span>
+                      얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로
+                      유지됩니다.
+                    </span>
+                  </p>
+                ) : (
+                  <p className="text-xs opacity-90 mt-1">
+                    얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로
+                    유지됩니다.
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>
