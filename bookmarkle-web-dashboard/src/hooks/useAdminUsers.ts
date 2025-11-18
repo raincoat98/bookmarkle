@@ -134,9 +134,7 @@ export function useAdminUsers() {
     } catch (err: unknown) {
       console.error("사용자 목록 로드 오류:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "사용자 목록을 불러오는데 실패했습니다."
+        err instanceof Error ? err.message : "Failed to load user list."
       );
     } finally {
       setLoading(false);
@@ -160,12 +158,12 @@ export function useAdminUsers() {
       );
 
       console.log(
-        `사용자 ${uid} 상태 변경: ${isActive ? "활성화" : "비활성화"}`
+        `User ${uid} status changed: ${isActive ? "activated" : "deactivated"}`
       );
     } catch (err: unknown) {
       console.error("사용자 상태 변경 실패:", err);
       setError(
-        err instanceof Error ? err.message : "사용자 상태 변경에 실패했습니다."
+        err instanceof Error ? err.message : "Failed to change user status."
       );
     }
   };

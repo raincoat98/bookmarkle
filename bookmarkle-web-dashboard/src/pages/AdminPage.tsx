@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Header } from "../components/Header";
 import { AdminUserManagement } from "../components/admin/AdminUserManagement";
 import { useAdminUsers } from "../hooks/useAdminUsers";
@@ -6,6 +7,7 @@ import { SubscriptionFeatureSettings } from "../components/settings/Subscription
 import { ShieldCheck, Users, Settings } from "lucide-react";
 
 export function AdminPage() {
+  const { t } = useTranslation();
   const { users, loading, error, refetch, toggleUserStatus } = useAdminUsers();
   const [activeTab, setActiveTab] = useState<"users" | "subscription">("users");
 
@@ -18,11 +20,13 @@ export function AdminPage() {
           <div className="flex items-center gap-3 mb-2">
             <ShieldCheck className="h-7 w-7 sm:h-8 sm:w-8 text-brand-600 dark:text-brand-400" />
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-              관리자 대시보드
+              {t("admin.title")}
             </h1>
           </div>
           <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400">
-            전체 사용자를 관리하고 통계를 확인할 수 있습니다.
+            {t("admin.description", {
+              defaultValue: "전체 사용자를 관리하고 통계를 확인할 수 있습니다.",
+            })}
           </p>
         </div>
 
@@ -38,7 +42,7 @@ export function AdminPage() {
               }`}
             >
               <Users className="w-4 h-4" />
-              <span>사용자 관리</span>
+              <span>{t("admin.users")}</span>
             </button>
             <button
               onClick={() => setActiveTab("subscription")}
@@ -49,7 +53,7 @@ export function AdminPage() {
               }`}
             >
               <Settings className="w-4 h-4" />
-              <span>구독 기능 설정</span>
+              <span>{t("premium.settings.subscriptionFeatureSettings")}</span>
             </button>
           </nav>
         </div>
