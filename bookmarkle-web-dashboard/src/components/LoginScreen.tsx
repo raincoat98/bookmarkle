@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
 import { BrowserCompatibilityWarning } from "./BrowserCompatibilityWarning";
-import { SubscriptionAnnouncementModal } from "./SubscriptionAnnouncementModal";
 import { isAdminUser } from "../firebase";
 import {
   detectBrowser,
@@ -15,7 +14,6 @@ export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,19 +39,6 @@ export const LoginScreen = () => {
     }
   }, [user]);
 
-  // 최초 로그인 시 구독 알림 모달 표시 (관리자 제외)
-  useEffect(() => {
-    if (user && !isAdmin) {
-      const hasSeenSubscriptionModal = localStorage.getItem(
-        "hasSeenSubscriptionModal"
-      );
-      const hasSeenBetaModal = localStorage.getItem("hasSeenBetaModal"); // 하위 호환성
-      if (!hasSeenSubscriptionModal && !hasSeenBetaModal) {
-        setShowSubscriptionModal(true);
-        localStorage.setItem("hasSeenSubscriptionModal", "true");
-      }
-    }
-  }, [user, isAdmin]);
 
   // 폼 데이터
   const [formData, setFormData] = useState({
@@ -368,12 +353,6 @@ export const LoginScreen = () => {
           </div>
         </div>
       </div>
-      {!isAdmin && (
-        <SubscriptionAnnouncementModal
-          isOpen={showSubscriptionModal}
-          onClose={() => setShowSubscriptionModal(false)}
-        />
-      )}
     </div>
   );
 };
