@@ -87,7 +87,7 @@ export const SubscriptionAnnouncementModal: React.FC<
               </div>
               <div>
                 <h2 className="text-2xl font-bold">
-                  {t("subscription.modal.title", {
+                  {t("premium.subscription.modal.title", {
                     defaultValue: "프리미엄 구독으로 업그레이드하세요!",
                   })}
                 </h2>
@@ -98,13 +98,13 @@ export const SubscriptionAnnouncementModal: React.FC<
           {/* 내용 */}
           <div className="p-6 space-y-4 flex-1 overflow-y-auto">
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("subscription.modal.description", {
+              {t("premium.subscription.modal.description", {
                 defaultValue:
                   "Bookmarkle이 정식 오픈되었습니다! 프리미엄 구독으로 더 많은 기능을 이용하실 수 있습니다.",
               })}
             </p>
             <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("subscription.modal.features", {
+              {t("premium.subscription.modal.features", {
                 defaultValue:
                   "프리미엄 구독으로 무제한 북마크, 고급 검색 기능, 커스텀 테마 등 다양한 기능을 이용하세요.",
               })}
@@ -117,16 +117,22 @@ export const SubscriptionAnnouncementModal: React.FC<
                       <Gift className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1">
-                          {t("subscription.modal.earlyUserBenefitApplied", {
-                            defaultValue:
-                              "얼리유저 특별 혜택이 적용되었습니다!",
-                          })}
+                          {t(
+                            "premium.subscription.modal.earlyUserBenefitApplied",
+                            {
+                              defaultValue:
+                                "얼리유저 특별 혜택이 적용되었습니다!",
+                            }
+                          )}
                         </p>
                         <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                          {t("subscription.modal.earlyUserBenefitDesc", {
-                            defaultValue:
-                              "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
-                          })}
+                          {t(
+                            "premium.subscription.modal.earlyUserBenefitDesc",
+                            {
+                              defaultValue:
+                                "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
+                            }
+                          )}
                         </p>
                       </div>
                     </div>
@@ -134,7 +140,7 @@ export const SubscriptionAnnouncementModal: React.FC<
                 )}
                 {!isEarlyUser && (
                   <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {t("subscription.modal.earlyUserBenefitDesc", {
+                    {t("premium.subscription.modal.earlyUserBenefitDesc", {
                       defaultValue:
                         "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
                     })}
@@ -143,7 +149,7 @@ export const SubscriptionAnnouncementModal: React.FC<
               </>
             )}
             <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
-              {t("subscription.modal.betterService", {
+              {t("premium.subscription.modal.betterService", {
                 defaultValue:
                   "더 나은 서비스를 제공하기 위해 계속 노력하겠습니다.",
               })}
@@ -157,13 +163,17 @@ export const SubscriptionAnnouncementModal: React.FC<
                 onClick={handleClose}
                 className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
               >
-                닫기
+                {t("premium.subscription.modal.close", {
+                  defaultValue: "닫기",
+                })}
               </button>
               <button
                 onClick={handleSubscribe}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
               >
-                바로가기
+                {t("premium.subscription.modal.goToPricing", {
+                  defaultValue: "바로가기",
+                })}
               </button>
             </div>
           </div>

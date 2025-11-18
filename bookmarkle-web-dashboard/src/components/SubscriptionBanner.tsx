@@ -5,12 +5,16 @@ import { useAuthStore } from "../stores";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
-import { useNavigate } from "react-router-dom";
 
-export const SubscriptionBanner = () => {
+interface SubscriptionBannerProps {
+  onViewClick?: () => void;
+}
+
+export const SubscriptionBanner = ({
+  onViewClick,
+}: SubscriptionBannerProps) => {
   const { t } = useTranslation();
   const { user } = useAuthStore();
-  const navigate = useNavigate();
   const [isDismissed, setIsDismissed] = useState(false);
   const [isEarlyUser, setIsEarlyUser] = useState(false);
 
@@ -55,8 +59,11 @@ export const SubscriptionBanner = () => {
     betaUtils.dismissBanner();
   };
 
-  const handleClick = () => {
-    navigate("/pricing");
+  const handleViewClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onViewClick) {
+      onViewClick();
+    }
   };
 
   // 구독 알림 배너를 표시하지 않는 경우 체크
@@ -73,16 +80,13 @@ export const SubscriptionBanner = () => {
   }
 
   return (
-    <div
-      className="relative bg-gradient-to-r from-brand-500 to-accent-500 text-white px-4 py-3 shadow-lg cursor-pointer hover:from-brand-600 hover:to-accent-600 transition-all"
-      onClick={handleClick}
-    >
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="relative bg-gradient-to-r from-brand-500 to-accent-500 text-white px-4 py-3 shadow-lg">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
         <div className="flex items-center space-x-3 min-w-0 flex-1">
           <Crown className="w-5 h-5 flex-shrink-0" />
           <div className="flex items-center space-x-2 min-w-0 flex-1">
             <span className="text-sm font-medium truncate">
-              {t("subscription.banner.title", {
+              {t("premium.subscription.banner.title", {
                 defaultValue: "프리미엄 구독으로 더 많은 기능을 이용하세요!",
               })}
             </span>
@@ -92,14 +96,14 @@ export const SubscriptionBanner = () => {
                   <div className="flex items-center space-x-1 flex-shrink-0">
                     <Gift className="w-3 h-3" />
                     <span className="text-xs opacity-90 hidden md:inline">
-                      {t("subscription.banner.earlyUserBenefit", {
+                      {t("premium.subscription.banner.earlyUserBenefit", {
                         defaultValue: "얼리유저 특별 혜택 적용 중",
                       })}
                     </span>
                   </div>
                 ) : (
                   <span className="text-xs opacity-90 hidden md:inline">
-                    {t("subscription.banner.earlyUserBenefit", {
+                    {t("premium.subscription.banner.earlyUserBenefitCheck", {
                       defaultValue: "얼리유저 특별 혜택 확인하기",
                     })}
                   </span>
@@ -108,16 +112,28 @@ export const SubscriptionBanner = () => {
             )}
           </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            handleDismiss();
-          }}
-          className="p-1 hover:bg-white/20 rounded-lg transition-colors"
-          aria-label={t("common.close")}
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          {onViewClick && (
+            <button
+              onClick={handleViewClick}
+              className="px-4 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-medium transition-colors backdrop-blur-sm"
+            >
+              {t("premium.subscription.banner.viewDetails", {
+                defaultValue: "자세히 보기",
+              })}
+            </button>
+          )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDismiss();
+            }}
+            className="p-1 hover:bg-white/20 rounded-lg transition-colors"
+            aria-label={t("common.close")}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
     </div>
   );

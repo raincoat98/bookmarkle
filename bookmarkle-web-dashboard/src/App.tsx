@@ -19,7 +19,7 @@ import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
 import { SubscriptionBanner } from "./components/SubscriptionBanner";
 import { SubscriptionAnnouncementModal } from "./components/SubscriptionAnnouncementModal";
-import { betaUtils, isBetaPeriod } from "./utils/betaFlags";
+import { isBetaPeriod } from "./utils/betaFlags";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
@@ -44,37 +44,25 @@ function AppContent() {
   // 관리자 페이지인지 확인
   const isAdminPage = location.pathname === "/admin";
 
-  // 구독 알림 모달 표시 (로그인된 사용자에게, 관리자 페이지 제외)
-  useEffect(() => {
-    if (user && !isAdminPage && betaUtils.shouldShowModal()) {
-      setShowSubscriptionModal(true);
-    }
-  }, [user, isAdminPage]);
+  const handleOpenModal = () => {
+    setShowSubscriptionModal(true);
+  };
 
-  // 로컬 스토리지 변경 감지 (구독 설정 초기화 시 모달 다시 표시)
-  useEffect(() => {
-    const checkSubscriptionModal = () => {
-      if (user && !isAdminPage && betaUtils.shouldShowModal()) {
-        setShowSubscriptionModal(true);
-      }
-    };
-
-    checkSubscriptionModal();
-    const interval = setInterval(checkSubscriptionModal, 500);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }, [user, isAdminPage]);
+  const handleCloseModal = () => {
+    setShowSubscriptionModal(false);
+  };
 
   return (
     <>
       {/* 관리자 페이지가 아닐 때만 배너 표시 */}
-      {user && !isAdminPage && <SubscriptionBanner />}
+      {user && !isAdminPage && (
+        <SubscriptionBanner onViewClick={handleOpenModal} />
+      )}
       {user && !isAdminPage && (
         <SubscriptionAnnouncementModal
           isOpen={showSubscriptionModal}
-          onClose={() => setShowSubscriptionModal(false)}
+          onClose={handleCloseModal}
+          forceShow={true}
         />
       )}
       {!user ? (
