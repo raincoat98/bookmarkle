@@ -12,11 +12,15 @@ export const ClockWidget: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const timeStr = now.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+  // 시간, 분, 초를 분리하여 초 부분만 애니메이션 적용
+  const hours24 = now.getHours();
+  const hours12 = hours24 % 12 || 12;
+  const minutes = now.getMinutes().toString().padStart(2, "0");
+  const seconds = now.getSeconds().toString().padStart(2, "0");
+  const ampm = hours24 >= 12 
+    ? (i18n.language === "ko" ? "오후" : i18n.language === "ja" ? "午後" : "PM")
+    : (i18n.language === "ko" ? "오전" : i18n.language === "ja" ? "午前" : "AM");
+  const displayHours = hours12.toString().padStart(2, "0");
 
   const getLocale = () => {
     switch (i18n.language) {
@@ -52,15 +56,11 @@ export const ClockWidget: React.FC = () => {
         whileHover={{ scale: 1.02 }}
         className="sm:col-span-2 card-glass p-2 sm:p-4 flex flex-col items-center justify-center text-center min-h-[100px] sm:min-h-[140px]"
       >
-        <motion.div
-          key={timeStr}
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text tracking-wider mb-0.5 sm:mb-1"
-        >
-          {timeStr}
-        </motion.div>
+        <div className="text-xl sm:text-2xl md:text-3xl font-bold gradient-text tracking-wider mb-0.5 sm:mb-1">
+          <span>{ampm} {displayHours}:{minutes}</span>
+          <span>:</span>
+          <span className="inline-block">{seconds}</span>
+        </div>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
