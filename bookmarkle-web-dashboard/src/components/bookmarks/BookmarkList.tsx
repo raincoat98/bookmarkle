@@ -539,11 +539,11 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                    className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between min-h-[2.5rem]">
                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                        <Folder className="w-4 h-4" />
+                        <Folder className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm">
                           {t("bookmarks.hiddenSubCollectionBookmarks", {
                             count: groupedBookmarks.groupedBookmarks.length,
@@ -552,7 +552,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                       </div>
                       <button
                         onClick={() => setShowSubCollections(true)}
-                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex-shrink-0 ml-2"
                       >
                         {t("bookmarks.show")}
                       </button>
@@ -675,11 +675,11 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                        className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between min-h-[2.5rem]">
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                            <Folder className="w-4 h-4" />
+                            <Folder className="w-4 h-4 flex-shrink-0" />
                             <span className="text-sm">
                               {t("bookmarks.hiddenSubCollectionBookmarks", {
                                 count: groupedBookmarks.groupedBookmarks.length,
@@ -688,7 +688,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                           </div>
                           <button
                             onClick={() => setShowSubCollections(true)}
-                            className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+                            className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex-shrink-0 ml-2"
                           >
                             {t("bookmarks.show")}
                           </button>
