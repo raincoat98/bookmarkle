@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Bookmark, Collection, SortOption } from "../../types";
 import { SortableBookmarkCard } from "./SortableBookmarkCard";
@@ -80,8 +80,19 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
     null
   );
 
-  // 하위 컬렉션 북마크 보기 토글 상태
-  const [showSubCollections, setShowSubCollections] = useState(true);
+  // 하위 컬렉션 북마크 보기 토글 상태 (로컬 스토리지에서 초기값 불러오기)
+  const [showSubCollections, setShowSubCollections] = useState(() => {
+    const stored = localStorage.getItem("showSubCollections");
+    if (stored !== null) {
+      return stored === "true";
+    }
+    return true; // 기본값은 true (보기)
+  });
+
+  // 로컬 스토리지에 상태 저장
+  useEffect(() => {
+    localStorage.setItem("showSubCollections", String(showSubCollections));
+  }, [showSubCollections]);
 
   // 필터링 및 정렬된 북마크
   const filteredAndSortedBookmarks = useMemo(() => {
@@ -525,14 +536,15 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                 groupedBookmarks?.groupedBookmarks &&
                 groupedBookmarks.groupedBookmarks.length > 0 && (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                        <Folder className="w-4 h-4" />
+                        <Folder className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm">
                           {t("bookmarks.hiddenSubCollectionBookmarks", {
                             count: groupedBookmarks.groupedBookmarks.length,
@@ -541,14 +553,15 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                       </div>
                       <button
                         onClick={() => setShowSubCollections(true)}
-                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+                        className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex-shrink-0 ml-2"
                       >
                         {t("bookmarks.show")}
                       </button>
                     </div>
                   </motion.div>
                 )}
-              {sortedGroupedBookmarks.groupedBookmarks &&
+              {showSubCollections &&
+                sortedGroupedBookmarks.groupedBookmarks &&
                 sortedGroupedBookmarks.groupedBookmarks.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -661,14 +674,15 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                     groupedBookmarks?.groupedBookmarks &&
                     groupedBookmarks.groupedBookmarks.length > 0 && (
                       <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
-                            <Folder className="w-4 h-4" />
+                            <Folder className="w-4 h-4 flex-shrink-0" />
                             <span className="text-sm">
                               {t("bookmarks.hiddenSubCollectionBookmarks", {
                                 count: groupedBookmarks.groupedBookmarks.length,
@@ -677,14 +691,15 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                           </div>
                           <button
                             onClick={() => setShowSubCollections(true)}
-                            className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium"
+                            className="text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium flex-shrink-0 ml-2"
                           >
                             {t("bookmarks.show")}
                           </button>
                         </div>
                       </motion.div>
                     )}
-                  {sortedGroupedBookmarks.groupedBookmarks &&
+                  {showSubCollections &&
+                    sortedGroupedBookmarks.groupedBookmarks &&
                     sortedGroupedBookmarks.groupedBookmarks.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
@@ -786,52 +801,53 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                       : "space-y-4"
                   }
                 >
-                  {filteredAndSortedBookmarks.map((bookmark: Bookmark, idx: number) =>
-                    viewMode === "grid" ? (
-                      <SortableBookmarkCard
-                        key={bookmark.id}
-                        bookmark={bookmark}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onRefreshFavicon={
-                          onRefreshFavicon
-                            ? handleRefreshFavicon
-                            : async () => {}
-                        }
-                        faviconLoading={
-                          faviconLoadingStates[bookmark.id] || false
-                        }
-                        collections={collections}
-                        onToggleFavorite={onToggleFavorite}
-                        onMoveUp={handleMoveUp}
-                        onMoveDown={handleMoveDown}
-                        isFirst={idx === 0}
-                        isLast={idx === filteredAndSortedBookmarks.length - 1}
-                        isMoving={movingBookmarkId === bookmark.id}
-                        moveDirection={moveDirection}
-                      />
-                    ) : (
-                      <SortableBookmarkListItem
-                        key={bookmark.id}
-                        bookmark={bookmark}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onRefreshFavicon={
-                          onRefreshFavicon ? handleRefreshFavicon : undefined
-                        }
-                        faviconLoading={
-                          faviconLoadingStates[bookmark.id] || false
-                        }
-                        collections={collections}
-                        onToggleFavorite={onToggleFavorite}
-                        onMoveUp={handleMoveUp}
-                        onMoveDown={handleMoveDown}
-                        isFirst={idx === 0}
-                        isLast={idx === filteredAndSortedBookmarks.length - 1}
-                        isMoving={movingBookmarkId === bookmark.id}
-                        moveDirection={moveDirection}
-                      />
-                    )
+                  {filteredAndSortedBookmarks.map(
+                    (bookmark: Bookmark, idx: number) =>
+                      viewMode === "grid" ? (
+                        <SortableBookmarkCard
+                          key={bookmark.id}
+                          bookmark={bookmark}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onRefreshFavicon={
+                            onRefreshFavicon
+                              ? handleRefreshFavicon
+                              : async () => {}
+                          }
+                          faviconLoading={
+                            faviconLoadingStates[bookmark.id] || false
+                          }
+                          collections={collections}
+                          onToggleFavorite={onToggleFavorite}
+                          onMoveUp={handleMoveUp}
+                          onMoveDown={handleMoveDown}
+                          isFirst={idx === 0}
+                          isLast={idx === filteredAndSortedBookmarks.length - 1}
+                          isMoving={movingBookmarkId === bookmark.id}
+                          moveDirection={moveDirection}
+                        />
+                      ) : (
+                        <SortableBookmarkListItem
+                          key={bookmark.id}
+                          bookmark={bookmark}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onRefreshFavicon={
+                            onRefreshFavicon ? handleRefreshFavicon : undefined
+                          }
+                          faviconLoading={
+                            faviconLoadingStates[bookmark.id] || false
+                          }
+                          collections={collections}
+                          onToggleFavorite={onToggleFavorite}
+                          onMoveUp={handleMoveUp}
+                          onMoveDown={handleMoveDown}
+                          isFirst={idx === 0}
+                          isLast={idx === filteredAndSortedBookmarks.length - 1}
+                          isMoving={movingBookmarkId === bookmark.id}
+                          moveDirection={moveDirection}
+                        />
+                      )
                   )}
                 </div>
               </SortableContext>
