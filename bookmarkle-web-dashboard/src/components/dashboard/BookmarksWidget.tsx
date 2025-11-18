@@ -112,6 +112,60 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
     window.open(url, "_blank");
   };
 
+  // 길게 누르기 처리 함수 생성기
+  const createLongPressHandlers = (
+    onLongPress: () => void,
+    onClick: () => void,
+    delay = 1000
+  ) => {
+    let timeoutRef: NodeJS.Timeout | null = null;
+    let startTimeRef = 0;
+    let movedRef = false;
+
+    const start = () => {
+      movedRef = false;
+      startTimeRef = Date.now();
+      timeoutRef = setTimeout(() => {
+        if (!movedRef) {
+          onLongPress();
+        }
+      }, delay);
+    };
+
+    const clear = () => {
+      if (timeoutRef) {
+        clearTimeout(timeoutRef);
+        timeoutRef = null;
+      }
+    };
+
+    const move = () => {
+      movedRef = true;
+      clear();
+    };
+
+    const end = () => {
+      const duration = Date.now() - startTimeRef;
+      clear();
+
+      // 짧게 눌렀고 이동하지 않았으면 클릭 처리
+      if (duration < delay && !movedRef) {
+        onClick();
+      }
+    };
+
+    return {
+      onMouseDown: start,
+      onMouseUp: end,
+      onMouseMove: move,
+      onMouseLeave: clear,
+      onTouchStart: start,
+      onTouchEnd: end,
+      onTouchMove: move,
+      onTouchCancel: clear,
+    };
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -129,7 +183,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
         >
-        <Heart className="w-4 sm:w-5 h-4 sm:h-5 text-red-500 mr-2 sm:mr-3" />
+          <Heart className="w-4 sm:w-5 h-4 sm:h-5 text-red-500 mr-2 sm:mr-3" />
         </motion.div>
         {t("bookmarks.title")}
       </motion.h3>
@@ -147,62 +201,74 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           </h4>
           {favoritesToShow.length > 0 ? (
             <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
-              {favoritesToShow.map((bookmark, index) => (
-                <motion.div
-                  key={bookmark.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
-                  whileHover={{ scale: 1.1, y: -5 }}
-                  className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 hover:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
-                >
-                  <div
-                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl group-hover/fav-section:scale-110 transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
-                    onClick={() => handleFaviconClick(bookmark.url)}
+              {favoritesToShow.map((bookmark, index) => {
+                const longPressHandlers = createLongPressHandlers(
+                  () => onEdit(bookmark),
+                  () => handleFaviconClick(bookmark.url),
+                  1000
+                );
+
+                return (
+                  <motion.div
+                    key={bookmark.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
+                    whileHover={{ scale: 1.1, y: -5 }}
+                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 hover:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
+                    {...longPressHandlers}
                   >
-                    <img
-                      src={`https://www.google.com/s2/favicons?domain=${
-                        new URL(bookmark.url).hostname
-                      }&sz=32`}
-                      alt={bookmark.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        const fallback =
-                          target.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = "flex";
-                      }}
-                    />
                     <div
-                      className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500"
-                      style={{ display: "none" }}
-                    >
-                      <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
-                    </div>
-                  </div>
-
-                  <p
-                    className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white text-center truncate w-full leading-tight"
-                    title={bookmark.title}
-                  >
-                    {bookmark.title}
-                  </p>
-
-                  <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/fav-section:opacity-100 transition-all duration-300 transform group-hover/fav-section:scale-110">
-                    <button
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl group-hover/fav-section:scale-110 transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleFavorite(bookmark.id, false);
+                        handleFaviconClick(bookmark.url);
                       }}
-                      className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
-                      title={t("bookmarks.removeFromFavorites")}
                     >
-                      <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${
+                          new URL(bookmark.url).hostname
+                        }&sz=32`}
+                        alt={bookmark.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          const fallback =
+                            target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = "flex";
+                        }}
+                      />
+                      <div
+                        className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500"
+                        style={{ display: "none" }}
+                      >
+                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
+                      </div>
+                    </div>
+
+                    <p
+                      className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white text-center truncate w-full leading-tight"
+                      title={bookmark.title}
+                    >
+                      {bookmark.title}
+                    </p>
+
+                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/fav-section:opacity-100 transition-all duration-300 transform group-hover/fav-section:scale-110">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleFavorite(bookmark.id, false);
+                        }}
+                        className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
+                        title={t("bookmarks.removeFromFavorites")}
+                      >
+                        <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <motion.div
@@ -231,97 +297,109 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           </h4>
           {recentsToShow.length > 0 ? (
             <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
-              {recentsToShow.map((bookmark, index) => (
-                <motion.div
-                  key={bookmark.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
-                  whileHover={{ scale: 1.1, y: -5 }}
-                  className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 hover:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
-                >
-                  <div
-                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl group-hover/recent-section:scale-110 transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
-                    onClick={() => handleFaviconClick(bookmark.url)}
+              {recentsToShow.map((bookmark, index) => {
+                const longPressHandlers = createLongPressHandlers(
+                  () => onEdit(bookmark),
+                  () => handleFaviconClick(bookmark.url),
+                  1000
+                );
+
+                return (
+                  <motion.div
+                    key={bookmark.id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
+                    whileHover={{ scale: 1.1, y: -5 }}
+                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 hover:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
+                    {...longPressHandlers}
                   >
-                    <img
-                      src={`https://www.google.com/s2/favicons?domain=${
-                        new URL(bookmark.url).hostname
-                      }&sz=32`}
-                      alt={bookmark.title}
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement;
-                        target.style.display = "none";
-                        const fallback =
-                          target.nextElementSibling as HTMLElement;
-                        if (fallback) fallback.style.display = "flex";
-                      }}
-                    />
                     <div
-                      className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600"
-                      style={{ display: "none" }}
-                    >
-                      <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
-                    </div>
-                  </div>
-
-                  <p
-                    className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white text-center truncate w-full leading-tight"
-                    title={bookmark.title}
-                  >
-                    {bookmark.title}
-                  </p>
-
-                  <p className="text-[9px] sm:text-xs text-gray-500 dark:text-gray-400 text-center mt-0.5 sm:mt-1 leading-tight">
-                    {formatDate(bookmark.createdAt)}
-                  </p>
-
-                  <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 transform group-hover/recent-section:scale-110">
-                    <button
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl group-hover/recent-section:scale-110 transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onToggleFavorite(bookmark.id, !bookmark.isFavorite);
+                        handleFaviconClick(bookmark.url);
                       }}
-                      className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 shadow-lg hover:shadow-xl transition-all duration-200"
-                      title={
-                        bookmark.isFavorite
-                          ? t("bookmarks.removeFromFavorites")
-                          : t("bookmarks.addToFavorites")
-                      }
                     >
-                      <Heart
-                        className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
-                          bookmark.isFavorite ? "fill-current" : ""
-                        }`}
+                      <img
+                        src={`https://www.google.com/s2/favicons?domain=${
+                          new URL(bookmark.url).hostname
+                        }&sz=32`}
+                        alt={bookmark.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = "none";
+                          const fallback =
+                            target.nextElementSibling as HTMLElement;
+                          if (fallback) fallback.style.display = "flex";
+                        }}
                       />
-                    </button>
-                  </div>
+                      <div
+                        className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600"
+                        style={{ display: "none" }}
+                      >
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
+                      </div>
+                    </div>
 
-                  <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 flex space-x-1.5 sm:space-x-2 group-hover/recent-section:scale-105">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit(bookmark);
-                      }}
-                      className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200"
-                      title={t("common.edit")}
+                    <p
+                      className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white text-center truncate w-full leading-tight"
+                      title={bookmark.title}
                     >
-                      <Edit className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(bookmark.id);
-                      }}
-                      className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
-                      title={t("common.delete")}
-                    >
-                      <Trash2 className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                    </button>
-                  </div>
-                </motion.div>
-              ))}
+                      {bookmark.title}
+                    </p>
+
+                    <p className="text-[9px] sm:text-xs text-gray-500 dark:text-gray-400 text-center mt-0.5 sm:mt-1 leading-tight">
+                      {formatDate(bookmark.createdAt)}
+                    </p>
+
+                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 transform group-hover/recent-section:scale-110">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggleFavorite(bookmark.id, !bookmark.isFavorite);
+                        }}
+                        className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 shadow-lg hover:shadow-xl transition-all duration-200"
+                        title={
+                          bookmark.isFavorite
+                            ? t("bookmarks.removeFromFavorites")
+                            : t("bookmarks.addToFavorites")
+                        }
+                      >
+                        <Heart
+                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
+                            bookmark.isFavorite ? "fill-current" : ""
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 flex space-x-1.5 sm:space-x-2 group-hover/recent-section:scale-105">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit(bookmark);
+                        }}
+                        className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200"
+                        title={t("common.edit")}
+                      >
+                        <Edit className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(bookmark.id);
+                        }}
+                        className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
+                        title={t("common.delete")}
+                      >
+                        <Trash2 className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           ) : (
             <motion.div
