@@ -123,7 +123,9 @@ export const SubscriptionSettings: React.FC = () => {
                 }`}
               >
                 {limits.maxBookmarks === Infinity
-                  ? `∞ (${rawBookmarks.length}개)`
+                  ? `∞ (${rawBookmarks.length}${t("common.countUnit", {
+                      defaultValue: "개",
+                    })})`
                   : `${rawBookmarks.length} / ${limits.maxBookmarks}`}
               </span>
             </div>
@@ -168,7 +170,9 @@ export const SubscriptionSettings: React.FC = () => {
                 }`}
               >
                 {limits.maxCollections === Infinity
-                  ? `∞ (${collections.length}개)`
+                  ? `∞ (${collections.length}${t("common.countUnit", {
+                      defaultValue: "개",
+                    })})`
                   : `${collections.length} / ${limits.maxCollections}`}
               </span>
             </div>
@@ -224,14 +228,22 @@ export const SubscriptionSettings: React.FC = () => {
             </div>
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                얼리 유저 혜택
+                {t("premium.earlyUserBenefits.title", {
+                  defaultValue: "얼리 유저 혜택",
+                })}
               </h3>
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                베타 기간 중 가입하신 얼리 유저로 인증되었습니다.
+                {t("premium.earlyUserBenefits.verified", {
+                  defaultValue:
+                    "베타 기간 중 가입하신 얼리 유저로 인증되었습니다.",
+                })}
               </p>
               <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mt-3">
                 <p className="text-xs text-yellow-800 dark:text-yellow-300">
-                  베타 기간 중 사용하던 기능들을 계속 무료로 이용하실 수 있습니다.
+                  {t("premium.earlyUserBenefits.description", {
+                    defaultValue:
+                      "베타 기간 중 사용하던 기능들을 계속 무료로 이용하실 수 있습니다.",
+                  })}
                 </p>
               </div>
             </div>

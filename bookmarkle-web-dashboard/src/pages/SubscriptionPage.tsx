@@ -53,12 +53,12 @@ export const SubscriptionPage: React.FC = () => {
       if (!bookmarkLimit.allowed) {
         warningMessage += `\n- ${t(
           "premium.bookmarks"
-        )}: ${currentBookmarkCount}개 (제한: ${freeBookmarkLimit}개)`;
+        )}: ${currentBookmarkCount}${t("common.countUnit", { defaultValue: "개" })} (${t("premium.limit", { defaultValue: "제한" })}: ${freeBookmarkLimit}${t("common.countUnit", { defaultValue: "개" })})`;
       }
       if (!collectionLimit.allowed) {
         warningMessage += `\n- ${t(
           "premium.collections"
-        )}: ${currentCollectionCount}개 (제한: ${freeCollectionLimit}개)`;
+        )}: ${currentCollectionCount}${t("common.countUnit", { defaultValue: "개" })} (${t("premium.limit", { defaultValue: "제한" })}: ${freeCollectionLimit}${t("common.countUnit", { defaultValue: "개" })})`;
       }
       warningMessage += `\n\n${t("premium.cancelWarningNote")}`;
     }
@@ -203,7 +203,7 @@ export const SubscriptionPage: React.FC = () => {
                   </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {limits.maxBookmarks === Infinity
-                      ? `∞ (${rawBookmarks.length}개)`
+                      ? `∞ (${rawBookmarks.length}${t("common.countUnit", { defaultValue: "개" })})`
                       : `${rawBookmarks.length} / ${limits.maxBookmarks}`}
                   </span>
                 </div>
@@ -241,7 +241,7 @@ export const SubscriptionPage: React.FC = () => {
                   </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {limits.maxCollections === Infinity
-                      ? `∞ (${collections.length}개)`
+                      ? `∞ (${collections.length}${t("common.countUnit", { defaultValue: "개" })})`
                       : `${collections.length} / ${limits.maxCollections}`}
                   </span>
                 </div>
