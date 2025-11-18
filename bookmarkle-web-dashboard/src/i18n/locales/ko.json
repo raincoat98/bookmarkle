@@ -291,7 +291,29 @@
     "restore": "복원",
     "mobileIconView": {
       "editModeDescription": "수정 모드 - 1초 이상 누르기, 드래그로 순서 변경"
-    }
+    },
+    "trash": "휴지통",
+    "trashTitle": "휴지통",
+    "trashDescription": "삭제된 북마크를 관리합니다. 30일 후 자동으로 완전 삭제됩니다.",
+    "trashEmpty": "휴지통이 비어있습니다",
+    "trashEmptyDescription": "삭제된 북마크가 없습니다",
+    "restore": "복원",
+    "restoreBookmark": "북마크 복원",
+    "restoreBookmarkConfirm": "이 북마크를 복원하시겠습니까?",
+    "restoreSuccess": "북마크가 복원되었습니다",
+    "restoreError": "북마크 복원 중 오류가 발생했습니다",
+    "permanentlyDelete": "완전 삭제",
+    "permanentlyDeleteBookmark": "북마크 완전 삭제",
+    "permanentlyDeleteBookmarkConfirm": "이 북마크를 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "permanentlyDeleteSuccess": "북마크가 완전히 삭제되었습니다",
+    "permanentlyDeleteError": "북마크 삭제 중 오류가 발생했습니다",
+    "emptyTrash": "휴지통 비우기",
+    "emptyTrashConfirm": "휴지통의 모든 북마크를 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "emptyTrashSuccess": "휴지통이 비워졌습니다",
+    "emptyTrashError": "휴지통 비우기 중 오류가 발생했습니다",
+    "deletedAt": "삭제일",
+    "daysUntilPermanentDelete": "{{days}}일 후 자동 삭제",
+    "autoDeleteInfo": "휴지통의 북마크는 30일 후 자동으로 완전 삭제됩니다"
   },
   "admin": {
     "title": "관리자",

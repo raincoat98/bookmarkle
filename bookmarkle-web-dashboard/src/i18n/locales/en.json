@@ -291,7 +291,28 @@
     "restore": "Restore",
     "mobileIconView": {
       "editModeDescription": "Edit Mode - Hold for 1+ seconds, drag to reorder"
-    }
+    },
+    "trash": "Trash",
+    "trashTitle": "Trash",
+    "trashDescription": "Manage deleted bookmarks. They will be permanently deleted automatically after 30 days.",
+    "trashEmpty": "Trash is empty",
+    "trashEmptyDescription": "No deleted bookmarks",
+    "restoreBookmark": "Restore Bookmark",
+    "restoreBookmarkConfirm": "Do you want to restore this bookmark?",
+    "restoreSuccess": "Bookmark restored successfully",
+    "restoreError": "An error occurred while restoring the bookmark",
+    "permanentlyDelete": "Permanently Delete",
+    "permanentlyDeleteBookmark": "Permanently Delete Bookmark",
+    "permanentlyDeleteBookmarkConfirm": "Do you want to permanently delete this bookmark? This action cannot be undone.",
+    "permanentlyDeleteSuccess": "Bookmark permanently deleted",
+    "permanentlyDeleteError": "An error occurred while deleting the bookmark",
+    "emptyTrash": "Empty Trash",
+    "emptyTrashConfirm": "Do you want to permanently delete all bookmarks in the trash? This action cannot be undone.",
+    "emptyTrashSuccess": "Trash emptied successfully",
+    "emptyTrashError": "An error occurred while emptying the trash",
+    "deletedAt": "Deleted at",
+    "daysUntilPermanentDelete": "Auto delete in {{days}} days",
+    "autoDeleteInfo": "Bookmarks in the trash will be permanently deleted automatically after 30 days"
   },
   "admin": {
     "title": "Admin",

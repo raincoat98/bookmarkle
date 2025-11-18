@@ -122,11 +122,12 @@ function AppContent() {
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore();
-  const { rawBookmarks } = useBookmarkStore();
+  const { rawBookmarks, cleanupOldTrash } = useBookmarkStore();
   const { collections } = useCollectionStore();
   const { subscribeToSubscription } = useSubscriptionStore();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const trashCleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // 인증 및 테마 초기화
   useEffect(() => {
@@ -199,6 +200,36 @@ function App() {
       }
     };
   }, [user?.uid, rawBookmarks, collections]);
+
+  // 휴지통 자동 정리 (30일 이상 된 항목 삭제)
+  useEffect(() => {
+    // 기존 타이머 클리어
+    if (trashCleanupIntervalRef.current) {
+      clearInterval(trashCleanupIntervalRef.current);
+    }
+
+    if (user?.uid) {
+      // 즉시 1회 실행
+      cleanupOldTrash(user.uid).catch((error) => {
+        console.error("휴지통 자동 정리 오류:", error);
+      });
+
+      // 매일 한 번씩 실행 (24시간)
+      const intervalMs = 1000 * 60 * 60 * 24;
+      trashCleanupIntervalRef.current = setInterval(() => {
+        cleanupOldTrash(user.uid).catch((error) => {
+          console.error("휴지통 자동 정리 오류:", error);
+        });
+      }, intervalMs);
+    }
+
+    // 언마운트 시 타이머 해제
+    return () => {
+      if (trashCleanupIntervalRef.current) {
+        clearInterval(trashCleanupIntervalRef.current);
+      }
+    };
+  }, [user?.uid, cleanupOldTrash]);
 
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {

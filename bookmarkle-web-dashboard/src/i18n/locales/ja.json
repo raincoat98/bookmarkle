@@ -291,7 +291,28 @@
     "restore": "復元",
     "mobileIconView": {
       "editModeDescription": "編集モード - 1秒以上長押し、ドラッグで順序変更"
-    }
+    },
+    "trash": "ゴミ箱",
+    "trashTitle": "ゴミ箱",
+    "trashDescription": "削除されたブックマークを管理します。30日後に自動的に完全に削除されます。",
+    "trashEmpty": "ゴミ箱は空です",
+    "trashEmptyDescription": "削除されたブックマークはありません",
+    "restoreBookmark": "ブックマークを復元",
+    "restoreBookmarkConfirm": "このブックマークを復元しますか？",
+    "restoreSuccess": "ブックマークが復元されました",
+    "restoreError": "ブックマークの復元中にエラーが発生しました",
+    "permanentlyDelete": "完全に削除",
+    "permanentlyDeleteBookmark": "ブックマークを完全に削除",
+    "permanentlyDeleteBookmarkConfirm": "このブックマークを完全に削除しますか？この操作は元に戻せません。",
+    "permanentlyDeleteSuccess": "ブックマークが完全に削除されました",
+    "permanentlyDeleteError": "ブックマークの削除中にエラーが発生しました",
+    "emptyTrash": "ゴミ箱を空にする",
+    "emptyTrashConfirm": "ゴミ箱内のすべてのブックマークを完全に削除しますか？この操作は元に戻せません。",
+    "emptyTrashSuccess": "ゴミ箱が空になりました",
+    "emptyTrashError": "ゴミ箱を空にする際にエラーが発生しました",
+    "deletedAt": "削除日時",
+    "daysUntilPermanentDelete": "{{days}}日後に自動削除",
+    "autoDeleteInfo": "ゴミ箱のブックマークは30日後に自動的に完全に削除されます"
   },
   "admin": {
     "title": "管理者",
