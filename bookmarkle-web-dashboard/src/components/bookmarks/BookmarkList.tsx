@@ -797,52 +797,53 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                       : "space-y-4"
                   }
                 >
-                  {filteredAndSortedBookmarks.map((bookmark: Bookmark, idx: number) =>
-                    viewMode === "grid" ? (
-                      <SortableBookmarkCard
-                        key={bookmark.id}
-                        bookmark={bookmark}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onRefreshFavicon={
-                          onRefreshFavicon
-                            ? handleRefreshFavicon
-                            : async () => {}
-                        }
-                        faviconLoading={
-                          faviconLoadingStates[bookmark.id] || false
-                        }
-                        collections={collections}
-                        onToggleFavorite={onToggleFavorite}
-                        onMoveUp={handleMoveUp}
-                        onMoveDown={handleMoveDown}
-                        isFirst={idx === 0}
-                        isLast={idx === filteredAndSortedBookmarks.length - 1}
-                        isMoving={movingBookmarkId === bookmark.id}
-                        moveDirection={moveDirection}
-                      />
-                    ) : (
-                      <SortableBookmarkListItem
-                        key={bookmark.id}
-                        bookmark={bookmark}
-                        onEdit={onEdit}
-                        onDelete={onDelete}
-                        onRefreshFavicon={
-                          onRefreshFavicon ? handleRefreshFavicon : undefined
-                        }
-                        faviconLoading={
-                          faviconLoadingStates[bookmark.id] || false
-                        }
-                        collections={collections}
-                        onToggleFavorite={onToggleFavorite}
-                        onMoveUp={handleMoveUp}
-                        onMoveDown={handleMoveDown}
-                        isFirst={idx === 0}
-                        isLast={idx === filteredAndSortedBookmarks.length - 1}
-                        isMoving={movingBookmarkId === bookmark.id}
-                        moveDirection={moveDirection}
-                      />
-                    )
+                  {filteredAndSortedBookmarks.map(
+                    (bookmark: Bookmark, idx: number) =>
+                      viewMode === "grid" ? (
+                        <SortableBookmarkCard
+                          key={bookmark.id}
+                          bookmark={bookmark}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onRefreshFavicon={
+                            onRefreshFavicon
+                              ? handleRefreshFavicon
+                              : async () => {}
+                          }
+                          faviconLoading={
+                            faviconLoadingStates[bookmark.id] || false
+                          }
+                          collections={collections}
+                          onToggleFavorite={onToggleFavorite}
+                          onMoveUp={handleMoveUp}
+                          onMoveDown={handleMoveDown}
+                          isFirst={idx === 0}
+                          isLast={idx === filteredAndSortedBookmarks.length - 1}
+                          isMoving={movingBookmarkId === bookmark.id}
+                          moveDirection={moveDirection}
+                        />
+                      ) : (
+                        <SortableBookmarkListItem
+                          key={bookmark.id}
+                          bookmark={bookmark}
+                          onEdit={onEdit}
+                          onDelete={onDelete}
+                          onRefreshFavicon={
+                            onRefreshFavicon ? handleRefreshFavicon : undefined
+                          }
+                          faviconLoading={
+                            faviconLoadingStates[bookmark.id] || false
+                          }
+                          collections={collections}
+                          onToggleFavorite={onToggleFavorite}
+                          onMoveUp={handleMoveUp}
+                          onMoveDown={handleMoveDown}
+                          isFirst={idx === 0}
+                          isLast={idx === filteredAndSortedBookmarks.length - 1}
+                          isMoving={movingBookmarkId === bookmark.id}
+                          moveDirection={moveDirection}
+                        />
+                      )
                   )}
                 </div>
               </SortableContext>
