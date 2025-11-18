@@ -12,6 +12,7 @@ import { AddCollectionModal } from "../components/AddCollectionModal";
 import { Drawer } from "../components/Drawer";
 import { UpgradeBanner } from "../components/UpgradeBanner";
 import { useTranslation } from "react-i18next";
+import { usePasteBookmark } from "../hooks/usePasteBookmark";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
@@ -117,6 +118,13 @@ export const DashboardPage: React.FC = () => {
       toast.error(`북마크 추가 실패: ${errorMessage}`);
     }
   };
+
+  // 붙여넣기 북마크 추가 기능
+  usePasteBookmark({
+    onAddBookmark: handleAddBookmark,
+    onOpenModal: () => setIsAddModalOpen(true),
+    enabled: !!user && isActive !== false,
+  });
 
   // 북마크 수정
   const handleUpdateBookmark = async (id: string, data: BookmarkFormData) => {

@@ -44,6 +44,26 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
     }
   }, [isOpen]);
 
+  // 붙여넣기 이벤트 리스너 (모달이 열렸을 때 URL 자동 채우기)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePasteBookmarkUrl = (e: Event) => {
+      const customEvent = e as CustomEvent<{ url: string; title: string; favicon: string }>;
+      if (customEvent.detail) {
+        setUrl(customEvent.detail.url);
+        setTitle(customEvent.detail.title);
+        setFavicon(customEvent.detail.favicon);
+      }
+    };
+
+    window.addEventListener("pasteBookmarkUrl", handlePasteBookmarkUrl as EventListener);
+
+    return () => {
+      window.removeEventListener("pasteBookmarkUrl", handlePasteBookmarkUrl as EventListener);
+    };
+  }, [isOpen]);
+
   // URL이 변경될 때 파비콘 자동 가져오기
   useEffect(() => {
     const fetchFavicon = async () => {
