@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
-import { useAuthStore } from "../stores";
+import { useAuthStore } from "../../stores";
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
-import { BrowserCompatibilityWarning } from "./BrowserCompatibilityWarning";
+import { BrowserCompatibilityWarning } from "../common/BrowserCompatibilityWarning";
 import {
   detectBrowser,
   getBrowserCompatibilityMessage,
-} from "../utils/browserDetection";
+} from "../../utils/browserDetection";
 
 export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();

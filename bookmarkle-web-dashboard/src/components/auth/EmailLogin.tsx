@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { loginWithEmail, resetPassword } from "../firebase";
+import { loginWithEmail, resetPassword } from "../../firebase";
 
 interface EmailLoginProps {
   onSuccess?: () => void;

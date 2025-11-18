@@ -1,11 +1,11 @@
 import React, { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import type { Bookmark, Collection, SortOption } from "../types";
+import type { Bookmark, Collection, SortOption } from "../../types";
 import { SortableBookmarkCard } from "./SortableBookmarkCard";
 import { SortableBookmarkListItem } from "./SortableBookmarkListItem";
 import { MobileIconView } from "./MobileIconView";
 import { BookmarkSort } from "./BookmarkSort";
-import { sortBookmarks } from "../utils/sortBookmarks";
+import { sortBookmarks } from "../../utils/sortBookmarks";
 import {
   DndContext,
   closestCenter,
@@ -25,7 +25,7 @@ import {
 import { BookOpen, Folder, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { Skeleton } from "./ui/Skeleton";
+import { Skeleton } from "../ui/Skeleton";
 
 interface BookmarkListProps {
   bookmarks: Bookmark[];
@@ -786,7 +786,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                       : "space-y-4"
                   }
                 >
-                  {filteredAndSortedBookmarks.map((bookmark, idx) =>
+                  {filteredAndSortedBookmarks.map((bookmark: Bookmark, idx: number) =>
                     viewMode === "grid" ? (
                       <SortableBookmarkCard
                         key={bookmark.id}

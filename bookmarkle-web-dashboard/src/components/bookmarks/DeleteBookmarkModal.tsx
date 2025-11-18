@@ -1,5 +1,5 @@
 import { useEffect, useCallback } from "react";
-import type { Bookmark } from "../types";
+import type { Bookmark } from "../../types";
 
 interface DeleteBookmarkModalProps {
   isOpen: boolean;

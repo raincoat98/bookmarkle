@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { signupWithEmail } from "../firebase";
+import { signupWithEmail } from "../../firebase";
 
 interface EmailSignupProps {
   onSuccess?: () => void;

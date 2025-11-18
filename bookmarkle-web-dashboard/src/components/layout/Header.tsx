@@ -3,7 +3,7 @@ import {
   useThemeStore,
   useDrawerStore,
   useSubscriptionStore,
-} from "../stores";
+} from "../../stores";
 import { Link } from "react-router-dom";
 import {
   Menu,
@@ -17,10 +17,10 @@ import {
   Crown,
   ChevronDown,
 } from "lucide-react";
-import { isAdminUser } from "../firebase";
+import { isAdminUser } from "../../firebase";
 import { useState, useEffect, useRef } from "react";
-import { NotificationCenter } from "./NotificationCenter";
-import { isBetaPeriod } from "../utils/betaFlags";
+import { NotificationCenter } from "../common/NotificationCenter";
+import { isBetaPeriod } from "../../utils/betaFlags";
 
 interface HeaderProps {
   showMenuButton?: boolean;

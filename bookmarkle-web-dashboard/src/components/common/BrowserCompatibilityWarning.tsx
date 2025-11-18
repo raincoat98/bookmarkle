@@ -4,7 +4,7 @@ import {
   detectBrowser,
   getBrowserCompatibilityMessage,
   getRecommendedBrowsers,
-} from "../utils/browserDetection";
+} from "../../utils/browserDetection";
 
 interface BrowserCompatibilityWarningProps {
   className?: string;
@@ -37,7 +37,7 @@ export const BrowserCompatibilityWarning: React.FC<
           <div className="space-y-2">
             <p className="text-xs text-amber-600 font-medium">권장 브라우저:</p>
             <div className="flex flex-wrap gap-2">
-              {recommendedBrowsers.map((browser) => (
+              {recommendedBrowsers.map((browser: string) => (
                 <div
                   key={browser}
                   className="flex items-center space-x-1 bg-white px-2 py-1 rounded text-xs text-amber-700 border border-amber-200"

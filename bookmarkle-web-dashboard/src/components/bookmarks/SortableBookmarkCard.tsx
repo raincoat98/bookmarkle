@@ -1,7 +1,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import type { Bookmark, Collection } from "../types";
-import { renderCollectionIcon } from "../utils/iconRenderer";
+import type { Bookmark, Collection } from "../../types";
+import { renderCollectionIcon } from "../../utils/iconRenderer";
 import { useTranslation } from "react-i18next";
 
 interface SortableBookmarkCardProps {
@@ -376,7 +376,7 @@ export const SortableBookmarkCard = ({
             {/* 태그 배지 - 모바일에서 아래쪽 */}
             {bookmark.tags && bookmark.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 sm:gap-1.5 mb-1">
-                {bookmark.tags.map((tag) => (
+                {bookmark.tags.map((tag: string) => (
                   <span
                     key={tag}
                     className="inline-flex items-center px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-full text-sm sm:text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm"

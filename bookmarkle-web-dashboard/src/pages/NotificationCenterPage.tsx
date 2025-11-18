@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../stores";
 import { useNotifications } from "../hooks/useNotifications";
-import { Drawer } from "../components/Drawer";
+import { Drawer } from "../components/layout/Drawer";
 import {
   getUserNotificationSettings,
   setUserNotificationSettings,

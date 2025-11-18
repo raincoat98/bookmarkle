@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { WeatherWidget } from "../WeatherWidget";
+import { WeatherWidget } from "../widgets/WeatherWidget";
 
 export const ClockWidget: React.FC = () => {
   const { i18n } = useTranslation();

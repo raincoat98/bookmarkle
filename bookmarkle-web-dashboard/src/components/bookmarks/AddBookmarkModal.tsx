@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { X, Plus, Globe, Folder } from "lucide-react";
-import type { Collection } from "../types";
-import { getFaviconUrl, findFaviconFromWebsite } from "../utils/favicon";
+import type { Collection } from "../../types";
+import { getFaviconUrl, findFaviconFromWebsite } from "../../utils/favicon";
 import { useTranslation } from "react-i18next";
 
 interface AddBookmarkModalProps {

@@ -6,7 +6,7 @@ import {
   useBookmarkStore,
   useCollectionStore,
 } from "../stores";
-import { Header } from "../components/Header";
+import { Header } from "../components/layout/Header";
 import { ArrowLeft, Check, Calendar, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";

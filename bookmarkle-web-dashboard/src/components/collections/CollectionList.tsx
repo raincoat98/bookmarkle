@@ -1,9 +1,9 @@
 import { useState } from "react";
-import type { Collection } from "../types";
-import { renderCollectionIcon } from "../utils/iconRenderer";
+import type { Collection } from "../../types";
+import { renderCollectionIcon } from "../../utils/iconRenderer";
 import { useTranslation } from "react-i18next";
 import { PinIcon, Star } from "lucide-react";
-import { Skeleton } from "./ui/Skeleton";
+import { Skeleton } from "../ui/Skeleton";
 interface CollectionListProps {
   collections: Collection[];
   loading: boolean;

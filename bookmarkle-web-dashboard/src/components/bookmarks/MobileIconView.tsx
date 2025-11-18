@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import type { Bookmark } from "../types";
+import type { Bookmark } from "../../types";
 import { Settings, Edit, Trash2, Heart, ExternalLink, X } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -105,7 +105,7 @@ export const MobileIconView: React.FC<MobileIconViewProps> = ({
     if (bookmark.favicon) return "bg-white";
 
     // URL 기반 색상 생성
-    const hash = bookmark.url.split("").reduce((a, b) => {
+    const hash = bookmark.url.split("").reduce((a: number, b: string) => {
       a = (a << 5) - a + b.charCodeAt(0);
       return a & a;
     }, 0);

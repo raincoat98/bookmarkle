@@ -1,4 +1,4 @@
-import { Header } from "../components/Header";
+import { Header } from "../components/layout/Header";
 import { Gift, Check, X, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 

@@ -1,5 +1,5 @@
 // src/components/Protected.tsx
-import { useAuthStore } from "../stores";
+import { useAuthStore } from "../../stores";
 
 export default function Protected({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();

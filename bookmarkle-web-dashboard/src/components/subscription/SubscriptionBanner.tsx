@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Crown, Gift } from "lucide-react";
-import { useAuthStore } from "../stores";
+import { useAuthStore } from "../../stores";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
-import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
+import { db } from "../../firebase";
+import { betaUtils, BETA_END_DATE } from "../../utils/betaFlags";
 
 interface SubscriptionBannerProps {
   onViewClick?: () => void;

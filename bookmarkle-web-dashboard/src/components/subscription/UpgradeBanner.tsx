@@ -2,10 +2,10 @@ import React from "react";
 import { Sparkles, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useSubscriptionStore, useAuthStore } from "../stores";
-import { isBetaPeriod, BETA_END_DATE } from "../utils/betaFlags";
+import { useSubscriptionStore, useAuthStore } from "../../stores";
+import { isBetaPeriod, BETA_END_DATE } from "../../utils/betaFlags";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 
 interface UpgradeBannerProps {
   onDismiss?: () => void;

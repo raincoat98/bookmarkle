@@ -15,11 +15,10 @@ import { PricingPage } from "./pages/PricingPage";
 import { SubscriptionPage } from "./pages/SubscriptionPage";
 import { EarlyBirdPolicyPage } from "./pages/EarlyBirdPolicyPage";
 import { LandingPage } from "./pages/LandingPage";
-import { LoginScreen } from "./components/LoginScreen";
-import { AdminProtected } from "./components/AdminProtected";
-import ExtensionBridge from "./components/ExtensionBridge";
-import { SubscriptionBanner } from "./components/SubscriptionBanner";
-import { SubscriptionAnnouncementModal } from "./components/SubscriptionAnnouncementModal";
+import { LoginScreen } from "./components/auth/LoginScreen";
+import { AdminProtected } from "./components/admin/AdminProtected";
+import { SubscriptionBanner } from "./components/subscription/SubscriptionBanner";
+import { SubscriptionAnnouncementModal } from "./components/subscription/SubscriptionAnnouncementModal";
 import { isBetaPeriod } from "./utils/betaFlags";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
@@ -269,7 +268,6 @@ function App() {
 
   return (
     <Router>
-      <ExtensionBridge />
       <Routes>
         <Route
           path="/"

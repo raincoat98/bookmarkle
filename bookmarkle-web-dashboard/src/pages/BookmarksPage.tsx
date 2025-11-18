@@ -1,17 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { BookmarkList } from "../components/BookmarkList";
-import { AddBookmarkModal } from "../components/AddBookmarkModal";
-import { EditBookmarkModal } from "../components/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
-import { AddCollectionModal } from "../components/AddCollectionModal";
-import { EditCollectionModal } from "../components/EditCollectionModal";
+import { BookmarkList } from "../components/bookmarks/BookmarkList";
+import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
+import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../components/bookmarks/DeleteBookmarkModal";
+import { AddCollectionModal } from "../components/collections/AddCollectionModal";
+import { EditCollectionModal } from "../components/collections/EditCollectionModal";
 import {
   useAuthStore,
   useBookmarkStore,
   useCollectionStore,
   useSubscriptionStore,
 } from "../stores";
-import { DisabledUserMessage } from "../components/DisabledUserMessage";
+import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";
 import type {
   Bookmark,
@@ -21,9 +21,9 @@ import type {
 } from "../types";
 import toast from "react-hot-toast";
 import { Search, Grid3X3, List, Plus, FolderPlus } from "lucide-react";
-import { Drawer } from "../components/Drawer";
+import { Drawer } from "../components/layout/Drawer";
 import { useTranslation } from "react-i18next";
-import { UpgradeModal } from "../components/UpgradeModal";
+import { UpgradeModal } from "../components/subscription/UpgradeModal";
 import {
   checkBookmarkLimit,
   checkCollectionLimit,

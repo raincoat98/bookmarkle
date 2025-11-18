@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { X, Crown, Gift } from "lucide-react";
-import { useAuthStore } from "../stores";
+import { useAuthStore } from "../../stores";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { betaUtils, BETA_END_DATE } from "../utils/betaFlags";
+import { betaUtils, BETA_END_DATE } from "../../utils/betaFlags";
 
 interface SubscriptionAnnouncementModalProps {
   isOpen: boolean;

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useDrawerStore } from "../stores";
+import { useDrawerStore } from "../../stores";
 import {
   Home,
   BookOpen,
@@ -9,8 +9,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { CollectionList } from "./CollectionList";
-import type { Collection } from "../types";
+import { CollectionList } from "../collections/CollectionList";
+import type { Collection } from "../../types";
 import { useTranslation } from "react-i18next";
 
 interface DrawerProps {
