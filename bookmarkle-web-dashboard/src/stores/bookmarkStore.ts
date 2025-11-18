@@ -9,6 +9,7 @@ import {
   deleteDoc,
   doc,
   writeBatch,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Bookmark, BookmarkFormData, Collection } from "../types";
@@ -28,7 +29,9 @@ const isSystemNotificationEnabled = () => {
 
 interface BookmarkState {
   rawBookmarks: Bookmark[];
+  trashBookmarks: Bookmark[];
   loading: boolean;
+  trashLoading: boolean;
   selectedCollection: string;
   collections: Collection[];
 }
@@ -41,6 +44,7 @@ interface BookmarkActions {
   getChildCollectionIds: (parentId: string) => string[];
   getFilteredBookmarks: () => Bookmark[];
   subscribeToBookmarks: (userId: string) => () => void;
+  subscribeToTrash: (userId: string) => () => void;
   migrateFavicons: (userId: string) => Promise<void>;
   migrateIsFavorite: (userId: string) => Promise<void>;
   addBookmark: (
@@ -53,6 +57,10 @@ interface BookmarkActions {
     userId: string
   ) => Promise<void>;
   deleteBookmark: (bookmarkId: string) => Promise<void>;
+  restoreBookmark: (bookmarkId: string) => Promise<void>;
+  permanentlyDeleteBookmark: (bookmarkId: string) => Promise<void>;
+  emptyTrash: (userId: string) => Promise<void>;
+  cleanupOldTrash: (userId: string) => Promise<void>;
   reorderBookmarks: (newBookmarks: Bookmark[], userId: string) => Promise<void>;
   toggleFavorite: (
     bookmarkId: string,
@@ -70,7 +78,9 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
   (set, get) => ({
     // State
     rawBookmarks: [],
+    trashBookmarks: [],
     loading: true,
+    trashLoading: true,
     selectedCollection: "all",
     collections: [],
 
@@ -136,19 +146,14 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
       });
     },
 
-    // 북마크 구독
+    // 북마크 구독 (삭제되지 않은 북마크만)
     subscribeToBookmarks: (userId: string) => {
-      const { selectedCollection } = get();
-
-      // 컬렉션에 따라 쿼리 조건 설정
-      let q;
-      if (selectedCollection === "none") {
-        q = query(collection(db, "bookmarks"), where("userId", "==", userId));
-      } else if (selectedCollection === "all") {
-        q = query(collection(db, "bookmarks"), where("userId", "==", userId));
-      } else {
-        q = query(collection(db, "bookmarks"), where("userId", "==", userId));
-      }
+      // 모든 북마크를 가져온 후 클라이언트에서 필터링
+      // (deletedAt 필드가 없는 기존 데이터도 포함하기 위해)
+      const q = query(
+        collection(db, "bookmarks"),
+        where("userId", "==", userId)
+      );
 
       const unsubscribe = onSnapshot(
         q,
@@ -157,7 +162,55 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
 
           querySnapshot.forEach((doc) => {
             const data = doc.data();
-            bookmarkList.push({
+            const deletedAt = data.deletedAt ? data.deletedAt.toDate() : null;
+            
+            // 삭제되지 않은 북마크만 추가
+            if (!deletedAt) {
+              bookmarkList.push({
+                id: doc.id,
+                title: data.title || "",
+                url: data.url || "",
+                description: data.description || "",
+                favicon: data.favicon || "",
+                collection: data.collection || null,
+                order: data.order || 0,
+                userId: data.userId || "",
+                createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
+                updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+                tags: data.tags || [],
+                isFavorite: data.isFavorite || false,
+                deletedAt: null,
+              });
+            }
+          });
+
+          set({ rawBookmarks: bookmarkList, loading: false });
+        },
+        (error) => {
+          console.error("북마크 로딩 오류:", error);
+          set({ loading: false });
+        }
+      );
+
+      return unsubscribe;
+    },
+
+    // 휴지통 구독 (삭제된 북마크만)
+    subscribeToTrash: (userId: string) => {
+      const q = query(
+        collection(db, "bookmarks"),
+        where("userId", "==", userId),
+        where("deletedAt", "!=", null)
+      );
+
+      const unsubscribe = onSnapshot(
+        q,
+        (querySnapshot) => {
+          const trashList: Bookmark[] = [];
+
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            trashList.push({
               id: doc.id,
               title: data.title || "",
               url: data.url || "",
@@ -170,14 +223,21 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
               updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
               tags: data.tags || [],
               isFavorite: data.isFavorite || false,
+              deletedAt: data.deletedAt ? data.deletedAt.toDate() : null,
             });
           });
 
-          set({ rawBookmarks: bookmarkList, loading: false });
+          // 삭제일 기준으로 정렬 (최신 삭제가 먼저)
+          trashList.sort((a, b) => {
+            if (!a.deletedAt || !b.deletedAt) return 0;
+            return b.deletedAt.getTime() - a.deletedAt.getTime();
+          });
+
+          set({ trashBookmarks: trashList, trashLoading: false });
         },
         (error) => {
-          console.error("북마크 로딩 오류:", error);
-          set({ loading: false });
+          console.error("휴지통 로딩 오류:", error);
+          set({ trashLoading: false });
         }
       );
 
@@ -355,14 +415,19 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
       }
     },
 
-    // 북마크 삭제
+    // 북마크 삭제 (휴지통으로 이동)
     deleteBookmark: async (bookmarkId: string) => {
       const { rawBookmarks } = get();
 
       // 삭제 전에 북마크 정보 가져오기 (알림용)
       const bookmarkToDelete = rawBookmarks.find((b) => b.id === bookmarkId);
 
-      await deleteDoc(doc(db, "bookmarks", bookmarkId));
+      // 완전 삭제 대신 deletedAt 필드 설정
+      const bookmarkRef = doc(db, "bookmarks", bookmarkId);
+      await updateDoc(bookmarkRef, {
+        deletedAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+      });
 
       // 브라우저 알림 표시
       if (bookmarkToDelete) {
@@ -371,6 +436,105 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
           showBookmarkNotification("deleted", bookmarkToDelete.title);
         }
       }
+    },
+
+    // 북마크 복원
+    restoreBookmark: async (bookmarkId: string) => {
+      const bookmarkRef = doc(db, "bookmarks", bookmarkId);
+      await updateDoc(bookmarkRef, {
+        deletedAt: null,
+        updatedAt: Timestamp.now(),
+      });
+    },
+
+    // 북마크 완전 삭제
+    permanentlyDeleteBookmark: async (bookmarkId: string) => {
+      await deleteDoc(doc(db, "bookmarks", bookmarkId));
+    },
+
+    // 휴지통 비우기
+    emptyTrash: async (userId: string) => {
+      // 휴지통의 모든 북마크 가져오기
+      return new Promise<void>((resolve, reject) => {
+        const q = query(
+          collection(db, "bookmarks"),
+          where("userId", "==", userId),
+          where("deletedAt", "!=", null)
+        );
+
+        const unsubscribe = onSnapshot(
+          q,
+          async (querySnapshot) => {
+            const batch = writeBatch(db);
+            querySnapshot.forEach((docSnapshot) => {
+              batch.delete(doc(db, "bookmarks", docSnapshot.id));
+            });
+
+            try {
+              await batch.commit();
+              unsubscribe();
+              resolve();
+            } catch (error) {
+              unsubscribe();
+              reject(error);
+            }
+          },
+          (error) => {
+            reject(error);
+          }
+        );
+      });
+    },
+
+    // 30일 이상 된 휴지통 항목 자동 삭제
+    cleanupOldTrash: async (userId: string) => {
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const q = query(
+        collection(db, "bookmarks"),
+        where("userId", "==", userId),
+        where("deletedAt", "!=", null)
+      );
+
+      return new Promise<void>((resolve, reject) => {
+        const unsubscribe = onSnapshot(
+          q,
+          async (querySnapshot) => {
+            const batch = writeBatch(db);
+            let deletedCount = 0;
+
+            querySnapshot.forEach((docSnapshot) => {
+              const data = docSnapshot.data();
+              const deletedAt = data.deletedAt?.toDate();
+              
+              if (deletedAt && deletedAt < thirtyDaysAgo) {
+                batch.delete(doc(db, "bookmarks", docSnapshot.id));
+                deletedCount++;
+              }
+            });
+
+            if (deletedCount > 0) {
+              try {
+                await batch.commit();
+                console.log(`${deletedCount}개의 오래된 휴지통 항목이 삭제되었습니다.`);
+              } catch (error) {
+                console.error("휴지통 정리 오류:", error);
+                unsubscribe();
+                reject(error);
+                return;
+              }
+            }
+
+            unsubscribe();
+            resolve();
+          },
+          (error) => {
+            console.error("휴지통 정리 오류:", error);
+            reject(error);
+          }
+        );
+      });
     },
 
     // 북마크 순서 변경

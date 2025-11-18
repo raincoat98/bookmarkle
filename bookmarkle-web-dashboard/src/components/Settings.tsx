@@ -16,6 +16,7 @@ import {
   Bell,
   Shield,
   Crown,
+  Trash2,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -26,6 +27,7 @@ import { StatsSettings } from "./settings/StatsSettings";
 import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
+import { TrashSettings } from "./settings/TrashSettings";
 import { getUserDefaultPage } from "../firebase";
 import { isBetaPeriod } from "../utils/betaFlags";
 import { performBackup, shouldBackup } from "../utils/backup";
@@ -179,6 +181,7 @@ export const Settings: React.FC<SettingsProps> = ({
       : []),
     { id: "stats", label: t("settings.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },
+    { id: "trash", label: t("settings.trash"), icon: Trash2 },
     { id: "account", label: t("settings.account"), icon: User },
     { id: "appearance", label: t("settings.appearance"), icon: Palette },
     { id: "notifications", label: t("settings.notifications"), icon: Bell },
@@ -243,6 +246,8 @@ export const Settings: React.FC<SettingsProps> = ({
             onNavigateToNotifications={handleNavigateToNotifications}
           />
         );
+      case "trash":
+        return <TrashSettings />;
       case "privacy":
         return <PrivacySettings />;
       default:

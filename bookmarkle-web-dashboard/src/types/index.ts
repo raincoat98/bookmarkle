@@ -73,6 +73,7 @@ export interface Bookmark {
   updatedAt: Date;
   tags: string[]; // 태그 필드 추가
   isFavorite: boolean; // 즐겨찾기 필드 추가
+  deletedAt?: Date | null; // 휴지통 기능을 위한 삭제 시간 필드
 }
 
 export interface BookmarkFormData {
