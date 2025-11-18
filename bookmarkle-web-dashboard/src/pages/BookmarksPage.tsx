@@ -55,7 +55,6 @@ export const BookmarksPage: React.FC = () => {
     updateCollection,
     deleteCollection,
     setPinned,
-    loading: collectionsLoading,
     fetchCollections,
   } = useCollectionStore();
 
@@ -556,7 +555,6 @@ export const BookmarksPage: React.FC = () => {
   return (
     <Drawer
       collections={collections}
-      collectionsLoading={collectionsLoading}
       selectedCollection={selectedCollection}
       onCollectionChange={setSelectedCollection}
       onDeleteCollectionRequest={(id, name) => {

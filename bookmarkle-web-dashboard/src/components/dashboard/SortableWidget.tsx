@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, ChevronUp, Eye, EyeOff, Move } from "lucide-react";
@@ -67,9 +68,14 @@ export const SortableWidget: React.FC<SortableWidgetProps> = ({
   }
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: enabled ? 1 : 0.5, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      whileHover={undefined}
       className={`relative group ${isDragging ? "opacity-50 z-50" : ""} ${
         isEditMode && !isMobile ? "cursor-move" : ""
       } ${!enabled && isEditMode ? "opacity-50" : ""}`}
@@ -135,6 +141,6 @@ export const SortableWidget: React.FC<SortableWidgetProps> = ({
       >
         {children}
       </div>
-    </div>
+    </motion.div>
   );
 };
