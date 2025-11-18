@@ -536,12 +536,13 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                 groupedBookmarks?.groupedBookmarks &&
                 groupedBookmarks.groupedBookmarks.length > 0 && (
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
                     className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
                   >
-                    <div className="flex items-center justify-between min-h-[2.5rem]">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                         <Folder className="w-4 h-4 flex-shrink-0" />
                         <span className="text-sm">
@@ -559,7 +560,8 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                     </div>
                   </motion.div>
                 )}
-              {sortedGroupedBookmarks.groupedBookmarks &&
+              {showSubCollections &&
+                sortedGroupedBookmarks.groupedBookmarks &&
                 sortedGroupedBookmarks.groupedBookmarks.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -672,12 +674,13 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                     groupedBookmarks?.groupedBookmarks &&
                     groupedBookmarks.groupedBookmarks.length > 0 && (
                       <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2 }}
                         className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 sm:p-4 border border-gray-200 dark:border-gray-700"
                       >
-                        <div className="flex items-center justify-between min-h-[2.5rem]">
+                        <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                             <Folder className="w-4 h-4 flex-shrink-0" />
                             <span className="text-sm">
@@ -695,7 +698,8 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                         </div>
                       </motion.div>
                     )}
-                  {sortedGroupedBookmarks.groupedBookmarks &&
+                  {showSubCollections &&
+                    sortedGroupedBookmarks.groupedBookmarks &&
                     sortedGroupedBookmarks.groupedBookmarks.length > 0 && (
                       <motion.div
                         initial={{ opacity: 0, height: 0 }}
