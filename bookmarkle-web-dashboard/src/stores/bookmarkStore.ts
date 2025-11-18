@@ -113,7 +113,9 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
 
       if (selectedCollection === "favorites") {
         // 즐겨찾기한 북마크들만
-        filtered = rawBookmarks.filter((bookmark) => bookmark.isFavorite === true);
+        filtered = rawBookmarks.filter(
+          (bookmark) => bookmark.isFavorite === true
+        );
       } else if (selectedCollection === "none") {
         // 컬렉션이 없는 북마크들
         filtered = rawBookmarks.filter(
@@ -163,7 +165,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
           querySnapshot.forEach((doc) => {
             const data = doc.data();
             const deletedAt = data.deletedAt ? data.deletedAt.toDate() : null;
-            
+
             // 삭제되지 않은 북마크만 추가
             if (!deletedAt) {
               bookmarkList.push({
@@ -175,8 +177,12 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
                 collection: data.collection || null,
                 order: data.order || 0,
                 userId: data.userId || "",
-                createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
-                updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
+                createdAt: data.createdAt
+                  ? data.createdAt.toDate()
+                  : new Date(),
+                updatedAt: data.updatedAt
+                  ? data.updatedAt.toDate()
+                  : new Date(),
                 tags: data.tags || [],
                 isFavorite: data.isFavorite || false,
                 deletedAt: null,
@@ -445,11 +451,23 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
         deletedAt: null,
         updatedAt: Timestamp.now(),
       });
+      // 복원 후 휴지통 리스트에서 즉시 제거 (optimistic update)
+      set((state) => ({
+        trashBookmarks: state.trashBookmarks.filter(
+          (bookmark) => bookmark.id !== bookmarkId
+        ),
+      }));
     },
 
     // 북마크 완전 삭제
     permanentlyDeleteBookmark: async (bookmarkId: string) => {
       await deleteDoc(doc(db, "bookmarks", bookmarkId));
+      // 완전 삭제 후 휴지통 리스트에서 즉시 제거 (optimistic update)
+      set((state) => ({
+        trashBookmarks: state.trashBookmarks.filter(
+          (bookmark) => bookmark.id !== bookmarkId
+        ),
+      }));
     },
 
     // 휴지통 비우기
@@ -507,7 +525,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
             querySnapshot.forEach((docSnapshot) => {
               const data = docSnapshot.data();
               const deletedAt = data.deletedAt?.toDate();
-              
+
               if (deletedAt && deletedAt < thirtyDaysAgo) {
                 batch.delete(doc(db, "bookmarks", docSnapshot.id));
                 deletedCount++;
@@ -517,7 +535,9 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
             if (deletedCount > 0) {
               try {
                 await batch.commit();
-                console.log(`${deletedCount}개의 오래된 휴지통 항목이 삭제되었습니다.`);
+                console.log(
+                  `${deletedCount}개의 오래된 휴지통 항목이 삭제되었습니다.`
+                );
               } catch (error) {
                 console.error("휴지통 정리 오류:", error);
                 unsubscribe();
