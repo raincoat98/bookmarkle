@@ -15,6 +15,7 @@ import { PricingPage } from "./pages/PricingPage";
 import { SubscriptionPage } from "./pages/SubscriptionPage";
 import { EarlyBirdPolicyPage } from "./pages/EarlyBirdPolicyPage";
 import { LandingPage } from "./pages/LandingPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { LoginScreen } from "./components/auth/LoginScreen";
 import { AdminProtected } from "./components/admin/AdminProtected";
 import { SubscriptionBanner } from "./components/subscription/SubscriptionBanner";
@@ -70,7 +71,7 @@ function AppContent() {
           <Route path="/about" element={<LandingPage />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/" element={<LoginScreen />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       ) : (
         <Routes>
@@ -112,7 +113,7 @@ function AppContent() {
             path="/extension-login-success"
             element={<ExtensionLoginSuccessPage />}
           />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       )}
     </>
