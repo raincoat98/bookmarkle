@@ -28,6 +28,7 @@ import {
   checkBookmarkLimit,
   checkCollectionLimit,
 } from "../utils/subscriptionLimits";
+import { usePasteBookmark } from "../hooks/usePasteBookmark";
 
 export const BookmarksPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
@@ -361,6 +362,13 @@ export const BookmarksPage: React.FC = () => {
       toast.error(`${t("bookmarks.bookmarkAddError")}: ${errorMessage}`);
     }
   };
+
+  // 붙여넣기 북마크 추가 기능
+  usePasteBookmark({
+    onAddBookmark: handleAddBookmark,
+    onOpenModal: () => setIsAddModalOpen(true),
+    enabled: !!user && isActive !== false,
+  });
 
   const handleUpdateBookmark = async (
     id: string,
