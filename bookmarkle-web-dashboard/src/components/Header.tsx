@@ -108,29 +108,10 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
             </Link>
           </div>
 
-          {/* 오른쪽: 사용자 메뉴 및 테마 토글 */}
-          <div className="flex items-center space-x-1 sm:space-x-2">
+          {/* 오른쪽: 알림, 테마, 사용자 메뉴 */}
+          <div className="flex items-center space-x-2">
             {/* 알림 센터 */}
             {user && <NotificationCenter />}
-
-            {/* 구독 관리 링크 - 모바일에서 숨김, 베타 기간 중 숨김 */}
-            {user && !isBetaPeriod() && (
-              <Link
-                to="/subscription"
-                className={`hidden sm:flex relative p-2 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm ${
-                  isPremium
-                    ? "text-yellow-500 hover:text-yellow-600 dark:hover:text-yellow-400"
-                    : "text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                }`}
-                aria-label="구독 관리"
-                title={isPremium ? "프리미엄 구독 관리" : "구독 관리"}
-              >
-                <Crown className="w-5 h-5" />
-                {isPremium && (
-                  <span className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-500 rounded-full border-2 border-white dark:border-gray-800"></span>
-                )}
-              </Link>
-            )}
 
             {/* 테마 토글 */}
             <button
@@ -154,7 +135,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
               )}
             </button>
 
-            {/* 사용자 메뉴 - 모바일에서 드롭다운으로 통합 */}
+            {/* 사용자 메뉴 */}
             {user && (
               <div className="relative" ref={menuRef}>
                 <button
@@ -164,11 +145,11 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                   <div className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-full flex items-center justify-center shadow-soft">
                     <User className="w-4 h-4 text-white" />
                   </div>
-                  <span className="hidden sm:block text-sm font-medium">
-                    {user.email}
-                  </span>
+                  {isPremium && (
+                    <Crown className="w-4 h-4 text-yellow-500" />
+                  )}
                   <ChevronDown
-                    className={`w-4 h-4 hidden sm:block transition-transform ${
+                    className={`w-4 h-4 transition-transform ${
                       isUserMenuOpen ? "rotate-180" : ""
                     }`}
                   />
@@ -187,7 +168,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       </p>
                     </div>
 
-                    {/* 구독 관리 - 모바일 전용, 베타 기간 중 숨김 */}
+                    {/* 구독 관리 - 베타 기간 중 숨김 */}
                     {!isBetaPeriod() && (
                       <Link
                         to="/subscription"
@@ -239,38 +220,6 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                   </div>
                 )}
               </div>
-            )}
-
-            {/* 데스크톱 전용: 관리자 페이지 링크 */}
-            {user && isAdmin && (
-              <Link
-                to="/admin"
-                className="hidden md:flex p-2 text-red-500 hover:text-red-600 dark:hover:text-red-400 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-red-50 dark:hover:bg-red-900/20 backdrop-blur-sm border-2 border-red-300 dark:border-red-600"
-                aria-label="관리자"
-                title="관리자 대시보드"
-              >
-                <Shield className="w-6 h-6" />
-              </Link>
-            )}
-
-            {/* 데스크톱 전용: 설정 링크 */}
-            <Link
-              to="/settings"
-              className="hidden md:flex p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
-              aria-label="설정"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
-
-            {/* 데스크톱 전용: 로그아웃 버튼 */}
-            {user && (
-              <button
-                onClick={handleLogout}
-                className="hidden md:flex p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
-                aria-label="로그아웃"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
             )}
           </div>
         </div>
