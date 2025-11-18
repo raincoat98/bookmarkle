@@ -175,9 +175,9 @@ export const Settings: React.FC<SettingsProps> = ({
     { id: "general", label: t("settings.general"), icon: SettingsIcon },
     // 베타 모드일 때는 구독 탭 숨김
     ...(!isBetaPeriod()
-      ? [{ id: "subscription", label: t("premium.subscription"), icon: Crown }]
+      ? [{ id: "subscription", label: t("premium.subscriptionLabel"), icon: Crown }]
       : []),
-    { id: "stats", label: t("admin.statistics"), icon: BarChart3 },
+    { id: "stats", label: t("settings.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },
     { id: "account", label: t("settings.account"), icon: User },
     { id: "appearance", label: t("settings.appearance"), icon: Palette },
