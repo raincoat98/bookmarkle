@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
 import { BrowserCompatibilityWarning } from "./BrowserCompatibilityWarning";
-import { isAdminUser } from "../firebase";
 import {
   detectBrowser,
   getBrowserCompatibilityMessage,
@@ -14,7 +13,6 @@ export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -27,18 +25,6 @@ export const LoginScreen = () => {
       navigate("/extension-login-success" + location.search);
     }
   }, [user, navigate, location.search]);
-
-  // 관리자 여부 확인
-  useEffect(() => {
-    if (user) {
-      isAdminUser(user)
-        .then(setIsAdmin)
-        .catch(() => setIsAdmin(false));
-    } else {
-      setIsAdmin(false);
-    }
-  }, [user]);
-
 
   // 폼 데이터
   const [formData, setFormData] = useState({
