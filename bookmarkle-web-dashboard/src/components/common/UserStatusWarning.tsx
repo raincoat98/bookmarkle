@@ -1,4 +1,4 @@
-import { useAuthStore } from "../stores";
+import { useAuthStore } from "../../stores";
 import { UserX, Mail } from "lucide-react";
 
 export function UserStatusWarning() {

@@ -52,7 +52,7 @@ export const BibleVerseWidget: React.FC = () => {
       lang.startsWith("en") || 
       lang === "ja" || 
       lang.startsWith("ja");
-    return (isEnglishOrJapanese ? bibleVersesEn : bibleVersesKo) as BibleData;
+    return (isEnglishOrJapanese ? bibleVersesEn : bibleVersesKo) as unknown as BibleData;
   }, [i18n.language]);
 
   // 마운트 시에만 실행되는 랜덤 구절 선택 함수 (메모이제이션)

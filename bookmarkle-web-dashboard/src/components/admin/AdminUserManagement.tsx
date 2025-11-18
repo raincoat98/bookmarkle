@@ -1,5 +1,5 @@
 import React from "react";
-import { AdminUserList } from "../AdminUserList";
+import { AdminUserList } from "./AdminUserList";
 import type { AdminUser } from "../../types";
 
 interface AdminUserManagementProps {

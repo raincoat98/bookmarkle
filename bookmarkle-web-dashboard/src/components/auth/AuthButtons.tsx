@@ -1,7 +1,7 @@
 // src/components/AuthButtons.tsx
 import { useState } from "react";
-import { loginWithGoogle, logout } from "../firebase";
-import { useAuthStore } from "../stores";
+import { loginWithGoogle, logout } from "../../firebase";
+import { useAuthStore } from "../../stores";
 import EmailLogin from "./EmailLogin";
 import EmailSignup from "./EmailSignup";
 
@@ -73,7 +73,7 @@ export default function AuthButtons() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           <button
-            onClick={() => loginWithGoogle().catch((e) => alert(e.message))}
+            onClick={() => loginWithGoogle().catch((e: Error) => alert(e.message))}
             style={{
               padding: "12px 16px",
               backgroundColor: "#4285f4",
@@ -165,7 +165,7 @@ export default function AuthButtons() {
       )}
       <span>{user.displayName ?? user.email}</span>
       <button
-        onClick={() => logout().catch((e) => alert(e.message))}
+        onClick={() => logout().catch((e: Error) => alert(e.message))}
         style={{
           padding: "6px 12px",
           backgroundColor: "#f44336",

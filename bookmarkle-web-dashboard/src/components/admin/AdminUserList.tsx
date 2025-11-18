@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { AdminUser } from "../types";
+import type { AdminUser } from "../../types";
 import {
   Search,
   User as UserIcon,
@@ -11,7 +11,7 @@ import {
   Crown,
   Gift,
 } from "lucide-react";
-import { isEarlyUser } from "../utils/earlyUser";
+import { isEarlyUser } from "../../utils/earlyUser";
 
 interface AdminUserListProps {
   users: AdminUser[];

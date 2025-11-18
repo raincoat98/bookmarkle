@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Header } from "../components/Header";
+import { Header } from "../components/layout/Header";
 import { AdminUserManagement } from "../components/admin/AdminUserManagement";
 import { useAdminUsers } from "../hooks/useAdminUsers";
 import { SubscriptionFeatureSettings } from "../components/settings/SubscriptionFeatureSettings";

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-import type { Bookmark, BookmarkFormData, Collection } from "../types";
-import { getFaviconUrl, findFaviconFromWebsite } from "../utils/favicon";
+import type { Bookmark, BookmarkFormData, Collection } from "../../types";
+import { getFaviconUrl, findFaviconFromWebsite } from "../../utils/favicon";
 import { useTranslation } from "react-i18next";
 
 interface EditBookmarkModalProps {
@@ -60,10 +60,10 @@ export const EditBookmarkModal = ({
         setFaviconLoading(true);
         try {
           const defaultFavicon = getFaviconUrl(formData.url);
-          setFormData((prev) => ({ ...prev, favicon: defaultFavicon }));
+          setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: defaultFavicon }));
 
           const actualFavicon = await findFaviconFromWebsite(formData.url);
-          setFormData((prev) => ({ ...prev, favicon: actualFavicon }));
+          setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: actualFavicon }));
         } catch (error) {
           console.error("파비콘 가져오기 실패:", error);
         } finally {
@@ -98,7 +98,7 @@ export const EditBookmarkModal = ({
   };
 
   const handleRemoveTag = (tag: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter((t) => t !== tag) });
+    setFormData({ ...formData, tags: formData.tags.filter((t: string) => t !== tag) });
   };
 
   // URL 유효성 검사
@@ -131,10 +131,10 @@ export const EditBookmarkModal = ({
       setFaviconLoading(true);
       try {
         const defaultFavicon = getFaviconUrl(formData.url);
-        setFormData((prev) => ({ ...prev, favicon: defaultFavicon }));
+        setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: defaultFavicon }));
 
         const actualFavicon = await findFaviconFromWebsite(formData.url);
-        setFormData((prev) => ({ ...prev, favicon: actualFavicon }));
+        setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: actualFavicon }));
       } catch (error) {
         console.error("파비콘 가져오기 실패:", error);
         toast.error(t("bookmarks.faviconFetchError"));
@@ -413,7 +413,7 @@ export const EditBookmarkModal = ({
                   </label>
                   <div className="space-y-2">
                     <div className="flex flex-wrap gap-2">
-                      {formData.tags.map((tag) => (
+                      {formData.tags.map((tag: string) => (
                         <span
                           key={tag}
                           className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200"

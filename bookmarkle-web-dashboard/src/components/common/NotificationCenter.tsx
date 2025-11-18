@@ -10,10 +10,10 @@ import {
   Info,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNotifications } from "../hooks/useNotifications";
-import { useAuthStore } from "../stores";
-import type { Notification } from "../types";
-import { db, getUserNotificationSettings } from "../firebase";
+import { useNotifications } from "../../hooks/useNotifications";
+import { useAuthStore } from "../../stores";
+import type { Notification } from "../../types";
+import { db, getUserNotificationSettings } from "../../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 
 export const NotificationCenter = () => {
@@ -92,7 +92,7 @@ export const NotificationCenter = () => {
         console.error("알림 설정 실시간 동기화 실패:", error);
         // 에러 발생 시 초기 로드 시도
         getUserNotificationSettings(user.uid)
-          .then((settings) => {
+          .then((settings: { notifications?: boolean; bookmarkNotifications?: boolean }) => {
             const fallback =
               settings.notifications !== undefined
                 ? settings.notifications
@@ -106,7 +106,7 @@ export const NotificationCenter = () => {
               );
             }
           })
-          .catch((err) => {
+          .catch((err: Error) => {
             console.error("알림 설정 로드 실패:", err);
           });
       }
@@ -232,7 +232,7 @@ export const NotificationCenter = () => {
                   <p>{t("notifications.noNotifications")}</p>
                 </div>
               ) : (
-                notifications.map((notification) => (
+                notifications.map((notification: Notification) => (
                   <div
                     key={notification.id}
                     className={`border-b border-gray-100 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
@@ -296,7 +296,7 @@ export const NotificationCenter = () => {
             </div>
 
             {/* 푸터 */}
-            {notifications.filter((n) => n.isRead).length > 0 && (
+            {notifications.filter((n: Notification) => n.isRead).length > 0 && (
               <div className="p-3 border-t border-gray-200 dark:border-gray-700">
                 <button
                   onClick={deleteReadNotifications}

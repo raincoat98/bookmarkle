@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Settings as SettingsIcon, RotateCcw, Eye } from "lucide-react";
 import { betaUtils } from "../../utils/betaFlags";
-import { SubscriptionAnnouncementModal } from "../SubscriptionAnnouncementModal";
+import { SubscriptionAnnouncementModal } from "../subscription/SubscriptionAnnouncementModal";
 
 export const SubscriptionFeatureSettings: React.FC = () => {
   const { t } = useTranslation();

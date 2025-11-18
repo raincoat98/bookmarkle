@@ -2,8 +2,8 @@ import React from "react";
 import { X, Sparkles, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useSubscriptionStore } from "../stores";
-import { isBetaPeriod } from "../utils/betaFlags";
+import { useSubscriptionStore } from "../../stores";
+import { isBetaPeriod } from "../../utils/betaFlags";
 
 interface UpgradeModalProps {
   isOpen: boolean;

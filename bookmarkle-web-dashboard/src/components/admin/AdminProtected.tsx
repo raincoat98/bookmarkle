@@ -1,6 +1,6 @@
 import { Navigate } from "react-router-dom";
-import { useAuthStore } from "../stores";
-import { isAdminUser } from "../firebase";
+import { useAuthStore } from "../../stores";
+import { isAdminUser } from "../../firebase";
 import { useState, useEffect } from "react";
 
 interface AdminProtectedProps {
@@ -14,7 +14,7 @@ export function AdminProtected({ children }: AdminProtectedProps) {
 
   useEffect(() => {
     if (user) {
-      isAdminUser(user).then((admin) => {
+      isAdminUser(user).then((admin: boolean) => {
         setIsAdmin(admin);
         setAdminLoading(false);
       });

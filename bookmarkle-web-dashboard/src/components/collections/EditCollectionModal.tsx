@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import type { Collection, CollectionFormData } from "../types";
+import type { Collection, CollectionFormData } from "../../types";
 import { IconPicker } from "./IconPicker";
 import * as LucideIcons from "lucide-react";
 import { PinIcon } from "lucide-react";

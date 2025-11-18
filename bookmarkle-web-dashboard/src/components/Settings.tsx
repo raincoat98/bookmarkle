@@ -165,7 +165,7 @@ export const Settings: React.FC<SettingsProps> = ({
   // 사용자 기본 페이지 로드
   useEffect(() => {
     if (user?.uid) {
-      getUserDefaultPage(user.uid).then((page) => {
+      getUserDefaultPage(user.uid).then((page: string | null) => {
         if (page) {
           setDefaultPage(page);
         }
@@ -177,7 +177,13 @@ export const Settings: React.FC<SettingsProps> = ({
     { id: "general", label: t("settings.general"), icon: SettingsIcon },
     // 베타 모드일 때는 구독 탭 숨김
     ...(!isBetaPeriod()
-      ? [{ id: "subscription", label: t("premium.subscriptionLabel"), icon: Crown }]
+      ? [
+          {
+            id: "subscription",
+            label: t("premium.subscriptionLabel"),
+            icon: Crown,
+          },
+        ]
       : []),
     { id: "stats", label: t("settings.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },

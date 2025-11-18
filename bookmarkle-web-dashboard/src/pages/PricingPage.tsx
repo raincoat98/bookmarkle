@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSubscriptionStore } from "../stores";
-import { Header } from "../components/Header";
+import { Header } from "../components/layout/Header";
 import { Check, Sparkles, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { isBetaPeriod } from "../utils/betaFlags";

@@ -3,7 +3,7 @@ import {
   useThemeStore,
   useDrawerStore,
   useSubscriptionStore,
-} from "../stores";
+} from "../../stores";
 import { Link } from "react-router-dom";
 import {
   Menu,
@@ -16,11 +16,12 @@ import {
   Shield,
   Crown,
   ChevronDown,
+  BookOpen,
 } from "lucide-react";
-import { isAdminUser } from "../firebase";
+import { isAdminUser } from "../../firebase";
 import { useState, useEffect, useRef } from "react";
-import { NotificationCenter } from "./NotificationCenter";
-import { isBetaPeriod } from "../utils/betaFlags";
+import { NotificationCenter } from "../common/NotificationCenter";
+import { isBetaPeriod } from "../../utils/betaFlags";
 
 interface HeaderProps {
   showMenuButton?: boolean;
@@ -96,13 +97,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
 
             <Link to="/" className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft">
-                <svg
-                  className="w-5 h-5 text-white"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                </svg>
+                <BookOpen className="w-5 h-5 text-white" />
               </div>
               <h1 className="text-xl font-bold gradient-text">북마클</h1>
             </Link>
@@ -145,9 +140,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                   <div className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-full flex items-center justify-center shadow-soft">
                     <User className="w-4 h-4 text-white" />
                   </div>
-                  {isPremium && (
-                    <Crown className="w-4 h-4 text-yellow-500" />
-                  )}
+                  {isPremium && <Crown className="w-4 h-4 text-yellow-500" />}
                   <ChevronDown
                     className={`w-4 h-4 transition-transform ${
                       isUserMenuOpen ? "rotate-180" : ""
