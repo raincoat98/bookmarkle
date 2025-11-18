@@ -100,6 +100,23 @@ export function useAdminUsers() {
           });
         }
 
+        // 구독 정보 파싱
+        let subscription = undefined;
+        if (userData.subscription) {
+          const subData = userData.subscription;
+          subscription = {
+            plan: subData.plan || "free",
+            status: subData.status || "expired",
+            billingCycle: subData.billingCycle || "monthly",
+            startDate: subData.startDate?.toDate() || new Date(),
+            endDate: subData.endDate?.toDate(),
+            cancelAtPeriodEnd: subData.cancelAtPeriodEnd || false,
+            subscriptionId: subData.subscriptionId,
+            customerId: subData.customerId,
+            trialEndDate: subData.trialEndDate?.toDate(),
+          };
+        }
+
         usersData.push({
           uid,
           email: userData.email || null,
@@ -109,6 +126,7 @@ export function useAdminUsers() {
           collectionCount,
           lastLoginAt: userData.lastLoginAt?.toDate(),
           isActive: userData.isActive !== false, // 기본값은 true (기존 사용자 호환성)
+          subscription,
         });
       }
 
@@ -116,9 +134,7 @@ export function useAdminUsers() {
     } catch (err: unknown) {
       console.error("사용자 목록 로드 오류:", err);
       setError(
-        err instanceof Error
-          ? err.message
-          : "사용자 목록을 불러오는데 실패했습니다."
+        err instanceof Error ? err.message : "Failed to load user list."
       );
     } finally {
       setLoading(false);
@@ -142,12 +158,12 @@ export function useAdminUsers() {
       );
 
       console.log(
-        `사용자 ${uid} 상태 변경: ${isActive ? "활성화" : "비활성화"}`
+        `User ${uid} status changed: ${isActive ? "activated" : "deactivated"}`
       );
     } catch (err: unknown) {
       console.error("사용자 상태 변경 실패:", err);
       setError(
-        err instanceof Error ? err.message : "사용자 상태 변경에 실패했습니다."
+        err instanceof Error ? err.message : "Failed to change user status."
       );
     }
   };

@@ -10,6 +10,7 @@ import { EditBookmarkModal } from "../components/EditBookmarkModal";
 import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
 import { AddCollectionModal } from "../components/AddCollectionModal";
 import { Drawer } from "../components/Drawer";
+import { UpgradeBanner } from "../components/UpgradeBanner";
 import { useTranslation } from "react-i18next";
 
 export const DashboardPage: React.FC = () => {
@@ -252,6 +253,7 @@ export const DashboardPage: React.FC = () => {
     <Drawer>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="p-4 lg:p-6">
+          <UpgradeBanner />
           <DashboardOverview
             bookmarks={bookmarks}
             collections={collections}

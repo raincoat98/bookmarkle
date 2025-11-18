@@ -3,6 +3,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BookmarksPage } from "./pages/BookmarksPage";
@@ -10,9 +11,15 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { AdminPage } from "./pages/AdminPage";
 import { ExtensionLoginSuccessPage } from "./pages/ExtensionLoginSuccessPage";
 import { NotificationCenterPage } from "./pages/NotificationCenterPage";
+import { PricingPage } from "./pages/PricingPage";
+import { SubscriptionPage } from "./pages/SubscriptionPage";
+import { EarlyBirdPolicyPage } from "./pages/EarlyBirdPolicyPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
+import { SubscriptionBanner } from "./components/SubscriptionBanner";
+import { SubscriptionAnnouncementModal } from "./components/SubscriptionAnnouncementModal";
+import { isBetaPeriod } from "./utils/betaFlags";
 import { Toaster } from "react-hot-toast";
 import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
@@ -25,13 +32,92 @@ import {
   useAuthStore,
   useBookmarkStore,
   useCollectionStore,
+  useSubscriptionStore,
   initializeTheme,
 } from "./stores";
+
+function AppContent() {
+  const { user } = useAuthStore();
+  const location = useLocation();
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
+  // 관리자 페이지인지 확인
+  const isAdminPage = location.pathname === "/admin";
+
+  const handleOpenModal = () => {
+    setShowSubscriptionModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowSubscriptionModal(false);
+  };
+
+  return (
+    <>
+      {/* 관리자 페이지가 아닐 때만 배너 표시 */}
+      {user && !isAdminPage && (
+        <SubscriptionBanner onViewClick={handleOpenModal} />
+      )}
+      {user && !isAdminPage && (
+        <SubscriptionAnnouncementModal
+          isOpen={showSubscriptionModal}
+          onClose={handleCloseModal}
+          forceShow={true}
+        />
+      )}
+      {!user ? (
+        <LoginScreen />
+      ) : (
+        <Routes>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/bookmarks" element={<BookmarksPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/notifications" element={<NotificationCenterPage />} />
+          <Route
+            path="/pricing"
+            element={
+              isBetaPeriod() ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <PricingPage />
+              )
+            }
+          />
+          <Route
+            path="/subscription"
+            element={
+              isBetaPeriod() ? (
+                <Navigate to="/dashboard" replace />
+              ) : (
+                <SubscriptionPage />
+              )
+            }
+          />
+          <Route path="/early-bird-policy" element={<EarlyBirdPolicyPage />} />
+          <Route
+            path="/admin"
+            element={
+              <AdminProtected>
+                <AdminPage />
+              </AdminProtected>
+            }
+          />
+          <Route
+            path="/extension-login-success"
+            element={<ExtensionLoginSuccessPage />}
+          />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      )}
+    </>
+  );
+}
 
 function App() {
   const { user, loading, initializeAuth } = useAuthStore();
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
+  const { subscribeToSubscription } = useSubscriptionStore();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -45,6 +131,16 @@ function App() {
       unsubscribeTheme();
     };
   }, [initializeAuth]);
+
+  // 구독 정보 초기화
+  useEffect(() => {
+    if (user?.uid) {
+      const unsubscribeSubscription = subscribeToSubscription(user.uid);
+      return () => {
+        unsubscribeSubscription();
+      };
+    }
+  }, [user?.uid, subscribeToSubscription]);
 
   useEffect(() => {
     if (user?.uid) {
@@ -136,38 +232,18 @@ function App() {
   return (
     <Router>
       <ExtensionBridge />
-      {!user ? (
-        <LoginScreen />
-      ) : (
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <Navigate
-                to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
-                replace
-              />
-            }
-          />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/bookmarks" element={<BookmarksPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/notifications" element={<NotificationCenterPage />} />
-          <Route
-            path="/admin"
-            element={
-              <AdminProtected>
-                <AdminPage />
-              </AdminProtected>
-            }
-          />
-          <Route
-            path="/extension-login-success"
-            element={<ExtensionLoginSuccessPage />}
-          />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      )}
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <Navigate
+              to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
+              replace
+            />
+          }
+        />
+        <Route path="*" element={<AppContent />} />
+      </Routes>
       <Toaster
         position="top-right"
         toastOptions={{

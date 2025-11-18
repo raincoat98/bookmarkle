@@ -11,6 +11,41 @@ export interface AppUser {
   provider?: string;
 }
 
+// 구독 플랜 타입
+export type SubscriptionPlan = "free" | "premium";
+
+// 구독 상태 타입
+export type SubscriptionStatus = "active" | "canceled" | "expired" | "trialing";
+
+// 구독 주기 타입
+export type SubscriptionBillingCycle = "monthly" | "yearly";
+
+// 구독 정보 인터페이스
+export interface Subscription {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  billingCycle: SubscriptionBillingCycle;
+  startDate: Date | any; // serverTimestamp
+  endDate: Date | any; // serverTimestamp (연간 구독의 경우)
+  cancelAtPeriodEnd?: boolean; // 기간 종료 시 취소 예정
+  subscriptionId?: string; // Stripe subscription ID
+  customerId?: string; // Stripe customer ID
+  trialEndDate?: Date | any; // 무료 체험 종료일
+}
+
+// 사용자 제한 설정
+export interface UserLimits {
+  maxBookmarks: number;
+  maxCollections: number;
+  maxBackupsPerWeek: number;
+  canUseAdvancedSearch: boolean;
+  canExportData: boolean;
+  canUseCustomTheme: boolean;
+  canRestoreDeletedBookmarks: boolean;
+  canShareBookmarks: boolean;
+  canUseAllWidgets: boolean;
+}
+
 // Firestore에 저장되는 사용자 데이터 타입
 export interface FirestoreUser {
   uid: string;
@@ -22,6 +57,7 @@ export interface FirestoreUser {
   updatedAt: any; // serverTimestamp
   provider: string;
   isActive?: boolean; // 사용자 활성화 상태
+  subscription?: Subscription; // 구독 정보
 }
 
 export interface Bookmark {
@@ -99,6 +135,7 @@ export interface AdminUser {
   collectionCount: number;
   lastLoginAt?: Date;
   isActive: boolean; // 사용자 활성화 상태
+  subscription?: Subscription; // 구독 정보
 }
 
 // 알림 관련 타입
