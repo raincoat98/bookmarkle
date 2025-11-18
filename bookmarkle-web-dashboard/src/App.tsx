@@ -14,6 +14,7 @@ import { NotificationCenterPage } from "./pages/NotificationCenterPage";
 import { PricingPage } from "./pages/PricingPage";
 import { SubscriptionPage } from "./pages/SubscriptionPage";
 import { EarlyBirdPolicyPage } from "./pages/EarlyBirdPolicyPage";
+import { LandingPage } from "./pages/LandingPage";
 import { LoginScreen } from "./components/LoginScreen";
 import { AdminProtected } from "./components/AdminProtected";
 import ExtensionBridge from "./components/ExtensionBridge";
@@ -66,9 +67,15 @@ function AppContent() {
         />
       )}
       {!user ? (
-        <LoginScreen />
+        <Routes>
+          <Route path="/about" element={<LandingPage />} />
+          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/" element={<LoginScreen />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       ) : (
         <Routes>
+          <Route path="/about" element={<LandingPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/bookmarks" element={<BookmarksPage />} />
           <Route path="/settings" element={<SettingsPage />} />
@@ -236,10 +243,14 @@ function App() {
         <Route
           path="/"
           element={
-            <Navigate
-              to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
-              replace
-            />
+            user ? (
+              <Navigate
+                to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
+                replace
+              />
+            ) : (
+              <AppContent />
+            )
           }
         />
         <Route path="*" element={<AppContent />} />

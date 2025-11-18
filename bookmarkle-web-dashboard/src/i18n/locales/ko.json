@@ -589,6 +589,90 @@
       "getStarted": "지금 바로 시작하기"
     }
   },
+  "landing": {
+    "nav": {
+      "features": "기능",
+      "howItWorks": "사용법",
+      "getStarted": "시작하기",
+      "chromeInstall": "Chrome 설치"
+    },
+    "hero": {
+      "badge": "나만의 스마트 북마크 관리자",
+      "title": "북마크를",
+      "titleHighlight": "똑똑하게",
+      "titleEnd": "관리하세요",
+      "description": "원하는 웹페이지를 한 번에 저장하고 간편하게 관리하는 나만의 책갈피 클립북",
+      "cta": "무료로 시작하기",
+      "chromeInstall": "Chrome에서 설치하기",
+      "learnMore": "자세히 알아보기"
+    },
+    "stats": {
+      "bookmarks": "무료 북마크",
+      "collections": "컬렉션",
+      "fast": "빠른 검색",
+      "secure": "안전한 저장"
+    },
+    "features": {
+      "title": "강력한 기능들",
+      "subtitle": "북마크 관리를 위한 모든 기능을 제공합니다",
+      "smartBookmarking": {
+        "title": "간편한 북마킹",
+        "description": "원하는 웹페이지를 한 번의 클릭으로 저장하고 컬렉션으로 체계적으로 관리하세요."
+      },
+      "powerfulSearch": {
+        "title": "강력한 검색",
+        "description": "수천 개의 북마크도 빠르게 찾을 수 있는 검색 기능."
+      },
+      "collections": {
+        "title": "컬렉션 관리",
+        "description": "북마크를 컬렉션으로 체계적으로 정리하세요."
+      },
+      "browserExtension": {
+        "title": "브라우저 확장",
+        "description": "Chrome 확장 프로그램으로 한 번의 클릭으로 저장."
+      },
+      "lightningFast": {
+        "title": "빠른 속도",
+        "description": "실시간 동기화로 모든 기기에서 즉시 접근."
+      },
+      "secure": {
+        "title": "안전한 저장",
+        "description": "Firebase로 암호화된 안전한 북마크 저장소."
+      }
+    },
+    "howItWorks": {
+      "title": "간단한 사용법",
+      "subtitle": "4단계로 시작하세요",
+      "step1": {
+        "title": "계정 만들기",
+        "description": "Google 계정으로 간편하게 가입하세요."
+      },
+      "step2": {
+        "title": "확장 프로그램 설치",
+        "description": "Chrome 웹 스토어에서 북마클 확장 프로그램을 설치하세요."
+      },
+      "step3": {
+        "title": "북마크 저장하기",
+        "description": "원하는 웹페이지에서 확장 프로그램 아이콘을 클릭하세요."
+      },
+      "step4": {
+        "title": "관리하고 즐기기",
+        "description": "대시보드에서 북마크를 정리하고 편리하게 관리하세요."
+      }
+    },
+    "cta": {
+      "title": "지금 바로 시작하세요",
+      "description": "무료로 가입하고 북마크를 체계적으로 관리해보세요. Google 계정으로 간편하게 시작할 수 있습니다.",
+      "button": "무료로 시작하기",
+      "chromeInstall": "Chrome에서 설치하기",
+      "feature1": "무료 플랜 제공",
+      "feature2": "빠른 가입 절차",
+      "feature3": "모든 기능 무료 체험"
+    },
+    "footer": {
+      "copyright": "© 2024 북마클. All rights reserved."
+    }
+  },
   "admin": {
     "title": "관리자 대시보드",
     "description": "전체 사용자를 관리하고 통계를 확인할 수 있습니다.",
