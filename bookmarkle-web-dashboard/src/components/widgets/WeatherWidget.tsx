@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import {
   Cloud,
   CloudRain,
@@ -64,8 +65,6 @@ const WeeklyWeatherModal: React.FC<{
   weeklyWeather: WeeklyWeatherData[];
   city: string;
 }> = ({ isOpen, onClose, weeklyWeather, city }) => {
-  if (!isOpen) return null;
-
   const getDayName = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -81,16 +80,27 @@ const WeeklyWeatherModal: React.FC<{
     }
   };
 
+  if (!isOpen) return null;
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             이번주 날씨
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
@@ -107,7 +117,7 @@ const WeeklyWeatherModal: React.FC<{
           <div className="space-y-3">
             {weeklyWeather.map((day, index) => (
               <div
-                key={index}
+                key={`${day.date}-${index}`}
                 className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
               >
                 <div className="flex items-center space-x-3">
@@ -126,7 +136,7 @@ const WeeklyWeatherModal: React.FC<{
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -489,8 +499,14 @@ export const WeatherWidget: React.FC = () => {
   return (
     <>
       <div
-        className="relative overflow-hidden rounded-xl sm:rounded-2xl shadow-soft cursor-pointer hover:shadow-lg transition-shadow min-h-[120px] sm:min-h-[140px]"
-        onClick={() => setIsModalOpen(true)}
+        className={`relative overflow-hidden rounded-xl sm:rounded-2xl shadow-soft cursor-pointer hover:shadow-lg transition-shadow min-h-[120px] sm:min-h-[140px] ${
+          isModalOpen ? "pointer-events-none opacity-50" : ""
+        }`}
+        onClick={() => {
+          if (!isModalOpen) {
+            setIsModalOpen(true);
+          }
+        }}
       >
         {/* 동적 배경 */}
         {weather && (

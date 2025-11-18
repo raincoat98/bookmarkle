@@ -5,6 +5,7 @@ import {
   useSubscriptionStore,
 } from "../../stores";
 import { Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
   Sun,
@@ -95,12 +96,29 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
               </button>
             )}
 
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4 }}
+            >
             <Link to="/" className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <h1 className="text-xl font-bold gradient-text">북마클</h1>
+                <motion.div
+                  whileHover={{ scale: 1.1, rotate: 5 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft"
+                >
+                  <BookOpen className="w-5 h-5 text-white" />
+                </motion.div>
+                <motion.h1
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2, duration: 0.4 }}
+                  className="text-xl font-bold gradient-text"
+                >
+                  북마클
+                </motion.h1>
             </Link>
+            </motion.div>
           </div>
 
           {/* 오른쪽: 알림, 테마, 사용자 메뉴 */}
@@ -109,9 +127,11 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
             {user && <NotificationCenter />}
 
             {/* 테마 토글 */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
               onClick={toggleTheme}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
+              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
               aria-label="테마 변경"
               title={`현재: ${
                 theme === "light"
@@ -121,14 +141,40 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                   : "자동"
               } 모드`}
             >
+              <AnimatePresence mode="wait">
               {theme === "light" ? (
+                  <motion.div
+                    key="moon"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
                 <Moon className="w-5 h-5" />
+                  </motion.div>
               ) : theme === "dark" ? (
+                  <motion.div
+                    key="globe"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
                 <Globe className="w-5 h-5" />
+                  </motion.div>
               ) : (
+                  <motion.div
+                    key="sun"
+                    initial={{ rotate: -90, opacity: 0 }}
+                    animate={{ rotate: 0, opacity: 1 }}
+                    exit={{ rotate: 90, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
                 <Sun className="w-5 h-5" />
+                  </motion.div>
               )}
-            </button>
+              </AnimatePresence>
+            </motion.button>
 
             {/* 사용자 메뉴 */}
             {user && (
@@ -149,8 +195,15 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                 </button>
 
                 {/* 드롭다운 메뉴 */}
+                <AnimatePresence>
                 {isUserMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[100]">
+                    <motion.div
+                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[100]"
+                    >
                     {/* 사용자 정보 */}
                     <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -210,8 +263,9 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       <LogOut className="w-4 h-4" />
                       <span>로그아웃</span>
                     </button>
-                  </div>
+                    </motion.div>
                 )}
+                </AnimatePresence>
               </div>
             )}
           </div>
