@@ -39,32 +39,32 @@ export const PricingPage: React.FC = () => {
   };
 
   const freeFeatures = [
-    "북마크 100개",
-    "컬렉션 10개",
-    "기본 검색",
-    "기본 백업(주 1회)",
-    "기본 위젯",
-    "광고 없음",
+    t("premium.features.free.bookmarks", { count: 500 }),
+    t("premium.features.free.collections", { count: 10 }),
+    t("premium.features.free.basicSearch"),
+    t("premium.features.free.weeklyBackup"),
+    t("premium.features.free.basicWidgets"),
+    t("premium.features.free.noAds", { defaultValue: "광고 없음" }),
   ];
 
   const premiumFeatures = [
-    "북마크 무제한",
-    "컬렉션 무제한",
-    "고급 검색(태그, 날짜, 도메인)",
-    "북마크 통계",
-    "삭제 북마크 복구",
-    "전체 위젯 unlocked",
-    "고급 테마",
-    "프리미엄 고객지원",
+    t("premium.features.unlimitedBookmarks"),
+    t("premium.features.unlimitedCollections"),
+    t("premium.features.advancedSearch"),
+    t("premium.features.bookmarkStats"),
+    t("premium.features.restoreDeleted"),
+    t("premium.features.allWidgets", { defaultValue: "전체 위젯 unlocked" }),
+    t("premium.features.customTheme"),
+    t("premium.features.premiumSupport", { defaultValue: "프리미엄 고객지원" }),
   ];
 
   const businessFeatures = [
-    "프리미엄 기능 전체 포함",
-    "팀 공유 기능",
-    "팀 컬렉션",
-    "팀 분석 리포트",
-    "API Access",
-    "커스텀 브랜딩",
+    t("premium.features.business.allPremium", { defaultValue: "프리미엄 기능 전체 포함" }),
+    t("premium.features.business.teamShare", { defaultValue: "팀 공유 기능" }),
+    t("premium.features.business.teamCollections", { defaultValue: "팀 컬렉션" }),
+    t("premium.features.business.teamReports", { defaultValue: "팀 분석 리포트" }),
+    t("premium.features.business.apiAccess", { defaultValue: "API Access" }),
+    t("premium.features.business.customBranding", { defaultValue: "커스텀 브랜딩" }),
   ];
 
   const monthlyPrice = 4.99;
@@ -97,11 +97,15 @@ export const PricingPage: React.FC = () => {
             <div className="text-blue-600 dark:text-blue-400 text-xl">✨</div>
             <div>
               <p className="font-semibold text-blue-900 dark:text-blue-200 mb-1">
-                프리미엄 플랜이 출시되었습니다!
+                {t("premium.pricing.launchAnnouncement", {
+                  defaultValue: "프리미엄 플랜이 출시되었습니다!",
+                })}
               </p>
               <p className="text-sm text-blue-800 dark:text-blue-300">
-                정식 오픈을 기념하여 특별한 가격으로 제공됩니다. 얼리유저는 기존
-                기능을 계속 무료로 사용하실 수 있습니다.
+                {t("premium.pricing.launchDescription", {
+                  defaultValue:
+                    "정식 오픈을 기념하여 특별한 가격으로 제공됩니다. 얼리유저는 기존 기능을 계속 무료로 사용하실 수 있습니다.",
+                })}
               </p>
             </div>
           </div>
@@ -274,7 +278,7 @@ export const PricingPage: React.FC = () => {
           <div className="group bg-white dark:bg-gray-800 rounded-2xl shadow-lg border-2 border-gray-200 dark:border-gray-700 p-8 transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-gray-300 dark:hover:border-gray-600">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2 transition-colors">
-                비즈니스
+                {t("premium.businessPlan", { defaultValue: "비즈니스" })}
               </h3>
               <div className="flex items-baseline justify-center">
                 <span className="text-4xl font-bold text-gray-900 dark:text-white">
@@ -312,7 +316,7 @@ export const PricingPage: React.FC = () => {
               disabled
               className="w-full px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 rounded-xl font-medium cursor-not-allowed transition-all"
             >
-              곧 출시 예정
+              {t("premium.comingSoon", { defaultValue: "곧 출시 예정" })}
             </button>
           </div>
         </div>

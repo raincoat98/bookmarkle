@@ -6,7 +6,7 @@ import { EARLY_USER_LIMITS, isEarlyUser } from "./earlyUser";
  */
 export const PLAN_LIMITS: Record<SubscriptionPlan, UserLimits> = {
   free: {
-    maxBookmarks: 100, // 무료 플랜: 300~500개 (500으로 설정)
+    maxBookmarks: 500, // 무료 플랜: 500개
     maxCollections: 10,
     maxBackupsPerWeek: 1, // 주 1회
     canUseAdvancedSearch: false,
