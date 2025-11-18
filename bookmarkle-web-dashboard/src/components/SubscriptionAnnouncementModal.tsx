@@ -152,12 +152,20 @@ export const SubscriptionAnnouncementModal: React.FC<
 
           {/* 버튼 */}
           <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <button
-              onClick={handleSubscribe}
-              className="w-full px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
-            >
-              {t("subscription.modal.subscribe", { defaultValue: "구독하기" })}
-            </button>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleClose}
+                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+              >
+                닫기
+              </button>
+              <button
+                onClick={handleSubscribe}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
+              >
+                바로가기
+              </button>
+            </div>
           </div>
         </div>
       </div>
