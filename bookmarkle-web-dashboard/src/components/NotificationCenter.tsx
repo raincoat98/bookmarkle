@@ -192,13 +192,7 @@ export const NotificationCenter = () => {
 
       {/* 알림 드롭다운 */}
       {isOpen && (
-        <>
-          {/* 오버레이 */}
-          <div
-            className="fixed inset-0 bg-black/20 z-[9998]"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="fixed right-2 left-2 top-16 sm:right-4 sm:left-auto sm:w-80 lg:absolute lg:right-0 lg:top-10 lg:mt-2 lg:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[600px] flex flex-col">
+        <div className="fixed right-2 left-2 top-16 sm:right-4 sm:left-auto sm:w-80 lg:absolute lg:right-0 lg:top-10 lg:mt-2 lg:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[600px] flex flex-col">
             {/* 헤더 */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -313,7 +307,6 @@ export const NotificationCenter = () => {
               </div>
             )}
           </div>
-        </>
       )}
     </div>
   );
