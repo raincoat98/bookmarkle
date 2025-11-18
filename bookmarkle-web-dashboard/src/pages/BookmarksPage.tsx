@@ -572,9 +572,9 @@ export const BookmarksPage: React.FC = () => {
         setIsAddSubCollectionModalOpen(true);
       }}
     >
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="sticky top-0 z-10 p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+        <div className="flex-shrink-0 sticky top-0 z-10 p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row gap-4 w-full">
             {/* 검색창 - 모든 화면 크기에서 보임 */}
             <div className="relative w-full sm:flex-1 min-w-0">
@@ -656,7 +656,7 @@ export const BookmarksPage: React.FC = () => {
         </div>
 
         {/* 메인 콘텐츠 */}
-        <div className="flex-1 p-4 lg:p-6 overflow-y-auto w-full min-w-0">
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto w-full min-w-0 overflow-x-hidden">
           {(() => {
             // 필터링된 북마크 데이터에서 실제 북마크 배열 추출
             let bookmarksToDisplay: Bookmark[] = [];
