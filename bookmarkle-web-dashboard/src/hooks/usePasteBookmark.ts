@@ -20,7 +20,9 @@ export const usePasteBookmark = ({
   /**
    * 클립보드에서 URL 추출 및 유효성 검사
    */
-  const extractUrlFromClipboard = useCallback(async (): Promise<string | null> => {
+  const extractUrlFromClipboard = useCallback(async (): Promise<
+    string | null
+  > => {
     try {
       const text = await navigator.clipboard.readText();
       if (!text || !text.trim()) {
@@ -33,7 +35,10 @@ export const usePasteBookmark = ({
       let normalizedUrl = trimmedText;
 
       // http:// 또는 https://로 시작하지 않으면 추가
-      if (!normalizedUrl.startsWith("http://") && !normalizedUrl.startsWith("https://")) {
+      if (
+        !normalizedUrl.startsWith("http://") &&
+        !normalizedUrl.startsWith("https://")
+      ) {
         normalizedUrl = `https://${normalizedUrl}`;
       }
 
@@ -83,7 +88,7 @@ export const usePasteBookmark = ({
     const isInput =
       tagName === "input" ||
       tagName === "textarea" ||
-      activeElement.isContentEditable;
+      (activeElement instanceof HTMLElement && activeElement.isContentEditable);
 
     return isInput;
   }, []);
@@ -139,7 +144,9 @@ export const usePasteBookmark = ({
         setTimeout(() => {
           // 모달 컴포넌트에서 URL을 받을 수 있도록 이벤트 발생
           window.dispatchEvent(
-            new CustomEvent("pasteBookmarkUrl", { detail: { url, title, favicon } })
+            new CustomEvent("pasteBookmarkUrl", {
+              detail: { url, title, favicon },
+            })
           );
         }, 100);
       } else {
@@ -151,7 +158,14 @@ export const usePasteBookmark = ({
         }
       }
     },
-    [enabled, extractUrlFromClipboard, generateTitleFromUrl, isInputFocused, onAddBookmark, onOpenModal]
+    [
+      enabled,
+      extractUrlFromClipboard,
+      generateTitleFromUrl,
+      isInputFocused,
+      onAddBookmark,
+      onOpenModal,
+    ]
   );
 
   /**
@@ -169,4 +183,3 @@ export const usePasteBookmark = ({
     };
   }, [enabled, handlePaste]);
 };
-
