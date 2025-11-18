@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Bookmark, Collection, SortOption } from "../../types";
 import { SortableBookmarkCard } from "./SortableBookmarkCard";
@@ -80,8 +80,19 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
     null
   );
 
-  // 하위 컬렉션 북마크 보기 토글 상태
-  const [showSubCollections, setShowSubCollections] = useState(true);
+  // 하위 컬렉션 북마크 보기 토글 상태 (로컬 스토리지에서 초기값 불러오기)
+  const [showSubCollections, setShowSubCollections] = useState(() => {
+    const stored = localStorage.getItem("showSubCollections");
+    if (stored !== null) {
+      return stored === "true";
+    }
+    return true; // 기본값은 true (보기)
+  });
+
+  // 로컬 스토리지에 상태 저장
+  useEffect(() => {
+    localStorage.setItem("showSubCollections", String(showSubCollections));
+  }, [showSubCollections]);
 
   // 필터링 및 정렬된 북마크
   const filteredAndSortedBookmarks = useMemo(() => {
