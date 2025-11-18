@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   Cloud,
@@ -9,8 +9,12 @@ import {
   MapPin,
   X,
   RefreshCw,
+  Search,
+  Settings,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useAuthStore } from "../../stores/authStore";
+import { getUserWeatherLocation, setUserWeatherLocation } from "../../firebase";
 
 interface WeatherData {
   temperature: number;
@@ -30,6 +34,38 @@ interface WeeklyWeatherData {
   };
   description: string;
   icon: string;
+}
+
+interface LocationSearchResult {
+  name: string;
+  lat: number;
+  lon: number;
+  country: string;
+  state?: string;
+}
+
+interface OpenWeatherGeocodeResult {
+  name: string;
+  lat: number;
+  lon: number;
+  country: string;
+  state?: string;
+  local_names?: {
+    ko?: string;
+    [key: string]: string | undefined;
+  };
+}
+
+interface OpenWeatherForecastItem {
+  dt: number;
+  main: {
+    temp: number;
+  };
+  weather: Array<{
+    id: number;
+    description: string;
+    icon: string;
+  }>;
 }
 
 // 날씨 아이콘 매핑
@@ -65,6 +101,8 @@ const WeeklyWeatherModal: React.FC<{
   weeklyWeather: WeeklyWeatherData[];
   city: string;
 }> = ({ isOpen, onClose, weeklyWeather, city }) => {
+  const { t, i18n } = useTranslation();
+
   const getDayName = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -72,11 +110,17 @@ const WeeklyWeatherModal: React.FC<{
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     if (date.toDateString() === today.toDateString()) {
-      return "오늘";
+      return t("weather.today");
     } else if (date.toDateString() === tomorrow.toDateString()) {
-      return "내일";
+      return t("weather.tomorrow");
     } else {
-      return date.toLocaleDateString("ko-KR", { weekday: "short" });
+      const localeMap: { [key: string]: string } = {
+        ko: "ko-KR",
+        en: "en-US",
+        ja: "ja-JP",
+      };
+      const locale = localeMap[i18n.language] || "en-US";
+      return date.toLocaleDateString(locale, { weekday: "short" });
     }
   };
 
@@ -96,7 +140,7 @@ const WeeklyWeatherModal: React.FC<{
       >
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            이번주 날씨
+            {t("weather.weeklyWeather")}
           </h2>
           <button
             onClick={onClose}
@@ -141,16 +185,291 @@ const WeeklyWeatherModal: React.FC<{
   );
 };
 
+// 위치 검색 모달 컴포넌트
+const LocationSearchModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onSelectLocation: (location: {
+    lat: number;
+    lon: number;
+    city: string;
+  }) => void;
+}> = ({ isOpen, onClose, onSelectLocation }) => {
+  const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<LocationSearchResult[]>(
+    []
+  );
+  const [isSearching, setIsSearching] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const searchLocation = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+      if (!API_KEY) {
+        throw new Error("API 키가 설정되지 않았습니다");
+      }
+
+      const response = await fetch(
+        `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
+          query
+        )}&limit=5&appid=${API_KEY}`
+      );
+
+      if (!response.ok) {
+        throw new Error("위치 검색 API 호출 실패");
+      }
+
+      const data = (await response.json()) as OpenWeatherGeocodeResult[];
+      setSearchResults(
+        data.map((item) => {
+          // 한국어 이름이 있으면 우선 사용, 없으면 원래 이름 사용
+          const displayName = item.local_names?.ko || item.name;
+
+          return {
+            name: displayName,
+            lat: item.lat,
+            lon: item.lon,
+            country: item.country,
+            state: item.state,
+          };
+        })
+      );
+    } catch (error) {
+      console.error("위치 검색 실패:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    searchLocation(searchQuery);
+  };
+
+  const handleSelectLocation = async (location: LocationSearchResult) => {
+    setSaving(true);
+    try {
+      const cityName = `${location.name}${
+        location.state ? `, ${location.state}` : ""
+      }, ${location.country}`;
+      await onSelectLocation({
+        lat: location.lat,
+        lon: location.lon,
+        city: cityName,
+      });
+      onClose();
+      setSearchQuery("");
+      setSearchResults([]);
+    } catch (error) {
+      console.error("위치 저장 실패:", error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleUseCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert(t("weather.geolocationNotSupported"));
+      return;
+    }
+
+    setIsSearching(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+          if (!API_KEY) {
+            throw new Error("API 키가 설정되지 않았습니다");
+          }
+
+          // 역 지오코딩으로 도시 이름 가져오기
+          const response = await fetch(
+            `https://api.openweathermap.org/geo/1.0/reverse?lat=${position.coords.latitude}&lon=${position.coords.longitude}&limit=1&appid=${API_KEY}`
+          );
+
+          if (!response.ok) {
+            throw new Error("역 지오코딩 API 호출 실패");
+          }
+
+          const data = (await response.json()) as OpenWeatherGeocodeResult[];
+          if (data.length > 0) {
+            const location = data[0];
+            // 한국어 이름이 있으면 우선 사용, 없으면 원래 이름 사용
+            const displayName = location.local_names?.ko || location.name;
+
+            await handleSelectLocation({
+              name: displayName,
+              lat: location.lat,
+              lon: location.lon,
+              country: location.country,
+              state: location.state,
+            });
+          } else {
+            // 위치를 찾을 수 없어도 좌표만 저장
+            await handleSelectLocation({
+              name: t("weather.currentLocation"),
+              lat: position.coords.latitude,
+              lon: position.coords.longitude,
+              country: "",
+            });
+          }
+        } catch (error) {
+          console.error("현재 위치 가져오기 실패:", error);
+        } finally {
+          setIsSearching(false);
+        }
+      },
+      (error) => {
+        console.error("위치 정보 가져오기 실패:", error);
+        setIsSearching(false);
+      }
+    );
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md h-[600px] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {t("weather.changeLocation")}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="p-6 overflow-y-auto flex-1">
+          <form onSubmit={handleSearch} className="mb-4">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    searchLocation(e.target.value);
+                  }}
+                  placeholder={t("weather.searchPlaceholder")}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </form>
+
+          <button
+            onClick={handleUseCurrentLocation}
+            disabled={isSearching}
+            className="w-full mb-4 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            <MapPin className="w-4 h-4" />
+            {t("weather.useCurrentLocation")}
+          </button>
+
+          {isSearching && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                {t("weather.searching")}
+              </p>
+            </div>
+          )}
+
+          {!isSearching && searchResults.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {t("weather.selectLocation")}
+              </p>
+              {searchResults.map((result, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleSelectLocation(result)}
+                  disabled={saving}
+                  className="w-full text-left p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                >
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-gray-900 dark:text-white">
+                        {result.name}
+                        {result.state && `, ${result.state}`}
+                      </p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {result.country}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {!isSearching &&
+            searchQuery &&
+            searchResults.length === 0 &&
+            searchQuery.trim() && (
+              <div className="text-center py-4">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("weather.noResults")}
+                </p>
+              </div>
+            )}
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 export const WeatherWidget: React.FC = () => {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weeklyWeather, setWeeklyWeather] = useState<WeeklyWeatherData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   // 사용자 위치 가져오기
-  const getLocation = (): Promise<{ lat: number; lon: number }> => {
+  const getLocation = useCallback(async (): Promise<{
+    lat: number;
+    lon: number;
+  }> => {
+    // 먼저 저장된 위치 정보 확인
+    if (user) {
+      try {
+        const savedLocation = await getUserWeatherLocation(user.uid);
+        if (savedLocation) {
+          return { lat: savedLocation.lat, lon: savedLocation.lon };
+        }
+      } catch (error) {
+        console.error("저장된 위치 정보 불러오기 실패:", error);
+      }
+    }
+
+    // 저장된 위치가 없으면 브라우저 위치 또는 기본값 사용
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         // 서울역 좌표로 기본값 설정
@@ -174,10 +493,10 @@ export const WeatherWidget: React.FC = () => {
         { timeout: 10000, enableHighAccuracy: false }
       );
     });
-  };
+  }, [user]);
 
   // 이번주 날씨 데이터 가져오기
-  const fetchWeeklyWeather = async (lat: number, lon: number) => {
+  const fetchWeeklyWeather = useCallback(async (lat: number, lon: number) => {
     try {
       const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
       if (!API_KEY) {
@@ -225,12 +544,14 @@ export const WeatherWidget: React.FC = () => {
         throw new Error("주간 날씨 API 호출 실패");
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as {
+        list: OpenWeatherForecastItem[];
+      };
 
       // 5일간의 날씨 데이터를 일별로 그룹화
-      const dailyData = new Map<string, any[]>();
+      const dailyData = new Map<string, OpenWeatherForecastItem[]>();
 
-      data.list.forEach((item: any) => {
+      data.list.forEach((item) => {
         const date = new Date(item.dt * 1000).toISOString().split("T")[0];
         if (!dailyData.has(date)) {
           dailyData.set(date, []);
@@ -242,14 +563,14 @@ export const WeatherWidget: React.FC = () => {
 
       dailyData.forEach((dayItems, date) => {
         // 해당 날의 평균 온도와 가장 많이 나타나는 날씨 상태 계산
-        const temperatures = dayItems.map((item: any) => item.main.temp);
+        const temperatures = dayItems.map((item) => item.main.temp);
         const minTemp = Math.round(Math.min(...temperatures));
         const maxTemp = Math.round(Math.max(...temperatures));
 
         // 가장 많이 나타나는 날씨 상태 찾기
         const weatherCounts = new Map<string, number>();
-        dayItems.forEach((item: any) => {
-          const weatherId = item.weather[0].id;
+        dayItems.forEach((item) => {
+          const weatherId = item.weather[0].id.toString();
           weatherCounts.set(weatherId, (weatherCounts.get(weatherId) || 0) + 1);
         });
 
@@ -258,15 +579,17 @@ export const WeatherWidget: React.FC = () => {
         )[0][0];
 
         const weatherItem = dayItems.find(
-          (item: any) => item.weather[0].id === mostCommonWeather
+          (item) => item.weather[0].id.toString() === mostCommonWeather
         );
 
-        weeklyData.push({
-          date,
-          temperature: { min: minTemp, max: maxTemp },
-          description: weatherItem.weather[0].description,
-          icon: weatherItem.weather[0].icon,
-        });
+        if (weatherItem) {
+          weeklyData.push({
+            date,
+            temperature: { min: minTemp, max: maxTemp },
+            description: weatherItem.weather[0].description,
+            icon: weatherItem.weather[0].icon,
+          });
+        }
       });
 
       setWeeklyWeather(weeklyData.slice(0, 7)); // 최대 7일
@@ -306,104 +629,152 @@ export const WeatherWidget: React.FC = () => {
         },
       ]);
     }
-  };
+  }, []);
 
   // 특정 위치로 날씨 데이터 가져오기
-  const fetchWeatherWithLocation = async (lat: number, lon: number) => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchWeatherWithLocation = useCallback(
+    async (lat: number, lon: number, savedCityName?: string) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-      const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
-      if (!API_KEY) {
-        throw new Error("API 키가 설정되지 않았습니다");
-      }
+        const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+        if (!API_KEY) {
+          throw new Error("API 키가 설정되지 않았습니다");
+        }
 
-      const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=kr`
-      );
+        const response = await fetch(
+          `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=kr`
+        );
 
-      if (!response.ok) {
-        throw new Error("날씨 API 호출 실패");
-      }
+        if (!response.ok) {
+          throw new Error("날씨 API 호출 실패");
+        }
 
-      const data = await response.json();
+        const data = await response.json();
 
-      setWeather({
-        temperature: Math.round(data.main.temp),
-        description: data.weather[0].description,
-        icon: data.weather[0].icon,
-        city: data.name,
-        humidity: data.main.humidity,
-        windSpeed: Math.round(data.wind.speed * 3.6), // m/s를 km/h로 변환
-        feelsLike: Math.round(data.main.feels_like),
-      });
+        // 저장된 도시 이름이 있으면 우선 사용, 없으면 API 응답의 도시 이름 사용
+        const cityName = savedCityName || data.name;
 
-      // 주간 날씨 데이터도 함께 가져오기
-      await fetchWeeklyWeather(lat, lon);
-    } catch (error) {
-      console.log("날씨 정보 가져오기 실패:", error);
-      setError("날씨 정보를 가져올 수 없습니다");
+        setWeather({
+          temperature: Math.round(data.main.temp),
+          description: data.weather[0].description,
+          icon: data.weather[0].icon,
+          city: cityName,
+          humidity: data.main.humidity,
+          windSpeed: Math.round(data.wind.speed * 3.6), // m/s를 km/h로 변환
+          feelsLike: Math.round(data.main.feels_like),
+        });
 
-      // 기본 날씨 데이터 (API 실패 시)
-      setWeather({
-        temperature: 22,
-        description: "맑음",
-        icon: "01d",
-        city: "서울역",
-        humidity: 65,
-        windSpeed: 12,
-        feelsLike: 24,
-      });
+        // 주간 날씨 데이터도 함께 가져오기
+        await fetchWeeklyWeather(lat, lon);
+      } catch (error) {
+        console.log("날씨 정보 가져오기 실패:", error);
+        setError("날씨 정보를 가져올 수 없습니다");
 
-      // 기본 주간 날씨 데이터도 설정
-      setWeeklyWeather([
-        {
-          date: new Date().toISOString().split("T")[0],
-          temperature: { min: 15, max: 25 },
+        // 기본 날씨 데이터 (API 실패 시)
+        setWeather({
+          temperature: 22,
           description: "맑음",
           icon: "01d",
-        },
-        {
-          date: new Date(Date.now() + 86400000).toISOString().split("T")[0],
-          temperature: { min: 16, max: 26 },
-          description: "구름 많음",
-          icon: "02d",
-        },
-        {
-          date: new Date(Date.now() + 172800000).toISOString().split("T")[0],
-          temperature: { min: 14, max: 24 },
-          description: "비",
-          icon: "10d",
-        },
-        {
-          date: new Date(Date.now() + 259200000).toISOString().split("T")[0],
-          temperature: { min: 13, max: 23 },
-          description: "맑음",
-          icon: "01d",
-        },
-        {
-          date: new Date(Date.now() + 345600000).toISOString().split("T")[0],
-          temperature: { min: 12, max: 22 },
-          description: "구름 많음",
-          icon: "02d",
-        },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
+          city: "서울역",
+          humidity: 65,
+          windSpeed: 12,
+          feelsLike: 24,
+        });
+
+        // 기본 주간 날씨 데이터도 설정
+        setWeeklyWeather([
+          {
+            date: new Date().toISOString().split("T")[0],
+            temperature: { min: 15, max: 25 },
+            description: "맑음",
+            icon: "01d",
+          },
+          {
+            date: new Date(Date.now() + 86400000).toISOString().split("T")[0],
+            temperature: { min: 16, max: 26 },
+            description: "구름 많음",
+            icon: "02d",
+          },
+          {
+            date: new Date(Date.now() + 172800000).toISOString().split("T")[0],
+            temperature: { min: 14, max: 24 },
+            description: "비",
+            icon: "10d",
+          },
+          {
+            date: new Date(Date.now() + 259200000).toISOString().split("T")[0],
+            temperature: { min: 13, max: 23 },
+            description: "맑음",
+            icon: "01d",
+          },
+          {
+            date: new Date(Date.now() + 345600000).toISOString().split("T")[0],
+            temperature: { min: 12, max: 22 },
+            description: "구름 많음",
+            icon: "02d",
+          },
+        ]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [fetchWeeklyWeather]
+  );
 
   // 날씨 데이터 가져오기
-  const fetchWeather = async () => {
+  const fetchWeather = useCallback(async () => {
     const location = await getLocation();
-    await fetchWeatherWithLocation(location.lat, location.lon);
-  };
+
+    // 저장된 위치 정보가 있으면 도시 이름도 함께 가져오기
+    let savedCityName: string | undefined;
+    if (user) {
+      try {
+        const savedLocation = await getUserWeatherLocation(user.uid);
+        if (savedLocation) {
+          savedCityName = savedLocation.city;
+        }
+      } catch (error) {
+        console.error("저장된 위치 정보 불러오기 실패:", error);
+      }
+    }
+
+    await fetchWeatherWithLocation(location.lat, location.lon, savedCityName);
+  }, [getLocation, fetchWeatherWithLocation, user]);
 
   // 현재 위치 새로고침
-  const handleRefreshLocation = async () => {
+  const handleRefreshLocation = useCallback(async () => {
     await fetchWeather();
-  };
+  }, [fetchWeather]);
+
+  // 위치 선택 핸들러
+  const handleSelectLocation = useCallback(
+    async (location: { lat: number; lon: number; city: string }) => {
+      if (user) {
+        try {
+          // 먼저 Firestore에 저장
+          await setUserWeatherLocation(user.uid, location);
+          console.log("위치 저장 완료:", location);
+
+          // 저장 후 즉시 날씨 정보 업데이트 (저장한 위치와 도시 이름 사용)
+          await fetchWeatherWithLocation(
+            location.lat,
+            location.lon,
+            location.city
+          );
+
+          // 에러 상태 초기화
+          setError(null);
+        } catch (error) {
+          console.error("위치 저장 또는 날씨 업데이트 실패:", error);
+          setError(t("weather.locationSaveError"));
+          setLoading(false);
+        }
+      }
+    },
+    [user, t, fetchWeatherWithLocation]
+  );
 
   useEffect(() => {
     fetchWeather();
@@ -412,7 +783,7 @@ export const WeatherWidget: React.FC = () => {
     const interval = setInterval(fetchWeather, 30 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchWeather]);
 
   if (loading) {
     return (
@@ -520,8 +891,18 @@ export const WeatherWidget: React.FC = () => {
         {/* 배경 오버레이 */}
         <div className="absolute inset-0 bg-white/20 dark:bg-black/20 backdrop-blur-sm" />
 
-        {/* 위치 새로고침 버튼 */}
-        <div className="absolute bottom-2 right-2 z-20">
+        {/* 위치 새로고침 및 변경 버튼 */}
+        <div className="absolute bottom-2 right-2 z-20 flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLocationModalOpen(true);
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            title={t("weather.changeLocation")}
+          >
+            <Settings className="w-4 h-4 text-white" />
+          </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -652,6 +1033,12 @@ export const WeatherWidget: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         weeklyWeather={weeklyWeather}
         city={weather.city}
+      />
+
+      <LocationSearchModal
+        isOpen={isLocationModalOpen}
+        onClose={() => setIsLocationModalOpen(false)}
+        onSelectLocation={handleSelectLocation}
       />
     </>
   );
