@@ -449,7 +449,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               groupedBookmarks.groupedBookmarks.length > 0 && (
                 <button
                   onClick={() => setShowSubCollections(!showSubCollections)}
-                  className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
                   title={
                     showSubCollections
                       ? t("bookmarks.hideSubCollections")
@@ -458,15 +458,15 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
                 >
                   {showSubCollections ? (
                     <>
-                      <EyeOff className="w-3 sm:w-4 h-3 sm:h-4" />
+                      <EyeOff className="w-4 h-4" />
                       <span className="hidden sm:inline">
                         {t("bookmarks.hideSubCollections")}
                       </span>
-                      <span className="sm:hidden">{t("bookmarks.hide")}</span>
+                      <span className="sm:hidden">{t("bookmarks.show")}</span>
                     </>
                   ) : (
                     <>
-                      <Eye className="w-3 sm:w-4 h-3 sm:h-4" />
+                      <Eye className="w-4 h-4" />
                       <span className="hidden sm:inline">
                         {t("bookmarks.showSubCollections")}
                       </span>

@@ -76,6 +76,10 @@ export const Drawer: React.FC<DrawerProps> = ({
         if (desktop && !prevDesktop) {
           setIsDrawerOpen(true);
         }
+        // 모바일로 전환되면 Drawer를 닫음
+        if (!desktop && prevDesktop) {
+          setIsDrawerOpen(false);
+        }
       }, 100); // 디바운스
     };
 
