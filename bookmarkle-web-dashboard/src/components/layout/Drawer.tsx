@@ -54,12 +54,25 @@ export const Drawer: React.FC<DrawerProps> = ({
     return false;
   });
 
+  // 초기 마운트 시 데스크톱 체크 및 Drawer 상태 동기화
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const desktop = window.innerWidth >= 1024;
+      setIsDesktop(desktop);
+
+      // 데스크톱이면 Drawer 열기
+      if (desktop) {
+        setIsDrawerOpen(true);
+      }
+    }
+  }, [setIsDrawerOpen]); // 초기 마운트 시 한 번만 실행
+
   // 데스크톱에서는 Drawer를 항상 열어둠
   useEffect(() => {
-    if (isDesktop && !isDrawerOpen) {
+    if (isDesktop) {
       setIsDrawerOpen(true);
     }
-  }, [isDesktop, isDrawerOpen, setIsDrawerOpen]);
+  }, [isDesktop, setIsDrawerOpen]);
 
   // 리사이즈 이벤트 처리 (디바운스)
   useEffect(() => {
@@ -67,28 +80,37 @@ export const Drawer: React.FC<DrawerProps> = ({
 
     const checkDesktop = () => {
       clearTimeout(resizeTimer);
+
       resizeTimer = setTimeout(() => {
         const desktop = window.innerWidth >= 1024;
-        const prevDesktop = isDesktop;
-        setIsDesktop(desktop);
 
-        // 데스크톱으로 전환되면 Drawer를 항상 열어둠
-        if (desktop && !prevDesktop) {
-          setIsDrawerOpen(true);
-        }
-        // 모바일로 전환되면 Drawer를 닫음
-        if (!desktop && prevDesktop) {
-          setIsDrawerOpen(false);
-        }
+        setIsDesktop((prevDesktop) => {
+          // 상태가 변경된 경우에만 Drawer 상태 업데이트
+          if (desktop !== prevDesktop) {
+            // 데스크톱으로 전환되면 Drawer를 항상 열어둠
+            if (desktop && !prevDesktop) {
+              setIsDrawerOpen(true);
+            }
+            // 모바일로 전환되면 Drawer를 닫음
+            if (!desktop && prevDesktop) {
+              setIsDrawerOpen(false);
+            }
+          }
+          return desktop;
+        });
       }, 100); // 디바운스
     };
 
     window.addEventListener("resize", checkDesktop);
+
+    // 초기 체크 (마운트 시에도 실행)
+    checkDesktop();
+
     return () => {
       window.removeEventListener("resize", checkDesktop);
       clearTimeout(resizeTimer);
     };
-  }, [isDesktop, setIsDrawerOpen]);
+  }, [setIsDrawerOpen]);
 
   const navigation = [
     {
