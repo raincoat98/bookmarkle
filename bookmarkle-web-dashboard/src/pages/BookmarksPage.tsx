@@ -574,8 +574,8 @@ export const BookmarksPage: React.FC = () => {
     >
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="flex-shrink-0 sticky top-0 z-10 p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row gap-4 w-full">
+        <div className="flex-shrink-0 sticky top-0 z-10 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
             {/* 검색창 - 모든 화면 크기에서 보임 */}
             <div className="relative w-full sm:flex-1 min-w-0">
               <input
@@ -583,75 +583,81 @@ export const BookmarksPage: React.FC = () => {
                 placeholder={t("bookmarks.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 h-[48px] border border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 h-[44px] border border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm shadow-sm text-sm"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             </div>
 
             {/* 데스크톱 컨트롤 */}
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3 lg:gap-4">
               {/* 뷰 모드 토글 버튼 - 데스크톱에서만 */}
-              <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1 shadow-lg">
+              <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1 shadow-lg h-[44px]">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-all duration-200 min-w-[40px] h-[40px] flex items-center justify-center ${
+                  className={`p-1.5 rounded-lg transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
                     viewMode === "grid"
                       ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-md"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                   title={t("bookmarks.gridView")}
                 >
-                  <Grid3X3 className="w-5 h-5" />
+                  <Grid3X3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-all duration-200 min-w-[40px] h-[40px] flex items-center justify-center ${
+                  className={`p-1.5 rounded-lg transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
                     viewMode === "list"
                       ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-md"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                   title={t("bookmarks.listView")}
                 >
-                  <List className="w-5 h-5" />
+                  <List className="w-4 h-4" />
                 </button>
               </div>
 
               {/* 데스크톱 버튼들 */}
-              <div className="flex gap-3">
+              <div className="flex gap-2 lg:gap-3">
                 <button
                   onClick={() => setIsAddCollectionModalOpen(true)}
-                  className="inline-flex items-center justify-center px-6 py-3 h-[48px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center px-4 lg:px-6 py-2 h-[44px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
                 >
-                  <FolderPlus className="w-5 h-5 mr-2" />
-                  {t("collections.addCollection")}
+                  <FolderPlus className="w-4 h-4 lg:w-5 lg:h-5 mr-1.5 lg:mr-2" />
+                  <span className="hidden lg:inline">
+                    {t("collections.addCollection")}
+                  </span>
+                  <span className="lg:hidden">컬렉션</span>
                 </button>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center justify-center px-6 py-3 h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center px-4 lg:px-6 py-2 h-[44px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
                 >
-                  <Plus className="w-5 h-5 mr-2" />
-                  {t("bookmarks.addBookmark")}
+                  <Plus className="w-4 h-4 lg:w-5 lg:h-5 mr-1.5 lg:mr-2" />
+                  <span className="hidden lg:inline">
+                    {t("bookmarks.addBookmark")}
+                  </span>
+                  <span className="lg:hidden">북마크</span>
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* 모바일 버튼들 - 한 줄에 2개 */}
-          <div className="grid grid-cols-2 gap-3 mt-4 sm:hidden">
-            <button
-              onClick={() => setIsAddCollectionModalOpen(true)}
-              className="flex items-center justify-center px-4 py-3 h-[48px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg"
-            >
-              <FolderPlus className="w-5 h-5 mr-2" />
-              {t("collections.addCollection")}
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center justify-center px-4 py-3 h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              {t("bookmarks.addBookmark")}
-            </button>
+            {/* 모바일 버튼들 - 한 줄에 2개 */}
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              <button
+                onClick={() => setIsAddCollectionModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+              >
+                <FolderPlus className="w-4 h-4 mr-1.5" />
+                <span>컬렉션</span>
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                <span>북마크</span>
+              </button>
+            </div>
           </div>
         </div>
 

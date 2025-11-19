@@ -264,12 +264,12 @@ export const SortableBookmarkCard = ({
         </button>
       </div>
       {/* 카드 내용 - 모바일에서 수직 배치 */}
-      <div className="p-4 sm:p-5 pt-20 sm:pt-16 relative z-10 pointer-events-none">
-        <div className="flex flex-col sm:flex-row sm:items-start gap-y-3 sm:space-x-4 pointer-events-auto">
+      <div className="p-4 sm:p-5 lg:p-5 pt-20 sm:pt-16 lg:pt-16 relative z-10 pointer-events-none">
+        <div className="flex flex-col sm:flex-row sm:items-start gap-y-2.5 sm:gap-y-3 sm:space-x-3 lg:space-x-4 pointer-events-auto">
           {/* 파비콘 - 모바일에서 위쪽 */}
           <div className="relative flex-shrink-0 flex justify-center sm:block mb-2 sm:mb-0">
             <div
-              className="w-12 h-12 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-brand-100 to-accent-100 dark:from-brand-900/30 dark:to-accent-900/30 flex items-center justify-center shadow-sm group/favicon cursor-pointer hover:bg-gradient-to-br hover:from-brand-200 hover:to-accent-200 dark:hover:from-brand-800/50 dark:hover:to-accent-800/50 transition-all duration-200"
+              className="w-11 h-11 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-xl bg-gradient-to-br from-brand-100 to-accent-100 dark:from-brand-900/30 dark:to-accent-900/30 flex items-center justify-center shadow-sm group/favicon cursor-pointer hover:bg-gradient-to-br hover:from-brand-200 hover:to-accent-200 dark:hover:from-brand-800/50 dark:hover:to-accent-800/50 transition-all duration-200"
               onClick={handleRefreshFavicon}
               title={t("common.refreshFavicon")}
             >
@@ -277,7 +277,7 @@ export const SortableBookmarkCard = ({
                 <img
                   src={bookmark.favicon}
                   alt={t("common.favicon")}
-                  className="w-8 h-8 sm:w-6 sm:h-6 rounded-lg group-hover/favicon:opacity-70 transition-opacity duration-200"
+                  className="w-7 h-7 sm:w-6 sm:h-6 lg:w-8 lg:h-8 rounded-lg group-hover/favicon:opacity-70 transition-opacity duration-200"
                   onError={(e) => {
                     e.currentTarget.style.display = "none";
                   }}
@@ -319,8 +319,8 @@ export const SortableBookmarkCard = ({
           </div>
 
           {/* 텍스트 및 정보 영역 - 수직 배치 */}
-          <div className="flex-1 min-w-0 flex flex-col gap-y-2">
-            <div className="flex items-center space-x-2 mb-1 pointer-events-auto">
+          <div className="flex-1 min-w-0 flex flex-col gap-y-1.5 sm:gap-y-2">
+            <div className="flex items-center space-x-2 pointer-events-auto">
               <a
                 href={bookmark.url}
                 target="_blank"
@@ -346,7 +346,7 @@ export const SortableBookmarkCard = ({
                     return false;
                   }
                 }}
-                className={`text-lg sm:text-base font-semibold text-gray-900 dark:text-white truncate hover:text-brand-600 dark:hover:text-brand-400 transition-colors duration-200 cursor-pointer pointer-events-auto ${
+                className={`text-base sm:text-base lg:text-lg font-semibold text-gray-900 dark:text-white truncate hover:text-brand-600 dark:hover:text-brand-400 transition-colors duration-200 cursor-pointer pointer-events-auto leading-tight ${
                   isDragging ? "pointer-events-none opacity-50" : ""
                 }`}
                 title={bookmark.title}
@@ -354,32 +354,32 @@ export const SortableBookmarkCard = ({
                 {bookmark.title}
               </a>
             </div>
-            <p className="text-sm sm:text-sm text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs sm:text-xs lg:text-sm text-gray-500 dark:text-gray-400 truncate mb-0.5">
               {bookmark.url}
             </p>
             {/* 컬렉션 정보 - 모바일에서 아래쪽 */}
-            <div className="flex flex-wrap items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-0.5">
               {collection ? (
-                <span className="inline-flex items-center gap-1 px-3 py-2 sm:px-2.5 sm:py-1 rounded-full text-sm sm:text-xs font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-300">
-                  {renderCollectionIcon(collection.icon, "w-4 h-4")}{" "}
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-2 sm:py-0.5 lg:px-2.5 lg:py-1 rounded-full text-xs sm:text-xs lg:text-sm font-medium bg-brand-100 text-brand-800 dark:bg-brand-900/30 dark:text-brand-300">
+                  {renderCollectionIcon(collection.icon, "w-3 h-3 sm:w-3.5 sm:h-3.5")}{" "}
                   {collection.name}
                 </span>
               ) : (
-                <span className="inline-flex items-center px-3 py-2 sm:px-2.5 sm:py-1 rounded-full text-sm sm:text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
+                <span className="inline-flex items-center px-2.5 py-1 sm:px-2 sm:py-0.5 lg:px-2.5 lg:py-1 rounded-full text-xs sm:text-xs lg:text-sm font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
                   {t("collections.noCollection")}
                 </span>
               )}
-              <div className="text-sm sm:text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-3 py-2 sm:px-2 sm:py-1 rounded-md">
+              <div className="text-xs sm:text-xs lg:text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-2 py-0.5 sm:px-1.5 sm:py-0.5 lg:px-2 lg:py-0.5 rounded-md">
                 {bookmark.createdAt.toLocaleDateString()}
               </div>
             </div>
             {/* 태그 배지 - 모바일에서 아래쪽 */}
             {bookmark.tags && bookmark.tags.length > 0 && (
-              <div className="flex flex-wrap gap-2 sm:gap-1.5 mb-1">
+              <div className="flex flex-wrap gap-1.5 sm:gap-1.5 mb-0.5">
                 {bookmark.tags.map((tag: string) => (
                   <span
                     key={tag}
-                    className="inline-flex items-center px-3 py-1.5 sm:px-2.5 sm:py-1 rounded-full text-sm sm:text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm"
+                    className="inline-flex items-center px-2.5 py-1 sm:px-2 sm:py-0.5 lg:px-2.5 lg:py-1 rounded-full text-xs sm:text-xs lg:text-sm font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm"
                   >
                     #{tag}
                   </span>
@@ -387,14 +387,14 @@ export const SortableBookmarkCard = ({
               </div>
             )}
             {bookmark.description && (
-              <p className="text-sm sm:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 transition-colors duration-200 leading-relaxed">
+              <p className="text-xs sm:text-xs lg:text-sm text-gray-600 dark:text-gray-300 line-clamp-2 transition-colors duration-200 leading-relaxed mt-0.5">
                 {bookmark.description}
               </p>
             )}
           </div>
         </div>
         {/* 방문하기 버튼: 모바일에서 전체 너비, 데스크톱은 우측 정렬 */}
-        <div className="flex mt-4 sm:justify-end relative z-30 pointer-events-auto">
+        <div className="flex mt-3 sm:mt-4 lg:mt-4 sm:justify-end relative z-30 pointer-events-auto">
           <a
             href={bookmark.url}
             target="_blank"
@@ -420,7 +420,7 @@ export const SortableBookmarkCard = ({
                 return false;
               }
             }}
-            className={`inline-flex items-center justify-center w-full sm:w-auto space-x-2 px-4 py-3 sm:px-4 sm:py-2 text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:hover:bg-brand-900/30 rounded-lg transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md active:scale-95 min-h-[44px] sm:min-h-[36px] z-30 pointer-events-auto ${
+            className={`inline-flex items-center justify-center w-full sm:w-auto space-x-2 px-3 py-2.5 sm:px-3.5 sm:py-2 lg:px-4 lg:py-2.5 text-xs sm:text-xs lg:text-sm font-medium text-brand-600 dark:text-brand-400 hover:text-brand-800 dark:hover:text-brand-300 bg-brand-50 hover:bg-brand-100 dark:bg-brand-900/20 dark:hover:bg-brand-900/30 rounded-lg transition-all duration-200 hover:scale-105 shadow-sm hover:shadow-md active:scale-95 min-h-[40px] sm:min-h-[34px] lg:min-h-[38px] z-30 pointer-events-auto ${
               isDragging ? "pointer-events-none opacity-50" : ""
             }`}
           >
