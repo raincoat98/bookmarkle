@@ -205,8 +205,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
     subscribeToTrash: (userId: string) => {
       const q = query(
         collection(db, "bookmarks"),
-        where("userId", "==", userId),
-        where("deletedAt", "!=", null)
+        where("userId", "==", userId)
       );
 
       const unsubscribe = onSnapshot(
@@ -214,10 +213,16 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
         (querySnapshot) => {
           const trashList: Bookmark[] = [];
 
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
+          querySnapshot.forEach((docSnapshot) => {
+            const data = docSnapshot.data();
+            const deletedAt = data.deletedAt ? data.deletedAt.toDate() : null;
+
+            if (!deletedAt) {
+              return;
+            }
+
             trashList.push({
-              id: doc.id,
+              id: docSnapshot.id,
               title: data.title || "",
               url: data.url || "",
               description: data.description || "",
@@ -229,11 +234,10 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
               updatedAt: data.updatedAt ? data.updatedAt.toDate() : new Date(),
               tags: data.tags || [],
               isFavorite: data.isFavorite || false,
-              deletedAt: data.deletedAt ? data.deletedAt.toDate() : null,
+              deletedAt,
             });
           });
 
-          // 삭제일 기준으로 정렬 (최신 삭제가 먼저)
           trashList.sort((a, b) => {
             if (!a.deletedAt || !b.deletedAt) return 0;
             return b.deletedAt.getTime() - a.deletedAt.getTime();
@@ -472,36 +476,26 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
 
     // 휴지통 비우기
     emptyTrash: async (userId: string) => {
-      // 휴지통의 모든 북마크 가져오기
-      return new Promise<void>((resolve, reject) => {
-        const q = query(
-          collection(db, "bookmarks"),
-          where("userId", "==", userId),
-          where("deletedAt", "!=", null)
-        );
+      if (!userId) throw new Error("사용자가 로그인되지 않았습니다.");
 
-        const unsubscribe = onSnapshot(
-          q,
-          async (querySnapshot) => {
-            const batch = writeBatch(db);
-            querySnapshot.forEach((docSnapshot) => {
-              batch.delete(doc(db, "bookmarks", docSnapshot.id));
-            });
+      const { trashBookmarks } = get();
+      if (!trashBookmarks.length) {
+        set({ trashBookmarks: [], trashLoading: false });
+        return;
+      }
 
-            try {
-              await batch.commit();
-              unsubscribe();
-              resolve();
-            } catch (error) {
-              unsubscribe();
-              reject(error);
-            }
-          },
-          (error) => {
-            reject(error);
-          }
-        );
+      const batch = writeBatch(db);
+      trashBookmarks.forEach((bookmark) => {
+        batch.delete(doc(db, "bookmarks", bookmark.id));
       });
+
+      try {
+        await batch.commit();
+        set({ trashBookmarks: [], trashLoading: false });
+      } catch (error) {
+        console.error("휴지통 비우기 오류:", error);
+        throw error;
+      }
     },
 
     // 30일 이상 된 휴지통 항목 자동 삭제
