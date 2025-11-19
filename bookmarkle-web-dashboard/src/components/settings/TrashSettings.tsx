@@ -20,8 +20,12 @@ export const TrashSettings: React.FC = () => {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [emptying, setEmptying] = useState(false);
   const [showEmptyConfirm, setShowEmptyConfirm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
-  const [showRestoreConfirm, setShowRestoreConfirm] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(
+    null
+  );
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState<string | null>(
+    null
+  );
 
   // 휴지통 구독
   useEffect(() => {
@@ -79,10 +83,13 @@ export const TrashSettings: React.FC = () => {
   };
 
   // 삭제일로부터 경과 일수 계산
-  const getDaysUntilPermanentDelete = (deletedAt: Date | null | undefined): number => {
+  const getDaysUntilPermanentDelete = (
+    deletedAt: Date | null | undefined
+  ): number => {
     if (!deletedAt) return 0;
     const now = new Date();
-    const diffTime = deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000 - now.getTime();
+    const diffTime =
+      deletedAt.getTime() + 30 * 24 * 60 * 60 * 1000 - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return Math.max(0, diffDays);
   };
@@ -158,7 +165,9 @@ export const TrashSettings: React.FC = () => {
             {/* 휴지통 목록 */}
             <div className="space-y-3">
               {trashBookmarks.map((bookmark) => {
-                const daysLeft = getDaysUntilPermanentDelete(bookmark.deletedAt);
+                const daysLeft = getDaysUntilPermanentDelete(
+                  bookmark.deletedAt
+                );
                 return (
                   <div
                     key={bookmark.id}
@@ -173,7 +182,8 @@ export const TrashSettings: React.FC = () => {
                               alt=""
                               className="w-5 h-5 flex-shrink-0"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
+                                (e.target as HTMLImageElement).style.display =
+                                  "none";
                               }}
                             />
                           ) : (
@@ -188,11 +198,14 @@ export const TrashSettings: React.FC = () => {
                         </p>
                         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 gap-2 sm:gap-0 text-xs text-gray-500 dark:text-gray-400">
                           <span className="break-words">
-                            {t("settings.deletedAt")}: {formatDate(bookmark.deletedAt)}
+                            {t("settings.deletedAt")}:{" "}
+                            {formatDate(bookmark.deletedAt)}
                           </span>
                           {daysLeft > 0 ? (
                             <span className="text-yellow-600 dark:text-yellow-400 whitespace-nowrap">
-                              {t("settings.daysUntilPermanentDelete", { days: daysLeft })}
+                              {t("settings.daysUntilPermanentDelete", {
+                                days: daysLeft,
+                              })}
                             </span>
                           ) : (
                             <span className="text-red-600 dark:text-red-400 whitespace-nowrap">
@@ -250,7 +263,9 @@ export const TrashSettings: React.FC = () => {
                 disabled={restoringId === showRestoreConfirm}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {restoringId === showRestoreConfirm ? t("common.processing") : t("settings.restore")}
+                {restoringId === showRestoreConfirm
+                  ? t("common.processing")
+                  : t("settings.restore")}
               </button>
             </div>
           </div>
@@ -279,7 +294,9 @@ export const TrashSettings: React.FC = () => {
                 disabled={deletingId === showDeleteConfirm}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {deletingId === showDeleteConfirm ? t("common.processing") : t("settings.permanentlyDelete")}
+                {deletingId === showDeleteConfirm
+                  ? t("common.processing")
+                  : t("settings.permanentlyDelete")}
               </button>
             </div>
           </div>
@@ -317,4 +334,3 @@ export const TrashSettings: React.FC = () => {
     </div>
   );
 };
-
