@@ -170,8 +170,8 @@ export const Drawer: React.FC<DrawerProps> = ({
           <div className="flex h-full flex-col bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-white/30 dark:border-gray-700/30 shadow-glass">
             {/* 헤더 */}
             <div
-              className={`flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 ${
-                isDrawerCollapsed ? "p-2 lg:p-3" : "p-4 lg:p-6"
+              className={`flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 h-[80px] ${
+                isDrawerCollapsed ? "px-2 lg:px-3" : "px-4 lg:px-6"
               }`}
             >
               <div
@@ -182,18 +182,20 @@ export const Drawer: React.FC<DrawerProps> = ({
                 }`}
               >
                 <div
-                  className={`bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft ${
-                    isDrawerCollapsed ? "w-6 h-6" : "w-7 h-7 lg:w-8 lg:h-8"
+                  className={`bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft flex-shrink-0 ${
+                    isDrawerCollapsed ? "w-7 h-7" : "w-9 h-9 lg:w-10 lg:h-10"
                   }`}
                 >
                   <BookOpen
                     className={`text-white ${
-                      isDrawerCollapsed ? "w-3 h-3" : "w-4 h-4 lg:w-5 lg:h-5"
+                      isDrawerCollapsed
+                        ? "w-3.5 h-3.5"
+                        : "w-5 h-5 lg:w-6 lg:h-6"
                     }`}
                   />
                 </div>
                 {!isDrawerCollapsed && (
-                  <h1 className="text-lg lg:text-xl font-bold gradient-text">
+                  <h1 className="text-base lg:text-lg font-bold gradient-text leading-none">
                     북마클
                   </h1>
                 )}
@@ -329,12 +331,12 @@ export const Drawer: React.FC<DrawerProps> = ({
         >
           <div className="flex h-full flex-col bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-white/30 dark:border-gray-700/30 shadow-glass">
             {/* 헤더 */}
-            <div className="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 p-4 lg:p-6">
+            <div className="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 h-[80px] px-4 lg:px-6">
               <div className="flex items-center space-x-2 lg:space-x-3">
-                <div className="bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft w-7 h-7 lg:w-8 lg:h-8">
-                  <BookOpen className="text-white w-4 h-4 lg:w-5 lg:h-5" />
+                <div className="bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft flex-shrink-0 w-9 h-9 lg:w-10 lg:h-10">
+                  <BookOpen className="text-white w-5 h-5 lg:w-6 lg:h-6" />
                 </div>
-                <h1 className="text-lg lg:text-xl font-bold gradient-text">
+                <h1 className="text-base lg:text-lg font-bold gradient-text leading-none">
                   북마클
                 </h1>
               </div>
@@ -342,9 +344,9 @@ export const Drawer: React.FC<DrawerProps> = ({
                 {/* 모바일 닫기 버튼 */}
                 <button
                   onClick={() => setIsDrawerOpen(false)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
+                  className="p-1.5 lg:p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 h-5 lg:w-6 lg:h-6" />
                 </button>
               </div>
             </div>
