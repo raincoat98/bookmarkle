@@ -574,8 +574,8 @@ export const BookmarksPage: React.FC = () => {
     >
       <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="flex-shrink-0 sticky top-0 z-10 h-[80px] px-4 lg:px-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm flex items-center">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full">
+        <div className="flex-shrink-0 sticky top-0 z-10 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
             {/* 검색창 - 모든 화면 크기에서 보임 */}
             <div className="relative w-full sm:flex-1 min-w-0">
               <input
@@ -640,24 +640,24 @@ export const BookmarksPage: React.FC = () => {
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* 모바일 버튼들 - 한 줄에 2개 */}
-          <div className="grid grid-cols-2 gap-2 mt-3 sm:hidden absolute bottom-3 left-4 right-4">
-            <button
-              onClick={() => setIsAddCollectionModalOpen(true)}
-              className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
-            >
-              <FolderPlus className="w-4 h-4 mr-1.5" />
-              <span>컬렉션</span>
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
-            >
-              <Plus className="w-4 h-4 mr-1.5" />
-              <span>북마크</span>
-            </button>
+            {/* 모바일 버튼들 - 한 줄에 2개 */}
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              <button
+                onClick={() => setIsAddCollectionModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+              >
+                <FolderPlus className="w-4 h-4 mr-1.5" />
+                <span>컬렉션</span>
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                <span>북마크</span>
+              </button>
+            </div>
           </div>
         </div>
 
