@@ -257,8 +257,22 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/fav-section:opacity-100 transition-all duration-300 transform group-hover/fav-section:scale-110">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
                           onToggleFavorite(bookmark.id, false);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                         }}
                         className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         title={t("bookmarks.removeFromFavorites")}
@@ -357,8 +371,22 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 transform group-hover/recent-section:scale-110">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
                           onToggleFavorite(bookmark.id, !bookmark.isFavorite);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                         }}
                         className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         title={
