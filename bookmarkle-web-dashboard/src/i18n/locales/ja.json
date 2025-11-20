@@ -378,7 +378,8 @@
     "geolocationPermissionDenied": "位置情報の権限が拒否されました",
     "geolocationUnavailable": "位置情報を利用できません",
     "geolocationTimeout": "位置情報のリクエストがタイムアウトしました",
-    "locationFetchError": "位置情報を取得できません"
+    "locationFetchError": "位置情報を取得できません",
+    "useDefaultLocation": "デフォルトの位置（ソウル駅）を使用しますか？"
   },
   "languages": {
     "korean": "한국어",
