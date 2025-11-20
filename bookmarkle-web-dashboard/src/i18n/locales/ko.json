@@ -374,7 +374,12 @@
     "today": "오늘",
     "tomorrow": "내일",
     "currentLocation": "현재 위치",
-    "geolocationNotSupported": "이 브라우저는 위치 서비스를 지원하지 않습니다"
+    "geolocationNotSupported": "이 브라우저는 위치 서비스를 지원하지 않습니다",
+    "geolocationError": "위치 정보를 가져올 수 없습니다",
+    "geolocationPermissionDenied": "위치 권한이 거부되었습니다",
+    "geolocationUnavailable": "위치 정보를 사용할 수 없습니다",
+    "geolocationTimeout": "위치 정보 요청 시간이 초과되었습니다",
+    "locationFetchError": "위치 정보를 가져올 수 없습니다"
   },
   "languages": {
     "korean": "한국어",

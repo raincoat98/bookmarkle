@@ -373,7 +373,12 @@
     "today": "Today",
     "tomorrow": "Tomorrow",
     "currentLocation": "Current location",
-    "geolocationNotSupported": "This browser does not support location services"
+    "geolocationNotSupported": "This browser does not support location services",
+    "geolocationError": "Unable to get location information",
+    "geolocationPermissionDenied": "Location permission denied",
+    "geolocationUnavailable": "Location information unavailable",
+    "geolocationTimeout": "Location request timed out",
+    "locationFetchError": "Unable to fetch location information"
   },
   "languages": {
     "korean": "한국어",
