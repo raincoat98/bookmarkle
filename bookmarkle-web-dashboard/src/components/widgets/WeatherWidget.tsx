@@ -270,6 +270,7 @@ const LocationSearchModal: React.FC<{
       setSearchResults([]);
     } catch (error) {
       console.error("위치 저장 실패:", error);
+      alert(t("weather.locationSaveError") || "위치 저장 중 오류가 발생했습니다.");
     } finally {
       setSaving(false);
     }
@@ -305,6 +306,8 @@ const LocationSearchModal: React.FC<{
             // 한국어 이름이 있으면 우선 사용, 없으면 원래 이름 사용
             const displayName = location.local_names?.ko || location.name;
 
+            // handleSelectLocation 호출 전에 로딩 상태 해제
+            setIsSearching(false);
             await handleSelectLocation({
               name: displayName,
               lat: location.lat,
@@ -314,6 +317,8 @@ const LocationSearchModal: React.FC<{
             });
           } else {
             // 위치를 찾을 수 없어도 좌표만 저장
+            // handleSelectLocation 호출 전에 로딩 상태 해제
+            setIsSearching(false);
             await handleSelectLocation({
               name: t("weather.currentLocation"),
               lat: position.coords.latitude,
@@ -323,13 +328,26 @@ const LocationSearchModal: React.FC<{
           }
         } catch (error) {
           console.error("현재 위치 가져오기 실패:", error);
-        } finally {
           setIsSearching(false);
+          alert(t("weather.locationFetchError") || "위치 정보를 가져올 수 없습니다.");
         }
       },
       (error) => {
         console.error("위치 정보 가져오기 실패:", error);
         setIsSearching(false);
+        let errorMessage = t("weather.geolocationError") || "위치 정보를 가져올 수 없습니다.";
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage = t("weather.geolocationPermissionDenied") || "위치 권한이 거부되었습니다.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage = t("weather.geolocationUnavailable") || "위치 정보를 사용할 수 없습니다.";
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage = t("weather.geolocationTimeout") || "위치 정보 요청 시간이 초과되었습니다.";
+        }
+        alert(errorMessage);
+      },
+      {
+        timeout: 10000,
+        enableHighAccuracy: false,
       }
     );
   };
