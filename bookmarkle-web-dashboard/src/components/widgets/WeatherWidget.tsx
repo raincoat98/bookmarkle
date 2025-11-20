@@ -301,28 +301,34 @@ const LocationSearchModal: React.FC<{
           }
 
           const data = (await response.json()) as OpenWeatherGeocodeResult[];
+          // 실제 GPS 좌표 사용 (역 지오코딩 응답의 좌표가 아닌)
+          const actualLat = position.coords.latitude;
+          const actualLon = position.coords.longitude;
+          
           if (data.length > 0) {
             const location = data[0];
             // 한국어 이름이 있으면 우선 사용, 없으면 원래 이름 사용
             const displayName = location.local_names?.ko || location.name;
 
             // handleSelectLocation 호출 전에 로딩 상태 해제
+            // (handleSelectLocation이 onSelectLocation을 호출하고 모달을 닫음)
             setIsSearching(false);
             await handleSelectLocation({
               name: displayName,
-              lat: location.lat,
-              lon: location.lon,
+              lat: actualLat,
+              lon: actualLon,
               country: location.country,
               state: location.state,
             });
           } else {
             // 위치를 찾을 수 없어도 좌표만 저장
+            const cityName = t("weather.currentLocation");
             // handleSelectLocation 호출 전에 로딩 상태 해제
             setIsSearching(false);
             await handleSelectLocation({
-              name: t("weather.currentLocation"),
-              lat: position.coords.latitude,
-              lon: position.coords.longitude,
+              name: cityName,
+              lat: actualLat,
+              lon: actualLon,
               country: "",
             });
           }
