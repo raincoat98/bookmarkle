@@ -257,8 +257,22 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/fav-section:opacity-100 transition-all duration-300 transform group-hover/fav-section:scale-110">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
                           onToggleFavorite(bookmark.id, false);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                         }}
                         className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         title={t("bookmarks.removeFromFavorites")}
@@ -311,11 +325,11 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
                     whileHover={{ scale: 1.1, y: -5 }}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 hover:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
+                    className="group/bookmark-item relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 hover:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
                     {...longPressHandlers}
                   >
                     <div
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl group-hover/recent-section:scale-110 transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl group-hover/bookmark-item:scale-110 transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleFaviconClick(bookmark.url);
@@ -339,7 +353,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600"
                         style={{ display: "none" }}
                       >
-                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
+                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/bookmark-item:animate-pulse" />
                       </div>
                     </div>
 
@@ -354,11 +368,25 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                       {formatDate(bookmark.createdAt)}
                     </p>
 
-                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 transform group-hover/recent-section:scale-110">
+                    <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 opacity-0 group-hover/bookmark-item:opacity-100 transition-all duration-300 transform group-hover/bookmark-item:scale-110">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
                           onToggleFavorite(bookmark.id, !bookmark.isFavorite);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                         }}
                         className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         title={
@@ -375,11 +403,25 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                       </button>
                     </div>
 
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/recent-section:opacity-100 transition-all duration-300 flex space-x-1.5 sm:space-x-2 group-hover/recent-section:scale-105">
+                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 opacity-0 group-hover/bookmark-item:opacity-100 transition-all duration-300 flex space-x-1.5 sm:space-x-2 group-hover/bookmark-item:scale-105">
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
                           onEdit(bookmark);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                         }}
                         className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         title={t("common.edit")}
@@ -388,8 +430,22 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                       </button>
                       <button
                         onClick={(e) => {
+                          e.preventDefault();
                           e.stopPropagation();
+                          e.nativeEvent.stopImmediatePropagation();
                           onDelete(bookmark.id);
+                        }}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchStart={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                        onTouchEnd={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
                         }}
                         className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 shadow-lg hover:shadow-xl transition-all duration-200"
                         title={t("common.delete")}
