@@ -510,7 +510,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
 // serializeUser 함수는 offscreen.js에서 처리
 
-const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app/dashboard";
+const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app";
 
 let overrideNewTabEnabled = false;
 let cachedStartPageUrl = DEFAULT_START_PAGE_URL;
