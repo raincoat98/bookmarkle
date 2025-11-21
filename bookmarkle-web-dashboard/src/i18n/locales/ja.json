@@ -29,7 +29,9 @@
     "apply": "適用",
     "optional": "オプション",
     "adding": "追加中...",
-    "updating": "更新中..."
+    "updating": "更新中...",
+    "processing": "処理中...",
+    "countUnit": "個"
   },
   "auth": {
     "login": "ログイン",
@@ -224,6 +226,7 @@
     "appearance": "外観",
     "account": "アカウント",
     "backup": "バックアップ",
+    "statistics": "統計",
     "language": "言語",
     "theme": "テーマ",
     "themeLight": "ライト",
@@ -288,7 +291,28 @@
     "restore": "復元",
     "mobileIconView": {
       "editModeDescription": "編集モード - 1秒以上長押し、ドラッグで順序変更"
-    }
+    },
+    "trash": "ゴミ箱",
+    "trashTitle": "ゴミ箱",
+    "trashDescription": "削除されたブックマークを管理します。30日後に自動的に完全に削除されます。",
+    "trashEmpty": "ゴミ箱は空です",
+    "trashEmptyDescription": "削除されたブックマークはありません",
+    "restoreBookmark": "ブックマークを復元",
+    "restoreBookmarkConfirm": "このブックマークを復元しますか？",
+    "restoreSuccess": "ブックマークが復元されました",
+    "restoreError": "ブックマークの復元中にエラーが発生しました",
+    "permanentlyDelete": "完全に削除",
+    "permanentlyDeleteBookmark": "ブックマークを完全に削除",
+    "permanentlyDeleteBookmarkConfirm": "このブックマークを完全に削除しますか？この操作は元に戻せません。",
+    "permanentlyDeleteSuccess": "ブックマークが完全に削除されました",
+    "permanentlyDeleteError": "ブックマークの削除中にエラーが発生しました",
+    "emptyTrash": "ゴミ箱を空にする",
+    "emptyTrashConfirm": "ゴミ箱内のすべてのブックマークを完全に削除しますか？この操作は元に戻せません。",
+    "emptyTrashSuccess": "ゴミ箱が空になりました",
+    "emptyTrashError": "ゴミ箱を空にする際にエラーが発生しました",
+    "deletedAt": "削除日時",
+    "daysUntilPermanentDelete": "{{days}}日後に自動削除",
+    "autoDeleteInfo": "ゴミ箱のブックマークは30日後に自動的に完全に削除されます"
   },
   "admin": {
     "title": "管理者",
@@ -332,9 +356,30 @@
     "noWeatherData": "天気情報なし",
     "fetchError": "天気情報を取得できません",
     "refreshLocation": "位置を更新",
+    "changeLocation": "位置を変更",
+    "searchLocation": "位置を検索",
+    "searchPlaceholder": "都市名を入力してください (例: 東京, 大阪, Seoul)",
+    "searching": "検索中...",
+    "noResults": "検索結果がありません",
+    "selectLocation": "位置を選択",
+    "saveLocation": "保存",
+    "useCurrentLocation": "現在地を使用",
+    "locationSaved": "位置が保存されました",
+    "locationSaveError": "位置の保存中にエラーが発生しました",
     "feelsLike": "体感",
     "humidity": "湿度",
-    "windSpeed": "風速"
+    "windSpeed": "風速",
+    "weeklyWeather": "今週の天気",
+    "today": "今日",
+    "tomorrow": "明日",
+    "currentLocation": "現在地",
+    "geolocationNotSupported": "このブラウザは位置サービスをサポートしていません",
+    "geolocationError": "位置情報を取得できません",
+    "geolocationPermissionDenied": "位置情報の権限が拒否されました",
+    "geolocationUnavailable": "位置情報を利用できません",
+    "geolocationTimeout": "位置情報のリクエストがタイムアウトしました",
+    "locationFetchError": "位置情報を取得できません",
+    "useDefaultLocation": "デフォルトの位置（ソウル駅）を使用しますか？"
   },
   "languages": {
     "korean": "한국어",
@@ -390,5 +435,148 @@
       "bookmarkDeleted": "ブックマークが削除されました",
       "systemUpdate": "システムが更新されました"
     }
+  },
+  "premium": {
+    "upgradeToPremium": "プレミアムにアップグレード",
+    "unlockAllFeatures": "すべての機能をアンロック",
+    "upgradeNow": "今すぐアップグレード",
+    "maybeLater": "後で",
+    "currentPlan": "現在のプラン",
+    "freePlan": "無料",
+    "premiumPlan": "プレミアム",
+    "active": "アクティブ",
+    "free": "無料",
+    "month": "月",
+    "year": "年",
+    "monthly": "月額",
+    "yearly": "年額",
+    "or": "または",
+    "save17": "17%節約",
+    "save": "{{percent}}%節約",
+    "popular": "人気",
+    "billedAs": "請求額",
+    "perYear": "年間",
+    "chooseYourPlan": "プランを選択",
+    "pricingDescription": "ニーズに合ったプランを選択し、ブックマーク管理をより効率的に",
+    "bookmarkLimitReached": "ブックマーク制限に達しました ({{current}}/{{limit}})",
+    "collectionLimitReached": "コレクション制限に達しました ({{current}}/{{limit}})",
+    "premiumFeatureRequired": "この機能はプレミアムプランでのみ利用可能です",
+    "premiumFeatures": "プレミアム機能",
+    "features": {
+      "unlimitedBookmarks": "無制限ブックマーク",
+      "unlimitedCollections": "無制限コレクション",
+      "advancedSearch": "高度な検索 (タグ/ドメイン/日付)",
+      "dailyBackup": "自動バックアップ (毎日)",
+      "bookmarkStats": "ブックマーク統計と分析",
+      "exportData": "データエクスポート (JSON/HTML/CSV)",
+      "customTheme": "カスタムテーマ",
+      "restoreDeleted": "削除されたブックマークを復元",
+      "shareBookmarks": "ブックマーク共有機能",
+      "free": {
+        "bookmarks": "ブックマーク {{count}}個",
+        "collections": "コレクション {{count}}個",
+        "basicSearch": "基本検索",
+        "weeklyBackup": "基本バックアップ (週1回)",
+        "basicWidgets": "基本ウィジェット",
+        "noAds": "広告なし"
+      },
+      "allWidgets": "すべてのウィジェットアンロック",
+      "premiumSupport": "プレミアムサポート",
+      "business": {
+        "allPremium": "すべてのプレミアム機能を含む",
+        "teamShare": "チーム共有機能",
+        "teamCollections": "チームコレクション",
+        "teamReports": "チーム分析レポート",
+        "apiAccess": "APIアクセス",
+        "customBranding": "カスタムブランディング"
+      }
+    },
+    "bookmarks": "ブックマーク",
+    "collections": "コレクション",
+    "subscriptionLabel": "購読",
+    "subscriptionManagement": "購読管理",
+    "settings": {
+      "subscriptionFeatureSettings": "購読機能設定",
+      "subscriptionBanner": "購読バナー",
+      "subscriptionModal": "購読モーダル",
+      "hidden": "非表示",
+      "showing": "表示中",
+      "showCompleted": "表示完了",
+      "waiting": "待機中",
+      "showSubscriptionModal": "購読通知モーダルを表示",
+      "resetSettings": "購読設定をリセット",
+      "resetDescription": "購読バナーとモーダルを再度表示します。",
+      "resetConfirm": "購読設定をリセットしますか？購読バナーとモーダルが再度表示されます。",
+      "resetSuccess": "購読設定がリセットされました。"
+    },
+    "manageYourSubscription": "購読を管理し、設定を変更します",
+    "activeSubscription": "アクティブな購読",
+    "freeAccount": "無料アカウント",
+    "billingCycle": "請求サイクル",
+    "renewsOn": "更新日",
+    "cancelsOn": "キャンセル日",
+    "currentUsage": "現在の使用量",
+    "cancelSubscription": "購読をキャンセル",
+    "changePlan": "プラン変更",
+    "cancellationScheduled": "キャンセル予定",
+    "cancellationMessage": "購読は {{date}} に終了します",
+    "confirmCancel": "購読をキャンセルしますか？",
+    "cancelPending": "購読キャンセルが処理中です",
+    "cancelError": "購読キャンセル中にエラーが発生しました",
+    "cancelWarning": "⚠️ 警告: 現在の使用量が無料プランの制限を超えています。",
+    "cancelWarningNote": "キャンセル後も既存のデータは保持されますが、新しいアイテムを追加することはできません。必要に応じて一部のデータを削除するか、プレミアムプランを維持してください。",
+    "cancelLimitExceeded": "購読がキャンセルされました。現在の使用量が制限を超えているため、新しいアイテムを追加することはできません。既存のデータはそのまま保持されます。",
+    "limitExceeded": "制限超過: {{current}}個 (制限: {{limit}}個)",
+    "limit": "制限",
+    "earlyUserBenefits": {
+      "title": "早期ユーザー特典",
+      "verified": "ベータ期間中に登録された早期ユーザーとして認証されました。",
+      "description": "ベータ期間中に使用していた機能を引き続き無料でご利用いただけます。"
+    },
+    "manageSubscription": "購読管理",
+    "downgrade": "ダウングレード",
+    "stripeIntegrationPending": "Stripe決済連携を準備中です",
+    "faq": "よくある質問",
+    "faq1": {
+      "question": "無料プランからプレミアムにいつでもアップグレードできますか？",
+      "answer": "はい、いつでもアップグレードできます。アップグレードすると、すぐにすべてのプレミアム機能を使用できます。"
+    },
+    "faq2": {
+      "question": "プレミアムプランをキャンセルするとデータが削除されますか？",
+      "answer": "いいえ、データはそのまま保持されます。ただし、プレミアム機能は使用できなくなり、無料プランの制限が適用されます。"
+    },
+    "faq3": {
+      "question": "年間購読と月額購読の違いは何ですか？",
+      "answer": "年間購読は月額購読と比較して17%割引で提供され、年間支払いで追加の特典を受けることができます。"
+    },
+    "pricing": {
+      "launchAnnouncement": "プレミアムプランがリリースされました！",
+      "launchDescription": "正式オープンを記念して特別価格で提供されます。早期ユーザーは既存の機能を引き続き無料でご利用いただけます。"
+    },
+    "businessPlan": "ビジネス",
+    "comingSoon": "近日公開予定",
+    "subscription": {
+      "banner": {
+        "title": "プレミアム購読でより多くの機能をご利用ください！",
+        "earlyUserBenefit": "早期ユーザー特別特典適用中",
+        "earlyUserBenefitCheck": "早期ユーザー特別特典を確認",
+        "viewDetails": "詳細を見る"
+      },
+      "modal": {
+        "title": "プレミアム購読にアップグレードしましょう！",
+        "description": "Bookmarkleが正式オープンしました！プレミアム購読でより多くの機能をご利用いただけます。",
+        "features": "プレミアム購読で、無制限ブックマーク、高度な検索機能、カスタムテーマなど、さまざまな機能をご利用いただけます。",
+        "earlyUserBenefitApplied": "早期ユーザー特別特典が適用されました！",
+        "earlyUserBenefitDesc": "ベータ期間中に登録された早期ユーザーは、特別割引特典を受けることができます。",
+        "betterService": "より良いサービスを提供するため、引き続き努力いたします。",
+        "close": "閉じる",
+        "goToPricing": "料金へ"
+      }
+    }
+  },
+  "admin": {
+    "title": "管理者ダッシュボード",
+    "description": "すべてのユーザーを管理し、統計を確認できます。",
+    "users": "ユーザー管理"
   }
 }

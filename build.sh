@@ -221,10 +221,12 @@ build_my_extension() {
     log_info "Extension 파일들을 빌드 디렉토리로 복사 중..."
     rsync -av --exclude='*.DS_Store' --exclude='*.git*' --exclude='node_modules' --exclude='*.log' . "$BUILD_DIR/"
     
-    # _locales 폴더가 있는지 확인하고 복사
-    if [ -d "public/_locales" ]; then
-        log_info "_locales 폴더 복사 중..."
-        cp -r public/_locales "$BUILD_DIR/"
+    # _locales 폴더가 제대로 복사되었는지 확인
+    if [ -d "$BUILD_DIR/_locales" ]; then
+        log_success "_locales 폴더 복사 확인 완료"
+    elif [ -d "_locales" ]; then
+        log_info "_locales 폴더를 별도로 복사 중..."
+        cp -r _locales "$BUILD_DIR/"
         log_success "_locales 폴더 복사 완료"
     else
         log_warning "_locales 폴더를 찾을 수 없습니다"

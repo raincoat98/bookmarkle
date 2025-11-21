@@ -1,0 +1,52 @@
+{
+  "plans": {
+    "free": {
+      "name": "Free",
+      "priceMonthly": 0,
+      "priceYearly": 0,
+      "limits": {
+        "bookmarks": 500,
+        "collections": 10,
+        "backupCycle": "weekly"
+      },
+      "features": [
+        "기본 검색",
+        "기본 위젯",
+        "광고 없음"
+      ]
+    },
+    "premium": {
+      "name": "Premium",
+      "priceMonthly": 4.99,
+      "priceYearly": 49.99,
+      "limits": {
+        "bookmarks": "unlimited",
+        "collections": "unlimited",
+        "backupCycle": "daily"
+      },
+      "features": [
+        "고급 검색",
+        "북마크 통계",
+        "북마크 복구",
+        "전체 위젯 unlocked",
+        "프리미엄 테마"
+      ]
+    },
+    "business": {
+      "name": "Business",
+      "priceMonthly": 9.99,
+      "priceYearly": 99.99,
+      "limits": {
+        "teamMembers": "unlimited"
+      },
+      "features": [
+        "팀 공유",
+        "팀 컬렉션",
+        "팀 리포트",
+        "API Access",
+        "커스텀 브랜딩"
+      ]
+    }
+  }
+}
+

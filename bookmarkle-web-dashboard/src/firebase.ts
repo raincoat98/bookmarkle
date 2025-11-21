@@ -214,6 +214,56 @@ export async function setUserNotificationSettings(
   await setDoc(settingsRef, settings, { merge: true });
 }
 
+// 날씨 위치 정보 가져오기
+export async function getUserWeatherLocation(uid: string): Promise<{
+  lat: number;
+  lon: number;
+  city: string;
+} | null> {
+  const db = getFirestore();
+  const settingsRef = doc(db, "users", uid, "settings", "main");
+  const snap = await getDoc(settingsRef);
+  if (snap.exists()) {
+    const data = snap.data();
+    if (
+      data.weatherLocation &&
+      data.weatherLocation.lat &&
+      data.weatherLocation.lon
+    ) {
+      return {
+        lat: data.weatherLocation.lat,
+        lon: data.weatherLocation.lon,
+        city: data.weatherLocation.city || "",
+      };
+    }
+  }
+  return null;
+}
+
+// 날씨 위치 정보 저장
+export async function setUserWeatherLocation(
+  uid: string,
+  location: {
+    lat: number;
+    lon: number;
+    city: string;
+  }
+): Promise<void> {
+  const db = getFirestore();
+  const settingsRef = doc(db, "users", uid, "settings", "main");
+  await setDoc(
+    settingsRef,
+    {
+      weatherLocation: {
+        lat: location.lat,
+        lon: location.lon,
+        city: location.city,
+      },
+    },
+    { merge: true }
+  );
+}
+
 // 관리자 ID 목록 (환경 변수 또는 하드코딩)
 const ADMIN_EMAILS = [
   import.meta.env.VITE_ADMIN_EMAIL || "admin@bookmarkle.com",

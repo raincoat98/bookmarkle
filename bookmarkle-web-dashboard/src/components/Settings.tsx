@@ -15,6 +15,8 @@ import {
   Palette,
   Bell,
   Shield,
+  Crown,
+  Trash2,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -24,7 +26,10 @@ import { NotificationSettings } from "./settings/NotificationSettings";
 import { StatsSettings } from "./settings/StatsSettings";
 import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
+import { SubscriptionSettings } from "./settings/SubscriptionSettings";
+import { TrashSettings } from "./settings/TrashSettings";
 import { getUserDefaultPage } from "../firebase";
+import { isBetaPeriod } from "../utils/betaFlags";
 import { performBackup, shouldBackup } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
 
@@ -160,18 +165,29 @@ export const Settings: React.FC<SettingsProps> = ({
   // 사용자 기본 페이지 로드
   useEffect(() => {
     if (user?.uid) {
-      getUserDefaultPage(user.uid).then((page) => {
+      getUserDefaultPage(user.uid).then((page: string | null) => {
         if (page) {
           setDefaultPage(page);
         }
       });
     }
-  }, [user?.uid]);
+  }, [user?.uid, setDefaultPage]);
 
   const tabs = [
     { id: "general", label: t("settings.general"), icon: SettingsIcon },
-    { id: "stats", label: t("admin.statistics"), icon: BarChart3 },
+    // 베타 모드일 때는 구독 탭 숨김
+    ...(!isBetaPeriod()
+      ? [
+          {
+            id: "subscription",
+            label: t("premium.subscriptionLabel"),
+            icon: Crown,
+          },
+        ]
+      : []),
+    { id: "stats", label: t("settings.statistics"), icon: BarChart3 },
     { id: "backup", label: t("settings.backup"), icon: Download },
+    { id: "trash", label: t("settings.trash"), icon: Trash2 },
     { id: "account", label: t("settings.account"), icon: User },
     { id: "appearance", label: t("settings.appearance"), icon: Palette },
     { id: "notifications", label: t("settings.notifications"), icon: Bell },
@@ -189,6 +205,8 @@ export const Settings: React.FC<SettingsProps> = ({
             onImportData={handleImportData}
           />
         );
+      case "subscription":
+        return <SubscriptionSettings />;
       case "stats":
         return (
           <StatsSettings bookmarks={rawBookmarks} collections={collections} />
@@ -234,6 +252,8 @@ export const Settings: React.FC<SettingsProps> = ({
             onNavigateToNotifications={handleNavigateToNotifications}
           />
         );
+      case "trash":
+        return <TrashSettings />;
       case "privacy":
         return <PrivacySettings />;
       default:
@@ -252,18 +272,18 @@ export const Settings: React.FC<SettingsProps> = ({
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 헤더 */}
       <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 h-[80px] px-4 lg:px-6">
+            <div className="flex items-center space-x-3 lg:space-x-4">
               <button
                 onClick={onBack}
-                className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-1.5 lg:p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5 lg:w-6 lg:h-6" />
               </button>
               <div className="flex items-center space-x-2">
-                <SettingsIcon className="w-6 h-6 text-brand-600" />
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                <SettingsIcon className="w-5 h-5 lg:w-6 lg:h-6 text-brand-600" />
+                <h1 className="text-base lg:text-lg font-bold text-gray-900 dark:text-white leading-none">
                   {t("settings.title")}
                 </h1>
               </div>

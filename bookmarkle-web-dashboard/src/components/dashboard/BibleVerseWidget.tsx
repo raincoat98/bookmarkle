@@ -233,77 +233,125 @@ export const BibleVerseWidget: React.FC = () => {
       }}
     >
       <div className="absolute inset-0 opacity-10" style={{ zIndex: -10 }}>
-        <div
+        <motion.div
           className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]"
-          style={{
-            animation: "spin 60s linear infinite",
-            zIndex: -10,
-          }}
-        ></div>
-        <div
+          style={{ zIndex: -10 }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
           className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.05)_0%,transparent_50%)]"
-          style={{
-            animation: "spin 90s linear infinite reverse",
-            zIndex: -10,
-          }}
-        ></div>
-        <div
+          style={{ zIndex: -10 }}
+          animate={{ rotate: -360 }}
+          transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+        />
+        <motion.div
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,transparent_70%)]"
-          style={{
-            animation: "ping 8s cubic-bezier(0, 0, 0.2, 1) infinite",
-            zIndex: -10,
+          style={{ zIndex: -10 }}
+          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full"
+          style={{ zIndex: -10 }}
+          animate={{ y: [0, -20, 0] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute top-3/4 right-1/4 w-1 h-1 bg-white/30 rounded-full"
+          style={{ zIndex: -10 }}
+          animate={{ y: [0, -20, 0] }}
+          transition={{
+            duration: 4,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1,
           }}
-        ></div>
-        <div
-          className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full animate-bounce duration-[3000ms]"
+        />
+        <motion.div
+          className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-white/25 rounded-full"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute top-3/4 right-1/4 w-1 h-1 bg-white/30 rounded-full animate-bounce duration-[4000ms] delay-1000"
+          animate={{ y: [0, -20, 0] }}
+          transition={{
+            duration: 3.5,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+        />
+        <motion.div
+          className="absolute top-1/3 right-1/2 w-1 h-1 bg-white/15 rounded-full"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-white/25 rounded-full animate-bounce duration-[3500ms] delay-2000"
+          animate={{ y: [0, -20, 0] }}
+          transition={{
+            duration: 2.8,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 0.5,
+          }}
+        />
+        <motion.div
+          className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-white/20 rounded-full"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute top-1/3 right-1/2 w-1 h-1 bg-white/15 rounded-full animate-bounce duration-[2800ms] delay-500"
+          animate={{ y: [0, -20, 0] }}
+          transition={{
+            duration: 3.2,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1.5,
+          }}
+        />
+        <motion.div
+          className="absolute top-2/3 left-2/3 w-1 h-1 bg-white/25 rounded-full"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-white/20 rounded-full animate-bounce duration-[3200ms] delay-1500"
+          animate={{ y: [0, -20, 0] }}
+          transition={{
+            duration: 3.6,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 3,
+          }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute top-2/3 left-2/3 w-1 h-1 bg-white/25 rounded-full animate-bounce duration-[3600ms] delay-3000"
+          animate={{ opacity: [0.3, 0.7, 0.3] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-l from-transparent via-white/3 to-transparent"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse duration-[8000ms]"
+          animate={{ opacity: [0.2, 0.6, 0.2] }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2,
+          }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-t from-transparent via-white/2 to-transparent"
           style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute inset-0 bg-gradient-to-l from-transparent via-white/3 to-transparent animate-pulse duration-[12000ms] delay-2000"
-          style={{ zIndex: -10 }}
-        ></div>
-        <div
-          className="absolute inset-0 bg-gradient-to-t from-transparent via-white/2 to-transparent animate-pulse duration-[10000ms] delay-4000"
-          style={{ zIndex: -10 }}
-        ></div>
-        <div
+          animate={{ opacity: [0.1, 0.5, 0.1] }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 4,
+          }}
+        />
+        <motion.div
           className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-60"
-          style={{
-            animation: "float-horizontal 15s infinite ease-in-out",
-            zIndex: -10,
-          }}
-        ></div>
-        <div
+          style={{ zIndex: -10 }}
+          animate={{ x: [0, 100, 0] }}
+          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
           className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-40"
-          style={{
-            animation: "float-horizontal-reverse 20s infinite ease-in-out",
-            zIndex: -10,
-          }}
-        ></div>
+          style={{ zIndex: -10 }}
+          animate={{ x: [0, -100, 0] }}
+          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+        />
       </div>
 
       <motion.div

@@ -1,12 +1,17 @@
 import React, { useState, useMemo } from "react";
-import { BookmarkList } from "../components/BookmarkList";
-import { AddBookmarkModal } from "../components/AddBookmarkModal";
-import { EditBookmarkModal } from "../components/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
-import { AddCollectionModal } from "../components/AddCollectionModal";
-import { EditCollectionModal } from "../components/EditCollectionModal";
-import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
-import { DisabledUserMessage } from "../components/DisabledUserMessage";
+import { BookmarkList } from "../components/bookmarks/BookmarkList";
+import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
+import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../components/bookmarks/DeleteBookmarkModal";
+import { AddCollectionModal } from "../components/collections/AddCollectionModal";
+import { EditCollectionModal } from "../components/collections/EditCollectionModal";
+import {
+  useAuthStore,
+  useBookmarkStore,
+  useCollectionStore,
+  useSubscriptionStore,
+} from "../stores";
+import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";
 import type {
   Bookmark,
@@ -16,15 +21,26 @@ import type {
 } from "../types";
 import toast from "react-hot-toast";
 import { Search, Grid3X3, List, Plus, FolderPlus } from "lucide-react";
-import { Drawer } from "../components/Drawer";
+import { Drawer } from "../components/layout/Drawer";
 import { useTranslation } from "react-i18next";
+import { UpgradeModal } from "../components/subscription/UpgradeModal";
+import {
+  checkBookmarkLimit,
+  checkCollectionLimit,
+} from "../utils/subscriptionLimits";
+import { usePasteBookmark } from "../hooks/usePasteBookmark";
 
 export const BookmarksPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
+  const { plan, limits } = useSubscriptionStore();
   const { t } = useTranslation();
 
   // 상태 관리
   const [selectedCollection, setSelectedCollection] = useState("all");
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeReason, setUpgradeReason] = useState<
+    "bookmark_limit" | "collection_limit" | "premium_feature"
+  >("bookmark_limit");
 
   // 정렬 상태 관리
   const [currentSort, setCurrentSort] = useState<SortOption>({
@@ -39,7 +55,6 @@ export const BookmarksPage: React.FC = () => {
     updateCollection,
     deleteCollection,
     setPinned,
-    loading: collectionsLoading,
     fetchCollections,
   } = useCollectionStore();
 
@@ -187,6 +202,14 @@ export const BookmarksPage: React.FC = () => {
       return;
     }
 
+    // 컬렉션 제한 체크
+    const collectionLimit = checkCollectionLimit(collections.length, plan);
+    if (!collectionLimit.allowed) {
+      setUpgradeReason("collection_limit");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       const collectionId = await addCollection(
         {
@@ -292,6 +315,14 @@ export const BookmarksPage: React.FC = () => {
 
   // 이벤트 핸들러들
   const handleAddBookmark = async (bookmarkData: BookmarkFormData) => {
+    // 북마크 제한 체크
+    const bookmarkLimit = checkBookmarkLimit(bookmarks.length, plan);
+    if (!bookmarkLimit.allowed) {
+      setUpgradeReason("bookmark_limit");
+      setShowUpgradeModal(true);
+      return;
+    }
+
     try {
       console.log("BookmarksPage - 북마크 추가 시도:", bookmarkData);
 
@@ -330,6 +361,13 @@ export const BookmarksPage: React.FC = () => {
       toast.error(`${t("bookmarks.bookmarkAddError")}: ${errorMessage}`);
     }
   };
+
+  // 붙여넣기 북마크 추가 기능
+  usePasteBookmark({
+    onAddBookmark: handleAddBookmark,
+    onOpenModal: () => setIsAddModalOpen(true),
+    enabled: !!user && isActive !== false,
+  });
 
   const handleUpdateBookmark = async (
     id: string,
@@ -517,7 +555,6 @@ export const BookmarksPage: React.FC = () => {
   return (
     <Drawer
       collections={collections}
-      collectionsLoading={collectionsLoading}
       selectedCollection={selectedCollection}
       onCollectionChange={setSelectedCollection}
       onDeleteCollectionRequest={(id, name) => {
@@ -535,10 +572,10 @@ export const BookmarksPage: React.FC = () => {
         setIsAddSubCollectionModalOpen(true);
       }}
     >
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="sticky top-0 z-10 p-4 lg:p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row gap-4 w-full">
+        <div className="flex-shrink-0 sticky top-0 z-10 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
             {/* 검색창 - 모든 화면 크기에서 보임 */}
             <div className="relative w-full sm:flex-1 min-w-0">
               <input
@@ -546,80 +583,86 @@ export const BookmarksPage: React.FC = () => {
                 placeholder={t("bookmarks.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 h-[48px] border border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm shadow-sm"
+                className="w-full pl-10 pr-4 py-2.5 h-[44px] border border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm shadow-sm text-sm"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             </div>
 
             {/* 데스크톱 컨트롤 */}
-            <div className="hidden sm:flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-3 lg:gap-4">
               {/* 뷰 모드 토글 버튼 - 데스크톱에서만 */}
-              <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1 shadow-lg">
+              <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1 shadow-lg h-[44px]">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-2 rounded-lg transition-all duration-200 min-w-[40px] h-[40px] flex items-center justify-center ${
+                  className={`p-1.5 rounded-lg transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
                     viewMode === "grid"
                       ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-md"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                   title={t("bookmarks.gridView")}
                 >
-                  <Grid3X3 className="w-5 h-5" />
+                  <Grid3X3 className="w-4 h-4" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded-lg transition-all duration-200 min-w-[40px] h-[40px] flex items-center justify-center ${
+                  className={`p-1.5 rounded-lg transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
                     viewMode === "list"
                       ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-md"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                   title={t("bookmarks.listView")}
                 >
-                  <List className="w-5 h-5" />
+                  <List className="w-4 h-4" />
                 </button>
               </div>
 
               {/* 데스크톱 버튼들 */}
-              <div className="flex gap-3">
+              <div className="flex gap-2 lg:gap-3">
                 <button
                   onClick={() => setIsAddCollectionModalOpen(true)}
-                  className="inline-flex items-center justify-center px-6 py-3 h-[48px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center px-4 lg:px-6 py-2 h-[44px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
                 >
-                  <FolderPlus className="w-5 h-5 mr-2" />
-                  {t("collections.addCollection")}
+                  <FolderPlus className="w-4 h-4 lg:w-5 lg:h-5 mr-1.5 lg:mr-2" />
+                  <span className="hidden lg:inline">
+                    {t("collections.addCollection")}
+                  </span>
+                  <span className="lg:hidden">컬렉션</span>
                 </button>
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center justify-center px-6 py-3 h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center px-4 lg:px-6 py-2 h-[44px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
                 >
-                  <Plus className="w-5 h-5 mr-2" />
-                  {t("bookmarks.addBookmark")}
+                  <Plus className="w-4 h-4 lg:w-5 lg:h-5 mr-1.5 lg:mr-2" />
+                  <span className="hidden lg:inline">
+                    {t("bookmarks.addBookmark")}
+                  </span>
+                  <span className="lg:hidden">북마크</span>
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* 모바일 버튼들 - 한 줄에 2개 */}
-          <div className="grid grid-cols-2 gap-3 mt-4 sm:hidden">
-            <button
-              onClick={() => setIsAddCollectionModalOpen(true)}
-              className="flex items-center justify-center px-4 py-3 h-[48px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg"
-            >
-              <FolderPlus className="w-5 h-5 mr-2" />
-              {t("collections.addCollection")}
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center justify-center px-4 py-3 h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg"
-            >
-              <Plus className="w-5 h-5 mr-2" />
-              {t("bookmarks.addBookmark")}
-            </button>
+            {/* 모바일 버튼들 - 한 줄에 2개 */}
+            <div className="grid grid-cols-2 gap-2 sm:hidden">
+              <button
+                onClick={() => setIsAddCollectionModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+              >
+                <FolderPlus className="w-4 h-4 mr-1.5" />
+                <span>컬렉션</span>
+              </button>
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                <span>북마크</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* 메인 콘텐츠 */}
-        <div className="flex-1 p-4 lg:p-6 overflow-y-auto w-full min-w-0">
+        <div className="flex-1 p-4 lg:p-6 overflow-y-auto w-full min-w-0 overflow-x-hidden">
           {(() => {
             // 필터링된 북마크 데이터에서 실제 북마크 배열 추출
             let bookmarksToDisplay: Bookmark[] = [];
@@ -837,6 +880,26 @@ export const BookmarksPage: React.FC = () => {
         }}
         onAdd={handleAddCollection}
         parentId={subCollectionParentId}
+      />
+
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason={upgradeReason}
+        currentCount={
+          upgradeReason === "bookmark_limit"
+            ? bookmarks.length
+            : upgradeReason === "collection_limit"
+            ? collections.length
+            : undefined
+        }
+        limit={
+          upgradeReason === "bookmark_limit"
+            ? limits.maxBookmarks
+            : upgradeReason === "collection_limit"
+            ? limits.maxCollections
+            : undefined
+        }
       />
     </Drawer>
   );

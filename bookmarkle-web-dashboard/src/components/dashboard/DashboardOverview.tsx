@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import {
   DndContext,
   KeyboardSensor,
@@ -595,7 +596,18 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           items={enabledWidgets.map((widget) => widget.id)}
           strategy={verticalListSortingStrategy}
         >
-          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.1,
+                },
+              },
+            }}
+            className="space-y-4 sm:space-y-6 lg:space-y-8"
+          >
             {widgets
               .filter((widget) => widget.enabled || isEditMode)
               .map((widget, index) => {
@@ -603,8 +615,15 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                 const canMoveDown = index < widgets.length - 1;
 
                 return (
-                  <SortableWidget
+                  <motion.div
                     key={widget.id}
+                    variants={{
+                      hidden: { opacity: 0, y: 20 },
+                      visible: { opacity: 1, y: 0 },
+                    }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  >
+                    <SortableWidget
                     id={widget.id}
                     enabled={widget.enabled}
                     isEditMode={isEditMode}
@@ -616,9 +635,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   >
                     {renderWidget(widget)}
                   </SortableWidget>
+                  </motion.div>
                 );
               })}
-          </div>
+          </motion.div>
         </SortableContext>
       </DndContext>
 

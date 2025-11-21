@@ -29,7 +29,9 @@
     "apply": "적용",
     "optional": "선택사항",
     "adding": "추가 중...",
-    "updating": "수정 중..."
+    "updating": "수정 중...",
+    "processing": "처리 중...",
+    "countUnit": "개"
   },
   "auth": {
     "login": "로그인",
@@ -224,6 +226,7 @@
     "appearance": "외관",
     "account": "계정",
     "backup": "백업",
+    "statistics": "통계",
     "language": "언어",
     "theme": "테마",
     "themeLight": "라이트",
@@ -288,7 +291,29 @@
     "restore": "복원",
     "mobileIconView": {
       "editModeDescription": "수정 모드 - 1초 이상 누르기, 드래그로 순서 변경"
-    }
+    },
+    "trash": "휴지통",
+    "trashTitle": "휴지통",
+    "trashDescription": "삭제된 북마크를 관리합니다. 30일 후 자동으로 완전 삭제됩니다.",
+    "trashEmpty": "휴지통이 비어있습니다",
+    "trashEmptyDescription": "삭제된 북마크가 없습니다",
+    "restore": "복원",
+    "restoreBookmark": "북마크 복원",
+    "restoreBookmarkConfirm": "이 북마크를 복원하시겠습니까?",
+    "restoreSuccess": "북마크가 복원되었습니다",
+    "restoreError": "북마크 복원 중 오류가 발생했습니다",
+    "permanentlyDelete": "완전 삭제",
+    "permanentlyDeleteBookmark": "북마크 완전 삭제",
+    "permanentlyDeleteBookmarkConfirm": "이 북마크를 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "permanentlyDeleteSuccess": "북마크가 완전히 삭제되었습니다",
+    "permanentlyDeleteError": "북마크 삭제 중 오류가 발생했습니다",
+    "emptyTrash": "휴지통 비우기",
+    "emptyTrashConfirm": "휴지통의 모든 북마크를 완전히 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "emptyTrashSuccess": "휴지통이 비워졌습니다",
+    "emptyTrashError": "휴지통 비우기 중 오류가 발생했습니다",
+    "deletedAt": "삭제일",
+    "daysUntilPermanentDelete": "{{days}}일 후 자동 삭제",
+    "autoDeleteInfo": "휴지통의 북마크는 30일 후 자동으로 완전 삭제됩니다"
   },
   "admin": {
     "title": "관리자",
@@ -332,9 +357,30 @@
     "noWeatherData": "날씨 정보 없음",
     "fetchError": "날씨 정보를 가져올 수 없습니다",
     "refreshLocation": "위치 새로고침",
+    "changeLocation": "위치 변경",
+    "searchLocation": "위치 검색",
+    "searchPlaceholder": "도시 이름을 입력하세요 (예: 서울, 서울시, Seoul)",
+    "searching": "검색 중...",
+    "noResults": "검색 결과가 없습니다",
+    "selectLocation": "위치 선택",
+    "saveLocation": "저장",
+    "useCurrentLocation": "현재 위치 사용",
+    "locationSaved": "위치가 저장되었습니다",
+    "locationSaveError": "위치 저장 중 오류가 발생했습니다",
     "feelsLike": "체감",
     "humidity": "습도",
-    "windSpeed": "풍속"
+    "windSpeed": "풍속",
+    "weeklyWeather": "이번주 날씨",
+    "today": "오늘",
+    "tomorrow": "내일",
+    "currentLocation": "현재 위치",
+    "geolocationNotSupported": "이 브라우저는 위치 서비스를 지원하지 않습니다",
+    "geolocationError": "위치 정보를 가져올 수 없습니다",
+    "geolocationPermissionDenied": "위치 권한이 거부되었습니다",
+    "geolocationUnavailable": "위치 정보를 사용할 수 없습니다",
+    "geolocationTimeout": "위치 정보 요청 시간이 초과되었습니다",
+    "locationFetchError": "위치 정보를 가져올 수 없습니다",
+    "useDefaultLocation": "기본 위치(서울역)를 사용하시겠습니까?"
   },
   "languages": {
     "korean": "한국어",
@@ -391,5 +437,288 @@
       "bookmarkDeleted": "북마크가 삭제되었습니다",
       "systemUpdate": "시스템이 업데이트되었습니다"
     }
+  },
+  "premium": {
+    "upgradeToPremium": "프리미엄으로 업그레이드",
+    "unlockAllFeatures": "모든 기능을 잠금 해제하세요",
+    "upgradeNow": "지금 업그레이드",
+    "maybeLater": "나중에",
+    "currentPlan": "현재 플랜",
+    "freePlan": "무료",
+    "premiumPlan": "프리미엄",
+    "active": "활성",
+    "free": "무료",
+    "month": "월",
+    "year": "년",
+    "monthly": "월간",
+    "yearly": "연간",
+    "or": "또는",
+    "save17": "17% 절약",
+    "save": "{{percent}}% 절약",
+    "popular": "인기",
+    "billedAs": "연간 결제 시",
+    "perYear": "연간",
+    "chooseYourPlan": "플랜을 선택하세요",
+    "pricingDescription": "필요에 맞는 플랜을 선택하고 북마크 관리를 더욱 효율적으로 만들어보세요",
+    "bookmarkLimitReached": "북마크 제한에 도달했습니다 ({{current}}/{{limit}})",
+    "collectionLimitReached": "컬렉션 제한에 도달했습니다 ({{current}}/{{limit}})",
+    "premiumFeatureRequired": "이 기능은 프리미엄 플랜에서만 사용할 수 있습니다",
+    "premiumFeatures": "프리미엄 기능",
+    "features": {
+      "unlimitedBookmarks": "무제한 북마크",
+      "unlimitedCollections": "무제한 컬렉션",
+      "advancedSearch": "고급 검색 (태그/도메인/기간)",
+      "dailyBackup": "자동 백업 (일 1회)",
+      "bookmarkStats": "북마크 통계 및 분석",
+      "exportData": "데이터 내보내기 (JSON/HTML/CSV)",
+      "customTheme": "커스텀 테마",
+      "restoreDeleted": "삭제된 북마크 복구",
+      "shareBookmarks": "북마크 공유 기능",
+      "free": {
+        "bookmarks": "북마크 {{count}}개",
+        "collections": "컬렉션 {{count}}개",
+        "basicSearch": "기본 검색",
+        "weeklyBackup": "기본 백업 (주 1회)",
+        "basicWidgets": "기본 위젯",
+        "noAds": "광고 없음"
+      },
+      "allWidgets": "전체 위젯 unlocked",
+      "premiumSupport": "프리미엄 고객지원",
+      "business": {
+        "allPremium": "프리미엄 기능 전체 포함",
+        "teamShare": "팀 공유 기능",
+        "teamCollections": "팀 컬렉션",
+        "teamReports": "팀 분석 리포트",
+        "apiAccess": "API Access",
+        "customBranding": "커스텀 브랜딩"
+      }
+    },
+    "bookmarks": "북마크",
+    "collections": "컬렉션",
+    "subscriptionLabel": "구독",
+    "subscriptionManagement": "구독 관리",
+    "settings": {
+      "subscriptionFeatureSettings": "구독 기능 설정",
+      "subscriptionBanner": "구독 배너",
+      "subscriptionModal": "구독 모달",
+      "hidden": "숨김",
+      "showing": "표시 중",
+      "showCompleted": "표시 완료",
+      "waiting": "대기 중",
+      "showSubscriptionModal": "구독 알림 모달 보기",
+      "resetSettings": "구독 설정 초기화",
+      "resetDescription": "구독 배너와 모달을 다시 표시합니다.",
+      "resetConfirm": "구독 설정을 초기화하시겠습니까? 구독 배너와 모달이 다시 표시됩니다.",
+      "resetSuccess": "구독 설정이 초기화되었습니다."
+    },
+    "manageYourSubscription": "구독을 관리하고 설정을 변경하세요",
+    "activeSubscription": "활성 구독",
+    "freeAccount": "무료 계정",
+    "billingCycle": "결제 주기",
+    "renewsOn": "갱신일",
+    "cancelsOn": "취소일",
+    "currentUsage": "현재 사용량",
+    "cancelSubscription": "구독 취소",
+    "changePlan": "플랜 변경",
+    "cancellationScheduled": "취소 예정",
+    "cancellationMessage": "구독이 {{date}}에 종료됩니다",
+    "confirmCancel": "구독을 취소하시겠습니까?",
+    "cancelPending": "구독 취소가 처리 중입니다",
+    "cancelError": "구독 취소 중 오류가 발생했습니다",
+    "cancelWarning": "⚠️ 주의: 현재 사용량이 무료 플랜 제한을 초과합니다.",
+    "cancelWarningNote": "구독 취소 후에도 기존 데이터는 유지되지만, 새로 추가할 수 없습니다. 필요시 일부 데이터를 삭제하거나 프리미엄 플랜을 유지해주세요.",
+    "cancelLimitExceeded": "구독이 취소되었습니다. 현재 사용량이 제한을 초과하므로 새로 추가할 수 없습니다. 기존 데이터는 그대로 유지됩니다.",
+    "limitExceeded": "제한 초과: {{current}}개 (제한: {{limit}}개)",
+    "limit": "제한",
+    "earlyUserBenefits": {
+      "title": "얼리 유저 혜택",
+      "verified": "베타 기간 중 가입하신 얼리 유저로 인증되었습니다.",
+      "description": "베타 기간 중 사용하던 기능들을 계속 무료로 이용하실 수 있습니다."
+    },
+    "manageSubscription": "구독 관리",
+    "downgrade": "다운그레이드",
+    "stripeIntegrationPending": "Stripe 결제 연동이 준비 중입니다",
+    "faq": "자주 묻는 질문",
+    "faq1": {
+      "question": "무료 플랜에서 프리미엄으로 언제든지 업그레이드할 수 있나요?",
+      "answer": "네, 언제든지 업그레이드할 수 있습니다. 업그레이드 시 즉시 모든 프리미엄 기능을 사용할 수 있습니다."
+    },
+    "faq2": {
+      "question": "프리미엄 플랜을 취소하면 데이터가 삭제되나요?",
+      "answer": "아니요, 데이터는 그대로 유지됩니다. 다만 프리미엄 기능은 사용할 수 없게 되고 무료 플랜의 제한이 적용됩니다."
+    },
+    "faq3": {
+      "question": "연간 구독과 월간 구독의 차이는 무엇인가요?",
+      "answer": "연간 구독은 월간 구독 대비 17% 할인된 가격으로 제공되며, 연간 결제 시 추가 혜택을 받을 수 있습니다."
+    },
+    "pricing": {
+      "launchAnnouncement": "프리미엄 플랜이 출시되었습니다!",
+      "launchDescription": "정식 오픈을 기념하여 특별한 가격으로 제공됩니다. 얼리유저는 기존 기능을 계속 무료로 사용하실 수 있습니다."
+    },
+    "businessPlan": "비즈니스",
+    "comingSoon": "곧 출시 예정",
+    "subscription": {
+      "banner": {
+        "title": "프리미엄 구독으로 더 많은 기능을 이용하세요!",
+        "earlyUserBenefit": "얼리유저 특별 혜택 적용 중",
+        "earlyUserBenefitCheck": "얼리유저 특별 혜택 확인하기",
+        "viewDetails": "자세히 보기"
+      },
+      "modal": {
+        "title": "프리미엄 구독으로 업그레이드하세요!",
+        "description": "Bookmarkle이 정식 오픈되었습니다! 프리미엄 구독으로 더 많은 기능을 이용하실 수 있습니다.",
+        "features": "프리미엄 구독으로 무제한 북마크, 고급 검색 기능, 커스텀 테마 등 다양한 기능을 이용하세요.",
+        "earlyUserBenefitApplied": "얼리유저 특별 혜택이 적용되었습니다!",
+        "earlyUserBenefitDesc": "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
+        "betterService": "더 나은 서비스를 제공하기 위해 계속 노력하겠습니다.",
+        "close": "닫기",
+        "goToPricing": "바로가기"
+      }
+    }
+  },
+  "beta": {
+    "currentBeta": "현재 베타 기간으로 모든 기능 무료 제공 중입니다",
+    "earlyUserBenefit": "🎉 얼리유저 혜택: 정식 오픈 후에도 기존 기능을 영구 무료로 사용할 수 있습니다",
+    "earlyUserLifetime": "영구 무료 혜택 적용 중",
+    "earlyUserBadge": "얼리유저",
+    "betaEndDate": "베타 종료일",
+    "earlyUserInfo": "베타 기간 중 가입하신 얼리유저는 정식 오픈 후에도 모든 기능을 무료로 사용하실 수 있습니다.",
+    "settings": {
+      "title": "베타 정보",
+      "betaVersionInfo": "베타 버전 정보",
+      "description": "현재 베타 기간 중이며, 모든 기능을 무료로 사용할 수 있습니다.",
+      "betaStatus": "베타 기간 현황",
+      "betaActive": "베타 진행 중",
+      "daysRemaining": "정식 오픈까지 약 {{days}}일 남음",
+      "launchDateTBD": "정식 오픈일 미정",
+      "allFreeFeatures": "모든 기능을 무료로 사용할 수 있습니다.",
+      "officialLaunch": "정식 오픈 완료",
+      "earlyUserStatus": "얼리유저 상태",
+      "earlyUserVerified": "🎉 얼리유저 인증됨",
+      "earlyUserSpecialBenefit": "특별 혜택: 정식 오픈 후에도 현재 사용 중인 모든 기능을 계속 무료로 이용할 수 있습니다.",
+      "notEarlyUser": "얼리유저 혜택 대상이 아닙니다.",
+      "betaFeatureSettings": "베타 기능 설정",
+      "currentStatus": "현재 상태",
+      "betaBanner": "베타 배너",
+      "betaModal": "베타 모달",
+      "hidden": "숨김",
+      "showing": "표시 중",
+      "showCompleted": "표시 완료",
+      "waiting": "대기 중",
+      "showBetaModal": "베타 모달 보기",
+      "resetSettings": "베타 설정 초기화",
+      "resetDescription": "베타 배너와 모달을 다시 표시합니다.",
+      "resetConfirm": "베타 설정을 초기화하시겠습니까? 베타 배너와 모달이 다시 표시됩니다.",
+      "resetSuccess": "베타 설정이 초기화되었습니다.",
+      "betaFeedback": "베타 피드백",
+      "feedbackDescription": "베타 버전을 사용하시면서 불편한 점이나 개선 아이디어가 있으시면 언제든 피드백을 보내주세요.",
+      "sendFeedback": "피드백 보내기",
+      "developerInfo": "개발자 정보",
+      "devModeDescription": "개발 모드: 환경 변수를 통해 베타 기능들을 개별적으로 제어할 수 있습니다.",
+      "betaEndDateInfo": "베타 종료일: {{date}}"
+    },
+    "banner": {
+      "title": "🚀 Beta Free Access! 지금 북마클의 모든 기능을 무료로 사용하세요.",
+      "earlyUserBenefit": "얼리유저는 정식 오픈 후에도 기존 기능이 계속 무료로 유지됩니다."
+    },
+    "modal": {
+      "title": "Bookmarkle 베타 안내",
+      "currentBeta": "현재 북마클은 베타 기간으로",
+      "allFree": "모든 기능을 무료로 제한 없이 사용할 수 있습니다.",
+      "premiumTransition": "정식 오픈 이후 일부 기능은 프리미엄으로 전환될 수 있으나,",
+      "earlyUserBenefitApplied": "🎉 얼리유저 혜택 적용 중!",
+      "earlyUserBenefitDesc": "지금 가입한 얼리유저는 기존 기능을 계속 무료로 이용할 수 있습니다.",
+      "betterService": "더 나은 서비스를 위해 언제든 피드백을 보내주세요!",
+      "getStarted": "지금 바로 시작하기"
+    }
+  },
+  "landing": {
+    "nav": {
+      "features": "기능",
+      "howItWorks": "사용법",
+      "getStarted": "시작하기",
+      "chromeInstall": "Chrome 설치"
+    },
+    "hero": {
+      "badge": "나만의 스마트 북마크 관리자",
+      "title": "북마크를",
+      "titleHighlight": "똑똑하게",
+      "titleEnd": "관리하세요",
+      "description": "원하는 웹페이지를 한 번에 저장하고 간편하게 관리하는 나만의 책갈피 클립북",
+      "cta": "무료로 시작하기",
+      "chromeInstall": "Chrome에서 설치하기",
+      "learnMore": "자세히 알아보기"
+    },
+    "stats": {
+      "bookmarks": "무료 북마크",
+      "collections": "컬렉션",
+      "fast": "빠른 검색",
+      "secure": "안전한 저장"
+    },
+    "features": {
+      "title": "강력한 기능들",
+      "subtitle": "북마크 관리를 위한 모든 기능을 제공합니다",
+      "smartBookmarking": {
+        "title": "간편한 북마킹",
+        "description": "원하는 웹페이지를 한 번의 클릭으로 저장하고 컬렉션으로 체계적으로 관리하세요."
+      },
+      "powerfulSearch": {
+        "title": "강력한 검색",
+        "description": "수천 개의 북마크도 빠르게 찾을 수 있는 검색 기능."
+      },
+      "collections": {
+        "title": "컬렉션 관리",
+        "description": "북마크를 컬렉션으로 체계적으로 정리하세요."
+      },
+      "browserExtension": {
+        "title": "브라우저 확장",
+        "description": "Chrome 확장 프로그램으로 한 번의 클릭으로 저장."
+      },
+      "lightningFast": {
+        "title": "빠른 속도",
+        "description": "실시간 동기화로 모든 기기에서 즉시 접근."
+      },
+      "secure": {
+        "title": "안전한 저장",
+        "description": "Firebase로 암호화된 안전한 북마크 저장소."
+      }
+    },
+    "howItWorks": {
+      "title": "간단한 사용법",
+      "subtitle": "4단계로 시작하세요",
+      "step1": {
+        "title": "계정 만들기",
+        "description": "Google 계정으로 간편하게 가입하세요."
+      },
+      "step2": {
+        "title": "확장 프로그램 설치",
+        "description": "Chrome 웹 스토어에서 북마클 확장 프로그램을 설치하세요."
+      },
+      "step3": {
+        "title": "북마크 저장하기",
+        "description": "원하는 웹페이지에서 확장 프로그램 아이콘을 클릭하세요."
+      },
+      "step4": {
+        "title": "관리하고 즐기기",
+        "description": "대시보드에서 북마크를 정리하고 편리하게 관리하세요."
+      }
+    },
+    "cta": {
+      "title": "지금 바로 시작하세요",
+      "description": "무료로 가입하고 북마크를 체계적으로 관리해보세요. Google 계정으로 간편하게 시작할 수 있습니다.",
+      "button": "무료로 시작하기",
+      "chromeInstall": "Chrome에서 설치하기",
+      "feature1": "무료 플랜 제공",
+      "feature2": "빠른 가입 절차",
+      "feature3": "모든 기능 무료 체험"
+    },
+    "footer": {
+      "copyright": "© 2024 북마클. All rights reserved."
+    }
+  },
+  "admin": {
+    "title": "관리자 대시보드",
+    "description": "전체 사용자를 관리하고 통계를 확인할 수 있습니다.",
+    "users": "사용자 관리"
   }
 }
