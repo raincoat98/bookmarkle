@@ -1,3 +1,4 @@
+import { useEffect, useState, useRef } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -5,6 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BookmarksPage } from "./pages/BookmarksPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -21,8 +23,6 @@ import { AdminProtected } from "./components/admin/AdminProtected";
 import { SubscriptionBanner } from "./components/subscription/SubscriptionBanner";
 import { SubscriptionAnnouncementModal } from "./components/subscription/SubscriptionAnnouncementModal";
 import { isBetaPeriod } from "./utils/betaFlags";
-import { Toaster } from "react-hot-toast";
-import { useEffect, useState, useRef } from "react";
 import { getUserDefaultPage } from "./firebase";
 import {
   shouldBackup,
@@ -37,34 +37,30 @@ import {
   initializeTheme,
 } from "./stores";
 
+const ONE_DAY_MS = 1000 * 60 * 60 * 24;
+const ONE_WEEK_MS = ONE_DAY_MS * 7;
+const ONE_MONTH_MS = ONE_DAY_MS * 30;
+
 function AppContent() {
   const { user } = useAuthStore();
   const location = useLocation();
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
-
-  // 관리자 페이지인지 확인
   const isAdminPage = location.pathname === "/admin";
-
-  const handleOpenModal = () => {
-    setShowSubscriptionModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowSubscriptionModal(false);
-  };
+  const showSubscriptionUI = user && !isAdminPage;
 
   return (
     <>
-      {/* 관리자 페이지가 아닐 때만 배너 표시 */}
-      {user && !isAdminPage && (
-        <SubscriptionBanner onViewClick={handleOpenModal} />
-      )}
-      {user && !isAdminPage && (
-        <SubscriptionAnnouncementModal
-          isOpen={showSubscriptionModal}
-          onClose={handleCloseModal}
-          forceShow={true}
-        />
+      {showSubscriptionUI && (
+        <>
+          <SubscriptionBanner
+            onViewClick={() => setShowSubscriptionModal(true)}
+          />
+          <SubscriptionAnnouncementModal
+            isOpen={showSubscriptionModal}
+            onClose={() => setShowSubscriptionModal(false)}
+            forceShow={true}
+          />
+        </>
       )}
       {!user ? (
         <Routes>
@@ -129,71 +125,61 @@ function App() {
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const trashCleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 인증 및 테마 초기화
   useEffect(() => {
     const unsubscribeAuth = initializeAuth();
     const unsubscribeTheme = initializeTheme();
-
     return () => {
       unsubscribeAuth();
       unsubscribeTheme();
     };
   }, [initializeAuth]);
 
-  // 구독 정보 초기화
   useEffect(() => {
-    if (user?.uid) {
-      const unsubscribeSubscription = subscribeToSubscription(user.uid);
-      return () => {
-        unsubscribeSubscription();
-      };
-    }
+    if (!user?.uid) return;
+    const unsubscribeSubscription = subscribeToSubscription(user.uid);
+    return () => unsubscribeSubscription();
   }, [user?.uid, subscribeToSubscription]);
 
   useEffect(() => {
-    if (user?.uid) {
-      getUserDefaultPage(user.uid)
-        .then((page) => setDefaultPage(page || "dashboard"))
-        .catch(() => setDefaultPage("dashboard"));
-    }
+    if (!user?.uid) return;
+    getUserDefaultPage(user.uid)
+      .then((page) => setDefaultPage(page || "dashboard"))
+      .catch(() => setDefaultPage("dashboard"));
   }, [user?.uid]);
 
-  // 자동 백업 체크
   useEffect(() => {
-    // 자동 백업 타이머 클리어
     if (backupIntervalRef.current) {
       clearInterval(backupIntervalRef.current);
     }
 
     const settings = loadBackupSettings();
-    if (
+    const shouldSetupBackup =
       user?.uid &&
       settings.enabled &&
-      rawBookmarks &&
-      collections &&
-      rawBookmarks.length > 0 &&
-      collections.length > 0
-    ) {
-      // 주기(ms) 계산
-      let intervalMs = 1000 * 60 * 60 * 24 * 7; // 기본: weekly
-      if (settings.frequency === "daily") intervalMs = 1000 * 60 * 60 * 24;
-      if (settings.frequency === "monthly")
-        intervalMs = 1000 * 60 * 60 * 24 * 30;
+      rawBookmarks?.length > 0 &&
+      collections?.length > 0;
 
-      // 즉시 1회 실행
+    if (!shouldSetupBackup) {
+      return;
+    }
+
+    const intervalMap: Record<string, number> = {
+      daily: ONE_DAY_MS,
+      weekly: ONE_WEEK_MS,
+      monthly: ONE_MONTH_MS,
+    };
+    const intervalMs = intervalMap[settings.frequency] || ONE_WEEK_MS;
+
+    if (shouldBackup()) {
+      performBackup(rawBookmarks, collections, user.uid);
+    }
+
+    backupIntervalRef.current = setInterval(() => {
       if (shouldBackup()) {
         performBackup(rawBookmarks, collections, user.uid);
       }
+    }, intervalMs);
 
-      // 주기적으로 실행
-      backupIntervalRef.current = setInterval(() => {
-        if (shouldBackup()) {
-          performBackup(rawBookmarks, collections, user.uid);
-        }
-      }, intervalMs);
-    }
-
-    // 언마운트 시 타이머 해제
     return () => {
       if (backupIntervalRef.current) {
         clearInterval(backupIntervalRef.current);
@@ -201,29 +187,33 @@ function App() {
     };
   }, [user?.uid, rawBookmarks, collections]);
 
-  // 휴지통 자동 정리 (30일 이상 된 항목 삭제)
   useEffect(() => {
-    // 기존 타이머 클리어
     if (trashCleanupIntervalRef.current) {
       clearInterval(trashCleanupIntervalRef.current);
     }
 
-    if (user?.uid) {
-      // 즉시 1회 실행
-      cleanupOldTrash(user.uid).catch((error) => {
+    if (!user?.uid) return;
+
+    const handleCleanupError = (error: unknown) => {
+      const err = error as { code?: string; message?: string };
+      if (
+        err?.code === "failed-precondition" &&
+        err?.message?.includes("index is currently building")
+      ) {
+        console.log(
+          "휴지통 자동 정리: 인덱스 빌드 중입니다. 나중에 다시 시도됩니다."
+        );
+      } else {
         console.error("휴지통 자동 정리 오류:", error);
-      });
+      }
+    };
 
-      // 매일 한 번씩 실행 (24시간)
-      const intervalMs = 1000 * 60 * 60 * 24;
-      trashCleanupIntervalRef.current = setInterval(() => {
-        cleanupOldTrash(user.uid).catch((error) => {
-          console.error("휴지통 자동 정리 오류:", error);
-        });
-      }, intervalMs);
-    }
+    cleanupOldTrash(user.uid).catch(handleCleanupError);
 
-    // 언마운트 시 타이머 해제
+    trashCleanupIntervalRef.current = setInterval(() => {
+      cleanupOldTrash(user.uid).catch(handleCleanupError);
+    }, ONE_DAY_MS);
+
     return () => {
       if (trashCleanupIntervalRef.current) {
         clearInterval(trashCleanupIntervalRef.current);
@@ -237,16 +227,17 @@ function App() {
         setDefaultPage(e.newValue || "dashboard");
       }
     };
+
     const handleLocalStorageChange = () => {
-      // Firestore에서 다시 불러오도록 트리거
-      if (user?.uid) {
-        getUserDefaultPage(user.uid)
-          .then((page) => setDefaultPage(page || "dashboard"))
-          .catch(() => setDefaultPage("dashboard"));
-      }
+      if (!user?.uid) return;
+      getUserDefaultPage(user.uid)
+        .then((page) => setDefaultPage(page || "dashboard"))
+        .catch(() => setDefaultPage("dashboard"));
     };
+
     window.addEventListener("storage", handleStorageChange);
     window.addEventListener("localStorageChange", handleLocalStorageChange);
+
     return () => {
       window.removeEventListener("storage", handleStorageChange);
       window.removeEventListener(
