@@ -23,9 +23,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
-  const [touchedBookmarkId, setTouchedBookmarkId] = useState<string | null>(
-    null
-  );
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -126,66 +123,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
     window.open(url, "_blank");
   };
 
-  // 길게 누르기 처리 함수 생성기
-  const createLongPressHandlers = (
-    onLongPress: () => void,
-    onClick: () => void,
-    delay = 1000,
-    bookmarkId?: string
-  ) => {
-    let timeoutRef: NodeJS.Timeout | null = null;
-    let startTimeRef = 0;
-    let movedRef = false;
-
-    const start = () => {
-      movedRef = false;
-      startTimeRef = Date.now();
-      if (bookmarkId) {
-        setTouchedBookmarkId(bookmarkId);
-      }
-      timeoutRef = setTimeout(() => {
-        if (!movedRef) {
-          onLongPress();
-        }
-      }, delay);
-    };
-
-    const clear = () => {
-      if (timeoutRef) {
-        clearTimeout(timeoutRef);
-        timeoutRef = null;
-      }
-    };
-
-    const move = () => {
-      movedRef = true;
-      clear();
-    };
-
-    const end = () => {
-      const duration = Date.now() - startTimeRef;
-      clear();
-      if (bookmarkId) {
-        setTimeout(() => setTouchedBookmarkId(null), 300);
-      }
-
-      // 짧게 눌렀고 이동하지 않았으면 클릭 처리
-      if (duration < delay && !movedRef) {
-        onClick();
-      }
-    };
-
-    return {
-      onMouseDown: start,
-      onMouseUp: end,
-      onMouseMove: move,
-      onMouseLeave: clear,
-      onTouchStart: start,
-      onTouchEnd: end,
-      onTouchMove: move,
-      onTouchCancel: clear,
-    };
-  };
 
   return (
     <motion.div
@@ -223,13 +160,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           {favoritesToShow.length > 0 ? (
             <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
               {favoritesToShow.map((bookmark, index) => {
-                const longPressHandlers = createLongPressHandlers(
-                  () => onEdit(bookmark),
-                  () => handleFaviconClick(bookmark.url),
-                  1000,
-                  bookmark.id
-                );
-
                 return (
                   <motion.div
                     key={bookmark.id}
@@ -237,8 +167,8 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
                     whileTap={isMobile ? { scale: 0.95 } : undefined}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
-                    {...longPressHandlers}
+                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto cursor-pointer"
+                    onClick={() => handleFaviconClick(bookmark.url)}
                   >
                     <div
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
@@ -279,9 +209,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div
                       className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 transition-all duration-300 transform ${
                         isMobile
-                          ? touchedBookmarkId === bookmark.id
-                            ? "opacity-100 scale-110"
-                            : "opacity-70"
+                          ? "opacity-70"
                           : "opacity-0 group-hover/fav-section:opacity-100"
                       }`}
                     >
@@ -342,13 +270,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           {recentsToShow.length > 0 ? (
             <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
               {recentsToShow.map((bookmark, index) => {
-                const longPressHandlers = createLongPressHandlers(
-                  () => onEdit(bookmark),
-                  () => handleFaviconClick(bookmark.url),
-                  1000,
-                  bookmark.id
-                );
-
                 return (
                   <motion.div
                     key={bookmark.id}
@@ -356,8 +277,8 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
                     whileTap={isMobile ? { scale: 0.95 } : undefined}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
-                    {...longPressHandlers}
+                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto cursor-pointer"
+                    onClick={() => handleFaviconClick(bookmark.url)}
                   >
                     <div
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
@@ -402,9 +323,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div
                       className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 transition-all duration-300 transform ${
                         isMobile
-                          ? touchedBookmarkId === bookmark.id
-                            ? "opacity-100 scale-110"
-                            : "opacity-70"
+                          ? "opacity-70"
                           : "opacity-0 group-hover/recent-section:opacity-100"
                       }`}
                     >
