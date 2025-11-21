@@ -1,9 +1,12 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Key, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Key, Trash2, Shield } from "lucide-react";
+import { isAdminUser } from "../../firebase";
+import type { User } from "firebase/auth";
 
 interface AccountSettingsProps {
-  user: any;
+  user: User | null;
   onLogout: () => void;
   onDeleteAccount: () => void;
 }
@@ -14,6 +17,16 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
   onDeleteAccount,
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      isAdminUser(user).then(setIsAdmin);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   return (
     <div className="space-y-6">
@@ -47,6 +60,15 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
           {t("settings.accountManagement")}
         </h3>
         <div className="space-y-4">
+          {isAdmin && (
+            <button
+              onClick={() => navigate("/admin")}
+              className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              {t("admin.title")}
+            </button>
+          )}
           <button
             onClick={onLogout}
             className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"

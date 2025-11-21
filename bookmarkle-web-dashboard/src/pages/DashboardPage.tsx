@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { DashboardOverview } from "../components/dashboard/DashboardOverview";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
-import { DisabledUserMessage } from "../components/DisabledUserMessage";
+import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";
 import type { Bookmark, BookmarkFormData, SortOption } from "../types";
 import toast from "react-hot-toast";
-import { AddBookmarkModal } from "../components/AddBookmarkModal";
-import { EditBookmarkModal } from "../components/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../components/DeleteBookmarkModal";
-import { AddCollectionModal } from "../components/AddCollectionModal";
-import { Drawer } from "../components/Drawer";
+import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
+import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../components/bookmarks/DeleteBookmarkModal";
+import { AddCollectionModal } from "../components/collections/AddCollectionModal";
+import { Drawer } from "../components/layout/Drawer";
+import { UpgradeBanner } from "../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
+import { usePasteBookmark } from "../hooks/usePasteBookmark";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore();
@@ -116,6 +118,13 @@ export const DashboardPage: React.FC = () => {
       toast.error(`북마크 추가 실패: ${errorMessage}`);
     }
   };
+
+  // 붙여넣기 북마크 추가 기능
+  usePasteBookmark({
+    onAddBookmark: handleAddBookmark,
+    onOpenModal: () => setIsAddModalOpen(true),
+    enabled: !!user && isActive !== false,
+  });
 
   // 북마크 수정
   const handleUpdateBookmark = async (id: string, data: BookmarkFormData) => {
@@ -252,6 +261,7 @@ export const DashboardPage: React.FC = () => {
     <Drawer>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="p-4 lg:p-6">
+          <UpgradeBanner />
           <DashboardOverview
             bookmarks={bookmarks}
             collections={collections}

@@ -29,7 +29,9 @@
     "apply": "Apply",
     "optional": "Optional",
     "adding": "Adding...",
-    "updating": "Updating..."
+    "updating": "Updating...",
+    "processing": "Processing...",
+    "countUnit": ""
   },
   "auth": {
     "login": "Login",
@@ -224,6 +226,7 @@
     "appearance": "Appearance",
     "account": "Account",
     "backup": "Backup",
+    "statistics": "Statistics",
     "language": "Language",
     "theme": "Theme",
     "themeLight": "Light",
@@ -288,7 +291,28 @@
     "restore": "Restore",
     "mobileIconView": {
       "editModeDescription": "Edit Mode - Hold for 1+ seconds, drag to reorder"
-    }
+    },
+    "trash": "Trash",
+    "trashTitle": "Trash",
+    "trashDescription": "Manage deleted bookmarks. They will be permanently deleted automatically after 30 days.",
+    "trashEmpty": "Trash is empty",
+    "trashEmptyDescription": "No deleted bookmarks",
+    "restoreBookmark": "Restore Bookmark",
+    "restoreBookmarkConfirm": "Do you want to restore this bookmark?",
+    "restoreSuccess": "Bookmark restored successfully",
+    "restoreError": "An error occurred while restoring the bookmark",
+    "permanentlyDelete": "Permanently Delete",
+    "permanentlyDeleteBookmark": "Permanently Delete Bookmark",
+    "permanentlyDeleteBookmarkConfirm": "Do you want to permanently delete this bookmark? This action cannot be undone.",
+    "permanentlyDeleteSuccess": "Bookmark permanently deleted",
+    "permanentlyDeleteError": "An error occurred while deleting the bookmark",
+    "emptyTrash": "Empty Trash",
+    "emptyTrashConfirm": "Do you want to permanently delete all bookmarks in the trash? This action cannot be undone.",
+    "emptyTrashSuccess": "Trash emptied successfully",
+    "emptyTrashError": "An error occurred while emptying the trash",
+    "deletedAt": "Deleted at",
+    "daysUntilPermanentDelete": "Auto delete in {{days}} days",
+    "autoDeleteInfo": "Bookmarks in the trash will be permanently deleted automatically after 30 days"
   },
   "admin": {
     "title": "Admin",
@@ -332,9 +356,30 @@
     "noWeatherData": "No weather data",
     "fetchError": "Unable to fetch weather information",
     "refreshLocation": "Refresh location",
+    "changeLocation": "Change location",
+    "searchLocation": "Search location",
+    "searchPlaceholder": "Enter city name (e.g., Seoul, Tokyo, New York)",
+    "searching": "Searching...",
+    "noResults": "No results found",
+    "selectLocation": "Select location",
+    "saveLocation": "Save",
+    "useCurrentLocation": "Use current location",
+    "locationSaved": "Location saved",
+    "locationSaveError": "Error saving location",
     "feelsLike": "Feels like",
     "humidity": "Humidity",
-    "windSpeed": "Wind speed"
+    "windSpeed": "Wind speed",
+    "weeklyWeather": "Weekly Weather",
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "currentLocation": "Current location",
+    "geolocationNotSupported": "This browser does not support location services",
+    "geolocationError": "Unable to get location information",
+    "geolocationPermissionDenied": "Location permission denied",
+    "geolocationUnavailable": "Location information unavailable",
+    "geolocationTimeout": "Location request timed out",
+    "locationFetchError": "Unable to fetch location information",
+    "useDefaultLocation": "Would you like to use the default location (Seoul Station)?"
   },
   "languages": {
     "korean": "한국어",
@@ -391,5 +436,148 @@
       "bookmarkDeleted": "Bookmark has been deleted",
       "systemUpdate": "System has been updated"
     }
+  },
+  "premium": {
+    "upgradeToPremium": "Upgrade to Premium",
+    "unlockAllFeatures": "Unlock all features",
+    "upgradeNow": "Upgrade Now",
+    "maybeLater": "Maybe Later",
+    "currentPlan": "Current Plan",
+    "freePlan": "Free",
+    "premiumPlan": "Premium",
+    "active": "Active",
+    "free": "Free",
+    "month": "Month",
+    "year": "Year",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "or": "or",
+    "save17": "Save 17%",
+    "save": "Save {{percent}}%",
+    "popular": "Popular",
+    "billedAs": "Billed as",
+    "perYear": "per year",
+    "chooseYourPlan": "Choose Your Plan",
+    "pricingDescription": "Select a plan that fits your needs and make bookmark management more efficient",
+    "bookmarkLimitReached": "Bookmark limit reached ({{current}}/{{limit}})",
+    "collectionLimitReached": "Collection limit reached ({{current}}/{{limit}})",
+    "premiumFeatureRequired": "This feature is only available in the Premium plan",
+    "premiumFeatures": "Premium Features",
+    "features": {
+      "unlimitedBookmarks": "Unlimited Bookmarks",
+      "unlimitedCollections": "Unlimited Collections",
+      "advancedSearch": "Advanced Search (Tags/Domain/Date)",
+      "dailyBackup": "Auto Backup (Daily)",
+      "bookmarkStats": "Bookmark Statistics & Analytics",
+      "exportData": "Data Export (JSON/HTML/CSV)",
+      "customTheme": "Custom Theme",
+      "restoreDeleted": "Restore Deleted Bookmarks",
+      "shareBookmarks": "Share Bookmarks",
+      "free": {
+        "bookmarks": "{{count}} Bookmarks",
+        "collections": "{{count}} Collections",
+        "basicSearch": "Basic Search",
+        "weeklyBackup": "Basic Backup (Weekly)",
+        "basicWidgets": "Basic Widgets",
+        "noAds": "No Ads"
+      },
+      "allWidgets": "All Widgets Unlocked",
+      "premiumSupport": "Premium Support",
+      "business": {
+        "allPremium": "All Premium Features Included",
+        "teamShare": "Team Sharing",
+        "teamCollections": "Team Collections",
+        "teamReports": "Team Analytics Reports",
+        "apiAccess": "API Access",
+        "customBranding": "Custom Branding"
+      }
+    },
+    "bookmarks": "Bookmarks",
+    "collections": "Collections",
+    "subscriptionLabel": "Subscription",
+    "subscriptionManagement": "Subscription Management",
+    "settings": {
+      "subscriptionFeatureSettings": "Subscription Feature Settings",
+      "subscriptionBanner": "Subscription Banner",
+      "subscriptionModal": "Subscription Modal",
+      "hidden": "Hidden",
+      "showing": "Showing",
+      "showCompleted": "Show Completed",
+      "waiting": "Waiting",
+      "showSubscriptionModal": "Show Subscription Modal",
+      "resetSettings": "Reset Subscription Settings",
+      "resetDescription": "Show subscription banner and modal again.",
+      "resetConfirm": "Do you want to reset subscription settings? The subscription banner and modal will be shown again.",
+      "resetSuccess": "Subscription settings have been reset."
+    },
+    "manageYourSubscription": "Manage your subscription and change settings",
+    "activeSubscription": "Active Subscription",
+    "freeAccount": "Free Account",
+    "billingCycle": "Billing Cycle",
+    "renewsOn": "Renews On",
+    "cancelsOn": "Cancels On",
+    "currentUsage": "Current Usage",
+    "cancelSubscription": "Cancel Subscription",
+    "changePlan": "Change Plan",
+    "cancellationScheduled": "Cancellation Scheduled",
+    "cancellationMessage": "Subscription will end on {{date}}",
+    "confirmCancel": "Do you want to cancel your subscription?",
+    "cancelPending": "Subscription cancellation is being processed",
+    "cancelError": "An error occurred while canceling subscription",
+    "cancelWarning": "⚠️ Warning: Current usage exceeds the free plan limit.",
+    "cancelWarningNote": "Your existing data will be retained after cancellation, but you won't be able to add new items. Please delete some data if necessary or keep the Premium plan.",
+    "cancelLimitExceeded": "Subscription has been canceled. Your current usage exceeds the limit, so you cannot add new items. Your existing data will remain unchanged.",
+    "limitExceeded": "Limit Exceeded: {{current}} (Limit: {{limit}})",
+    "limit": "Limit",
+    "earlyUserBenefits": {
+      "title": "Early User Benefits",
+      "verified": "You have been verified as an early user who joined during the beta period.",
+      "description": "You can continue to use the features you used during the beta period for free."
+    },
+    "manageSubscription": "Manage Subscription",
+    "downgrade": "Downgrade",
+    "stripeIntegrationPending": "Stripe payment integration is being prepared",
+    "faq": "Frequently Asked Questions",
+    "faq1": {
+      "question": "Can I upgrade from Free to Premium at any time?",
+      "answer": "Yes, you can upgrade at any time. When you upgrade, you can immediately use all Premium features."
+    },
+    "faq2": {
+      "question": "Will my data be deleted if I cancel the Premium plan?",
+      "answer": "No, your data will remain intact. However, you won't be able to use Premium features and the Free plan limits will apply."
+    },
+    "faq3": {
+      "question": "What's the difference between yearly and monthly subscriptions?",
+      "answer": "Yearly subscriptions are offered at a 17% discount compared to monthly subscriptions, and you can receive additional benefits with annual payments."
+    },
+    "pricing": {
+      "launchAnnouncement": "Premium Plan Launched!",
+      "launchDescription": "To celebrate the official launch, we're offering special pricing. Early users can continue to use existing features for free."
+    },
+    "businessPlan": "Business",
+    "comingSoon": "Coming Soon",
+    "subscription": {
+      "banner": {
+        "title": "Upgrade to Premium for more features!",
+        "earlyUserBenefit": "Early User Special Benefit Applied",
+        "earlyUserBenefitCheck": "Check Early User Special Benefits",
+        "viewDetails": "View Details"
+      },
+      "modal": {
+        "title": "Upgrade to Premium Subscription!",
+        "description": "Bookmarkle is now officially open! Subscribe to Premium to access more features.",
+        "features": "With Premium subscription, enjoy unlimited bookmarks, advanced search, custom themes, and more.",
+        "earlyUserBenefitApplied": "Early User Special Benefits Applied!",
+        "earlyUserBenefitDesc": "Early users who joined during the beta period can receive special discount benefits.",
+        "betterService": "We will continue to work hard to provide better service.",
+        "close": "Close",
+        "goToPricing": "Go to Pricing"
+      }
+    }
+  },
+  "admin": {
+    "title": "Admin Dashboard",
+    "description": "Manage all users and view statistics.",
+    "users": "User Management"
   }
 }

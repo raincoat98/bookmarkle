@@ -1,4 +1,4 @@
-const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app/dashboard";
+const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app";
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 
 function isAllowedUrl(value) {
@@ -69,4 +69,3 @@ async function handleNewTabRedirect() {
 document.addEventListener("DOMContentLoaded", handleNewTabRedirect, {
   once: true,
 });
-
