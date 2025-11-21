@@ -373,7 +373,13 @@
     "today": "今日",
     "tomorrow": "明日",
     "currentLocation": "現在地",
-    "geolocationNotSupported": "このブラウザは位置サービスをサポートしていません"
+    "geolocationNotSupported": "このブラウザは位置サービスをサポートしていません",
+    "geolocationError": "位置情報を取得できません",
+    "geolocationPermissionDenied": "位置情報の権限が拒否されました",
+    "geolocationUnavailable": "位置情報を利用できません",
+    "geolocationTimeout": "位置情報のリクエストがタイムアウトしました",
+    "locationFetchError": "位置情報を取得できません",
+    "useDefaultLocation": "デフォルトの位置（ソウル駅）を使用しますか？"
   },
   "languages": {
     "korean": "한국어",
