@@ -360,7 +360,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           {t("dashboard.title")}
         </h2>
-        <div className="flex items-center flex-wrap gap-2">
+        <div className="flex items-center flex-wrap gap-2 justify-end sm:justify-start">
           {notificationsEnabled && (
             <div className="relative">
               <button
