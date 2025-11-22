@@ -356,11 +356,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
           {t("dashboard.title")}
         </h2>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center flex-wrap gap-2">
           {notificationsEnabled && (
             <div className="relative">
               <button
@@ -562,14 +562,14 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
           <button
             onClick={() => setIsEditMode(!isEditMode)}
-            className={`px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors ${
+            className={`px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
               isEditMode
                 ? "bg-blue-500 text-white hover:bg-blue-600"
                 : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
             }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>
+            <Settings className="w-4 h-4 flex-shrink-0" />
+            <span className="text-sm sm:text-base">
               {isEditMode
                 ? t("dashboard.editComplete")
                 : t("dashboard.editWidget")}
@@ -578,10 +578,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           {isEditMode && (
             <button
               onClick={resetWidgetOrder}
-              className="px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center space-x-2 transition-colors"
+              className="px-3 sm:px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
             >
-              <RotateCcw className="w-4 h-4" />
-              <span>{t("dashboard.reset")}</span>
+              <RotateCcw className="w-4 h-4 flex-shrink-0" />
+              <span className="text-sm sm:text-base">{t("dashboard.reset")}</span>
             </button>
           )}
         </div>
