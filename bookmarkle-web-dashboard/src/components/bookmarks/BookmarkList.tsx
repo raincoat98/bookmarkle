@@ -25,7 +25,6 @@ import {
 import { BookOpen, Folder, Eye, EyeOff } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { Skeleton } from "../ui/Skeleton";
 
 interface BookmarkListProps {
   bookmarks: Bookmark[];
@@ -144,64 +143,10 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   );
 
   if (loading) {
-    const skeletonCount = viewMode === "grid" ? 8 : 6;
-    const skeletonItems = Array.from({ length: skeletonCount });
-
     return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-4 w-32" />
-          <div className="flex items-center gap-3">
-            <Skeleton className="h-10 w-10 rounded-lg" />
-            <Skeleton className="h-10 w-28 rounded-lg" />
-          </div>
-        </div>
-        <div
-          className={
-            viewMode === "grid"
-              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 lg:gap-5"
-              : "space-y-3"
-          }
-        >
-          {skeletonItems.map((_, idx) =>
-            viewMode === "grid" ? (
-              <div
-                key={`bookmark-skeleton-grid-${idx}`}
-                className="rounded-2xl border border-slate-200/70 dark:border-slate-700/60 bg-white/90 dark:bg-slate-800/90 p-5 shadow-sm"
-              >
-                <div className="flex items-start gap-4">
-                  <Skeleton className="h-12 w-12 rounded-xl" />
-                  <div className="flex-1 space-y-3">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
-                  <Skeleton className="h-8 w-8 rounded-lg" />
-                </div>
-                <Skeleton className="h-3 w-full mt-6" />
-                <Skeleton className="h-3 w-5/6 mt-2" />
-                <div className="mt-6 flex gap-2">
-                  <Skeleton className="h-8 w-20 rounded-lg" />
-                  <Skeleton className="h-8 w-16 rounded-lg" />
-                </div>
-              </div>
-            ) : (
-              <div
-                key={`bookmark-skeleton-list-${idx}`}
-                className="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/90 dark:bg-slate-800/90 p-4 flex items-center gap-4 shadow-sm"
-              >
-                <Skeleton className="h-12 w-12 rounded-xl" />
-                <div className="flex-1 space-y-3">
-                  <Skeleton className="h-4 w-1/2" />
-                  <Skeleton className="h-3 w-5/6" />
-                  <Skeleton className="h-3 w-1/3" />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Skeleton className="h-8 w-20 rounded-lg" />
-                  <Skeleton className="h-8 w-16 rounded-lg" />
-                </div>
-              </div>
-            )
-          )}
+      <div className="space-y-6 flex items-center justify-center py-16">
+        <div className="text-gray-500 dark:text-gray-400">
+          {t("common.loading")}
         </div>
       </div>
     );
@@ -209,41 +154,26 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
 
   // 드래그 종료 핸들러
   const handleDragEnd = (event: DragEndEvent) => {
-    console.log("Drag end event:", event); // 디버깅 로그
     const { active, over } = event;
 
-    if (!over) {
-      console.log("No drop target found"); // 드롭 타겟이 없는 경우
+    if (!over || active.id === over.id) {
       return;
     }
 
-    if (active.id !== over.id) {
-      // 순서 변경을 위해서는 원본 bookmarks 배열을 사용해야 함
-      // 정렬된 배열이 아닌 원본 순서를 기준으로 인덱스 찾기
-      const oldIndex = bookmarks.findIndex((item) => item.id === active.id);
-      const newIndex = bookmarks.findIndex((item) => item.id === over.id);
+    // 순서 변경을 위해서는 원본 bookmarks 배열을 사용해야 함
+    // 정렬된 배열이 아닌 원본 순서를 기준으로 인덱스 찾기
+    const oldIndex = bookmarks.findIndex((item) => item.id === active.id);
+    const newIndex = bookmarks.findIndex((item) => item.id === over.id);
 
-      console.log("Moving from index", oldIndex, "to", newIndex); // 디버깅 로그
-      console.log("Active bookmark:", bookmarks[oldIndex]?.title); // 이동하는 북마크
-      console.log("Over bookmark:", bookmarks[newIndex]?.title); // 대상 북마크
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newBookmarks = arrayMove(bookmarks, oldIndex, newIndex);
+      onReorder(newBookmarks);
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newBookmarks = arrayMove(bookmarks, oldIndex, newIndex);
-        console.log("New bookmarks array length:", newBookmarks.length); // 새로운 배열 길이
-
-        // 부모 컴포넌트에 알림
-        onReorder(newBookmarks);
-
-        // 즉시 UI 업데이트를 위한 토스트 메시지
-        toast.success(t("bookmarks.bookmarkOrderChanged"), {
-          duration: 2000,
-          icon: "📌",
-        });
-      } else {
-        console.log("Bookmark not found in original array"); // 북마크를 찾을 수 없는 경우
-      }
-    } else {
-      console.log("Same position, no reorder needed"); // 같은 위치인 경우
+      // 즉시 UI 업데이트를 위한 토스트 메시지
+      toast.success(t("bookmarks.bookmarkOrderChanged"), {
+        duration: 2000,
+        icon: "📌",
+      });
     }
   };
 
@@ -312,7 +242,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
     try {
       await onRefreshFavicon(bookmark.id, bookmark.url);
     } catch (error) {
-      console.error("파비콘 새로고침 실패:", error);
+      toast.error(t("bookmarks.faviconRefreshError"));
     } finally {
       setFaviconLoadingStates((prev) => ({ ...prev, [bookmark.id]: false }));
     }
@@ -634,12 +564,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
-            onDragStart={(event) => {
-              console.log("Drag start event:", event);
-            }}
-            onDragOver={(event) => {
-              console.log("Drag over event:", event);
-            }}
           >
             <SortableContext
               items={allGroupedBookmarks.map((item) => item.id)}
@@ -779,12 +703,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
-              onDragStart={(event) => {
-                console.log("Drag start event:", event); // 디버깅 로그
-              }}
-              onDragOver={(event) => {
-                console.log("Drag over event:", event); // 디버깅 로그
-              }}
             >
               <SortableContext
                 items={bookmarks.map((item) => item.id)}

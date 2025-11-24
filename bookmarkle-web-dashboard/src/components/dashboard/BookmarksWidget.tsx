@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Edit, Trash2, Heart, Sparkles, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Bookmark, Collection } from "../../types";
-import { Skeleton } from "../ui/Skeleton";
 
 interface BookmarksWidgetProps {
   bookmarks: Bookmark[];
@@ -78,41 +77,10 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
   };
 
   if (loading) {
-    const skeletonCards = Array.from({ length: 10 });
-
     return (
-      <div className="card-glass p-4 sm:p-6 h-full flex flex-col">
-        <Skeleton className="h-5 w-32 mb-6" />
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          <div className="flex flex-col bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-4 border border-yellow-200/50 dark:border-yellow-800/50">
-            <Skeleton className="h-4 w-24 mb-4" />
-            <div className="flex flex-wrap gap-3 flex-1">
-              {skeletonCards.map((_, idx) => (
-                <div
-                  key={`bookmarks-favorite-skeleton-${idx}`}
-                  className="w-20 h-24 flex flex-col items-center justify-center gap-3 rounded-xl border border-white/40 dark:border-gray-600/40 bg-white/70 dark:bg-gray-800/70"
-                >
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-blue-200/50 dark:border-blue-800/50">
-            <Skeleton className="h-4 w-28 mb-4" />
-            <div className="flex flex-wrap gap-3 flex-1">
-              {skeletonCards.map((_, idx) => (
-                <div
-                  key={`bookmarks-recent-skeleton-${idx}`}
-                  className="w-20 h-28 flex flex-col items-center justify-center gap-3 rounded-xl border border-white/40 dark:border-gray-600/40 bg-white/70 dark:bg-gray-800/70"
-                >
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-12" />
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="card-glass p-4 sm:p-6 h-full flex flex-col items-center justify-center">
+        <div className="text-gray-500 dark:text-gray-400">
+          {t("common.loading")}
         </div>
       </div>
     );
