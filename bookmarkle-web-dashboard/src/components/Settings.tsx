@@ -79,7 +79,6 @@ export const Settings: React.FC<SettingsProps> = ({
     handleThemeChange,
     handleNotificationToggle,
     handleSystemNotificationToggle,
-    handleTestNotification,
     handleAutoBackupToggle,
     handleBackupFrequencyChange,
     handleManualBackup,
@@ -248,7 +247,6 @@ export const Settings: React.FC<SettingsProps> = ({
             browserNotificationPermission={browserNotificationPermission}
             onNotificationToggle={handleNotificationToggle}
             onSystemNotificationToggle={handleSystemNotificationToggle}
-            onTestNotification={handleTestNotification}
             onNavigateToNotifications={handleNavigateToNotifications}
           />
         );
