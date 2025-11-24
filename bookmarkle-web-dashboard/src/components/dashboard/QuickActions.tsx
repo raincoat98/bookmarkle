@@ -2,7 +2,6 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Plus, FolderPlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Skeleton } from "../ui/Skeleton";
 
 interface QuickActionsProps {
   onAddBookmark: () => void;
@@ -19,21 +18,9 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
 
   if (loading) {
     return (
-      <div className="card-glass p-6">
-        <Skeleton className="h-5 w-36 mb-6" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {Array.from({ length: 2 }).map((_, idx) => (
-            <div
-              key={`quick-action-skeleton-${idx}`}
-              className="flex items-center space-x-4 p-4 rounded-2xl border border-white/30 dark:border-gray-600/30 bg-white/60 dark:bg-gray-800/60"
-            >
-              <Skeleton className="w-12 h-12 rounded-xl" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-44" />
-              </div>
-            </div>
-          ))}
+      <div className="card-glass p-6 flex items-center justify-center">
+        <div className="text-gray-500 dark:text-gray-400">
+          {t("common.loading")}
         </div>
       </div>
     );
