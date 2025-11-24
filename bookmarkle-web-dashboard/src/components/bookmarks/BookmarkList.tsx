@@ -154,41 +154,26 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
 
   // 드래그 종료 핸들러
   const handleDragEnd = (event: DragEndEvent) => {
-    console.log("Drag end event:", event); // 디버깅 로그
     const { active, over } = event;
 
-    if (!over) {
-      console.log("No drop target found"); // 드롭 타겟이 없는 경우
+    if (!over || active.id === over.id) {
       return;
     }
 
-    if (active.id !== over.id) {
-      // 순서 변경을 위해서는 원본 bookmarks 배열을 사용해야 함
-      // 정렬된 배열이 아닌 원본 순서를 기준으로 인덱스 찾기
-      const oldIndex = bookmarks.findIndex((item) => item.id === active.id);
-      const newIndex = bookmarks.findIndex((item) => item.id === over.id);
+    // 순서 변경을 위해서는 원본 bookmarks 배열을 사용해야 함
+    // 정렬된 배열이 아닌 원본 순서를 기준으로 인덱스 찾기
+    const oldIndex = bookmarks.findIndex((item) => item.id === active.id);
+    const newIndex = bookmarks.findIndex((item) => item.id === over.id);
 
-      console.log("Moving from index", oldIndex, "to", newIndex); // 디버깅 로그
-      console.log("Active bookmark:", bookmarks[oldIndex]?.title); // 이동하는 북마크
-      console.log("Over bookmark:", bookmarks[newIndex]?.title); // 대상 북마크
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const newBookmarks = arrayMove(bookmarks, oldIndex, newIndex);
+      onReorder(newBookmarks);
 
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newBookmarks = arrayMove(bookmarks, oldIndex, newIndex);
-        console.log("New bookmarks array length:", newBookmarks.length); // 새로운 배열 길이
-
-        // 부모 컴포넌트에 알림
-        onReorder(newBookmarks);
-
-        // 즉시 UI 업데이트를 위한 토스트 메시지
-        toast.success(t("bookmarks.bookmarkOrderChanged"), {
-          duration: 2000,
-          icon: "📌",
-        });
-      } else {
-        console.log("Bookmark not found in original array"); // 북마크를 찾을 수 없는 경우
-      }
-    } else {
-      console.log("Same position, no reorder needed"); // 같은 위치인 경우
+      // 즉시 UI 업데이트를 위한 토스트 메시지
+      toast.success(t("bookmarks.bookmarkOrderChanged"), {
+        duration: 2000,
+        icon: "📌",
+      });
     }
   };
 
@@ -257,7 +242,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
     try {
       await onRefreshFavicon(bookmark.id, bookmark.url);
     } catch (error) {
-      console.error("파비콘 새로고침 실패:", error);
+      toast.error(t("bookmarks.faviconRefreshError"));
     } finally {
       setFaviconLoadingStates((prev) => ({ ...prev, [bookmark.id]: false }));
     }
@@ -579,12 +564,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
-            onDragStart={(event) => {
-              console.log("Drag start event:", event);
-            }}
-            onDragOver={(event) => {
-              console.log("Drag over event:", event);
-            }}
           >
             <SortableContext
               items={allGroupedBookmarks.map((item) => item.id)}
@@ -724,12 +703,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={handleDragEnd}
-              onDragStart={(event) => {
-                console.log("Drag start event:", event); // 디버깅 로그
-              }}
-              onDragOver={(event) => {
-                console.log("Drag over event:", event); // 디버깅 로그
-              }}
             >
               <SortableContext
                 items={bookmarks.map((item) => item.id)}

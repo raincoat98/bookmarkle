@@ -60,12 +60,18 @@ export const EditBookmarkModal = ({
         setFaviconLoading(true);
         try {
           const defaultFavicon = getFaviconUrl(formData.url);
-          setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: defaultFavicon }));
+          setFormData((prev: BookmarkFormData) => ({
+            ...prev,
+            favicon: defaultFavicon,
+          }));
 
           const actualFavicon = await findFaviconFromWebsite(formData.url);
-          setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: actualFavicon }));
-        } catch (error) {
-          console.error("파비콘 가져오기 실패:", error);
+          setFormData((prev: BookmarkFormData) => ({
+            ...prev,
+            favicon: actualFavicon,
+          }));
+        } catch {
+          // 기본 파비콘은 이미 설정되어 있음
         } finally {
           setFaviconLoading(false);
         }
@@ -98,7 +104,10 @@ export const EditBookmarkModal = ({
   };
 
   const handleRemoveTag = (tag: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter((t: string) => t !== tag) });
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter((t: string) => t !== tag),
+    });
   };
 
   // URL 유효성 검사
@@ -131,12 +140,17 @@ export const EditBookmarkModal = ({
       setFaviconLoading(true);
       try {
         const defaultFavicon = getFaviconUrl(formData.url);
-        setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: defaultFavicon }));
+        setFormData((prev: BookmarkFormData) => ({
+          ...prev,
+          favicon: defaultFavicon,
+        }));
 
         const actualFavicon = await findFaviconFromWebsite(formData.url);
-        setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: actualFavicon }));
-      } catch (error) {
-        console.error("파비콘 가져오기 실패:", error);
+        setFormData((prev: BookmarkFormData) => ({
+          ...prev,
+          favicon: actualFavicon,
+        }));
+      } catch {
         toast.error(t("bookmarks.faviconFetchError"));
       } finally {
         setFaviconLoading(false);
@@ -152,8 +166,7 @@ export const EditBookmarkModal = ({
     try {
       await onUpdate(bookmark.id, formData);
       onClose();
-    } catch (error) {
-      console.error("Error updating bookmark:", error);
+    } catch {
       toast.error(t("bookmarks.bookmarkUpdateError"));
     } finally {
       setLoading(false);
