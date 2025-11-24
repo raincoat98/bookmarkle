@@ -248,7 +248,6 @@ export const Settings: React.FC<SettingsProps> = ({
             browserNotificationPermission={browserNotificationPermission}
             onNotificationToggle={handleNotificationToggle}
             onSystemNotificationToggle={handleSystemNotificationToggle}
-            onTestNotification={handleTestNotification}
             onNavigateToNotifications={handleNavigateToNotifications}
           />
         );
