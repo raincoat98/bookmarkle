@@ -79,7 +79,6 @@ export const Settings: React.FC<SettingsProps> = ({
     handleThemeChange,
     handleNotificationToggle,
     handleSystemNotificationToggle,
-    handleTestNotification,
     handleAutoBackupToggle,
     handleBackupFrequencyChange,
     handleManualBackup,
