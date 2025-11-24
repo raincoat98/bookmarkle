@@ -413,43 +413,45 @@ export const NotificationCenterPage: React.FC = () => {
             </h3>
             <div className="space-y-4">
               <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">
                       {t("notifications.bookmarkNotifications")}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 break-words">
                       {t("notifications.bookmarkNotificationsDescription")}
                     </p>
                   </div>
-                  <button
-                    onClick={handleNotificationToggle}
-                    disabled={notificationsEnabled === null}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      notificationsEnabled === null
-                        ? "bg-gray-300 dark:bg-gray-600 opacity-50 cursor-not-allowed"
-                        : notificationsEnabled
-                        ? "bg-brand-600"
-                        : "bg-gray-200 dark:bg-gray-700"
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  <div className="flex items-center justify-end sm:justify-start flex-shrink-0">
+                    <button
+                      onClick={handleNotificationToggle}
+                      disabled={notificationsEnabled === null}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                         notificationsEnabled === null
-                          ? "translate-x-1"
+                          ? "bg-gray-300 dark:bg-gray-600 opacity-50 cursor-not-allowed"
                           : notificationsEnabled
-                          ? "translate-x-6"
-                          : "translate-x-1"
+                          ? "bg-brand-600"
+                          : "bg-gray-200 dark:bg-gray-700"
                       }`}
-                    />
-                  </button>
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          notificationsEnabled === null
+                            ? "translate-x-1"
+                            : notificationsEnabled
+                            ? "translate-x-6"
+                            : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex-1 min-w-0">
                     <p className="font-medium text-gray-900 dark:text-white">
                       {t("notifications.systemNotifications")}
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 break-words">
                       {t("notifications.systemNotificationsDescription")}
                     </p>
                     {browserNotificationPermission.denied && (
@@ -458,9 +460,9 @@ export const NotificationCenterPage: React.FC = () => {
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center justify-end sm:justify-start space-x-2 flex-shrink-0">
                     <button
-                      className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       onClick={() =>
                         showTestNotification(
                           t("notifications.testNotificationTitle"),
@@ -477,7 +479,7 @@ export const NotificationCenterPage: React.FC = () => {
                     <button
                       onClick={handleSystemNotificationToggle}
                       disabled={systemNotificationsEnabled === null}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-shrink-0 ${
                         systemNotificationsEnabled === null
                           ? "bg-gray-300 dark:bg-gray-600 opacity-50 cursor-not-allowed"
                           : systemNotificationsEnabled
@@ -510,16 +512,16 @@ export const NotificationCenterPage: React.FC = () => {
 
           {/* 알림 목록 */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+              <div className="flex items-center justify-between gap-2 sm:gap-3">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">
                   {t("notifications.title")}
                 </h3>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                   {notifications.length > 0 && (
                     <button
                       onClick={deleteAllNotifications}
-                      className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 sm:px-3 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 whitespace-nowrap"
                     >
                       {t("notifications.deleteAll")}
                     </button>
@@ -527,7 +529,7 @@ export const NotificationCenterPage: React.FC = () => {
                   {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
-                      className="text-xs sm:text-sm text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 px-2 sm:px-3 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20"
+                      className="text-xs sm:text-sm text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 px-2 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 whitespace-nowrap"
                     >
                       {t("notifications.markAllAsRead")}
                     </button>

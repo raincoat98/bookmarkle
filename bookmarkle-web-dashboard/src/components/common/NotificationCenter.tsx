@@ -194,15 +194,15 @@ export const NotificationCenter = () => {
       {isOpen && (
         <div className="fixed right-2 left-2 top-16 sm:right-4 sm:left-auto sm:w-80 lg:absolute lg:right-0 lg:top-10 lg:mt-2 lg:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[600px] flex flex-col">
             {/* 헤더 */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 gap-2 sm:gap-3">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">
                 {t("notifications.title")}
               </h3>
-              <div className="flex items-center space-x-1 sm:space-x-2">
+              <div className="flex items-center space-x-2 flex-shrink-0">
                 {notifications.length > 0 && (
                   <button
                     onClick={deleteAllNotifications}
-                    className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-1 sm:px-0"
+                    className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 whitespace-nowrap"
                   >
                     {t("notifications.deleteAll")}
                   </button>
@@ -210,14 +210,14 @@ export const NotificationCenter = () => {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllAsRead}
-                    className="text-xs sm:text-sm text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 px-1 sm:px-0"
+                    className="text-xs sm:text-sm text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 px-2 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 whitespace-nowrap"
                   >
                     {t("notifications.markAllAsRead")}
                   </button>
                 )}
                 <button
                   onClick={() => setIsOpen(false)}
-                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
                 >
                   <X className="w-4 h-4" />
                 </button>
