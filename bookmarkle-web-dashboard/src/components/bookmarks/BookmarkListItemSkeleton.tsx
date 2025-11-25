@@ -19,18 +19,21 @@ export const BookmarkListItemSkeleton: React.FC = () => {
             <div className="w-10 h-10 rounded-lg bg-gray-200 dark:bg-gray-700"></div>
           </div>
 
-          {/* 제목 및 URL - 한 줄로, 반응형 최적화 */}
-          <div className="flex-1 min-w-0 flex items-center gap-2 md:gap-3 overflow-hidden">
+          {/* 제목 및 URL - 세로 배치 */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1 overflow-hidden">
             {/* 제목 */}
-            <div className="flex-shrink-0 min-w-[80px] md:min-w-[140px] max-w-[200px] md:max-w-[400px]">
-              <div className="h-4 md:h-5 bg-gray-200 dark:bg-gray-700 rounded w-24 md:w-32"></div>
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="relative flex-shrink-0 min-w-[80px] md:min-w-[140px] max-w-[200px] md:max-w-[400px]">
+                <div className="h-4 md:h-5 bg-gray-200 dark:bg-gray-700 rounded w-24 md:w-32"></div>
+              </div>
             </div>
-            {/* 구분점 */}
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
-              •
-            </span>
+            {/* 태그 배지 */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-16"></div>
+              <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded-full w-12"></div>
+            </div>
             {/* URL */}
-            <div className="flex-1 min-w-0 hidden sm:block">
+            <div className="relative flex-1 min-w-0 hidden sm:block">
               <div className="h-3 md:h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
             </div>
           </div>
