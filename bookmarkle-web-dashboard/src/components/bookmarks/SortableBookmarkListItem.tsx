@@ -374,29 +374,43 @@ export const SortableBookmarkListItem = ({
             </div>
           </div>
 
-          {/* 제목 및 URL - 한 줄로, 반응형 최적화 */}
-          <div className="flex-1 min-w-0 flex items-center gap-2 md:gap-3 overflow-hidden">
-            <div className="relative group/title flex-shrink-0 min-w-[80px] md:min-w-[140px] max-w-[200px] md:max-w-[400px]">
-              <a
-                href={bookmark.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm md:text-base font-semibold text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors duration-200 cursor-pointer block truncate"
-                title={bookmark.title}
-              >
-                {bookmark.title}
-              </a>
-              {/* 호버 시 전체 제목 툴팁 */}
-              {bookmark.title.length > 5 && (
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-10 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg whitespace-nowrap pointer-events-none">
+          {/* 제목 및 URL - 세로 배치 */}
+          <div className="flex-1 min-w-0 flex flex-col gap-1 overflow-hidden">
+            {/* 제목 */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="relative group/title flex-shrink-0 min-w-[80px] md:min-w-[140px] max-w-[200px] md:max-w-[400px]">
+                <a
+                  href={bookmark.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm md:text-base font-semibold text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400 transition-colors duration-200 cursor-pointer block truncate"
+                  title={bookmark.title}
+                >
                   {bookmark.title}
-                  <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
-                </div>
-              )}
+                </a>
+                {/* 호버 시 전체 제목 툴팁 */}
+                {bookmark.title.length > 5 && (
+                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-10 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg whitespace-nowrap pointer-events-none">
+                    {bookmark.title}
+                    <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
+                  </div>
+                )}
+              </div>
             </div>
-            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0 hidden sm:inline">
-              •
-            </span>
+            {/* 태그 배지 - URL 위에 배치 */}
+            {bookmark.tags && bookmark.tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {bookmark.tags.map((tag: string) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 shadow-sm"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            {/* URL */}
             <div className="relative group/url flex-1 min-w-0 hidden sm:block">
               <p
                 className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate"
