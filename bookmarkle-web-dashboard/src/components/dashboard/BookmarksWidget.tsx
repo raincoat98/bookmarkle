@@ -4,6 +4,69 @@ import { Edit, Trash2, Heart, Sparkles, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Bookmark, Collection } from "../../types";
 
+// 파비콘 표시 컴포넌트
+interface FaviconDisplayProps {
+  bookmark: Bookmark;
+  fallbackIcon: React.ReactNode;
+  className?: string;
+}
+
+const FaviconDisplay: React.FC<FaviconDisplayProps> = ({
+  bookmark,
+  fallbackIcon,
+  className = "w-full h-full object-cover",
+}) => {
+  const [showCustomFavicon, setShowCustomFavicon] = useState(
+    !!bookmark.favicon
+  );
+  const [customFaviconError, setCustomFaviconError] = useState(false);
+  const [googleFaviconError, setGoogleFaviconError] = useState(false);
+
+  const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${
+    new URL(bookmark.url).hostname
+  }&sz=32`;
+
+  // 북마크가 변경될 때 상태 리셋
+  useEffect(() => {
+    setShowCustomFavicon(!!bookmark.favicon);
+    setCustomFaviconError(false);
+    setGoogleFaviconError(false);
+  }, [bookmark.id, bookmark.favicon]);
+
+  // 모든 파비콘이 실패한 경우 fallback 표시
+  if (customFaviconError && googleFaviconError) {
+    return <>{fallbackIcon}</>;
+  }
+
+  return (
+    <>
+      {/* 사용자가 직접 입력한 파비콘 */}
+      {bookmark.favicon && showCustomFavicon && !customFaviconError && (
+        <img
+          src={bookmark.favicon}
+          alt={bookmark.title}
+          className={className}
+          onError={() => {
+            setCustomFaviconError(true);
+            setShowCustomFavicon(false);
+          }}
+        />
+      )}
+      {/* Google 파비콘 서비스 (커스텀 파비콘이 없거나 실패한 경우) */}
+      {(!bookmark.favicon || customFaviconError) && !googleFaviconError && (
+        <img
+          src={googleFaviconUrl}
+          alt={bookmark.title}
+          className={className}
+          onError={() => {
+            setGoogleFaviconError(true);
+          }}
+        />
+      )}
+    </>
+  );
+};
+
 interface BookmarksWidgetProps {
   bookmarks: Bookmark[];
   collections: Collection[];
@@ -155,26 +218,14 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         handleFaviconClick(bookmark.url);
                       }}
                     >
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${
-                          new URL(bookmark.url).hostname
-                        }&sz=32`}
-                        alt={bookmark.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                          const fallback =
-                            target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = "flex";
-                        }}
+                      <FaviconDisplay
+                        bookmark={bookmark}
+                        fallbackIcon={
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500">
+                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
+                          </div>
+                        }
                       />
-                      <div
-                        className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500"
-                        style={{ display: "none" }}
-                      >
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
-                      </div>
                     </div>
 
                     <p
@@ -281,26 +332,14 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         handleFaviconClick(bookmark.url);
                       }}
                     >
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${
-                          new URL(bookmark.url).hostname
-                        }&sz=32`}
-                        alt={bookmark.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                          const fallback =
-                            target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = "flex";
-                        }}
+                      <FaviconDisplay
+                        bookmark={bookmark}
+                        fallbackIcon={
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600">
+                            <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
+                          </div>
+                        }
                       />
-                      <div
-                        className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600"
-                        style={{ display: "none" }}
-                      >
-                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
-                      </div>
                     </div>
 
                     <p
