@@ -203,7 +203,8 @@ export const Drawer: React.FC<DrawerProps> = ({
                 isDrawerCollapsed ? "px-2 lg:px-3" : "px-4 lg:px-6"
               }`}
             >
-              <div
+              <Link
+                to="/about"
                 className={`flex items-center ${
                   isDrawerCollapsed
                     ? "justify-center"
@@ -228,7 +229,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                     북마클
                   </h1>
                 )}
-              </div>
+              </Link>
               <div
                 className={`flex items-center ${
                   isDrawerCollapsed ? "justify-center" : "space-x-2"
