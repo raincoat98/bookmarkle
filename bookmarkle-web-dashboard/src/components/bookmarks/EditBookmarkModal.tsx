@@ -45,7 +45,7 @@ export const EditBookmarkModal = ({
         url: bookmark.url,
         description: bookmark.description || "",
         favicon: favicon,
-        collection: bookmark.collection || collections[0]?.id || "",
+        collection: bookmark.collection || "",
         tags: bookmark.tags || [],
         isFavorite: bookmark.isFavorite || false,
       });
