@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShallow } from "zustand/react/shallow";
 import { useDrawerStore } from "../../stores";
 import {
   Home,
@@ -45,7 +46,14 @@ export const Drawer: React.FC<DrawerProps> = ({
     setIsDrawerOpen,
     isDrawerCollapsed,
     setIsDrawerCollapsed,
-  } = useDrawerStore();
+  } = useDrawerStore(
+    useShallow((state) => ({
+      isDrawerOpen: state.isDrawerOpen,
+      setIsDrawerOpen: state.setIsDrawerOpen,
+      isDrawerCollapsed: state.isDrawerCollapsed,
+      setIsDrawerCollapsed: state.setIsDrawerCollapsed,
+    }))
+  );
   const location = useLocation();
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window !== "undefined") {

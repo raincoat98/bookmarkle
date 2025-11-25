@@ -29,10 +29,22 @@ import {
   checkCollectionLimit,
 } from "../utils/subscriptionLimits";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
+import { useShallow } from "zustand/react/shallow";
 
 export const BookmarksPage: React.FC = () => {
-  const { user, isActive, isActiveLoading } = useAuthStore();
-  const { plan, limits } = useSubscriptionStore();
+  const { user, isActive, isActiveLoading } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      isActive: state.isActive,
+      isActiveLoading: state.isActiveLoading,
+    }))
+  );
+  const { plan, limits } = useSubscriptionStore(
+    useShallow((state) => ({
+      plan: state.plan,
+      limits: state.limits,
+    }))
+  );
   const { t } = useTranslation();
 
   // 상태 관리
@@ -56,7 +68,16 @@ export const BookmarksPage: React.FC = () => {
     deleteCollection,
     setPinned,
     fetchCollections,
-  } = useCollectionStore();
+  } = useCollectionStore(
+    useShallow((state) => ({
+      collections: state.collections,
+      addCollection: state.addCollection,
+      updateCollection: state.updateCollection,
+      deleteCollection: state.deleteCollection,
+      setPinned: state.setPinned,
+      fetchCollections: state.fetchCollections,
+    }))
+  );
 
   const {
     getFilteredBookmarks,
@@ -70,7 +91,21 @@ export const BookmarksPage: React.FC = () => {
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
     loading: bookmarksLoading,
-  } = useBookmarkStore();
+  } = useBookmarkStore(
+    useShallow((state) => ({
+      getFilteredBookmarks: state.getFilteredBookmarks,
+      addBookmark: state.addBookmark,
+      updateBookmark: state.updateBookmark,
+      deleteBookmark: state.deleteBookmark,
+      reorderBookmarks: state.reorderBookmarks,
+      toggleFavorite: state.toggleFavorite,
+      updateBookmarkFavicon: state.updateBookmarkFavicon,
+      subscribeToBookmarks: state.subscribeToBookmarks,
+      setSelectedCollection: state.setSelectedCollection,
+      setCollections: state.setCollections,
+      loading: state.loading,
+    }))
+  );
 
   // 핀된 컬렉션을 기본 탭으로 설정
   React.useEffect(() => {

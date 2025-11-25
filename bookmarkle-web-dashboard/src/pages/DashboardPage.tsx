@@ -13,9 +13,16 @@ import { Drawer } from "../components/layout/Drawer";
 import { UpgradeBanner } from "../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
+import { useShallow } from "zustand/react/shallow";
 
 export const DashboardPage: React.FC = () => {
-  const { user, isActive, isActiveLoading } = useAuthStore();
+  const { user, isActive, isActiveLoading } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      isActive: state.isActive,
+      isActiveLoading: state.isActiveLoading,
+    }))
+  );
   const { t } = useTranslation();
   const {
     getFilteredBookmarks,
@@ -27,13 +34,32 @@ export const DashboardPage: React.FC = () => {
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
     loading: bookmarksLoading,
-  } = useBookmarkStore();
+  } = useBookmarkStore(
+    useShallow((state) => ({
+      getFilteredBookmarks: state.getFilteredBookmarks,
+      addBookmark: state.addBookmark,
+      updateBookmark: state.updateBookmark,
+      deleteBookmark: state.deleteBookmark,
+      toggleFavorite: state.toggleFavorite,
+      subscribeToBookmarks: state.subscribeToBookmarks,
+      setSelectedCollection: state.setSelectedCollection,
+      setCollections: state.setCollections,
+      loading: state.loading,
+    }))
+  );
   const {
     collections,
     addCollection,
     fetchCollections,
     loading: collectionsLoading,
-  } = useCollectionStore();
+  } = useCollectionStore(
+    useShallow((state) => ({
+      collections: state.collections,
+      addCollection: state.addCollection,
+      fetchCollections: state.fetchCollections,
+      loading: state.loading,
+    }))
+  );
   const { createNotification } = useNotifications(user?.uid || "");
 
   // 북마크 데이터 가져오기
