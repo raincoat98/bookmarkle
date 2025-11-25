@@ -31,7 +31,8 @@
     "adding": "추가 중...",
     "updating": "수정 중...",
     "processing": "처리 중...",
-    "countUnit": "개"
+    "countUnit": "개",
+    "moreActions": "더보기"
   },
   "auth": {
     "login": "로그인",

@@ -31,7 +31,8 @@
     "adding": "Adding...",
     "updating": "Updating...",
     "processing": "Processing...",
-    "countUnit": ""
+    "countUnit": "",
+    "moreActions": "More Actions"
   },
   "auth": {
     "login": "Login",
