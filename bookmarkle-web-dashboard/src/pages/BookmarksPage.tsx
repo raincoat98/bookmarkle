@@ -118,7 +118,15 @@ export const BookmarksPage: React.FC = () => {
   // 나머지 상태 관리
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    const saved = localStorage.getItem("bookmarkViewMode");
+    return saved === "grid" || saved === "list" ? saved : "grid";
+  });
+
+  // 뷰 모드 localStorage 저장
+  React.useEffect(() => {
+    localStorage.setItem("bookmarkViewMode", viewMode);
+  }, [viewMode]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -572,9 +580,9 @@ export const BookmarksPage: React.FC = () => {
         setIsAddSubCollectionModalOpen(true);
       }}
     >
-      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="flex-shrink-0 sticky top-0 z-10 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+        <div className="flex-shrink-0 sticky top-0 z-50 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
             {/* 검색창 - 모든 화면 크기에서 보임 */}
             <div className="relative w-full sm:flex-1 min-w-0">
@@ -661,8 +669,8 @@ export const BookmarksPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 메인 콘텐츠 */}
-        <div className="flex-1 p-4 lg:p-6 overflow-y-auto w-full min-w-0 overflow-x-hidden">
+        {/* 메인 콘텐츠 - 스크롤은 Drawer의 main에서 처리 */}
+        <div className="flex-1 p-4 lg:p-6 w-full min-w-0">
           {(() => {
             // 필터링된 북마크 데이터에서 실제 북마크 배열 추출
             let bookmarksToDisplay: Bookmark[] = [];
