@@ -237,7 +237,7 @@ export const SortableBookmarkListItem = ({
       style={style}
       className={`group relative bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl hover:scale-[1.01] transition-all duration-300 overflow-hidden min-w-0 backdrop-blur-sm ${
         isDragging ? "opacity-50 shadow-2xl z-50" : ""
-      } hover:z-30 z-10 ${
+      } hover:z-[100] z-10 ${
         isMoving
           ? `animate-pulse shadow-2xl ring-4 ${
               moveDirection === "up"
@@ -432,7 +432,7 @@ export const SortableBookmarkListItem = ({
           </div>
 
           {/* 액션 버튼들 - md 이상: 항상 표시, md 미만: 메뉴 버튼 */}
-          <div className="flex-shrink-0 relative">
+          <div className="flex-shrink-0 relative z-[110]">
             {/* 모바일/태블릿: 메뉴 버튼 (md 미만) */}
             <button
               ref={menuButtonRef}
