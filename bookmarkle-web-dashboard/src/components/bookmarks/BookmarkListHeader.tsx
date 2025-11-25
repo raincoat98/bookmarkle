@@ -22,7 +22,7 @@ export const BookmarkListHeader: React.FC<BookmarkListHeaderProps> = ({
 
   if (loading) {
     return (
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center relative z-40">
         <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-32 animate-pulse"></div>
         <div className="flex items-center gap-2 sm:gap-3">
           {rightContent}
@@ -33,7 +33,7 @@ export const BookmarkListHeader: React.FC<BookmarkListHeaderProps> = ({
   }
 
   return (
-    <div className="flex justify-between items-center">
+    <div className="flex justify-between items-center relative z-40">
       <div className="text-sm text-gray-600 dark:text-gray-400">
         {t("bookmarks.totalBookmarks", { count: totalCount })}
       </div>

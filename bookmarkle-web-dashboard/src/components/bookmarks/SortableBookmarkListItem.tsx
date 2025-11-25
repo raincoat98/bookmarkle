@@ -236,8 +236,8 @@ export const SortableBookmarkListItem = ({
       ref={setNodeRef}
       style={style}
       className={`group relative bg-gradient-to-r from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-xl border border-gray-200/50 dark:border-gray-700/50 hover:shadow-xl hover:scale-[1.01] transition-all duration-300 overflow-hidden min-w-0 backdrop-blur-sm ${
-        isDragging ? "opacity-50 shadow-2xl z-50" : ""
-      } hover:z-[100] z-10 ${
+        isDragging ? "opacity-50 shadow-2xl z-10" : ""
+      } hover:z-[20] z-0 ${
         isMoving
           ? `animate-pulse shadow-2xl ring-4 ${
               moveDirection === "up"
@@ -388,7 +388,7 @@ export const SortableBookmarkListItem = ({
               </a>
               {/* 호버 시 전체 제목 툴팁 */}
               {bookmark.title.length > 5 && (
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg whitespace-nowrap pointer-events-none">
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/title:block z-10 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg whitespace-nowrap pointer-events-none">
                   {bookmark.title}
                   <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
                 </div>
@@ -406,7 +406,7 @@ export const SortableBookmarkListItem = ({
               </p>
               {/* 호버 시 전체 URL 툴팁 */}
               {bookmark.url.length > 30 && (
-                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/url:block z-50 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg whitespace-nowrap pointer-events-none max-w-[400px] truncate">
+                <div className="absolute left-0 bottom-full mb-2 hidden group-hover/url:block z-10 px-2 py-1 text-xs font-medium text-white bg-gray-900 dark:bg-gray-700 rounded-md shadow-lg whitespace-nowrap pointer-events-none max-w-[400px] truncate">
                   {bookmark.url}
                   <div className="absolute top-full left-4 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900 dark:border-t-gray-700"></div>
                 </div>
@@ -432,7 +432,7 @@ export const SortableBookmarkListItem = ({
           </div>
 
           {/* 액션 버튼들 - md 이상: 항상 표시, md 미만: 메뉴 버튼 */}
-          <div className="flex-shrink-0 relative z-[110]">
+          <div className="flex-shrink-0 relative z-[30]">
             {/* 모바일/태블릿: 메뉴 버튼 (md 미만) */}
             <button
               ref={menuButtonRef}
