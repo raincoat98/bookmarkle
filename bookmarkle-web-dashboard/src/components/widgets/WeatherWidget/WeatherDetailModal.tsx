@@ -74,52 +74,53 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-3xl w-full max-h-[85vh] flex flex-col mx-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <MapPin className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               {city}
             </span>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Close"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 컨텐츠 */}
         <div className="flex-1 overflow-y-auto">
           {/* 오늘 시간별 날씨 - 가로 스크롤 */}
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="px-6 pt-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
               {t("weather.hourlyWeather")}
             </h3>
             {hourlyWeather.length > 0 ? (
-              <div className="overflow-x-auto pb-2">
-                <div className="flex gap-4 min-w-max">
+              <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                <div className="flex gap-2.5 min-w-max">
                   {hourlyWeather.map((hour, index) => (
                     <div
                       key={`${hour.time}-${index}`}
-                      className="flex flex-col items-center min-w-[80px] p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      className="flex flex-col items-center w-20 h-28 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all duration-200 flex-shrink-0 hover:shadow-md"
                     >
-                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
                         {formatTime(hour.hour)}
                       </div>
                       <img
                         src={getWeatherIconUrl(hour.icon)}
                         alt={hour.description}
-                        className="w-10 h-10 mb-2"
+                        className="w-9 h-9 mb-1.5 flex-shrink-0"
                       />
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <div className="text-base font-bold text-gray-900 dark:text-white mb-0.5 whitespace-nowrap">
                         {hour.temperature}°
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                      <div className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight line-clamp-2 max-h-[2rem] overflow-hidden w-full px-0.5">
                         {hour.description}
                       </div>
                     </div>
@@ -127,7 +128,7 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
                 </div>
               </div>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {t("weather.noHourlyData")}
                 </p>
@@ -136,34 +137,42 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
           </div>
 
           {/* 이번주 날씨 */}
-          <div className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="px-6 py-4">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
               {t("weather.weeklyWeather")}
             </h3>
             {weeklyWeather.length > 0 ? (
-              <div className="space-y-3">
-                {weeklyWeather.map((day, index) => (
-                  <div
-                    key={`${day.date}-${index}`}
-                    className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[60px]">
+              <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+                <div className="flex gap-2.5 min-w-max">
+                  {weeklyWeather.map((day, index) => (
+                    <div
+                      key={`${day.date}-${index}`}
+                      className="flex flex-col items-center w-28 h-36 p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all duration-200 flex-shrink-0 hover:shadow-md"
+                    >
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2 whitespace-nowrap">
                         {getDayName(day.date)}
                       </div>
-                      {getWeatherIcon(day.icon)}
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="mb-2">
+                        {getWeatherIcon(day.icon)}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 text-center line-clamp-2 max-h-[2rem] overflow-hidden w-full px-1">
                         {day.description}
                       </div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white mt-auto">
+                        <span className="text-gray-500 dark:text-gray-400">
+                          {day.temperature.min}°
+                        </span>
+                        <span className="mx-1 text-gray-400 dark:text-gray-500">
+                          /
+                        </span>
+                        <span>{day.temperature.max}°</span>
+                      </div>
                     </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {day.temperature.min}° / {day.temperature.max}°
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-12">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
                   {t("weather.noWeatherData")}
                 </p>
