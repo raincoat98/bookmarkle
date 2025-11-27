@@ -98,36 +98,36 @@ export const WeatherWidget: React.FC = () => {
         <div className="absolute bottom-2 right-2 z-20">
           {/* 데스크톱: 3개 버튼 모두 표시 */}
           <div className="hidden sm:flex gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
                 setIsDetailModalOpen(true);
-              }}
-              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
               title={t("weather.weeklyWeather")}
-            >
-              <Clock className="w-4 h-4 text-white" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsLocationModalOpen(true);
-              }}
-              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-              title={t("weather.changeLocation")}
-            >
-              <Settings className="w-4 h-4 text-white" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                fetchWeather();
-              }}
-              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-              title={t("weather.refreshLocation")}
-            >
-              <RefreshCw className="w-4 h-4 text-white" />
-            </button>
+          >
+            <Clock className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLocationModalOpen(true);
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            title={t("weather.changeLocation")}
+          >
+            <Settings className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              fetchWeather();
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            title={t("weather.refreshLocation")}
+          >
+            <RefreshCw className="w-4 h-4 text-white" />
+          </button>
           </div>
 
           {/* 모바일: 메뉴 버튼 하나만 표시 */}

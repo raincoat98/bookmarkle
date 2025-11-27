@@ -42,11 +42,6 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
     }
   };
 
-  const isCurrentHour = (hour: number) => {
-    const now = new Date();
-    return now.getHours() === hour;
-  };
-
   const getDayName = (dateStr: string) => {
     const date = new Date(dateStr);
     const today = new Date();
@@ -109,40 +104,27 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
             {hourlyWeather.length > 0 ? (
               <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
                 <div className="flex gap-2.5 min-w-max">
-                  {hourlyWeather.map((hour, index) => {
-                    const isCurrent = isCurrentHour(hour.hour);
-                    return (
-                      <div
-                        key={`${hour.time}-${index}`}
-                        className={`flex flex-col items-center w-20 h-28 p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 hover:shadow-md ${
-                          isCurrent
-                            ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-500"
-                            : "bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600"
-                        }`}
-                      >
-                        <div
-                          className={`text-sm font-bold mb-1.5 whitespace-nowrap ${
-                            isCurrent
-                              ? "text-blue-700 dark:text-blue-300"
-                              : "text-gray-800 dark:text-gray-200"
-                          }`}
-                        >
-                          {formatTime(hour.hour)}
-                        </div>
+                  {hourlyWeather.map((hour, index) => (
+                    <div
+                      key={`${hour.time}-${index}`}
+                      className="flex flex-col items-center w-20 min-h-[120px] p-2.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all duration-200 flex-shrink-0 hover:shadow-md"
+                    >
+                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
+                        {formatTime(hour.hour)}
+                      </div>
                       <img
                         src={getWeatherIconUrl(hour.icon)}
                         alt={hour.description}
                         className="w-9 h-9 mb-1.5 flex-shrink-0"
                       />
-                      <div className="text-base font-bold text-gray-900 dark:text-white mb-0.5 whitespace-nowrap">
+                      <div className="text-base font-bold text-gray-900 dark:text-white mb-1 whitespace-nowrap">
                         {hour.temperature}°
                       </div>
-                      <div className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight line-clamp-2 max-h-[2rem] overflow-hidden w-full px-0.5">
+                      <div className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight min-h-[2rem] w-full px-0.5 flex items-center justify-center">
                         {hour.description}
                       </div>
-                      </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
