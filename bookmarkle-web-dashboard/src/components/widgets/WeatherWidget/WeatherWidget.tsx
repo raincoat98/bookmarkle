@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { Cloud, RefreshCw, Settings, Clock, MoreVertical } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useWeather } from "./useWeather";
-import { WeeklyWeatherModal, HourlyWeatherModal } from "./WeatherModals";
+import { WeatherDetailModal } from "./WeatherDetailModal";
 import { LocationSearchModal } from "./LocationSearchModal";
 import {
   getWeatherBackground,
@@ -22,8 +22,7 @@ export const WeatherWidget: React.FC = () => {
     handleSelectLocation,
   } = useWeather();
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isHourlyModalOpen, setIsHourlyModalOpen] = useState(false);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -77,11 +76,11 @@ export const WeatherWidget: React.FC = () => {
     <>
       <div
         className={`relative rounded-xl sm:rounded-2xl shadow-soft cursor-pointer hover:shadow-lg transition-shadow min-h-[120px] sm:min-h-[140px] ${
-          isModalOpen ? "pointer-events-none opacity-50" : ""
+          isDetailModalOpen ? "pointer-events-none opacity-50" : ""
         } ${isMenuOpen ? "overflow-visible" : "overflow-hidden"}`}
         onClick={() => {
-          if (!isModalOpen) {
-            setIsModalOpen(true);
+          if (!isDetailModalOpen) {
+            setIsDetailModalOpen(true);
           }
         }}
       >
@@ -102,10 +101,10 @@ export const WeatherWidget: React.FC = () => {
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                setIsHourlyModalOpen(true);
+                setIsDetailModalOpen(true);
               }}
               className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-              title={t("weather.hourlyWeather")}
+              title={t("weather.weeklyWeather")}
             >
               <Clock className="w-4 h-4 text-white" />
             </button>
@@ -150,13 +149,13 @@ export const WeatherWidget: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsHourlyModalOpen(true);
+                    setIsDetailModalOpen(true);
                     setIsMenuOpen(false);
                   }}
                   className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
                 >
                   <Clock className="w-4 h-4" />
-                  {t("weather.hourlyWeather")}
+                  {t("weather.weeklyWeather")}
                 </button>
                 <button
                   onClick={(e) => {
@@ -298,16 +297,10 @@ export const WeatherWidget: React.FC = () => {
         </div>
       </div>
 
-      <WeeklyWeatherModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+      <WeatherDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
         weeklyWeather={weeklyWeather}
-        city={weather.city}
-      />
-
-      <HourlyWeatherModal
-        isOpen={isHourlyModalOpen}
-        onClose={() => setIsHourlyModalOpen(false)}
         hourlyWeather={hourlyWeather}
         city={weather.city}
       />
