@@ -149,17 +149,6 @@ export const WeatherWidget: React.FC = () => {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setIsDetailModalOpen(true);
-                    setIsMenuOpen(false);
-                  }}
-                  className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
-                >
-                  <Clock className="w-4 h-4" />
-                  {t("weather.weeklyWeather")}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
                     setIsLocationModalOpen(true);
                     setIsMenuOpen(false);
                   }}

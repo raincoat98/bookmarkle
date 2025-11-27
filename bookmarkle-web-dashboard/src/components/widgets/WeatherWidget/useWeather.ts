@@ -128,15 +128,24 @@ export const useWeather = () => {
         list: OpenWeatherForecastItem[];
       };
 
-      // 오늘 날짜
-      const today = new Date();
-      const todayDateStr = today.toISOString().split("T")[0];
+      // 오늘 날짜와 내일 0시까지의 데이터 필터링
+      const now = new Date();
+      const nowTime = now.getTime();
+      const todayDateStr = now.toISOString().split("T")[0];
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      const tomorrowMidnight = tomorrow.getTime();
 
-      // 오늘 날짜의 시간별 데이터만 필터링
+      // 현재 시간 이후의 오늘 데이터 + 내일 0시까지 포함
       const todayData = data.list.filter((item) => {
         const itemDate = new Date(item.dt * 1000);
+        const itemTime = itemDate.getTime();
         const itemDateStr = itemDate.toISOString().split("T")[0];
-        return itemDateStr === todayDateStr;
+        
+        // 현재 시간 이후의 오늘 데이터이거나 내일 0시까지의 데이터
+        return (itemDateStr === todayDateStr && itemTime >= nowTime) || 
+               (itemTime <= tomorrowMidnight && itemDateStr === tomorrow.toISOString().split("T")[0]);
       });
 
       // 시간별 날씨 데이터 변환

@@ -190,4 +190,3 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
     </div>
   );
 };
-
