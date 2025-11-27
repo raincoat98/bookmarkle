@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Cloud, RefreshCw, Settings, Clock } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Cloud, RefreshCw, Settings, Clock, MoreVertical } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useWeather } from "./useWeather";
 import { WeeklyWeatherModal, HourlyWeatherModal } from "./WeatherModals";
@@ -25,6 +25,25 @@ export const WeatherWidget: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHourlyModalOpen, setIsHourlyModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
 
   if (loading) {
     return (
@@ -77,37 +96,93 @@ export const WeatherWidget: React.FC = () => {
         <div className="absolute inset-0 bg-white/20 dark:bg-black/20 backdrop-blur-sm" />
 
         {/* 위치 새로고침 및 변경 버튼 */}
-        <div className="absolute bottom-2 right-2 z-20 flex gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsHourlyModalOpen(true);
-            }}
-            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-            title={t("weather.hourlyWeather")}
-          >
-            <Clock className="w-4 h-4 text-white" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsLocationModalOpen(true);
-            }}
-            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-            title={t("weather.changeLocation")}
-          >
-            <Settings className="w-4 h-4 text-white" />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              fetchWeather();
-            }}
-            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-            title={t("weather.refreshLocation")}
-          >
-            <RefreshCw className="w-4 h-4 text-white" />
-          </button>
+        <div className="absolute bottom-2 right-2 z-20">
+          {/* 데스크톱: 3개 버튼 모두 표시 */}
+          <div className="hidden sm:flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsHourlyModalOpen(true);
+              }}
+              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+              title={t("weather.hourlyWeather")}
+            >
+              <Clock className="w-4 h-4 text-white" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsLocationModalOpen(true);
+              }}
+              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+              title={t("weather.changeLocation")}
+            >
+              <Settings className="w-4 h-4 text-white" />
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                fetchWeather();
+              }}
+              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+              title={t("weather.refreshLocation")}
+            >
+              <RefreshCw className="w-4 h-4 text-white" />
+            </button>
+          </div>
+
+          {/* 모바일: 메뉴 버튼 하나만 표시 */}
+          <div className="sm:hidden relative" ref={menuRef}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsMenuOpen(!isMenuOpen);
+              }}
+              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200"
+              title="메뉴"
+            >
+              <MoreVertical className="w-4 h-4 text-white" />
+            </button>
+
+            {/* 드롭다운 메뉴 */}
+            {isMenuOpen && (
+              <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsHourlyModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                >
+                  <Clock className="w-4 h-4" />
+                  {t("weather.hourlyWeather")}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsLocationModalOpen(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                >
+                  <Settings className="w-4 h-4" />
+                  {t("weather.changeLocation")}
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fetchWeather();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  {t("weather.refreshLocation")}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* 컨텐츠 */}

@@ -7,4 +7,3 @@ export type {
   OpenWeatherGeocodeResult,
   OpenWeatherForecastItem,
 } from "./weatherTypes";
-

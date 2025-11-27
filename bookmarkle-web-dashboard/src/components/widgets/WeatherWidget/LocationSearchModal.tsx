@@ -496,4 +496,3 @@ export const LocationSearchModal: React.FC<LocationSearchModalProps> = ({
     </>
   );
 };
-

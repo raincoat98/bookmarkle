@@ -2,10 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { MapPin, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type {
-  HourlyWeatherData,
-  WeeklyWeatherData,
-} from "./weatherTypes";
+import type { HourlyWeatherData, WeeklyWeatherData } from "./weatherTypes";
 import { getWeatherIcon } from "./weatherUtils";
 
 // 시간별 날씨 팝업 컴포넌트
@@ -240,4 +237,3 @@ export const ConfirmModal: React.FC<{
 };
 
 // LocationSearchModal은 별도 파일로 분리됨
-

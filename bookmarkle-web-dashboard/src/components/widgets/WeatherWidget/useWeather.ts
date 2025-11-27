@@ -1,6 +1,9 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAuthStore } from "../../../stores/authStore";
-import { getUserWeatherLocation, setUserWeatherLocation } from "../../../firebase";
+import {
+  getUserWeatherLocation,
+  setUserWeatherLocation,
+} from "../../../firebase";
 import type {
   WeatherData,
   WeeklyWeatherData,
@@ -351,4 +354,3 @@ export const useWeather = () => {
     handleSelectLocation,
   };
 };
-
