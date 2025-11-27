@@ -376,6 +376,8 @@
     "humidity": "Humidity",
     "windSpeed": "Wind speed",
     "weeklyWeather": "Weekly Weather",
+    "hourlyWeather": "Today's Hourly Weather",
+    "noHourlyData": "No hourly weather data available",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "currentLocation": "Current location",

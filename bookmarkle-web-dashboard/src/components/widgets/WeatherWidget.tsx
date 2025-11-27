@@ -11,6 +11,7 @@ import {
   RefreshCw,
   Search,
   Settings,
+  Clock,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../stores/authStore";
@@ -32,6 +33,14 @@ interface WeeklyWeatherData {
     min: number;
     max: number;
   };
+  description: string;
+  icon: string;
+}
+
+interface HourlyWeatherData {
+  time: string;
+  hour: number;
+  temperature: number;
   description: string;
   icon: string;
 }
@@ -92,6 +101,104 @@ const getWeatherIcon = (iconCode: string) => {
   };
 
   return iconMap[iconCode] || <Cloud className="w-6 h-6 text-gray-500" />;
+};
+
+// 시간별 날씨 팝업 컴포넌트
+const HourlyWeatherModal: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  hourlyWeather: HourlyWeatherData[];
+  city: string;
+}> = ({ isOpen, onClose, hourlyWeather, city }) => {
+  const { t, i18n } = useTranslation();
+
+  const formatTime = (hour: number) => {
+    const localeMap: { [key: string]: string } = {
+      ko: "ko-KR",
+      en: "en-US",
+      ja: "ja-JP",
+    };
+    const locale = localeMap[i18n.language] || "en-US";
+    
+    if (i18n.language === "ko") {
+      return `${hour}시`;
+    } else {
+      const date = new Date();
+      date.setHours(hour, 0, 0, 0);
+      return date.toLocaleTimeString(locale, {
+        hour: "numeric",
+        hour12: false,
+      });
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {t("weather.hourlyWeather")}
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        <div className="p-6">
+          <div className="flex items-center space-x-2 mb-4">
+            <MapPin className="w-4 h-4 text-gray-500" />
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {city}
+            </span>
+          </div>
+
+          <div className="space-y-3">
+            {hourlyWeather.length > 0 ? (
+              hourlyWeather.map((hour, index) => (
+                <div
+                  key={`${hour.time}-${index}`}
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
+                >
+                  <div className="flex items-center space-x-3">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[60px]">
+                      {formatTime(hour.hour)}시
+                    </div>
+                    {getWeatherIcon(hour.icon)}
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {hour.description}
+                    </div>
+                  </div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">
+                    {hour.temperature}°C
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("weather.noHourlyData")}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
 };
 
 // 이번주 날씨 팝업 컴포넌트
@@ -716,9 +823,11 @@ export const WeatherWidget: React.FC = () => {
   const { user } = useAuthStore();
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [weeklyWeather, setWeeklyWeather] = useState<WeeklyWeatherData[]>([]);
+  const [hourlyWeather, setHourlyWeather] = useState<HourlyWeatherData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHourlyModalOpen, setIsHourlyModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
 
   // 사용자 위치 가져오기
@@ -763,6 +872,60 @@ export const WeatherWidget: React.FC = () => {
       );
     });
   }, [user]);
+
+  // 오늘 시간별 날씨 데이터 가져오기
+  const fetchHourlyWeather = useCallback(async (lat: number, lon: number) => {
+    try {
+      const API_KEY = import.meta.env.VITE_OPENWEATHER_API_KEY;
+      if (!API_KEY) {
+        setHourlyWeather([]);
+        return;
+      }
+
+      const response = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=kr`
+      );
+
+      if (!response.ok) {
+        throw new Error("시간별 날씨 API 호출 실패");
+      }
+
+      const data = (await response.json()) as {
+        list: OpenWeatherForecastItem[];
+      };
+
+      // 오늘 날짜
+      const today = new Date();
+      const todayDateStr = today.toISOString().split("T")[0];
+
+      // 오늘 날짜의 시간별 데이터만 필터링
+      const todayData = data.list.filter((item) => {
+        const itemDate = new Date(item.dt * 1000);
+        const itemDateStr = itemDate.toISOString().split("T")[0];
+        return itemDateStr === todayDateStr;
+      });
+
+      // 시간별 날씨 데이터 변환
+      const hourlyData: HourlyWeatherData[] = todayData.map((item) => {
+        const date = new Date(item.dt * 1000);
+        return {
+          time: date.toISOString(),
+          hour: date.getHours(),
+          temperature: Math.round(item.main.temp),
+          description: item.weather[0].description,
+          icon: item.weather[0].icon,
+        };
+      });
+
+      // 시간 순으로 정렬
+      hourlyData.sort((a, b) => a.hour - b.hour);
+
+      setHourlyWeather(hourlyData);
+    } catch (error) {
+      console.log("시간별 날씨 정보 가져오기 실패:", error);
+      setHourlyWeather([]);
+    }
+  }, []);
 
   // 이번주 날씨 데이터 가져오기
   const fetchWeeklyWeather = useCallback(async (lat: number, lon: number) => {
@@ -935,8 +1098,11 @@ export const WeatherWidget: React.FC = () => {
           feelsLike: Math.round(data.main.feels_like),
         });
 
-        // 주간 날씨 데이터도 함께 가져오기
-        await fetchWeeklyWeather(lat, lon);
+        // 주간 날씨 데이터와 시간별 날씨 데이터도 함께 가져오기
+        await Promise.all([
+          fetchWeeklyWeather(lat, lon),
+          fetchHourlyWeather(lat, lon),
+        ]);
       } catch (error) {
         console.log("날씨 정보 가져오기 실패:", error);
         setError("날씨 정보를 가져올 수 없습니다");
@@ -989,7 +1155,7 @@ export const WeatherWidget: React.FC = () => {
         setLoading(false);
       }
     },
-    [fetchWeeklyWeather]
+    [fetchWeeklyWeather, fetchHourlyWeather]
   );
 
   // 날씨 데이터 가져오기
@@ -1165,6 +1331,16 @@ export const WeatherWidget: React.FC = () => {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              setIsHourlyModalOpen(true);
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            title={t("weather.hourlyWeather")}
+          >
+            <Clock className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
               setIsLocationModalOpen(true);
             }}
             className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
@@ -1301,6 +1477,13 @@ export const WeatherWidget: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         weeklyWeather={weeklyWeather}
+        city={weather.city}
+      />
+
+      <HourlyWeatherModal
+        isOpen={isHourlyModalOpen}
+        onClose={() => setIsHourlyModalOpen(false)}
+        hourlyWeather={hourlyWeather}
         city={weather.city}
       />
 

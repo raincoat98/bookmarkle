@@ -377,6 +377,8 @@
     "humidity": "습도",
     "windSpeed": "풍속",
     "weeklyWeather": "이번주 날씨",
+    "hourlyWeather": "오늘 시간별 날씨",
+    "noHourlyData": "시간별 날씨 데이터가 없습니다",
     "today": "오늘",
     "tomorrow": "내일",
     "currentLocation": "현재 위치",
