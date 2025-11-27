@@ -76,9 +76,9 @@ export const WeatherWidget: React.FC = () => {
   return (
     <>
       <div
-        className={`relative overflow-hidden rounded-xl sm:rounded-2xl shadow-soft cursor-pointer hover:shadow-lg transition-shadow min-h-[120px] sm:min-h-[140px] ${
+        className={`relative rounded-xl sm:rounded-2xl shadow-soft cursor-pointer hover:shadow-lg transition-shadow min-h-[120px] sm:min-h-[140px] ${
           isModalOpen ? "pointer-events-none opacity-50" : ""
-        }`}
+        } ${isMenuOpen ? "overflow-visible" : "overflow-hidden"}`}
         onClick={() => {
           if (!isModalOpen) {
             setIsModalOpen(true);
@@ -146,7 +146,7 @@ export const WeatherWidget: React.FC = () => {
 
             {/* 드롭다운 메뉴 */}
             {isMenuOpen && (
-              <div className="absolute bottom-full right-0 mb-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+              <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
