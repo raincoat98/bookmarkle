@@ -102,7 +102,7 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
               {t("weather.hourlyWeather")}
             </h3>
             {hourlyWeather.length > 0 ? (
-              <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
                 <div className="flex gap-2.5 min-w-max">
                   {hourlyWeather.map((hour, index) => (
                     <div
@@ -142,7 +142,7 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
               {t("weather.weeklyWeather")}
             </h3>
             {weeklyWeather.length > 0 ? (
-              <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+              <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
                 <div className="flex gap-2.5 min-w-max">
                   {weeklyWeather.map((day, index) => (
                     <div
@@ -152,9 +152,7 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
                       <div className="text-sm font-semibold text-gray-900 dark:text-white mb-2 whitespace-nowrap">
                         {getDayName(day.date)}
                       </div>
-                      <div className="mb-2">
-                        {getWeatherIcon(day.icon)}
-                      </div>
+                      <div className="mb-2">{getWeatherIcon(day.icon)}</div>
                       <div className="text-xs text-gray-600 dark:text-gray-400 mb-2 text-center line-clamp-2 max-h-[2rem] overflow-hidden w-full px-1">
                         {day.description}
                       </div>
