@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { MapPin, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
+import { useDrawerStore } from "../../../stores";
 import type { HourlyWeatherData, WeeklyWeatherData } from "./weatherTypes";
 import { getWeatherIcon, getWeatherIconUrl } from "./weatherUtils";
 
@@ -21,6 +23,32 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
   city,
 }) => {
   const { t, i18n } = useTranslation();
+  const { isDrawerCollapsed } = useDrawerStore(
+    useShallow((state) => ({
+      isDrawerCollapsed: state.isDrawerCollapsed,
+    }))
+  );
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // 사이드바 너비 계산
+  const sidebarWidth = isDesktop
+    ? isDrawerCollapsed
+      ? 64
+      : 288
+    : 0;
 
   const formatTime = (hour: number) => {
     const localeMap: { [key: string]: string } = {
@@ -67,7 +95,14 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      style={{
+        left: `${sidebarWidth}px`,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        transition: "left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}
       onClick={onClose}
     >
       <motion.div

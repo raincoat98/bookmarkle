@@ -98,25 +98,25 @@ export const WeatherWidget: React.FC = () => {
         <div className="absolute bottom-2 right-2 z-20">
           {/* 데스크톱: 새로고침 및 설정 버튼 */}
           <div className="hidden sm:flex gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
                 fetchWeather();
-              }}
-              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
               title={t("weather.refreshLocation")}
-            >
+          >
               <RefreshCw className="w-4 h-4 text-white" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsLocationModalOpen(true);
-              }}
-              className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
-              title={t("weather.changeLocation")}
-            >
-              <Settings className="w-4 h-4 text-white" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsLocationModalOpen(true);
+            }}
+            className="p-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-lg transition-all duration-200 hover:scale-110"
+            title={t("weather.changeLocation")}
+          >
+            <Settings className="w-4 h-4 text-white" />
             </button>
           </div>
 
@@ -146,18 +146,18 @@ export const WeatherWidget: React.FC = () => {
                 >
                   <Settings className="w-4 h-4" />
                   {t("weather.changeLocation")}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    fetchWeather();
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              fetchWeather();
                     setIsMenuOpen(false);
-                  }}
+            }}
                   className="w-full px-4 py-3 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3 transition-colors"
-                >
+          >
                   <RefreshCw className="w-4 h-4" />
                   {t("weather.refreshLocation")}
-                </button>
+          </button>
               </div>
             )}
           </div>
