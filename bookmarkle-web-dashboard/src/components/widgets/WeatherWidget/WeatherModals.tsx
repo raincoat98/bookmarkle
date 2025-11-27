@@ -1,14 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { MapPin, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
+import type {
   HourlyWeatherData,
   WeeklyWeatherData,
-  LocationSearchResult,
 } from "./weatherTypes";
 import { getWeatherIcon } from "./weatherUtils";
-import { LocationSearchModal } from "./LocationSearchModal";
 
 // 시간별 날씨 팝업 컴포넌트
 export const HourlyWeatherModal: React.FC<{

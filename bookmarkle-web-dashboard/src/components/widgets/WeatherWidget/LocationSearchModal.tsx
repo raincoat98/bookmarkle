@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { MapPin, X, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
+import type {
   LocationSearchResult,
   OpenWeatherGeocodeResult,
 } from "./weatherTypes";

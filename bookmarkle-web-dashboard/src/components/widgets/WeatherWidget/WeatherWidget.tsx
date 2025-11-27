@@ -2,10 +2,7 @@ import React, { useState } from "react";
 import { Cloud, RefreshCw, Settings, Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useWeather } from "./useWeather";
-import {
-  WeeklyWeatherModal,
-  HourlyWeatherModal,
-} from "./WeatherModals";
+import { WeeklyWeatherModal, HourlyWeatherModal } from "./WeatherModals";
 import { LocationSearchModal } from "./LocationSearchModal";
 import {
   getWeatherBackground,
