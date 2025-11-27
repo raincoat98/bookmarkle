@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { MapPin, X, Clock, Calendar } from "lucide-react";
+import { MapPin, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { HourlyWeatherData, WeeklyWeatherData } from "./weatherTypes";
-import { getWeatherIcon } from "./weatherUtils";
-
-type TabType = "weekly" | "hourly";
+import { getWeatherIcon, getWeatherIconUrl } from "./weatherUtils";
 
 interface WeatherDetailModalProps {
   isOpen: boolean;
@@ -23,7 +21,6 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
   city,
 }) => {
   const { t, i18n } = useTranslation();
-  const [activeTab, setActiveTab] = useState<TabType>("weekly");
 
   const formatTime = (hour: number) => {
     const localeMap: { [key: string]: string } = {
@@ -77,7 +74,7 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col"
+        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 헤더 */}
@@ -96,44 +93,62 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
           </button>
         </div>
 
-        {/* 탭 버튼 */}
-        <div className="flex border-b border-gray-200 dark:border-gray-700">
-          <button
-            onClick={() => setActiveTab("weekly")}
-            className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === "weekly"
-                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-            }`}
-          >
-            <Calendar className="w-4 h-4" />
-            {t("weather.weeklyWeather")}
-          </button>
-          <button
-            onClick={() => setActiveTab("hourly")}
-            className={`flex-1 px-6 py-4 text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
-              activeTab === "hourly"
-                ? "text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/20"
-                : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50"
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            {t("weather.hourlyWeather")}
-          </button>
-        </div>
-
         {/* 컨텐츠 */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {activeTab === "weekly" ? (
-            <div className="space-y-3">
-              {weeklyWeather.length > 0 ? (
-                weeklyWeather.map((day, index) => (
+        <div className="flex-1 overflow-y-auto">
+          {/* 오늘 시간별 날씨 - 가로 스크롤 */}
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {t("weather.hourlyWeather")}
+            </h3>
+            {hourlyWeather.length > 0 ? (
+              <div className="overflow-x-auto pb-2">
+                <div className="flex gap-4 min-w-max">
+                  {hourlyWeather.map((hour, index) => (
+                    <div
+                      key={`${hour.time}-${index}`}
+                      className="flex flex-col items-center min-w-[80px] p-3 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                    >
+                      <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+                        {formatTime(hour.hour)}
+                      </div>
+                      <img
+                        src={getWeatherIconUrl(hour.icon)}
+                        alt={hour.description}
+                        className="w-10 h-10 mb-2"
+                      />
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                        {hour.temperature}°
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1 text-center">
+                        {hour.description}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("weather.noHourlyData")}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* 이번주 날씨 */}
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {t("weather.weeklyWeather")}
+            </h3>
+            {weeklyWeather.length > 0 ? (
+              <div className="space-y-3">
+                {weeklyWeather.map((day, index) => (
                   <div
                     key={`${day.date}-${index}`}
                     className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   >
                     <div className="flex items-center space-x-3">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[50px]">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[60px]">
                         {getDayName(day.date)}
                       </div>
                       {getWeatherIcon(day.icon)}
@@ -145,46 +160,16 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
                       {day.temperature.min}° / {day.temperature.max}°
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("weather.noWeatherData")}
-                  </p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {hourlyWeather.length > 0 ? (
-                hourlyWeather.map((hour, index) => (
-                  <div
-                    key={`${hour.time}-${index}`}
-                    className="flex items-center justify-between p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[70px]">
-                        {formatTime(hour.hour)}
-                      </div>
-                      {getWeatherIcon(hour.icon)}
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        {hour.description}
-                      </div>
-                    </div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {hour.temperature}°C
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {t("weather.noHourlyData")}
-                  </p>
-                </div>
-              )}
-            </div>
-          )}
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {t("weather.noWeatherData")}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
     </div>
