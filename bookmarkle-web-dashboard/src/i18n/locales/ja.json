@@ -376,6 +376,8 @@
     "humidity": "湿度",
     "windSpeed": "風速",
     "weeklyWeather": "今週の天気",
+    "hourlyWeather": "今日の時間別天気",
+    "noHourlyData": "時間別天気データがありません",
     "today": "今日",
     "tomorrow": "明日",
     "currentLocation": "現在地",
