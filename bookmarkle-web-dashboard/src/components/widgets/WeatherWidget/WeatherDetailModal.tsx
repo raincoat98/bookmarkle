@@ -44,11 +44,7 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
   }, []);
 
   // 사이드바 너비 계산
-  const sidebarWidth = isDesktop
-    ? isDrawerCollapsed
-      ? 64
-      : 288
-    : 0;
+  const sidebarWidth = isDesktop ? (isDrawerCollapsed ? 64 : 288) : 0;
 
   const formatTime = (hour: number) => {
     const localeMap: { [key: string]: string } = {
@@ -90,6 +86,21 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
       return date.toLocaleDateString(locale, { weekday: "short" });
     }
   };
+
+  const highlightIndex = React.useMemo(() => {
+    if (!hourlyWeather.length) return 0;
+    const currentHour = new Date().getHours();
+    const upcomingIdx = hourlyWeather.findIndex(
+      (item) => item.hour >= currentHour
+    );
+    if (upcomingIdx !== -1) {
+      return upcomingIdx;
+    }
+    // 다음날 데이터가 이어지는 경우 가장 이른 시간(자정 이후)을 선택
+    const minHour = Math.min(...hourlyWeather.map((item) => item.hour));
+    const minHourIdx = hourlyWeather.findIndex((item) => item.hour === minHour);
+    return minHourIdx === -1 ? 0 : minHourIdx;
+  }, [hourlyWeather]);
 
   if (!isOpen) return null;
 
@@ -139,27 +150,34 @@ export const WeatherDetailModal: React.FC<WeatherDetailModalProps> = ({
             {hourlyWeather.length > 0 ? (
               <div className="overflow-x-auto pb-3 -mx-2 px-2 scrollbar-hide">
                 <div className="flex gap-2.5 min-w-max">
-                  {hourlyWeather.map((hour, index) => (
-                    <div
-                      key={`${hour.time}-${index}`}
-                      className="flex flex-col items-center w-20 min-h-[120px] p-2.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-600 transition-all duration-200 flex-shrink-0 hover:shadow-md"
-                    >
-                      <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
-                        {formatTime(hour.hour)}
+                  {hourlyWeather.map((hour, index) => {
+                    const isActive = index === highlightIndex;
+                    return (
+                      <div
+                        key={`${hour.time}-${index}`}
+                        className={`flex flex-col items-center w-20 min-h-[120px] p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 hover:shadow-md ${
+                          isActive
+                            ? "border-2 border-blue-400 dark:border-blue-500 bg-blue-500/5 dark:bg-blue-500/10"
+                            : "border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        <div className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5 whitespace-nowrap">
+                          {formatTime(hour.hour)}
+                        </div>
+                        <img
+                          src={getWeatherIconUrl(hour.icon)}
+                          alt={hour.description}
+                          className="w-9 h-9 mb-1.5 flex-shrink-0"
+                        />
+                        <div className="text-base font-bold text-gray-900 dark:text-white mb-1 whitespace-nowrap">
+                          {hour.temperature}°
+                        </div>
+                        <div className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight min-h-[2rem] w-full px-0.5 flex items-center justify-center">
+                          {hour.description}
+                        </div>
                       </div>
-                      <img
-                        src={getWeatherIconUrl(hour.icon)}
-                        alt={hour.description}
-                        className="w-9 h-9 mb-1.5 flex-shrink-0"
-                      />
-                      <div className="text-base font-bold text-gray-900 dark:text-white mb-1 whitespace-nowrap">
-                        {hour.temperature}°
-                      </div>
-                      <div className="text-[10px] text-gray-500 dark:text-gray-400 text-center leading-tight min-h-[2rem] w-full px-0.5 flex items-center justify-center">
-                        {hour.description}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             ) : (
