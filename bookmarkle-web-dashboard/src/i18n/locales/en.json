@@ -168,7 +168,6 @@
     "bookmarkMovedDown": "\"{{title}}\" moved down! 🔽",
     "noSearchResults": "No search results. Try a different search term.",
     "faviconRefreshed": "Favicon has been refreshed.",
-    "faviconRefreshError": "An error occurred while refreshing the favicon.",
     "favoriteToggleError": "An error occurred while changing favorite status.",
     "reorderError": "An error occurred while reordering bookmarks."
   },
@@ -582,10 +581,5 @@
         "goToPricing": "Go to Pricing"
       }
     }
-  },
-  "admin": {
-    "title": "Admin Dashboard",
-    "description": "Manage all users and view statistics.",
-    "users": "User Management"
   }
 }
