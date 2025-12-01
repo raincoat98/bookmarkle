@@ -90,8 +90,11 @@ export const Settings: React.FC<SettingsProps> = ({
     handleCancelDelete,
     handleDefaultPageChange,
     handleExportData,
+    handleExportChromeBookmarks,
     handleImportData,
+    handleImportChromeBookmarks,
     handleFileUpload,
+    handleChromeBookmarkFileUpload,
     handleConfirmImport,
     handleCancelImport,
     handleDeleteAccount,
@@ -101,6 +104,7 @@ export const Settings: React.FC<SettingsProps> = ({
     // 기타
     syncBackups,
     i18n,
+    chromeBookmarkFileInputRef,
   } = useSettings({
     user,
     rawBookmarks,
@@ -201,7 +205,9 @@ export const Settings: React.FC<SettingsProps> = ({
             defaultPage={defaultPage}
             onDefaultPageChange={handleDefaultPageChange}
             onExportData={handleExportData}
+            onExportChromeBookmarks={handleExportChromeBookmarks}
             onImportData={handleImportData}
+            onImportChromeBookmarks={handleImportChromeBookmarks}
           />
         );
       case "subscription":
@@ -260,7 +266,9 @@ export const Settings: React.FC<SettingsProps> = ({
             defaultPage={defaultPage}
             onDefaultPageChange={handleDefaultPageChange}
             onExportData={handleExportData}
+            onExportChromeBookmarks={handleExportChromeBookmarks}
             onImportData={handleImportData}
+            onImportChromeBookmarks={handleImportChromeBookmarks}
           />
         );
     }
@@ -343,12 +351,21 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </div>
 
-      {/* 숨겨진 파일 입력 */}
+      {/* 숨겨진 파일 입력 (JSON 형식) */}
       <input
         ref={fileInputRef}
         type="file"
         accept=".json"
         onChange={handleFileUpload}
+        style={{ display: "none" }}
+      />
+
+      {/* 숨겨진 파일 입력 (Chrome 북마크 HTML 형식) */}
+      <input
+        ref={chromeBookmarkFileInputRef}
+        type="file"
+        accept=".html"
+        onChange={handleChromeBookmarkFileUpload}
         style={{ display: "none" }}
       />
 
