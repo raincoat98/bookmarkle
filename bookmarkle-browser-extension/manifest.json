@@ -6,25 +6,26 @@
   "homepage_url": "https://chromewebstore.google.com/detail/%EB%B6%81%EB%A7%88%ED%81%B4/lkkbdejelaagaipenlheijafnjggkdcm?hl=ko",
   "default_locale": "ko",
   "icons": {
-    "16": "public/bookmark.png",
-    "32": "public/bookmark.png",
-    "48": "public/bookmark.png",
-    "128": "public/bookmark.png"
+    "16": "icons/bookmark.png",
+    "32": "icons/bookmark.png",
+    "48": "icons/bookmark.png",
+    "128": "icons/bookmark.png"
   },
   "action": {
+    "default_popup": "popup/popup.html",
     "default_icon": {
-      "16": "public/bookmark.png",
-      "32": "public/bookmark.png",
-      "48": "public/bookmark.png",
-      "128": "public/bookmark.png"
+      "16": "icons/bookmark.png",
+      "32": "icons/bookmark.png",
+      "48": "icons/bookmark.png",
+      "128": "icons/bookmark.png"
     }
   },
-  "options_page": "options.html",
+  "options_page": "options/options.html",
   "chrome_url_overrides": {
-    "newtab": "newtab.html"
+    "newtab": "newtab/newtab.html"
   },
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "background/background.js",
     "type": "module"
   },
   "permissions": [

@@ -1,8 +1,8 @@
 // Chrome Extension MV3에서는 Firebase SDK를 직접 import할 수 없음
 // 모든 Firebase 로직은 offscreen document에서 처리
 
-// Offscreen 문서 경로 상수
-const OFFSCREEN_PATH = "offscreen.html";
+// Offscreen 문서 경로 상수 (확장 프로그램 루트 기준)
+const OFFSCREEN_PATH = "background/offscreen.html";
 
 // 동시 생성 방지
 let creatingOffscreen;
