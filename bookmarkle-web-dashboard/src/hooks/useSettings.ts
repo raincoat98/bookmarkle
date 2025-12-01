@@ -22,6 +22,11 @@ import {
   deleteBackup,
   type BackupSettings,
 } from "../utils/backup";
+import {
+  downloadChromeBookmarks,
+  parseChromeBookmarks,
+  convertChromeBookmarksToAppFormat,
+} from "../utils/chromeBookmarks";
 import type { Bookmark, Collection } from "../types";
 
 export interface ImportPreviewData {
@@ -79,6 +84,7 @@ export const useSettings = ({
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chromeBookmarkFileInputRef = useRef<HTMLInputElement>(null);
 
   // 상태 관리
   const [activeTab, setActiveTab] = useState("general");
@@ -498,7 +504,7 @@ export const useSettings = ({
     }
   };
 
-  // 데이터 내보내기 핸들러
+  // 데이터 내보내기 핸들러 (JSON 형식)
   const handleExportData = () => {
     try {
       const exportData = {
@@ -529,10 +535,33 @@ export const useSettings = ({
     }
   };
 
-  // 데이터 가져오기 핸들러
+  // Chrome 북마크 형식으로 내보내기 핸들러
+  const handleExportChromeBookmarks = () => {
+    try {
+      if (!rawBookmarks || rawBookmarks.length === 0) {
+        toast.error("내보낼 북마크가 없습니다.");
+        return;
+      }
+
+      downloadChromeBookmarks(rawBookmarks, collections);
+      toast.success("Chrome 북마크 형식으로 내보내졌습니다.");
+    } catch (error) {
+      console.error("Chrome bookmark export error:", error);
+      toast.error("Chrome 북마크 내보내기 중 오류가 발생했습니다.");
+    }
+  };
+
+  // 데이터 가져오기 핸들러 (JSON 형식)
   const handleImportData = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
+    }
+  };
+
+  // Chrome 북마크 형식 가져오기 핸들러
+  const handleImportChromeBookmarks = () => {
+    if (chromeBookmarkFileInputRef.current) {
+      chromeBookmarkFileInputRef.current.click();
     }
   };
 
@@ -556,6 +585,52 @@ export const useSettings = ({
     } catch (error) {
       console.error("Import error:", error);
       toast.error("파일 읽기 중 오류가 발생했습니다.");
+    }
+
+    if (event.target) {
+      event.target.value = "";
+    }
+  };
+
+  // Chrome 북마크 파일 업로드 핸들러
+  const handleChromeBookmarkFileUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+
+      // Chrome 북마크 HTML 파싱
+      const parsed = parseChromeBookmarks(text);
+
+      if (parsed.bookmarks.length === 0) {
+        toast.error("북마크를 찾을 수 없습니다.");
+        return;
+      }
+
+      if (!user?.uid) {
+        toast.error("로그인이 필요합니다.");
+        return;
+      }
+
+      // 앱 형식으로 변환
+      const converted = convertChromeBookmarksToAppFormat(parsed, user.uid);
+
+      // ImportPreviewData 형식으로 변환
+      const importData: ImportPreviewData = {
+        version: "1.0",
+        exportedAt: new Date().toISOString(),
+        bookmarks: converted.bookmarks as Array<Record<string, unknown>>,
+        collections: converted.collections as Array<Record<string, unknown>>,
+      };
+
+      setImportData(importData);
+      setShowImportModal(true);
+    } catch (error) {
+      console.error("Chrome bookmark import error:", error);
+      toast.error("Chrome 북마크 파일 읽기 중 오류가 발생했습니다.");
     }
 
     if (event.target) {
@@ -617,6 +692,7 @@ export const useSettings = ({
     showDeleteAccountModal,
     setShowDeleteAccountModal,
     fileInputRef,
+    chromeBookmarkFileInputRef,
 
     // 핸들러
     handleThemeChange,
@@ -634,8 +710,11 @@ export const useSettings = ({
     handleCancelDelete,
     handleDefaultPageChange,
     handleExportData,
+    handleExportChromeBookmarks,
     handleImportData,
+    handleImportChromeBookmarks,
     handleFileUpload,
+    handleChromeBookmarkFileUpload,
     handleConfirmImport,
     handleCancelImport,
     handleDeleteAccount,
