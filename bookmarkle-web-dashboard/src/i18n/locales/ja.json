@@ -168,7 +168,6 @@
     "bookmarkMovedDown": "\"{{title}}\" が下に移動しました！🔽",
     "noSearchResults": "検索結果がありません。別の検索語を試してください。",
     "faviconRefreshed": "ファビコンが更新されました。",
-    "faviconRefreshError": "ファビコンの更新中にエラーが発生しました。",
     "favoriteToggleError": "お気に入り状態の変更中にエラーが発生しました。",
     "reorderError": "ブックマークの順序変更中にエラーが発生しました。"
   },
@@ -581,10 +580,5 @@
         "goToPricing": "料金へ"
       }
     }
-  },
-  "admin": {
-    "title": "管理者ダッシュボード",
-    "description": "すべてのユーザーを管理し、統計を確認できます。",
-    "users": "ユーザー管理"
   }
 }
