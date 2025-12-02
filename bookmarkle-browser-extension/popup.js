@@ -432,7 +432,7 @@ const $themeIcon = document.getElementById("themeIcon");
 // 로그인 버튼 클릭 이벤트
 $btn.addEventListener("click", async () => {
   // signin-popup 페이지로 리다이렉트하여 로그인 처리
-  const loginUrl = `https://bookmarkhub-5ea6c-sign.web.app?source=extension&extensionId=${chrome.runtime.id}`;
+  const loginUrl = `https://bookmarkhub-5ea6c-sign-a4489.web.app?source=extension&extensionId=${chrome.runtime.id}`;
   chrome.tabs.create({ url: loginUrl });
 
   // 팝업 창 닫기 (시작 페이지에서는 유지)
