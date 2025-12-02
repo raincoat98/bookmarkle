@@ -1,0 +1,4 @@
+export const config = {
+  PUBLIC_SIGN_URL: "_PUBLIC_SIGN_URL_",
+  PUBLIC_START_PAGE_URL: "_PUBLIC_START_PAGE_URL_",
+};

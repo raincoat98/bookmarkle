@@ -1,12 +1,12 @@
 // 외부 공개 페이지(iframe)에 로그인 시퀀스를 시작하고, 결과를 다시 background로 전달.
-const PUBLIC_POPUP_URL = "https://bookmarkhub-5ea6c-sign-a4489.web.app"; // Firebase Hosting
+const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 
 // 현재 사용자 상태 저장
 let currentUser = null;
 let currentIdToken = null;
 
 const iframe = document.createElement("iframe");
-iframe.src = PUBLIC_POPUP_URL;
+iframe.src = PUBLIC_SIGN_URL;
 iframe.style.display = "none"; // iframe 숨기기
 document.documentElement.appendChild(iframe);
 
@@ -50,7 +50,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "START_POPUP_AUTH") {
     // 외부 페이지에 초기화 신호
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
 
     function handleIframeMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
@@ -106,7 +106,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "LOGOUT_FIREBASE") {
     // signin-popup의 Firebase 세션도 로그아웃
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
     console.log("🔥 Firebase 로그아웃 요청을 signin-popup으로 전송");
     console.log("🔥 Target origin:", origin);
     console.log("🔥 Iframe exists:", !!iframe);
@@ -180,7 +180,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "GET_COLLECTIONS") {
     // 컬렉션 데이터 요청
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
 
     function handleCollectionsMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
@@ -222,7 +222,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "GET_BOOKMARKS") {
     // 북마크 데이터 요청
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
 
     function handleBookmarksMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
@@ -262,7 +262,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "SAVE_BOOKMARK") {
     // 북마크 저장 요청
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
 
     function handleSaveBookmarkMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
@@ -305,7 +305,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "CREATE_COLLECTION") {
     // 컬렉션 생성 요청
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
 
     function handleCreateCollectionMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
@@ -348,7 +348,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "GET_NOTIFICATION_SETTINGS") {
     // 알림 설정 요청
-    const origin = new URL(PUBLIC_POPUP_URL).origin;
+    const origin = new URL(PUBLIC_SIGN_URL).origin;
 
     function handleNotificationSettingsMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터

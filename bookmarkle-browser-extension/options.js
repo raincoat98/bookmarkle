@@ -1,4 +1,6 @@
-const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app";
+// config.js에서 설정 읽기 (빌드 시점에 환경 변수로 주입됨)
+// 빌드 시 _PUBLIC_START_PAGE_URL_ 플레이스홀더가 실제 값으로 치환됨
+const DEFAULT_START_PAGE_URL = "_PUBLIC_START_PAGE_URL_";
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 
 const form = document.getElementById("startPageForm");
@@ -267,5 +269,21 @@ urlInput.addEventListener("input", () => {
   clearStatus();
 });
 
-document.addEventListener("DOMContentLoaded", loadSettings);
-bindClipboardTriggers();
+// 기본 URL 표시 업데이트
+function updateDefaultUrlDisplay() {
+  const defaultUrlDisplay = document.getElementById("defaultUrlDisplay");
+  const defaultUrlCopyButton = document.getElementById("defaultUrlCopyButton");
+
+  if (defaultUrlDisplay && defaultUrlCopyButton) {
+    const url = DEFAULT_START_PAGE_URL;
+    defaultUrlDisplay.textContent = url;
+    defaultUrlDisplay.setAttribute("data-copy-text", url);
+    defaultUrlCopyButton.setAttribute("data-copy-text", url);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadSettings();
+  updateDefaultUrlDisplay();
+  bindClipboardTriggers();
+});

@@ -4,7 +4,9 @@
   "description": "북마클 브라우저 확장 프로그램",
   "main": "background.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "inject-config": "./inject-config.sh ../build/bookmarkle-browser-extension",
+    "build": "./inject-config.sh ../build/bookmarkle-browser-extension"
   },
   "keywords": [],
   "author": "",
