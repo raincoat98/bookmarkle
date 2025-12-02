@@ -1,5 +1,5 @@
 // 외부 공개 페이지(iframe)에 로그인 시퀀스를 시작하고, 결과를 다시 background로 전달.
-const PUBLIC_POPUP_URL = "https://bookmarkhub-5ea6c-sign.web.app"; // Firebase Hosting 권장
+const PUBLIC_POPUP_URL = "https://bookmarkhub-5ea6c-sign-a4489.web.app"; // Firebase Hosting
 
 // 현재 사용자 상태 저장
 let currentUser = null;
@@ -370,7 +370,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse(data);
         }
       } catch (e) {
-        window.removeEventListener("message", handleNotificationSettingsMessage);
+        window.removeEventListener(
+          "message",
+          handleNotificationSettingsMessage
+        );
         sendResponse({
           type: "NOTIFICATION_SETTINGS_ERROR",
           name: "ParseError",
@@ -379,7 +382,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
     }
 
-    window.addEventListener("message", handleNotificationSettingsMessage, false);
+    window.addEventListener(
+      "message",
+      handleNotificationSettingsMessage,
+      false
+    );
     iframe.contentWindow.postMessage(
       {
         getNotificationSettings: true,
