@@ -86,10 +86,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       await setDoc(doc(db, "users", firebaseUser.uid), userData, {
         merge: true,
       });
-      console.log(
-        "사용자 데이터가 Firestore에 저장되었습니다:",
-        firebaseUser.uid
-      );
     } catch (error) {
       console.error("Firestore에 사용자 데이터 저장 실패:", error);
     }

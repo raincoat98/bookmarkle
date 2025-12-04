@@ -18,8 +18,6 @@ export const SubscriptionBanner = ({
   const [isDismissed, setIsDismissed] = useState(false);
   const [isEarlyUser, setIsEarlyUser] = useState(false);
 
-  console.log("[SubscriptionBanner] 컴포넌트 렌더링:", { user: !!user });
-
   useEffect(() => {
     if (user) {
       checkEarlyUser();
@@ -46,7 +44,6 @@ export const SubscriptionBanner = ({
   // 구독 알림 배너 표시 상태 확인
   useEffect(() => {
     const shouldShow = betaUtils.shouldShowBanner();
-    console.log("[SubscriptionBanner] shouldShowBanner:", shouldShow);
     if (!shouldShow) {
       setIsDismissed(true);
     } else {
@@ -68,12 +65,6 @@ export const SubscriptionBanner = ({
 
   // 구독 알림 배너를 표시하지 않는 경우 체크
   const shouldShow = betaUtils.shouldShowBanner();
-  console.log("[SubscriptionBanner] 렌더링 체크:", {
-    isDismissed,
-    user: !!user,
-    shouldShow,
-    최종결과: !(isDismissed || !user || !shouldShow),
-  });
 
   if (isDismissed || !user || !shouldShow) {
     return null;

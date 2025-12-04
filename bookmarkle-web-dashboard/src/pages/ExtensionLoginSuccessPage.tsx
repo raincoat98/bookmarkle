@@ -10,14 +10,12 @@ import {
   createCollection,
   getUserNotificationSettings,
 } from "../utils/firestoreService";
-import { clearFirebaseStorage } from "../firebase";
 import type { Collection } from "../types";
 
 export const ExtensionLoginSuccessPage = () => {
-  const { user, logout, login, loginWithEmail, signup } = useAuthStore();
+  const { user, login, loginWithEmail, signup } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isSignup, setIsSignup] = useState(false);
   const [formData, setFormData] = useState({
@@ -58,20 +56,24 @@ export const ExtensionLoginSuccessPage = () => {
         return;
       }
 
-      console.log("🔥 Message received in ExtensionLoginSuccessPage:", event.data);
+      // console.log(
+      //   "🔥 Message received in ExtensionLoginSuccessPage:",
+      //   event.data
+      // );
 
       try {
         const data =
-          typeof event.data === "string"
-            ? JSON.parse(event.data)
-            : event.data;
+          typeof event.data === "string" ? JSON.parse(event.data) : event.data;
 
-        console.log("📦 Parsed message data:", data);
+        // console.log("📦 Parsed message data:", data);
 
         // getCollections 요청 처리
         if (data?.getCollections) {
           console.log("📬 Received getCollections request from offscreen");
-          console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+          console.log(
+            "📬 User ID check:",
+            userRef.current?.uid ? "✅ Available" : "❌ Missing"
+          );
 
           if (!userRef.current?.uid) {
             console.error("❌ No user ID to fetch collections");
@@ -86,10 +88,17 @@ export const ExtensionLoginSuccessPage = () => {
           }
 
           try {
-            console.log("📬 Fetching collections for user:", userRef.current.uid);
+            console.log(
+              "📬 Fetching collections for user:",
+              userRef.current.uid
+            );
             // 컬렉션 가져오기
             const collections = await fetchCollections(userRef.current.uid);
-            console.log("✅ Collections fetched successfully:", collections.length, "items");
+            console.log(
+              "✅ Collections fetched successfully:",
+              collections.length,
+              "items"
+            );
             console.log("📦 Sending collections to offscreen:", collections);
 
             window.parent.postMessage(
@@ -123,7 +132,10 @@ export const ExtensionLoginSuccessPage = () => {
             "📬 Received getBookmarks request from offscreen, collectionId:",
             data.collectionId
           );
-          console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+          console.log(
+            "📬 User ID check:",
+            userRef.current?.uid ? "✅ Available" : "❌ Missing"
+          );
 
           if (!userRef.current?.uid) {
             console.error("❌ No user ID to fetch bookmarks");
@@ -138,10 +150,22 @@ export const ExtensionLoginSuccessPage = () => {
           }
 
           try {
-            console.log("📬 Fetching bookmarks for user:", userRef.current.uid, "collection:", data.collectionId);
+            console.log(
+              "📬 Fetching bookmarks for user:",
+              userRef.current.uid,
+              "collection:",
+              data.collectionId
+            );
             // 북마크 가져오기
-            const bookmarks = await fetchBookmarks(userRef.current.uid, data.collectionId);
-            console.log("✅ Bookmarks fetched successfully:", bookmarks.length, "items");
+            const bookmarks = await fetchBookmarks(
+              userRef.current.uid,
+              data.collectionId
+            );
+            console.log(
+              "✅ Bookmarks fetched successfully:",
+              bookmarks.length,
+              "items"
+            );
             console.log("📦 Sending bookmarks to offscreen:", bookmarks);
 
             window.parent.postMessage(
@@ -174,7 +198,10 @@ export const ExtensionLoginSuccessPage = () => {
         if (data?.saveBookmark) {
           console.log("📬 Received saveBookmark request from offscreen");
           console.log("📬 Bookmark data:", data.bookmarkData);
-          console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+          console.log(
+            "📬 User ID check:",
+            userRef.current?.uid ? "✅ Available" : "❌ Missing"
+          );
 
           if (!userRef.current?.uid) {
             console.error("❌ No user ID to save bookmark");
@@ -229,7 +256,10 @@ export const ExtensionLoginSuccessPage = () => {
         if (data?.createCollection) {
           console.log("📬 Received createCollection request from offscreen");
           console.log("📬 Collection data:", data.collectionData);
-          console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+          console.log(
+            "📬 User ID check:",
+            userRef.current?.uid ? "✅ Available" : "❌ Missing"
+          );
 
           if (!userRef.current?.uid) {
             console.error("❌ No user ID to create collection");
@@ -244,7 +274,10 @@ export const ExtensionLoginSuccessPage = () => {
           }
 
           try {
-            console.log("📬 Creating collection for user:", userRef.current.uid);
+            console.log(
+              "📬 Creating collection for user:",
+              userRef.current.uid
+            );
             // 컬렉션 생성
             const collectionData = {
               ...data.collectionData,
@@ -252,8 +285,13 @@ export const ExtensionLoginSuccessPage = () => {
             };
 
             const collectionId = await createCollection(collectionData);
-            console.log("✅ Collection created successfully with ID:", collectionId);
-            console.log("📦 Sending collection created confirmation to offscreen");
+            console.log(
+              "✅ Collection created successfully with ID:",
+              collectionId
+            );
+            console.log(
+              "📦 Sending collection created confirmation to offscreen"
+            );
 
             window.parent.postMessage(
               {
@@ -285,7 +323,10 @@ export const ExtensionLoginSuccessPage = () => {
           console.log(
             "📬 Received getNotificationSettings request from offscreen"
           );
-          console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+          console.log(
+            "📬 User ID check:",
+            userRef.current?.uid ? "✅ Available" : "❌ Missing"
+          );
 
           if (!userRef.current?.uid) {
             console.error("❌ No user ID to fetch notification settings");
@@ -300,10 +341,18 @@ export const ExtensionLoginSuccessPage = () => {
           }
 
           try {
-            console.log("📬 Fetching notification settings for user:", userRef.current.uid);
+            console.log(
+              "📬 Fetching notification settings for user:",
+              userRef.current.uid
+            );
             // 알림 설정 가져오기
-            const settings = await getUserNotificationSettings(userRef.current.uid);
-            console.log("✅ Notification settings fetched successfully:", settings);
+            const settings = await getUserNotificationSettings(
+              userRef.current.uid
+            );
+            console.log(
+              "✅ Notification settings fetched successfully:",
+              settings
+            );
             console.log(
               "📦 Sending notification settings to offscreen:",
               settings
@@ -507,19 +556,13 @@ export const ExtensionLoginSuccessPage = () => {
         return;
       }
 
-      console.log("📤 sendToExtensionParent: Getting ID token...");
-
       // ID Token 가져오기
       const idToken = await getIdToken();
 
-      console.log("idToken", idToken);
-
       // 컬렉션 데이터 가져오기
-      console.log("📤 Fetching collections for user:", user.uid);
       let collections: Collection[] = [];
       try {
         collections = await fetchCollections(user.uid);
-        console.log("📤 Collections fetched:", collections);
       } catch (collectionError) {
         console.error("⚠️ Failed to fetch collections:", collectionError);
         // 컬렉션 로드 실패해도 로그인 정보는 전달
@@ -537,8 +580,6 @@ export const ExtensionLoginSuccessPage = () => {
         idToken: idToken,
         collections: collections,
       };
-
-      console.log("📤 Sending login data to Extension:", messageData);
 
       // URL에서 extensionId 파라미터 추출
       const urlParams = new URLSearchParams(location.search);
@@ -640,33 +681,7 @@ export const ExtensionLoginSuccessPage = () => {
   };
 
   const handleCloseWindow = () => {
-    // Extension에서 열린 창이라면 닫기
-    if (window.opener) {
-      window.close();
-    } else {
-      // 일반 브라우저에서 열렸다면 대시보드로 이동
-      navigate("/dashboard");
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      console.log("🔥 Logging out and clearing Firebase storage...");
-
-      // Firebase 로그아웃
-      await logout();
-      console.log("🔥 Firebase logout successful");
-
-      // Firebase 로컬 저장소 완전 정리
-      await clearFirebaseStorage();
-      console.log("🔥 Firebase storage cleared");
-
-      navigate("/extension-login-success" + location.search, { replace: true });
-    } catch (error) {
-      console.error("로그아웃 실패:", error);
-      setIsLoggingOut(false);
-    }
+    window.close();
   };
 
   // 로그인되지 않았으면 로그인/가입 폼 표시
@@ -909,27 +924,6 @@ export const ExtensionLoginSuccessPage = () => {
                 />
               </svg>
               <span>대시보드로 가기</span>
-            </button>
-
-            <button
-              onClick={handleLogout}
-              disabled={isLoggingOut}
-              className="w-full btn-secondary flex items-center justify-center space-x-2"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                />
-              </svg>
-              <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
             </button>
 
             <button
