@@ -2,7 +2,7 @@
 
 # 통합 배포 스크립트
 # 사용법: ./deploy.sh [프로젝트] [메시지]
-# 프로젝트: signin-popup, dashboard, my-extension, all (기본값)
+# 프로젝트: dashboard, my-extension, all (기본값)
 
 set -e  # 에러 발생 시 스크립트 중단
 
@@ -53,63 +53,6 @@ log_info "배포 메시지: $DEPLOY_MESSAGE"
 
 # 루트 디렉토리 저장
 ROOT_DIR=$(pwd)
-
-# SignIn Popup 배포 함수
-deploy_signin_popup() {
-    log_info "📱 SignIn Popup 배포 시작..."
-    
-    if [ ! -d "bookmarkle-signin-popup" ]; then
-        log_error "bookmarkle-signin-popup 디렉토리가 없습니다!"
-        return 1
-    fi
-    
-    cd bookmarkle-signin-popup
-    
-    # Firebase 프로젝트 확인
-    if [ ! -f ".firebaserc" ]; then
-        log_error "Firebase 프로젝트가 초기화되지 않았습니다!"
-        log_info "다음 명령어로 초기화하세요: firebase init hosting"
-        cd "$ROOT_DIR"
-        return 1
-    fi
-    
-    PROJECT_ID=$(cat .firebaserc | grep -o '"default": "[^"]*"' | cut -d'"' -f4)
-    log_info "Firebase 프로젝트: $PROJECT_ID"
-    
-    # 필수 파일 확인
-    REQUIRED_FILES=("index.html" "signInWithPopup.js" "firebase.json")
-    for file in "${REQUIRED_FILES[@]}"; do
-        if [ ! -f "$file" ]; then
-            log_error "필수 파일이 없습니다: $file"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    done
-    
-    # Firebase CLI 설치 확인
-    if ! command -v firebase &> /dev/null; then
-        log_warning "Firebase CLI가 설치되지 않았습니다. 설치 중..."
-        npm install -g firebase-tools
-        log_success "Firebase CLI 설치 완료"
-    fi
-    
-    # 배포 실행
-    log_info "Firebase Hosting에 배포 중..."
-    if firebase deploy --only hosting:signin --message "$DEPLOY_MESSAGE"; then
-        log_success "SignIn Popup 배포 완료!"
-
-        # 배포 URL 출력
-        HOSTING_URL="https://bookmarkhub-5ea6c.web.app/login"
-        echo -e "${GREEN}🌐 배포된 사이트: ${BLUE}$HOSTING_URL${NC}"
-    else
-        log_error "SignIn Popup 배포 실패!"
-        cd "$ROOT_DIR"
-        return 1
-    fi
-    
-    cd "$ROOT_DIR"
-    return 0
-}
 
 # 북마클 웹 대시보드 배포 함수
 deploy_dashboard() {
@@ -224,9 +167,6 @@ deploy_my_extension() {
 
 # 메인 배포 로직
 case $PROJECT in
-    "signin-popup")
-        deploy_signin_popup
-        ;;
     "dashboard")
         deploy_dashboard
         ;;
@@ -235,18 +175,14 @@ case $PROJECT in
         ;;
     "all")
         log_info "모든 프로젝트 배포 시작..."
-        
+
         SUCCESS_COUNT=0
-        TOTAL_COUNT=3
-        
-        if deploy_signin_popup; then
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        fi
-        
+        TOTAL_COUNT=2
+
         if deploy_dashboard; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         fi
-        
+
         if deploy_my_extension; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         fi
@@ -260,7 +196,7 @@ case $PROJECT in
         ;;
     *)
         log_error "알 수 없는 프로젝트: $PROJECT"
-        log_info "사용 가능한 프로젝트: signin-popup, dashboard, my-extension, all"
+        log_info "사용 가능한 프로젝트: dashboard, my-extension, all"
         exit 1
         ;;
 esac

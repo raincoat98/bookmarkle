@@ -2,7 +2,7 @@
 
 # 통합 빌드 스크립트
 # 사용법: ./build.sh [프로젝트]
-# 프로젝트: signin-popup, dashboard, my-extension, all (기본값)
+# 프로젝트: dashboard, my-extension, all (기본값)
 
 set -e  # 에러 발생 시 스크립트 중단
 
@@ -43,54 +43,6 @@ log_info "빌드 대상: $PROJECT"
 
 # 루트 디렉토리 저장
 ROOT_DIR=$(pwd)
-
-# SignIn Popup 빌드 함수 (정적 파일이므로 검증만)
-build_signin_popup() {
-    log_info "📱 SignIn Popup 빌드 확인..."
-    
-    if [ ! -d "bookmarkle-signin-popup" ]; then
-        log_error "bookmarkle-signin-popup 디렉토리가 없습니다!"
-        return 1
-    fi
-    
-    cd bookmarkle-signin-popup
-    
-    # 필수 파일 확인
-    REQUIRED_FILES=("index.html" "signInWithPopup.js")
-    for file in "${REQUIRED_FILES[@]}"; do
-        if [ ! -f "$file" ]; then
-            log_error "필수 파일이 없습니다: $file"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    done
-    
-    # JavaScript 파일 문법 검증 (Node.js가 있는 경우)
-    if command -v node &> /dev/null; then
-        log_info "JavaScript 파일 문법 검증 중..."
-        if node -c signInWithPopup.js; then
-            log_success "JavaScript 파일 문법 검증 완료"
-        else
-            log_error "JavaScript 파일에 문법 오류가 있습니다"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    fi
-    
-    # HTML 파일 기본 검증
-    if grep -q "<!doctype html>" index.html && grep -q "<html>" index.html; then
-        log_success "HTML 파일 기본 구조 확인 완료"
-    else
-        log_warning "HTML 파일 구조를 확인하세요"
-    fi
-    
-    log_success "SignIn Popup 빌드 확인 완료! (정적 파일)"
-    echo -e "${GREEN}📁 빌드된 파일들:${NC}"
-    ls -la *.html *.js 2>/dev/null || true
-    
-    cd "$ROOT_DIR"
-    return 0
-}
 
 # 북마클 웹 대시보드 빌드 함수
 build_dashboard() {
@@ -280,9 +232,6 @@ build_my_extension() {
 
 # 메인 빌드 로직
 case $PROJECT in
-    "signin-popup")
-        build_signin_popup
-        ;;
     "dashboard")
         build_dashboard
         ;;
@@ -291,19 +240,14 @@ case $PROJECT in
         ;;
     "all")
         log_info "모든 프로젝트 빌드 시작..."
-        
+
         SUCCESS_COUNT=0
-        TOTAL_COUNT=3
-        
-        if build_signin_popup; then
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        fi
-        
-        echo ""
+        TOTAL_COUNT=2
+
         if build_dashboard; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
         fi
-        
+
         echo ""
         if build_my_extension; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
@@ -319,7 +263,6 @@ case $PROJECT in
         # 빌드 결과 요약
         echo ""
         echo -e "${BLUE}📋 빌드 결과 요약:${NC}"
-        [ -d "bookmarkle-signin-popup" ] && echo "• 북마클 로그인 팝업: 정적 파일 (배포 준비됨)"
         [ -d "bookmarkle-web-dashboard/dist" ] && echo "• 북마클 웹 대시보드: bookmarkle-web-dashboard/dist/ (호스팅 준비됨)"
         if compgen -G "build/bookmarkle-browser-extension-*.zip" > /dev/null; then
             echo "• 북마클 브라우저 확장: build/bookmarkle-browser-extension-*.zip (스토어 업로드 준비됨)"
@@ -327,7 +270,7 @@ case $PROJECT in
         ;;
     *)
         log_error "알 수 없는 프로젝트: $PROJECT"
-        log_info "사용 가능한 프로젝트: signin-popup, dashboard, my-extension, all"
+        log_info "사용 가능한 프로젝트: dashboard, my-extension, all"
         exit 1
         ;;
 esac
