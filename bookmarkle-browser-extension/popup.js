@@ -1122,7 +1122,7 @@ if ($saveBookmarkButton) {
         title: window.currentPageData.title,
         url: window.currentPageData.url,
         description: $memoInput?.value || "",
-        collection: finalCollectionId,
+        collectionId: finalCollectionId,
         tags: tags,
         favicon: window.currentPageData.favIconUrl || "",
         isFavorite: false,

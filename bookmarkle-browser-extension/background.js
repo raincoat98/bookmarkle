@@ -755,7 +755,7 @@ async function handleSaveBookmark(msg) {
   }
 
   // 컬렉션이 선택된 경우 존재 여부 검증
-  const collectionId = msg.bookmarkData?.collection;
+  const collectionId = msg.bookmarkData?.collectionId;
   console.log(
     "🔍 [background] 북마크 저장 요청 - 컬렉션 ID:",
     collectionId,
@@ -1119,7 +1119,7 @@ chrome.action.onClicked.addListener(async (tab) => {
       title: tab.title || tab.url,
       url: tab.url,
       description: "",
-      collection: null, // 빠른 저장에서는 컬렉션 없음으로 저장
+      collectionId: null, // 빠른 저장에서는 컬렉션 없음으로 저장
       tags: [],
       favicon: tab.favIconUrl || "",
       isFavorite: false,
