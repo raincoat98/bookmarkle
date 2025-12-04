@@ -11,7 +11,7 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { BookmarksPage } from "./pages/BookmarksPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AdminPage } from "./pages/AdminPage";
-import { ExtensionLoginSuccessPage } from "./pages/ExtensionLoginSuccessPage";
+import { ExtensionLoginPage } from "./pages/ExtensionLoginPage";
 import { NotificationCenterPage } from "./pages/NotificationCenterPage";
 import { PricingPage } from "./pages/PricingPage";
 import { SubscriptionPage } from "./pages/SubscriptionPage";
@@ -101,7 +101,7 @@ function AppRoutes() {
         <Route path="/about" element={<LandingPage />} />
         <Route
           path="/extension-login-success"
-          element={<ExtensionLoginSuccessPage />}
+          element={<ExtensionLoginPage />}
         />
 
         {/* 로그인 필요 라우트 */}
