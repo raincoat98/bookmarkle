@@ -41,9 +41,10 @@ export default function EmailSignup({
     try {
       await signupWithEmail(email, password, displayName);
       onSuccess?.();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("회원가입 실패:", err);
-      setError(getErrorMessage(err.code));
+      const error = err as { code?: string };
+      setError(getErrorMessage(error.code || ""));
     } finally {
       setLoading(false);
     }
@@ -79,31 +80,19 @@ export default function EmailSignup({
   const passwordStrength = getPasswordStrength(password);
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ maxWidth: "400px", margin: "0 auto" }}
-    >
-      <h3 style={{ textAlign: "center", marginBottom: "24px" }}>✨ 회원가입</h3>
+    <form onSubmit={handleSubmit}>
+      <h3 className="text-center mb-6 font-semibold text-gray-900 dark:text-white">회원가입</h3>
 
       {error && (
-        <div
-          style={{
-            backgroundColor: "#ffebee",
-            color: "#c62828",
-            padding: "12px",
-            borderRadius: "4px",
-            marginBottom: "16px",
-            fontSize: "14px",
-          }}
-        >
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 px-3 py-3 rounded mb-4 text-sm">
           {error}
         </div>
       )}
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="mb-4">
         <label
           htmlFor="displayName"
-          style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}
+          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
           이름
         </label>
@@ -114,22 +103,15 @@ export default function EmailSignup({
           onChange={(e) => setDisplayName(e.target.value)}
           required
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            fontSize: "16px",
-            boxSizing: "border-box",
-          }}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="홍길동"
         />
       </div>
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="mb-4">
         <label
           htmlFor="email"
-          style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}
+          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
           이메일
         </label>
@@ -140,22 +122,15 @@ export default function EmailSignup({
           onChange={(e) => setEmail(e.target.value)}
           required
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            fontSize: "16px",
-            boxSizing: "border-box",
-          }}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="example@email.com"
         />
       </div>
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="mb-4">
         <label
           htmlFor="password"
-          style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}
+          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
           비밀번호
         </label>
@@ -166,33 +141,28 @@ export default function EmailSignup({
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            fontSize: "16px",
-            boxSizing: "border-box",
-          }}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="최소 6자 이상"
         />
         {password && (
           <div
-            style={{
-              fontSize: "12px",
-              marginTop: "4px",
-              color: passwordStrength.color,
-            }}
+            className={`text-xs mt-1 font-medium ${
+              passwordStrength.strength === "강함"
+                ? "text-green-600 dark:text-green-400"
+                : passwordStrength.strength === "보통"
+                ? "text-orange-600 dark:text-orange-400"
+                : "text-red-600 dark:text-red-400"
+            }`}
           >
             비밀번호 강도: {passwordStrength.strength}
           </div>
         )}
       </div>
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="mb-4">
         <label
           htmlFor="confirmPassword"
-          style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}
+          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
           비밀번호 확인
         </label>
@@ -203,22 +173,15 @@ export default function EmailSignup({
           onChange={(e) => setConfirmPassword(e.target.value)}
           required
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: `1px solid ${
-              confirmPassword && password !== confirmPassword
-                ? "#f44336"
-                : "#ddd"
-            }`,
-            borderRadius: "4px",
-            fontSize: "16px",
-            boxSizing: "border-box",
-          }}
+          className={`w-full px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed ${
+            confirmPassword && password !== confirmPassword
+              ? "border-red-500 dark:border-red-500"
+              : "border-gray-300 dark:border-gray-600"
+          }`}
           placeholder="비밀번호를 다시 입력하세요"
         />
         {confirmPassword && password !== confirmPassword && (
-          <div style={{ fontSize: "12px", marginTop: "4px", color: "#f44336" }}>
+          <div className="text-xs mt-1 text-red-600 dark:text-red-400">
             비밀번호가 일치하지 않습니다
           </div>
         )}
@@ -229,36 +192,19 @@ export default function EmailSignup({
         disabled={
           loading || !email.trim() || !password.trim() || !displayName.trim()
         }
-        style={{
-          width: "100%",
-          padding: "12px",
-          backgroundColor: loading ? "#ccc" : "#4caf50",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          fontSize: "16px",
-          fontWeight: "500",
-          cursor: loading ? "not-allowed" : "pointer",
-          marginBottom: "12px",
-        }}
+        className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white font-medium py-2 rounded mb-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 transition-colors"
       >
         {loading ? "회원가입 중..." : "회원가입"}
       </button>
 
-      <div style={{ textAlign: "center", fontSize: "14px" }}>
+      <div className="text-center text-sm text-gray-600 dark:text-gray-400">
         이미 계정이 있으신가요?{" "}
         {onSwitchToLogin && (
           <button
             type="button"
             onClick={onSwitchToLogin}
             disabled={loading}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#1976d2",
-              cursor: "pointer",
-              textDecoration: "underline",
-            }}
+            className="text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
           >
             로그인
           </button>

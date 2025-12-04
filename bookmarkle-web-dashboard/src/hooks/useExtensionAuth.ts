@@ -22,35 +22,25 @@ export function useExtensionAuth({
   extensionId,
 }: UseExtensionAuthOptions) {
   const location = useLocation();
+  const sentToExtensionRef = useRef(false);
 
   // Auto-send on user login
   useEffect(() => {
-    if (!isExtensionContext) {
+    if (!isExtensionContext || !user) {
       return;
     }
 
-    if (user) {
-      // Check if we've already sent auth for this user in this session
-      const wasSent = sessionStorage.getItem(
-        `${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`
-      );
+    // Check if we've already sent auth for this user in this session
+    const sessionKey = `${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`;
+    const wasSentInSession = sessionStorage.getItem(sessionKey);
 
-      if (!wasSent) {
-        sessionStorage.setItem(`${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`, "true");
-        console.log(
-          "📍 useEffect triggered: user logged in, sending to extension"
-        );
-        sendLoginData();
-      }
-    } else {
-      // Clear all auth sent flags when user logs out
-      const keys = Object.keys(sessionStorage);
-      keys.forEach((key) => {
-        if (key.startsWith(EXTENSION_AUTH_STORAGE_KEY)) {
-          sessionStorage.removeItem(key);
-        }
-      });
-      console.log("📍 User logged out, cleared extension auth sent flags");
+    if (!wasSentInSession && !sentToExtensionRef.current) {
+      sentToExtensionRef.current = true;
+      sessionStorage.setItem(sessionKey, "true");
+      console.log(
+        "📍 useEffect triggered: user logged in, sending to extension"
+      );
+      sendLoginData();
     }
   }, [user, isExtensionContext]);
 

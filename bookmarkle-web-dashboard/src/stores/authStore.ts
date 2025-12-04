@@ -137,6 +137,14 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // 로그아웃
   logout: async () => {
     try {
+      // sessionStorage에서 extension auth 플래그 초기화
+      const keys = Object.keys(sessionStorage);
+      keys.forEach((key) => {
+        if (key.startsWith("extension_auth_sent")) {
+          sessionStorage.removeItem(key);
+        }
+      });
+
       await fbLogout();
     } catch (error) {
       console.error("Logout error:", error);

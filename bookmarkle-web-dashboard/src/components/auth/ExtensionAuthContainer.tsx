@@ -64,10 +64,6 @@ export function ExtensionAuthContainer({
                 </p>
               </div>
             )}
-
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-              {isSignup ? "가입하기" : "로그인"}
-            </h2>
           </div>
 
           {/* Email Auth Forms - Reuse existing components */}

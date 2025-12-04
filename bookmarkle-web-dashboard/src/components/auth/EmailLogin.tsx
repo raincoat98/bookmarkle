@@ -24,9 +24,10 @@ export default function EmailLogin({
     try {
       await loginWithEmail(email, password);
       onSuccess?.();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("로그인 실패:", err);
-      setError(getErrorMessage(err.code));
+      const error = err as { code?: string };
+      setError(getErrorMessage(error.code || ""));
     } finally {
       setLoading(false);
     }
@@ -44,9 +45,10 @@ export default function EmailLogin({
     try {
       await resetPassword(email);
       setResetSent(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("비밀번호 재설정 실패:", err);
-      setError(getErrorMessage(err.code));
+      const error = err as { code?: string };
+      setError(getErrorMessage(error.code || ""));
     } finally {
       setLoading(false);
     }
@@ -71,25 +73,17 @@ export default function EmailLogin({
 
   if (resetSent) {
     return (
-      <div style={{ textAlign: "center", padding: "20px" }}>
-        <h3>📧 비밀번호 재설정 이메일 전송됨</h3>
-        <p>
+      <div className="text-center py-5">
+        <h3 className="font-semibold mb-3">📧 비밀번호 재설정 이메일 전송됨</h3>
+        <p className="mb-2">
           <strong>{email}</strong>으로 비밀번호 재설정 링크를 전송했습니다.
         </p>
-        <p style={{ fontSize: "14px", color: "#666" }}>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
           이메일을 확인하고 링크를 클릭하여 비밀번호를 재설정하세요.
         </p>
         <button
           onClick={() => setResetSent(false)}
-          style={{
-            padding: "8px 16px",
-            backgroundColor: "#1976d2",
-            color: "white",
-            border: "none",
-            borderRadius: "4px",
-            cursor: "pointer",
-            marginTop: "16px",
-          }}
+          className="btn-primary mt-4"
         >
           로그인으로 돌아가기
         </button>
@@ -98,33 +92,21 @@ export default function EmailLogin({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      style={{ maxWidth: "400px", margin: "0 auto" }}
-    >
-      <h3 style={{ textAlign: "center", marginBottom: "24px" }}>
-        📧 이메일 로그인
+    <form onSubmit={handleSubmit}>
+      <h3 className="text-center mb-6 font-semibold text-gray-900 dark:text-white">
+        이메일 로그인
       </h3>
 
       {error && (
-        <div
-          style={{
-            backgroundColor: "#ffebee",
-            color: "#c62828",
-            padding: "12px",
-            borderRadius: "4px",
-            marginBottom: "16px",
-            fontSize: "14px",
-          }}
-        >
+        <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 px-3 py-3 rounded mb-4 text-sm">
           {error}
         </div>
       )}
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="mb-4">
         <label
           htmlFor="email"
-          style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}
+          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
           이메일
         </label>
@@ -135,22 +117,15 @@ export default function EmailLogin({
           onChange={(e) => setEmail(e.target.value)}
           required
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            fontSize: "16px",
-            boxSizing: "border-box",
-          }}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="example@email.com"
         />
       </div>
 
-      <div style={{ marginBottom: "16px" }}>
+      <div className="mb-4">
         <label
           htmlFor="password"
-          style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}
+          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
           비밀번호
         </label>
@@ -161,14 +136,7 @@ export default function EmailLogin({
           onChange={(e) => setPassword(e.target.value)}
           required
           disabled={loading}
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: "1px solid #ddd",
-            borderRadius: "4px",
-            fontSize: "16px",
-            boxSizing: "border-box",
-          }}
+          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="비밀번호를 입력하세요"
         />
       </div>
@@ -176,35 +144,17 @@ export default function EmailLogin({
       <button
         type="submit"
         disabled={loading || !email.trim() || !password.trim()}
-        style={{
-          width: "100%",
-          padding: "12px",
-          backgroundColor: loading ? "#ccc" : "#1976d2",
-          color: "white",
-          border: "none",
-          borderRadius: "4px",
-          fontSize: "16px",
-          fontWeight: "500",
-          cursor: loading ? "not-allowed" : "pointer",
-          marginBottom: "12px",
-        }}
+        className="btn-primary w-full mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {loading ? "로그인 중..." : "로그인"}
       </button>
 
-      <div style={{ textAlign: "center", fontSize: "14px" }}>
+      <div className="text-center text-sm space-x-4">
         <button
           type="button"
           onClick={handleResetPassword}
           disabled={loading}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#1976d2",
-            cursor: "pointer",
-            textDecoration: "underline",
-            marginRight: "16px",
-          }}
+          className="text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
         >
           비밀번호 찾기
         </button>
@@ -214,13 +164,7 @@ export default function EmailLogin({
             type="button"
             onClick={onSwitchToSignup}
             disabled={loading}
-            style={{
-              background: "none",
-              border: "none",
-              color: "#1976d2",
-              cursor: "pointer",
-              textDecoration: "underline",
-            }}
+            className="text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
           >
             회원가입
           </button>
