@@ -145,6 +145,14 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         }
       });
 
+      // 확장프로그램에 로그아웃 신호 보내기
+      try {
+        window.parent.postMessage({ type: "LOGOUT_SUCCESS" }, "*");
+        console.log("📤 Logout signal sent to extension");
+      } catch (error) {
+        console.log("로그아웃 신호 전송 실패 (무시):", error);
+      }
+
       await fbLogout();
     } catch (error) {
       console.error("Logout error:", error);

@@ -39,7 +39,7 @@ window.addEventListener("message", (ev) => {
       return;
     }
 
-    // 로그인 성공 메시지만 처리
+    // 로그인 성공 메시지 처리
     if (data.type === "LOGIN_SUCCESS" && data.user) {
       console.log(
         "📥 Received LOGIN_SUCCESS from iframe:",
@@ -67,6 +67,22 @@ window.addEventListener("message", (ev) => {
         collections: data.collections || [],
       }).catch(() => {
         console.log("No listener for LOGIN_COMPLETED message");
+      });
+    }
+
+    // 로그아웃 신호 처리
+    if (data.type === "LOGOUT_SUCCESS") {
+      console.log("📤 Received LOGOUT_SUCCESS from iframe");
+
+      // 로컬 상태 정리
+      currentUser = null;
+      currentIdToken = null;
+
+      // background에 로그아웃 신호 전달
+      chrome.runtime.sendMessage({
+        type: "LOGOUT_SUCCESS",
+      }).catch(() => {
+        console.log("No listener for LOGOUT_SUCCESS message in background");
       });
     }
   } catch (e) {
