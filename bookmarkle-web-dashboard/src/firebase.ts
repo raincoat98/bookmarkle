@@ -142,6 +142,43 @@ export function resetPassword(email: string) {
 
 export async function logout() {
   await clearFirebaseStorage();
+
+  // 확장 프로그램에 LOGOUT_SUCCESS 메시지 전송
+  try {
+    const extensionId = import.meta.env.VITE_EXTENSION_ID;
+
+    if (extensionId && typeof window !== "undefined") {
+      const chromeRuntime = (window as unknown as Record<string, unknown>)
+        .chrome as
+        | {
+            runtime?: {
+              sendMessage?: (
+                extensionId: string,
+                msg: unknown,
+                callback: () => void
+              ) => void;
+            };
+          }
+        | undefined;
+
+      if (chromeRuntime?.runtime?.sendMessage) {
+        try {
+          chromeRuntime.runtime.sendMessage(
+            extensionId,
+            { type: "LOGOUT_SUCCESS" },
+            () => {
+              console.log("✅ LOGOUT_SUCCESS sent to extension");
+            }
+          );
+        } catch (error) {
+          console.warn("Failed to send LOGOUT_SUCCESS to extension:", error);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn("Error notifying extension about logout:", error);
+  }
+
   return signOut(auth);
 }
 

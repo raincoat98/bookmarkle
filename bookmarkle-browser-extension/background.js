@@ -843,7 +843,25 @@ chrome.runtime.onMessageExternal.addListener(
         chrome.storage.local.remove(
           ["currentUser", "currentIdToken", "cachedCollections"],
           () => {
-            console.log("User logout completed from external site");
+            console.log("✅ User logout completed from external site");
+            invalidateNotificationSettingsCache();
+
+            // popup에 LOGOUT 완료 알림 전송
+            try {
+              chrome.runtime.sendMessage(
+                { type: "LOGOUT_COMPLETED" },
+                (response) => {
+                  if (chrome.runtime.lastError) {
+                    console.warn("⚠️ Popup might be closed:", chrome.runtime.lastError);
+                  } else {
+                    console.log("✅ LOGOUT_COMPLETED sent to popup");
+                  }
+                }
+              );
+            } catch (error) {
+              console.warn("⚠️ Failed to send LOGOUT_COMPLETED to popup:", error);
+            }
+
             sendResponse({ success: true });
           }
         );

@@ -1481,7 +1481,7 @@ if (document.readyState === "loading") {
   initLanguageModal();
 }
 
-// ===== Extension 로그인 메시지 처리 =====
+// ===== Extension 로그인/로그아웃 메시지 처리 =====
 // background에서 보낸 LOGIN_COMPLETED 메시지 수신
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   console.log("🔔 Popup received message:", msg?.type);
@@ -1503,6 +1503,17 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         loadCollections(true);
       }
     }
+
+    sendResponse({ success: true });
+  }
+
+  // 로그아웃 완료 메시지 처리
+  if (msg?.type === "LOGOUT_COMPLETED") {
+    console.log("✅ LOGOUT_COMPLETED received in popup");
+
+    // 팝업 UI를 로그인 화면으로 전환
+    showLoginUI();
+    console.log("✅ Popup UI switched to login screen");
 
     sendResponse({ success: true });
   }
