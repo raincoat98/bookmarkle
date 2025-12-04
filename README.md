@@ -33,12 +33,6 @@
 │   ├── dist/                        # Build Output
 │   └── firebase.json                # Firebase Hosting Config
 │
-├── 🔐 bookmarkle-signin-popup/      # Standalone Auth Popup
-│   ├── index.html                   # Popup Interface
-│   ├── signInWithPopup.js           # Firebase Auth Logic
-│   ├── firebase.json                # Hosting Configuration
-│   └── i18n.js                      # 다국어 지원
-│
 ├── 📦 build/                        # 빌드 결과물
 │   └── bookmarkle-browser-extension/ # 패키징된 Extension
 │
@@ -82,8 +76,8 @@
 
 - **원클릭 북마크 추가** - 현재 페이지를 바로 북마크
 - **빠른 북마크 접근** - 팝업에서 북마크 검색 및 접근
-- **Extension ↔ 웹 대시보드 동기화** - 실시간 데이터 동기화
-- **Offscreen Document 기반 Firebase Auth** - 안전한 인증 처리
+- **Firebase 실시간 동기화** - Firestore를 통한 데이터 실시간 동기화
+- **Offscreen Document** - 확장 프로그램의 DOM 작업 처리
 
 ### 📊 **웹 대시보드**
 
@@ -92,12 +86,6 @@
 - **위젯 시스템** - 날씨, 명언 등 다양한 위젯
 - **자동 백업** - 주기적인 북마크 데이터 백업
 - **내보내기/가져오기** - JSON 형태로 데이터 관리
-
-### 🔐 **Standalone Auth Popup**
-
-- Chrome Extension 전용 인증 팝업
-- PostMessage 기반 통신
-- Firebase Hosting 배포
 
 ## 📋 사전 요구사항
 
@@ -139,18 +127,6 @@ VITE_FIREBASE_APP_ID=your_app_id
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 ```
 
-##### SignIn Popup 설정 (`bookmarkle-signin-popup/config.js`)
-
-```javascript
-export const firebaseConfig = {
-  apiKey: "your_api_key_here",
-  authDomain: "your_project.firebaseapp.com",
-  projectId: "your_project_id",
-  appId: "your_app_id",
-  messagingSenderId: "your_sender_id",
-};
-```
-
 ##### Chrome Extension 설정 (`bookmarkle-browser-extension/firebase-config.js`)
 
 ```javascript
@@ -168,9 +144,6 @@ export const firebaseConfig = {
 ```bash
 # 메인 웹앱용 사이트 (기본)
 firebase hosting:sites:create YOUR_PROJECT_ID
-
-# SignIn Popup용 별도 사이트
-firebase hosting:sites:create YOUR_PROJECT_ID-sign
 ```
 
 ### 📦 전체 프로젝트 관리
@@ -184,31 +157,19 @@ npm run build
 npm run deploy
 ./deploy.sh all "업데이트 메시지"
 
-# 모든 프로젝트 개발 서버 실행 (병렬)
+# 모든 프로젝트 개발 서버 실행
 npm run dev:all
-./dev.sh all
+./dev.sh
 ```
 
 ### 📱 개별 프로젝트 관리
-
-#### SignIn Popup
-
-```bash
-# 개발 서버
-npm run dev:signin
-./dev.sh signin-popup 8000
-
-# 빌드 & 배포
-npm run build:signin
-npm run deploy:signin
-```
 
 #### 북마클 대시보드 (bookmarkle-web-dashboard)
 
 ```bash
 # 개발 서버
 npm run dev:dashboard
-./dev.sh dashboard 3000
+./dev.sh
 
 # 빌드
 npm run build:dashboard
@@ -218,10 +179,6 @@ npm run build:dashboard
 #### Chrome Extension (bookmarkle-browser-extension)
 
 ```bash
-# 개발 환경 안내
-npm run dev:extension
-./dev.sh my-extension
-
 # 빌드 & 패키징
 npm run build:extension
 ./build.sh my-extension
@@ -231,29 +188,24 @@ npm run build:extension
 
 ### 🔧 통합 스크립트
 
-| 스크립트      | 설명           | 사용법                            |
-| ------------- | -------------- | --------------------------------- |
-| `./deploy.sh` | 통합 배포      | `./deploy.sh [프로젝트] [메시지]` |
-| `./dev.sh`    | 통합 개발 서버 | `./dev.sh [프로젝트] [포트]`      |
-| `./build.sh`  | 통합 빌드      | `./build.sh [프로젝트]`           |
+| 스크립트      | 설명      | 사용법                            |
+| ------------- | --------- | --------------------------------- |
+| `./deploy.sh` | 통합 배포 | `./deploy.sh [프로젝트] [메시지]` |
+| `./dev.sh`    | 개발 서버 | `./dev.sh`                        |
+| `./build.sh`  | 통합 빌드 | `./build.sh [프로젝트]`           |
 
 ### 📋 NPM 스크립트
 
-| 명령어                     | 설명                           |
-| -------------------------- | ------------------------------ |
-| `npm run build`            | 모든 프로젝트 빌드             |
-| `npm run deploy`           | 모든 프로젝트 배포             |
-| `npm run dev:all`          | 모든 프로젝트 개발 서버 (병렬) |
-| `npm run dev:signin`       | SignIn Popup 개발 서버         |
-| `npm run dev:dashboard`    | 북마클 대시보드 개발 서버      |
-| `npm run dev:extension`    | Extension 개발 환경            |
-| `npm run start`            | 대시보드 개발 서버 (기본)      |
-| `npm run build:signin`     | SignIn Popup 빌드              |
-| `npm run build:dashboard`  | 북마클 대시보드 빌드           |
-| `npm run build:extension`  | Extension 빌드 & 패키징        |
-| `npm run deploy:signin`    | SignIn Popup 배포              |
-| `npm run deploy:dashboard` | 북마클 대시보드 배포           |
-| `npm run deploy:extension` | Extension 패키징               |
+| 명령어                     | 설명                      |
+| -------------------------- | ------------------------- |
+| `npm run build`            | 모든 프로젝트 빌드        |
+| `npm run deploy`           | 모든 프로젝트 배포        |
+| `npm run dev:all`          | 모든 프로젝트 개발 서버   |
+| `npm run dev:dashboard`    | 북마클 대시보드 개발 서버 |
+| `npm run start`            | 대시보드 개발 서버 (기본) |
+| `npm run build:dashboard`  | 북마클 대시보드 빌드      |
+| `npm run build:extension`  | Extension 빌드 & 패키징   |
+| `npm run deploy:dashboard` | 북마클 대시보드 배포      |
 
 ## 🔧 설정
 
@@ -271,7 +223,6 @@ npm run build:extension
 각 프로젝트의 Firebase 설정 파일을 수동으로 생성할 수 있습니다:
 
 - **북마클 대시보드**: `bookmarkle-web-dashboard/.env.local`
-- **SignIn Popup**: `bookmarkle-signin-popup/config.js`
 - **Chrome Extension**: `bookmarkle-browser-extension/firebase-config.js`
 - **Service Account Key**: `serviceAccountKey.json` (프로젝트 루트에 저장)
 
@@ -279,7 +230,6 @@ npm run build:extension
 
 - **🧩 Chrome Extension**: Manifest V3 기반 북마크 관리 확장 프로그램
 - **📊 웹 대시보드**: React + TypeScript 기반 완전한 북마크 관리 대시보드
-- **🔐 Auth Popup**: Chrome Extension용 독립 인증 페이지
 - **🚀 통합 배포**: Firebase Hosting 자동 배포 시스템
 
 ## 🔍 문제 해결
