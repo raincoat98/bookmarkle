@@ -14,22 +14,43 @@ interface UseExtensionAuthOptions {
   extensionId: string | null;
 }
 
+const EXTENSION_AUTH_STORAGE_KEY = "extension_auth_sent";
+
 export function useExtensionAuth({
   user,
   isExtensionContext,
   extensionId,
 }: UseExtensionAuthOptions) {
-  const sentToExtensionRef = useRef(false);
   const location = useLocation();
 
   // Auto-send on user login
   useEffect(() => {
-    if (isExtensionContext && user && !sentToExtensionRef.current) {
-      sentToExtensionRef.current = true;
-      console.log(
-        "📍 useEffect triggered: user logged in, sending to extension"
+    if (!isExtensionContext) {
+      return;
+    }
+
+    if (user) {
+      // Check if we've already sent auth for this user in this session
+      const wasSent = sessionStorage.getItem(
+        `${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`
       );
-      sendLoginData();
+
+      if (!wasSent) {
+        sessionStorage.setItem(`${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`, "true");
+        console.log(
+          "📍 useEffect triggered: user logged in, sending to extension"
+        );
+        sendLoginData();
+      }
+    } else {
+      // Clear all auth sent flags when user logs out
+      const keys = Object.keys(sessionStorage);
+      keys.forEach((key) => {
+        if (key.startsWith(EXTENSION_AUTH_STORAGE_KEY)) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      console.log("📍 User logged out, cleared extension auth sent flags");
     }
   }, [user, isExtensionContext]);
 
