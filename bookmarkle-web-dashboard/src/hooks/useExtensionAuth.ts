@@ -26,7 +26,13 @@ export function useExtensionAuth({
 
   // Auto-send on user login
   useEffect(() => {
-    if (!isExtensionContext || !user) {
+    if (!isExtensionContext) {
+      return;
+    }
+
+    // 로그아웃 시 ref 리셋
+    if (!user) {
+      sentToExtensionRef.current = false;
       return;
     }
 

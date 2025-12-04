@@ -27,6 +27,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     userRef.current = user;
   }, [user]);
 
+  // Setup message listener once on mount
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
       // Filter Firebase internal messages
@@ -77,7 +78,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       console.log("📌 Message listener removed from ExtensionLoginPage");
       window.removeEventListener("message", handleMessage);
     };
-  }, [user]);
+  }, []);
 
   // ========================================================================
   // HANDLERS

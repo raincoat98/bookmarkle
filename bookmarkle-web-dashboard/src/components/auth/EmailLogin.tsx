@@ -149,12 +149,21 @@ export default function EmailLogin({
         {loading ? "로그인 중..." : "로그인"}
       </button>
 
-      <div className="text-center text-sm space-x-4">
+      <div className="relative mb-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-600"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-gray-800 text-gray-400">또는</span>
+        </div>
+      </div>
+
+      <div className="space-y-2 mb-6">
         <button
           type="button"
           onClick={handleResetPassword}
           disabled={loading}
-          className="text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full text-center text-gray-300 hover:text-gray-100 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           비밀번호 찾기
         </button>
@@ -164,7 +173,7 @@ export default function EmailLogin({
             type="button"
             onClick={onSwitchToSignup}
             disabled={loading}
-            className="text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full text-center text-gray-300 hover:text-gray-100 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             회원가입
           </button>
