@@ -1,5 +1,6 @@
 // src/components/AuthButtons.tsx
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { loginWithGoogle, logout } from "../../firebase";
 import { useAuthStore } from "../../stores";
 import EmailLogin from "./EmailLogin";
@@ -8,6 +9,7 @@ import EmailSignup from "./EmailSignup";
 type AuthMode = "buttons" | "email-login" | "email-signup";
 
 export default function AuthButtons() {
+  const navigate = useNavigate();
   const { user, loading } = useAuthStore();
   const [authMode, setAuthMode] = useState<AuthMode>("buttons");
 
@@ -165,7 +167,7 @@ export default function AuthButtons() {
       )}
       <span>{user.displayName ?? user.email}</span>
       <button
-        onClick={() => logout().catch((e: Error) => alert(e.message))}
+        onClick={() => logout().then(() => navigate("/", { replace: true })).catch((e: Error) => alert(e.message))}
         style={{
           padding: "6px 12px",
           backgroundColor: "#f44336",

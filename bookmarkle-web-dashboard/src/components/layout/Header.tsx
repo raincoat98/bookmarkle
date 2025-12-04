@@ -4,7 +4,7 @@ import {
   useDrawerStore,
   useSubscriptionStore,
 } from "../../stores";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -29,12 +29,14 @@ interface HeaderProps {
 }
 
 export const Header = ({ showMenuButton = false }: HeaderProps) => {
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const { setIsDrawerOpen } = useDrawerStore();
   const { isPremium } = useSubscriptionStore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const toggleTheme = () => {
@@ -49,9 +51,13 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
       await logout();
+      // 로그아웃 완료되면 navigate (user 상태가 null로 변경되고 Header가 언마운트되기 전에)
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("로그아웃 실패:", error);
+      setIsLoggingOut(false);
     }
   };
 
@@ -258,10 +264,11 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                         setIsUserMenuOpen(false);
                         handleLogout();
                       }}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      disabled={isLoggingOut}
+                      className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>로그아웃</span>
+                      <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
                     </button>
                     </motion.div>
                 )}

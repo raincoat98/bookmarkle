@@ -140,8 +140,61 @@ export function resetPassword(email: string) {
   return sendPasswordResetEmail(auth, email);
 }
 
-export function logout() {
+export async function logout() {
+  await clearFirebaseStorage();
   return signOut(auth);
+}
+
+/**
+ * Firebase 로컬 저장소 완전 클리어
+ * signInWithPopup.js에서 이관됨
+ */
+export async function clearFirebaseStorage() {
+  try {
+    console.log("Clearing Firebase local storage...");
+
+    // localStorage에서 Firebase 관련 키 제거
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("firebase:") || key.startsWith("firebaseui:"))
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+    console.log("localStorage cleared:", keysToRemove.length, "keys removed");
+
+    // IndexedDB는 비동기로 처리 (로그아웃을 블로킹하지 않음)
+    if ("indexedDB" in window) {
+      try {
+        const databases = await indexedDB.databases();
+        const firebaseDbs = databases.filter(
+          (db) =>
+            db.name &&
+            (db.name.includes("firebase") ||
+              db.name.includes("firebaseLocalStorageDb"))
+        );
+
+        for (const db of firebaseDbs) {
+          if (db.name) {
+            console.log("Deleting IndexedDB:", db.name);
+            const deleteReq = indexedDB.deleteDatabase(db.name);
+            deleteReq.onsuccess = () => console.log("Deleted:", db.name);
+            deleteReq.onerror = () => console.warn("Failed to delete:", db.name);
+          }
+        }
+      } catch (error) {
+        console.warn("IndexedDB clear failed:", error);
+      }
+    }
+
+    console.log("Firebase storage clearing completed");
+  } catch (error) {
+    console.error("Error clearing Firebase storage:", error);
+  }
 }
 
 export function watchAuth(cb: (user: User | null) => void) {

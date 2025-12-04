@@ -54,7 +54,8 @@ signin-popup/
 ```javascript
 // offscreen.html에서
 const iframe = document.createElement("iframe");
-iframe.src = "https://bookmarkhub-5ea6c-sign-a4489.web.app";
+iframe.src =
+  "https://bookmarkhub-5ea6c.web.app/extension-login-success?source=extension";
 document.body.appendChild(iframe);
 
 // 인증 시작
@@ -77,7 +78,7 @@ window.postMessage({ initAuth: true }, "*");
 
 ## 🌐 배포된 사이트
 
-- **호스팅 URL**: https://bookmarkhub-5ea6c-sign-a4489.web.app
+- **호스팅 URL**: https://bookmarkhub-5ea6c.web.app/login
 - **Firebase 콘솔**: https://console.firebase.google.com/project/bookmarkhub-5ea6c/overview
 
 ## 📋 NPM 스크립트

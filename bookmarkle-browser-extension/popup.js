@@ -432,7 +432,7 @@ const $themeIcon = document.getElementById("themeIcon");
 // 로그인 버튼 클릭 이벤트
 $btn.addEventListener("click", async () => {
   // signin-popup 페이지로 리다이렉트하여 로그인 처리
-  const loginUrl = `https://bookmarkhub-5ea6c-sign-a4489.web.app?source=extension&extensionId=${chrome.runtime.id}`;
+  const loginUrl = `https://bookmarkhub-5ea6c.web.app/extension-login-success?source=extension&extensionId=${chrome.runtime.id}`;
   chrome.tabs.create({ url: loginUrl });
 
   // 팝업 창 닫기 (시작 페이지에서는 유지)
@@ -1480,3 +1480,33 @@ if (document.readyState === "loading") {
   initI18n();
   initLanguageModal();
 }
+
+// ===== Extension 로그인 메시지 처리 =====
+// background에서 보낸 LOGIN_COMPLETED 메시지 수신
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  console.log("🔔 Popup received message:", msg?.type);
+
+  if (msg?.type === "LOGIN_COMPLETED") {
+    console.log("✅ LOGIN_COMPLETED received in popup:", msg.user?.email);
+    console.log("✅ Collections count:", msg.collections?.length || 0);
+
+    // 사용자 정보 갱신
+    if (msg.user) {
+      renderUser(msg.user);
+      // 컬렉션 렌더링
+      if (msg.collections && msg.collections.length > 0) {
+        console.log("✅ Rendering collections in popup");
+        renderCollections(msg.collections);
+      } else {
+        // 컬렉션이 없으면 서버에서 로드
+        console.log("ℹ️ No collections in message, loading from server");
+        loadCollections(true);
+      }
+    }
+
+    sendResponse({ success: true });
+  }
+
+  // 다른 메시지 타입도 처리 가능
+  return true; // async 응답
+});

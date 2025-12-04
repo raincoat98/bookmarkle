@@ -856,12 +856,84 @@ chrome.runtime.onMessageExternal.addListener(
   }
 );
 
+// 웹 대시보드(ExtensionLoginSuccessPage)에서 온 LOGIN_SUCCESS 메시지도 처리
+chrome.runtime.onMessageExternal.addListener(
+  (request, sender, sendResponse) => {
+    console.log("🌐 [onMessageExternal] Received:", request?.type, "from:", sender?.url);
+
+    if (request.type === "LOGIN_SUCCESS" && request.user) {
+      console.log("✅ LOGIN_SUCCESS from web dashboard:", request.user.email);
+
+      if (chrome.storage && chrome.storage.local) {
+        const dataToSave = {
+          currentUser: request.user,
+        };
+
+        if (request.idToken) {
+          dataToSave.currentIdToken = request.idToken;
+        }
+
+        if (request.collections) {
+          dataToSave.cachedCollections = request.collections;
+          console.log("✅ Saving collections from web dashboard:", request.collections.length);
+        }
+
+        chrome.storage.local.set(dataToSave, () => {
+          console.log("✅ Login data saved from web dashboard");
+          sendResponse({ success: true });
+        });
+      } else {
+        sendResponse({ success: false, error: "Storage API unavailable" });
+      }
+      return true;
+    }
+  }
+);
+
 // popup → background 메시지 수신 (통합된 단일 리스너)
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   console.log("Background received message:", msg?.type);
 
   (async () => {
     try {
+      // offscreen으로부터의 로그인 완료 알림
+      if (msg?.type === "LOGIN_COMPLETED") {
+        console.log("✅ LOGIN_COMPLETED received in background:", msg.user?.email);
+
+        if (chrome.storage && chrome.storage.local) {
+          await new Promise((resolve) => {
+            chrome.storage.local.set({
+              currentUser: msg.user,
+              currentIdToken: msg.idToken,
+              cachedCollections: msg.collections || [],
+            }, () => {
+              console.log("✅ User data and collections saved to Chrome Storage");
+              resolve();
+            });
+          });
+        }
+
+        // 로그인 완료를 모든 콘텐츠 스크립트와 팝업에 브로드캐스트
+        try {
+          chrome.tabs.query({}, (tabs) => {
+            tabs.forEach((tab) => {
+              chrome.tabs.sendMessage(tab.id, {
+                type: "LOGIN_COMPLETED",
+                user: msg.user,
+                collections: msg.collections,
+              }).catch(() => {
+                // 탭이 로드되지 않았거나 메시지를 받을 리스너가 없을 수 있음
+              });
+            });
+          });
+        } catch (e) {
+          console.log("Failed to broadcast to tabs:", e.message);
+        }
+
+        sendResponse({ success: true });
+        return;
+      }
+
       if (msg?.type === "LOGIN_GOOGLE") {
         await setupOffscreen();
         // offscreen으로 위임
@@ -875,16 +947,22 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
 
       if (msg?.type === "GET_AUTH_STATE") {
-        // Chrome Storage에서 직접 사용자 정보 조회
+        // Chrome Storage에서 직접 사용자 정보 및 컬렉션 조회
         if (chrome.storage && chrome.storage.local) {
-          chrome.storage.local.get(["currentUser"], (result) => {
-            sendResponse({ user: result.currentUser || null });
+          chrome.storage.local.get(["currentUser", "cachedCollections"], (result) => {
+            console.log("GET_AUTH_STATE - currentUser:", result.currentUser?.email);
+            console.log("GET_AUTH_STATE - cachedCollections:", result.cachedCollections?.length || 0);
+            sendResponse({
+              user: result.currentUser || null,
+              collections: result.cachedCollections || []
+            });
           });
+          return true; // async 응답
         } else {
           console.error("Chrome Storage API가 사용할 수 없습니다");
-          sendResponse({ user: null, error: "Storage API unavailable" });
+          sendResponse({ user: null, collections: [], error: "Storage API unavailable" });
+          return;
         }
-        return;
       }
 
       if (msg?.type === "LOGOUT") {
@@ -895,9 +973,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           if (chrome.storage && chrome.storage.local) {
             await new Promise((resolve) => {
               chrome.storage.local.remove(
-                ["currentUser", "currentIdToken", "cachedCollections"],
+                ["currentUser", "currentIdToken", "cachedCollections", "collections"],
                 () => {
-                  console.log("Chrome Storage에서 사용자 정보 제거 완료");
+                  console.log("Chrome Storage에서 사용자 정보 및 컬렉션 제거 완료");
                   resolve();
                 }
               );

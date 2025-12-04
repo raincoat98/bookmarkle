@@ -662,10 +662,16 @@ export const useSettings = ({
     setShowDeleteAccountModal(true);
   };
 
-  const handleConfirmDeleteAccount = () => {
-    toast.success("계정이 삭제되었습니다.");
-    setShowDeleteAccountModal(false);
-    logout();
+  const handleConfirmDeleteAccount = async () => {
+    try {
+      toast.success("계정이 삭제되었습니다.");
+      setShowDeleteAccountModal(false);
+      await Promise.resolve(logout());
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Account deletion or logout failed:", error);
+      toast.error(t("common.error"));
+    }
   };
 
   // 알림 센터로 이동 핸들러

@@ -22,7 +22,7 @@ export const LoginScreen = () => {
     const source = urlParams.get("source");
 
     if (user && source === "extension") {
-      navigate("/extension-login-success" + location.search);
+      navigate("/extension-login-success" + location.search, { replace: true });
     }
   }, [user, navigate, location.search]);
 

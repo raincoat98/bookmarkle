@@ -4,6 +4,7 @@ const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 // 현재 사용자 상태 저장
 let currentUser = null;
 let currentIdToken = null;
+let isIframeReady = false;
 
 const iframe = document.createElement("iframe");
 iframe.src = PUBLIC_SIGN_URL;
@@ -13,11 +14,65 @@ document.documentElement.appendChild(iframe);
 // iframe 로드 확인
 iframe.addEventListener("load", () => {
   console.log("SignIn popup iframe loaded successfully");
+  // iframe이 준비되었음을 표시
+  isIframeReady = true;
   // background에 준비 완료 신호 보내기
   chrome.runtime.sendMessage({ type: "OFFSCREEN_READY" }).catch(() => {
     // 메시지를 받을 리스너가 없을 수 있음 (무시)
   });
 });
+
+// iframe에서 보낸 로그인 결과 메시지를 받는 영구 리스너
+// (START_POPUP_AUTH와 무관하게 항상 수신 대기)
+window.addEventListener("message", (ev) => {
+  // Firebase 내부 메시지 노이즈 필터
+  if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
+
+  try {
+    const data =
+      typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data;
+
+    // iframe 준비 신호 처리
+    if (data.type === "IFRAME_READY") {
+      console.log("✅ IFRAME_READY signal received");
+      isIframeReady = true;
+      return;
+    }
+
+    // 로그인 성공 메시지만 처리
+    if (data.type === "LOGIN_SUCCESS" && data.user) {
+      console.log(
+        "📥 Received LOGIN_SUCCESS from iframe:",
+        data.user.email
+      );
+
+      // 사용자 정보와 토큰 저장
+      currentUser = data.user;
+      currentIdToken = data.idToken;
+
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({
+          currentUser: data.user,
+          currentIdToken: data.idToken,
+          cachedCollections: data.collections || [],
+        });
+        console.log("✅ User data and collections saved to Chrome Storage");
+      }
+
+      // background에 로그인 완료 알림 (컬렉션 포함)
+      chrome.runtime.sendMessage({
+        type: "LOGIN_COMPLETED",
+        user: data.user,
+        idToken: data.idToken,
+        collections: data.collections || [],
+      }).catch(() => {
+        console.log("No listener for LOGIN_COMPLETED message");
+      });
+    }
+  } catch (e) {
+    // JSON 파싱 실패는 무시
+  }
+}, false);
 
 iframe.addEventListener("error", () => {
   console.error("SignIn popup iframe failed to load");
@@ -33,6 +88,31 @@ if (chrome.storage && chrome.storage.local) {
       currentIdToken = result.currentIdToken;
       console.log("Loaded idToken from storage");
     }
+  });
+}
+
+// iframe이 준비될 때까지 기다리는 헬퍼 함수
+function ensureIframeReady() {
+  return new Promise(resolve => {
+    if (isIframeReady) {
+      resolve();
+      return;
+    }
+
+    // 최대 3초 기다리기 (50ms 간격)
+    let waited = 0;
+    const interval = setInterval(() => {
+      if (isIframeReady) {
+        clearInterval(interval);
+        console.log("✅ Iframe ready, processing message");
+        resolve();
+      } else if (waited > 3000) {
+        clearInterval(interval);
+        console.warn("⚠️ Iframe not ready after 3 seconds, proceeding anyway");
+        resolve();
+      }
+      waited += 50;
+    }, 50);
   });
 }
 
@@ -180,9 +260,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "GET_COLLECTIONS") {
     // 컬렉션 데이터 요청
-    const origin = new URL(PUBLIC_SIGN_URL).origin;
+    ensureIframeReady().then(() => {
+      const origin = new URL(PUBLIC_SIGN_URL).origin;
 
-    function handleCollectionsMessage(ev) {
+      function handleCollectionsMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
       if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
 
@@ -195,10 +276,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           data.type === "COLLECTIONS_DATA" ||
           data.type === "COLLECTIONS_ERROR"
         ) {
+          clearTimeout(timeoutId);
           window.removeEventListener("message", handleCollectionsMessage);
           sendResponse(data);
         }
       } catch (e) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handleCollectionsMessage);
         sendResponse({
           type: "COLLECTIONS_ERROR",
@@ -208,7 +291,20 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
     }
 
+    // 타임아웃 설정 (10초)
+    const timeoutId = setTimeout(() => {
+      console.log("🔥 GET_COLLECTIONS 타임아웃");
+      window.removeEventListener("message", handleCollectionsMessage);
+      sendResponse({
+        type: "COLLECTIONS_ERROR",
+        message: "Timeout waiting for collections data",
+      });
+    }, 10000);
+
     window.addEventListener("message", handleCollectionsMessage, false);
+    console.log("🔥 Sending getCollections to iframe with origin:", origin);
+    console.log("🔥 currentIdToken:", currentIdToken ? "exists" : "missing");
+
     iframe.contentWindow.postMessage(
       {
         getCollections: true,
@@ -216,15 +312,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       },
       origin
     );
+    });
 
     return true; // async 응답
   }
 
   if (msg.type === "GET_BOOKMARKS") {
     // 북마크 데이터 요청
-    const origin = new URL(PUBLIC_SIGN_URL).origin;
+    ensureIframeReady().then(() => {
+      const origin = new URL(PUBLIC_SIGN_URL).origin;
 
-    function handleBookmarksMessage(ev) {
+      function handleBookmarksMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
       if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
 
@@ -234,10 +332,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
         // 북마크 데이터 응답만 처리
         if (data.type === "BOOKMARKS_DATA" || data.type === "BOOKMARKS_ERROR") {
+          clearTimeout(timeoutId);
           window.removeEventListener("message", handleBookmarksMessage);
           sendResponse(data);
         }
       } catch (e) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handleBookmarksMessage);
         sendResponse({
           type: "BOOKMARKS_ERROR",
@@ -246,6 +346,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         });
       }
     }
+
+    // 타임아웃 설정 (10초)
+    const timeoutId = setTimeout(() => {
+      console.log("🔥 GET_BOOKMARKS 타임아웃");
+      window.removeEventListener("message", handleBookmarksMessage);
+      sendResponse({
+        type: "BOOKMARKS_ERROR",
+        message: "Timeout waiting for bookmarks data",
+      });
+    }, 10000);
 
     window.addEventListener("message", handleBookmarksMessage, false);
     iframe.contentWindow.postMessage(
@@ -256,15 +366,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       },
       origin
     );
+    });
 
     return true; // async 응답
   }
 
   if (msg.type === "SAVE_BOOKMARK") {
     // 북마크 저장 요청
-    const origin = new URL(PUBLIC_SIGN_URL).origin;
+    ensureIframeReady().then(() => {
+      const origin = new URL(PUBLIC_SIGN_URL).origin;
 
-    function handleSaveBookmarkMessage(ev) {
+      function handleSaveBookmarkMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
       if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
 
@@ -277,10 +389,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           data.type === "BOOKMARK_SAVED" ||
           data.type === "BOOKMARK_SAVE_ERROR"
         ) {
+          clearTimeout(timeoutId);
           window.removeEventListener("message", handleSaveBookmarkMessage);
           sendResponse(data);
         }
       } catch (e) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handleSaveBookmarkMessage);
         sendResponse({
           type: "BOOKMARK_SAVE_ERROR",
@@ -289,6 +403,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         });
       }
     }
+
+    // 타임아웃 설정 (10초)
+    const timeoutId = setTimeout(() => {
+      console.log("🔥 SAVE_BOOKMARK 타임아웃");
+      window.removeEventListener("message", handleSaveBookmarkMessage);
+      sendResponse({
+        type: "BOOKMARK_SAVE_ERROR",
+        message: "Timeout waiting for bookmark save response",
+      });
+    }, 10000);
 
     window.addEventListener("message", handleSaveBookmarkMessage, false);
 
@@ -299,15 +423,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     };
 
     iframe.contentWindow.postMessage(messageToSend, origin);
+    });
 
     return true; // async 응답
   }
 
   if (msg.type === "CREATE_COLLECTION") {
     // 컬렉션 생성 요청
-    const origin = new URL(PUBLIC_SIGN_URL).origin;
+    ensureIframeReady().then(() => {
+      const origin = new URL(PUBLIC_SIGN_URL).origin;
 
-    function handleCreateCollectionMessage(ev) {
+      function handleCreateCollectionMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
       if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
 
@@ -320,10 +446,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           data.type === "COLLECTION_CREATED" ||
           data.type === "COLLECTION_CREATE_ERROR"
         ) {
+          clearTimeout(timeoutId);
           window.removeEventListener("message", handleCreateCollectionMessage);
           sendResponse(data);
         }
       } catch (e) {
+        clearTimeout(timeoutId);
         window.removeEventListener("message", handleCreateCollectionMessage);
         sendResponse({
           type: "COLLECTION_CREATE_ERROR",
@@ -332,6 +460,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         });
       }
     }
+
+    // 타임아웃 설정 (10초)
+    const timeoutId = setTimeout(() => {
+      console.log("🔥 CREATE_COLLECTION 타임아웃");
+      window.removeEventListener("message", handleCreateCollectionMessage);
+      sendResponse({
+        type: "COLLECTION_CREATE_ERROR",
+        message: "Timeout waiting for collection creation response",
+      });
+    }, 10000);
 
     window.addEventListener("message", handleCreateCollectionMessage, false);
     iframe.contentWindow.postMessage(
@@ -342,15 +480,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       },
       origin
     );
+    });
 
     return true; // async 응답
   }
 
   if (msg.type === "GET_NOTIFICATION_SETTINGS") {
     // 알림 설정 요청
-    const origin = new URL(PUBLIC_SIGN_URL).origin;
+    ensureIframeReady().then(() => {
+      const origin = new URL(PUBLIC_SIGN_URL).origin;
 
-    function handleNotificationSettingsMessage(ev) {
+      function handleNotificationSettingsMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
       if (typeof ev.data === "string" && ev.data.startsWith("!_{")) return;
 
@@ -363,6 +503,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           data.type === "NOTIFICATION_SETTINGS_DATA" ||
           data.type === "NOTIFICATION_SETTINGS_ERROR"
         ) {
+          clearTimeout(timeoutId);
           window.removeEventListener(
             "message",
             handleNotificationSettingsMessage
@@ -370,6 +511,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           sendResponse(data);
         }
       } catch (e) {
+        clearTimeout(timeoutId);
         window.removeEventListener(
           "message",
           handleNotificationSettingsMessage
@@ -381,6 +523,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         });
       }
     }
+
+    // 타임아웃 설정 (10초)
+    const timeoutId = setTimeout(() => {
+      console.log("🔥 GET_NOTIFICATION_SETTINGS 타임아웃");
+      window.removeEventListener(
+        "message",
+        handleNotificationSettingsMessage
+      );
+      sendResponse({
+        type: "NOTIFICATION_SETTINGS_ERROR",
+        message: "Timeout waiting for notification settings",
+      });
+    }, 10000);
 
     window.addEventListener(
       "message",
@@ -394,6 +549,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       },
       origin
     );
+    });
 
     return true; // async 응답
   }
