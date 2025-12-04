@@ -162,7 +162,19 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
   // 인증 상태 초기화 및 감시
   initializeAuth: () => {
+    let authCallbackFired = false;
+
+    // 3초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    const timeoutId = setTimeout(() => {
+      if (!authCallbackFired) {
+        console.log("⚠️ Auth callback timeout - setting loading to false");
+        set({ loading: false });
+      }
+    }, 3000);
+
     const unsubscribe = watchAuth((user) => {
+      authCallbackFired = true;
+      clearTimeout(timeoutId);
       set({ user, loading: false });
 
       // 사용자 변경 시 상태 확인
