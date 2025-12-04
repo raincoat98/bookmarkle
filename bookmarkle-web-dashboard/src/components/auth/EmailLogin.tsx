@@ -149,16 +149,7 @@ export default function EmailLogin({
         {loading ? "로그인 중..." : "로그인"}
       </button>
 
-      <div className="relative mb-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-600"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-gray-800 text-gray-400">또는</span>
-        </div>
-      </div>
-
-      <div className="space-y-2 mb-6">
+      <div className="space-y-2 mb-6 flex justify-between">
         <button
           type="button"
           onClick={handleResetPassword}

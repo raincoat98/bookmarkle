@@ -3,7 +3,10 @@ import { useMemo, useCallback } from "react";
 import { useAuthStore } from "../stores";
 import { useExtensionAuth } from "../hooks/useExtensionAuth";
 import { useExtensionMessage } from "../hooks/useExtensionMessage";
-import { isExtensionContext, getExtensionId } from "../utils/extensionMessaging";
+import {
+  isExtensionContext,
+  getExtensionId,
+} from "../utils/extensionMessaging";
 import { ExtensionAuthContainer } from "../components/auth/ExtensionAuthContainer";
 import { ExtensionLoginStatus } from "../components/auth/ExtensionLoginStatus";
 
@@ -13,7 +16,10 @@ export const ExtensionLoginPage = () => {
   const location = useLocation();
 
   // Derive extension context from URL parameters
-  const extensionIsContext = useMemo(() => isExtensionContext(location), [location]);
+  const extensionIsContext = useMemo(
+    () => isExtensionContext(location),
+    [location]
+  );
   const extensionId = useMemo(() => getExtensionId(location), [location]);
 
   // Setup extension hooks
@@ -26,7 +32,10 @@ export const ExtensionLoginPage = () => {
   useExtensionMessage({ user });
 
   // Navigation handlers
-  const handleGoToDashboard = useCallback(() => navigate("/dashboard"), [navigate]);
+  const handleGoToDashboard = useCallback(
+    () => navigate("/dashboard"),
+    [navigate]
+  );
   const handleCloseWindow = useCallback(() => window.close(), []);
 
   // Wait for auth initialization to complete
