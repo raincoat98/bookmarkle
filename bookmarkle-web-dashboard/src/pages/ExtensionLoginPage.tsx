@@ -23,6 +23,7 @@ export const ExtensionLoginPage = () => {
   const extensionId = useMemo(() => getExtensionId(location), [location]);
 
   // Signal iframe readiness to offscreen document on page load
+  // Also reset extension auth flags on mount/unmount for clean state
   useEffect(() => {
     if (extensionIsContext) {
       // Send IFRAME_READY signal to parent (offscreen.js)
@@ -32,6 +33,19 @@ export const ExtensionLoginPage = () => {
       );
       console.log("📨 IFRAME_READY signal sent to parent");
     }
+
+    // Cleanup: clear extension auth flags on unmount
+    return () => {
+      if (extensionIsContext && typeof sessionStorage !== "undefined") {
+        const keys = Object.keys(sessionStorage);
+        keys.forEach((key) => {
+          if (key.startsWith("extension_auth_sent")) {
+            sessionStorage.removeItem(key);
+            console.log(`🧹 Cleared sessionStorage on unmount: ${key}`);
+          }
+        });
+      }
+    };
   }, [extensionIsContext]);
 
   // Setup extension hooks

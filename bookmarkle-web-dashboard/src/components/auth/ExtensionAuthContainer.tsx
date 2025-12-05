@@ -21,26 +21,37 @@ export function ExtensionAuthContainer({
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+      console.log("🔐 Google login button clicked");
 
       // 로그인 전 sessionStorage 정리 (로그아웃 후 재로그인 시 신호 재전송 가능)
       if (typeof sessionStorage !== "undefined") {
         const keys = Object.keys(sessionStorage);
-        keys.forEach((key) => {
-          if (key.startsWith("extension_auth_sent")) {
+        const clearedKeys = keys.filter((key) =>
+          key.startsWith("extension_auth_sent")
+        );
+
+        if (clearedKeys.length > 0) {
+          console.log(`🧹 Clearing ${clearedKeys.length} sessionStorage keys:`, clearedKeys);
+          clearedKeys.forEach((key) => {
             sessionStorage.removeItem(key);
-            console.log(`✅ Cleared sessionStorage: ${key}`);
-          }
-        });
+            console.log(`  ✅ Cleared: ${key}`);
+          });
+        } else {
+          console.log("📌 No sessionStorage keys to clear");
+        }
       }
 
+      console.log("🔄 Calling login()...");
       await login();
+      console.log("✅ Login completed successfully");
       onAuthSuccess?.();
     } catch (error: unknown) {
       const firebaseError = error as FirebaseError;
       if (firebaseError.code === "auth/popup-closed-by-user") {
+        console.log("ℹ️ User cancelled login popup");
         toast.error("로그인이 취소되었습니다.");
       } else {
-        console.error("Google login error:", error);
+        console.error("❌ Google login error:", error);
         toast.error("Google 로그인에 실패했습니다. 다시 시도해주세요.");
       }
     } finally {

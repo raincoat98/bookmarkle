@@ -32,6 +32,9 @@ export function useExtensionAuth({
 
     // 로그아웃 시 ref 리셋
     if (!user) {
+      if (sentToExtensionRef.current) {
+        console.log("🔄 User logged out - resetting extension auth state");
+      }
       sentToExtensionRef.current = false;
       return;
     }
@@ -40,6 +43,12 @@ export function useExtensionAuth({
     const sessionKey = `${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`;
     const wasSentInSession = sessionStorage.getItem(sessionKey);
 
+    console.log(`📊 Auth state check for ${user.email}:`, {
+      sessionKey,
+      wasSentInSession: !!wasSentInSession,
+      refAlreadySent: sentToExtensionRef.current,
+    });
+
     if (!wasSentInSession && !sentToExtensionRef.current) {
       sentToExtensionRef.current = true;
       sessionStorage.setItem(sessionKey, "true");
@@ -47,6 +56,8 @@ export function useExtensionAuth({
         "📍 useEffect triggered: user logged in, sending to extension"
       );
       sendLoginData();
+    } else {
+      console.log("⏭️ Skipping: auth already sent or marked");
     }
   }, [user, isExtensionContext]);
 
@@ -56,6 +67,8 @@ export function useExtensionAuth({
         console.log("❌ sendLoginData: No user");
         return;
       }
+
+      console.log("🔐 Starting login data send for:", user.email);
 
       // Parallelize token and collections fetch
       const results = await Promise.allSettled([
@@ -67,6 +80,9 @@ export function useExtensionAuth({
         results[0].status === "fulfilled" ? results[0].value : "";
       const collections =
         results[1].status === "fulfilled" ? results[1].value : [];
+
+      console.log("✅ Token fetched:", !!idToken);
+      console.log("✅ Collections fetched:", collections.length, "items");
 
       if (results[1].status === "rejected") {
         console.error(
@@ -81,6 +97,8 @@ export function useExtensionAuth({
 
       // Send via appropriate method
       const finalExtensionId = extensionId || getExtensionId(location);
+
+      console.log("📤 Preparing to send with extensionId:", finalExtensionId);
 
       if (finalExtensionId && typeof window !== "undefined") {
         sendViaRuntimeAPI(finalExtensionId, messageData);
