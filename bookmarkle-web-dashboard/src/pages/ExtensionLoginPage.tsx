@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect } from "react";
 import { useAuthStore } from "../stores";
 import { useExtensionAuth } from "../hooks/useExtensionAuth";
 import { useExtensionMessage } from "../hooks/useExtensionMessage";
@@ -21,6 +21,18 @@ export const ExtensionLoginPage = () => {
     [location]
   );
   const extensionId = useMemo(() => getExtensionId(location), [location]);
+
+  // Signal iframe readiness to offscreen document on page load
+  useEffect(() => {
+    if (extensionIsContext) {
+      // Send IFRAME_READY signal to parent (offscreen.js)
+      window.parent.postMessage(
+        { type: "IFRAME_READY" },
+        "*"
+      );
+      console.log("📨 IFRAME_READY signal sent to parent");
+    }
+  }, [extensionIsContext]);
 
   // Setup extension hooks
   useExtensionAuth({
