@@ -1493,14 +1493,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // 사용자 정보 갱신
     if (msg.user) {
       renderUser(msg.user);
-      // 컬렉션 렌더링
+      // 컬렉션 렌더링 (LOGIN_SUCCESS에서 이미 fetch됨)
       if (msg.collections && msg.collections.length > 0) {
-        console.log("✅ Rendering collections in popup");
+        console.log("✅ Rendering collections in popup:", msg.collections.length);
         renderCollections(msg.collections);
       } else {
-        // 컬렉션이 없으면 서버에서 로드
-        console.log("ℹ️ No collections in message, loading from server");
-        loadCollections(true);
+        console.warn("⚠️ No collections in LOGIN_COMPLETED message");
       }
     }
 

@@ -3,6 +3,7 @@
  * signInWithPopup.js에서 이관된 데이터베이스 조작 함수들
  */
 
+import { deduplicator } from "./requestDeduplication";
 import {
   db,
   auth,
@@ -62,9 +63,9 @@ export async function createCollection(collectionData: {
 }
 
 /**
- * Firestore에서 컬렉션 가져오기
+ * Firestore에서 컬렉션 가져오기 (내부 함수)
  */
-export async function fetchCollections(userId: string): Promise<Collection[]> {
+async function fetchCollectionsInternal(userId: string): Promise<Collection[]> {
   if (!userId) {
     throw new Error("User ID is required");
   }
@@ -98,6 +99,16 @@ export async function fetchCollections(userId: string): Promise<Collection[]> {
     console.error("Error fetching collections:", error);
     throw error;
   }
+}
+
+/**
+ * Firestore에서 컬렉션 가져오기 (중복 제거)
+ */
+export async function fetchCollections(userId: string): Promise<Collection[]> {
+  return deduplicator.deduplicate(
+    `collections:${userId}`,
+    () => fetchCollectionsInternal(userId)
+  );
 }
 
 /**

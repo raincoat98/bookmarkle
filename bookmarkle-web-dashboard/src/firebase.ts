@@ -85,12 +85,11 @@ export async function loginWithGoogle() {
   const result = await signInWithPopup(auth, googleProvider);
 
   // 사용자 정보를 Firestore에 저장 (오류가 발생해도 로그인은 성공)
+  // Don't await - let it run in background (non-blocking)
   if (result.user) {
-    try {
-      await saveUserToFirestore(result.user, false);
-    } catch (error) {
+    saveUserToFirestore(result.user, false).catch((error) => {
       console.error("Firestore 저장 실패 (로그인은 성공):", error);
-    }
+    });
   }
 
   return result;
@@ -101,9 +100,11 @@ export async function loginWithEmail(email: string, password: string) {
   await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
 
-  // 사용자 정보를 Firestore에 저장
+  // 사용자 정보를 Firestore에 저장 (non-blocking)
   if (result.user) {
-    await saveUserToFirestore(result.user, false);
+    saveUserToFirestore(result.user, false).catch((error) => {
+      console.error("Firestore 저장 실패 (로그인은 성공):", error);
+    });
   }
 
   return result;
@@ -127,9 +128,11 @@ export async function signupWithEmail(
     await updateProfile(userCredential.user, { displayName });
   }
 
-  // 사용자 정보를 Firestore에 저장 (신규 사용자)
+  // 사용자 정보를 Firestore에 저장 (신규 사용자, non-blocking)
   if (userCredential.user) {
-    await saveUserToFirestore(userCredential.user, true);
+    saveUserToFirestore(userCredential.user, true).catch((error) => {
+      console.error("Firestore 저장 실패 (가입은 성공):", error);
+    });
   }
 
   return userCredential;

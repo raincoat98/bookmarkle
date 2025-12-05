@@ -185,6 +185,7 @@ function App() {
 
   useEffect(() => {
     if (!user?.uid) return;
+    // Start subscription in parallel with other initialization
     const unsubscribeSubscription = subscribeToSubscription(user.uid);
     return () => unsubscribeSubscription();
   }, [user?.uid, subscribeToSubscription]);

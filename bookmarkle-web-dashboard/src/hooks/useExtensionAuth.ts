@@ -57,15 +57,22 @@ export function useExtensionAuth({
         return;
       }
 
-      // Get ID Token
-      const idToken = await getIdToken(user);
+      // Parallelize token and collections fetch
+      const results = await Promise.allSettled([
+        getIdToken(user),
+        fetchCollections(user.uid),
+      ]);
 
-      // Fetch collections
-      let collections: any[] = [];
-      try {
-        collections = await fetchCollections(user.uid);
-      } catch (collectionError) {
-        console.error("⚠️ Failed to fetch collections:", collectionError);
+      const idToken =
+        results[0].status === "fulfilled" ? results[0].value : "";
+      const collections =
+        results[1].status === "fulfilled" ? results[1].value : [];
+
+      if (results[1].status === "rejected") {
+        console.error(
+          "⚠️ Failed to fetch collections:",
+          results[1].reason
+        );
         // Collection load failure doesn't block login info transmission
       }
 

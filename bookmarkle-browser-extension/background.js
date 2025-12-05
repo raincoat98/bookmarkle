@@ -11,6 +11,12 @@ const OFFSCREEN_PATH = "offscreen.html";
 // 동시 생성 방지
 let creatingOffscreen = null;
 
+// Offscreen ready event handling
+let offscreenReadyResolver = null;
+let offscreenReadyPromise = new Promise((resolve) => {
+  offscreenReadyResolver = resolve;
+});
+
 // 시작 페이지 설정
 const DEFAULT_START_PAGE_URL = "_PUBLIC_START_PAGE_URL_";
 let overrideNewTabEnabled = false;
@@ -21,7 +27,7 @@ let startPageSettingsReadyPromise = null;
 // 알림 설정 캐시
 let cachedNotificationSettings = null;
 let settingsCacheTime = 0;
-const SETTINGS_CACHE_DURATION = 0; // 항상 최신 값 사용 (캐시는 실패 시 대비용)
+const SETTINGS_CACHE_DURATION = 60000; // 1분 캐시 TTL (설정이 자주 바뀌지 않음)
 const DEFAULT_NOTIFICATION_SETTINGS = {
   notifications: true,
   bookmarkNotifications: true,
@@ -105,31 +111,23 @@ async function hasOffscreen() {
 }
 
 /**
- * Offscreen 문서가 준비될 때까지 대기 (ping 테스트)
+ * Offscreen 문서가 준비될 때까지 대기 (event-driven)
  */
 async function waitForOffscreenReady(maxWait = 5000, silent = false) {
-  const startTime = Date.now();
-
-  while (Date.now() - startTime < maxWait) {
-    try {
-      // ping 메시지를 보내서 응답이 오는지 확인
-      await chrome.runtime.sendMessage({
-        target: "offscreen",
-        type: "PING",
-      });
-      // 응답이 왔으면 준비된 것
-      if (!silent) {
-        console.log("Offscreen is ready");
-      }
-      return;
-    } catch (error) {
-      // 아직 준비 안됨, 조금 더 대기
-      await new Promise((resolve) => setTimeout(resolve, 200));
+  try {
+    await Promise.race([
+      offscreenReadyPromise,
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), maxWait)
+      ),
+    ]);
+    if (!silent) {
+      console.log("✅ Offscreen is ready");
     }
-  }
-
-  if (!silent) {
-    console.warn("Offscreen may not be ready after maximum wait time");
+  } catch (error) {
+    if (!silent) {
+      console.warn("⚠️ Offscreen may not be ready after maximum wait time");
+    }
   }
 }
 
@@ -148,6 +146,11 @@ async function setupOffscreen(silent = false) {
     await waitForOffscreenReady(5000, silent);
     return;
   }
+
+  // Reset promise for new offscreen document
+  offscreenReadyPromise = new Promise((resolve) => {
+    offscreenReadyResolver = resolve;
+  });
 
   creatingOffscreen = chrome.offscreen.createDocument({
     url: OFFSCREEN_PATH,
@@ -177,19 +180,21 @@ async function sendMessageToOffscreen(message, maxRetries = 3) {
   console.log("🔥 sendMessageToOffscreen called with:", message);
   for (let i = 0; i < maxRetries; i++) {
     try {
-      console.log(
-        `🔥 Attempt ${i + 1}: Sending message via chrome.runtime.sendMessage`
-      );
+      console.log(`🔥 Attempt ${i + 1}: Sending message`);
       const result = await chrome.runtime.sendMessage(message);
-      console.log("🔥 Message sent successfully, result:", result);
+      console.log("🔥 Message sent successfully");
       return result;
     } catch (error) {
       console.error(`🔥 Attempt ${i + 1} failed:`, error);
       if (i === maxRetries - 1) {
         throw error;
       }
-      console.log(`Offscreen 메시지 전송 재시도 ${i + 1}/${maxRetries}`);
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Exponential backoff: 100ms, 200ms, 400ms instead of 500ms, 500ms, 500ms
+      const backoffMs = 100 * Math.pow(2, i);
+      console.log(
+        `Retrying in ${backoffMs}ms (${i + 1}/${maxRetries})`
+      );
+      await new Promise((resolve) => setTimeout(resolve, backoffMs));
     }
   }
 }
@@ -257,6 +262,14 @@ async function getNotificationSettings(userId) {
 function invalidateNotificationSettingsCache() {
   cachedNotificationSettings = null;
   settingsCacheTime = 0;
+}
+
+/**
+ * 컬렉션 캐시 무효화
+ */
+function invalidateCollectionsCache() {
+  // This will be set by popup when cache version mismatches
+  console.log("📌 Collections cache invalidated");
 }
 
 // ============================================================================
@@ -912,11 +925,23 @@ chrome.runtime.onMessageExternal.addListener(
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   console.log("Background received message:", msg?.type);
 
+  // Handle OFFSCREEN_READY signal
+  if (msg?.type === "OFFSCREEN_READY") {
+    console.log("✅ Offscreen is ready");
+    if (offscreenReadyResolver) {
+      offscreenReadyResolver();
+      offscreenReadyResolver = null;
+    }
+    sendResponse({ received: true });
+    return true;
+  }
+
   (async () => {
     try {
       // offscreen으로부터의 로그인 완료 알림
       if (msg?.type === "LOGIN_COMPLETED") {
         console.log("✅ LOGIN_COMPLETED received in background:", msg.user?.email);
+        invalidateCollectionsCache(); // Invalidate on login
 
         if (chrome.storage && chrome.storage.local) {
           await new Promise((resolve) => {

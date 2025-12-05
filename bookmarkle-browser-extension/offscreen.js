@@ -5,21 +5,39 @@ const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 let currentUser = null;
 let currentIdToken = null;
 let isIframeReady = false;
+let lastLoginUserId = null; // Prevent duplicate LOGIN_SUCCESS processing
+
+// Iframe ready event handling
+let iframeReadyResolver = null;
+let iframeReadyPromise = new Promise((resolve) => {
+  iframeReadyResolver = resolve;
+});
 
 const iframe = document.createElement("iframe");
 iframe.src = PUBLIC_SIGN_URL;
 iframe.style.display = "none"; // iframe 숨기기
 document.documentElement.appendChild(iframe);
 
-// iframe 로드 확인
-iframe.addEventListener("load", () => {
-  console.log("SignIn popup iframe loaded successfully");
-  // iframe이 준비되었음을 표시
+// Helper function to mark iframe as ready (prevent double-fire)
+function markIframeReady() {
+  if (isIframeReady) return; // Prevent double-fire
+
   isIframeReady = true;
+  if (iframeReadyResolver) {
+    iframeReadyResolver();
+    iframeReadyResolver = null;
+  }
+  console.log("✅ Iframe is ready");
   // background에 준비 완료 신호 보내기
   chrome.runtime.sendMessage({ type: "OFFSCREEN_READY" }).catch(() => {
     // 메시지를 받을 리스너가 없을 수 있음 (무시)
   });
+}
+
+// iframe 로드 확인
+iframe.addEventListener("load", () => {
+  console.log("SignIn popup iframe loaded successfully");
+  markIframeReady();
 });
 
 // iframe에서 보낸 로그인 결과 메시지를 받는 영구 리스너
@@ -35,12 +53,19 @@ window.addEventListener("message", (ev) => {
     // iframe 준비 신호 처리
     if (data.type === "IFRAME_READY") {
       console.log("✅ IFRAME_READY signal received");
-      isIframeReady = true;
+      markIframeReady();
       return;
     }
 
-    // 로그인 성공 메시지 처리
+    // 로그인 성공 메시지 처리 (중복 방지)
     if (data.type === "LOGIN_SUCCESS" && data.user) {
+      // Prevent duplicate processing from dual paths
+      if (lastLoginUserId === data.user.uid) {
+        console.log("⚠️ Duplicate LOGIN_SUCCESS ignored");
+        return;
+      }
+      lastLoginUserId = data.user.uid;
+
       console.log(
         "📥 Received LOGIN_SUCCESS from iframe:",
         data.user.email
@@ -77,6 +102,7 @@ window.addEventListener("message", (ev) => {
       // 로컬 상태 정리
       currentUser = null;
       currentIdToken = null;
+      lastLoginUserId = null; // Reset for next login
 
       // background에 로그아웃 신호 전달
       chrome.runtime.sendMessage({
@@ -107,29 +133,17 @@ if (chrome.storage && chrome.storage.local) {
   });
 }
 
-// iframe이 준비될 때까지 기다리는 헬퍼 함수
+// iframe이 준비될 때까지 기다리는 헬퍼 함수 (event-driven)
 function ensureIframeReady() {
-  return new Promise(resolve => {
-    if (isIframeReady) {
-      resolve();
-      return;
-    }
-
-    // 최대 3초 기다리기 (50ms 간격)
-    let waited = 0;
-    const interval = setInterval(() => {
-      if (isIframeReady) {
-        clearInterval(interval);
-        console.log("✅ Iframe ready, processing message");
-        resolve();
-      } else if (waited > 3000) {
-        clearInterval(interval);
+  return Promise.race([
+    iframeReadyPromise,
+    new Promise((resolve) => {
+      setTimeout(() => {
         console.warn("⚠️ Iframe not ready after 3 seconds, proceeding anyway");
         resolve();
-      }
-      waited += 50;
-    }, 50);
-  });
+      }, 3000);
+    }),
+  ]);
 }
 
 // background → offscreen 메시지 브리지

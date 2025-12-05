@@ -94,10 +94,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // Google 로그인
   login: async () => {
     try {
-      const result = await loginWithGoogle();
-      if (result.user) {
-        await get().saveUserToFirestore(result.user);
-      }
+      await loginWithGoogle();
+      // Firestore save is handled by firebase.ts, no need to save again
     } catch (error) {
       console.error("Login error:", error);
       throw error;
@@ -109,7 +107,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     try {
       const result = await fbLoginWithEmail(email, password);
       if (result.user) {
-        await get().saveUserToFirestore(result.user);
+        // Fire and forget - don't block on Firestore write
+        get().saveUserToFirestore(result.user).catch(console.error);
       }
     } catch (error) {
       console.error("Email login error:", error);
@@ -126,7 +125,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         displayName
       );
       if (userCredential.user) {
-        await get().saveUserToFirestore(userCredential.user);
+        // Fire and forget - don't block on Firestore write
+        get().saveUserToFirestore(userCredential.user).catch(console.error);
       }
     } catch (error) {
       console.error("Signup error:", error);
@@ -164,24 +164,38 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   initializeAuth: () => {
     let authCallbackFired = false;
 
-    // 3초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    // 5초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
         console.log("⚠️ Auth callback timeout - setting loading to false");
         set({ loading: false });
       }
-    }, 3000);
+    }, 5000);
 
     const unsubscribe = watchAuth((user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);
       set({ user, loading: false });
 
-      // 사용자 변경 시 상태 확인
+      // 사용자 변경 시 상태 확인 (백그라운드에서 실행)
       if (user) {
-        get().checkUserStatus(user.uid);
+        // Don't await - load user status in background
+        getDoc(doc(db, "users", user.uid))
+          .then((userDoc) => {
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              const active = userData.isActive !== false;
+              set({ isActive: active, isActiveLoading: false });
+            } else {
+              set({ isActive: true, isActiveLoading: false });
+            }
+          })
+          .catch((error) => {
+            console.error("사용자 상태 확인 실패:", error);
+            set({ isActive: true, isActiveLoading: false });
+          });
       } else {
-        set({ isActive: null });
+        set({ isActive: null, isActiveLoading: false });
       }
     });
 

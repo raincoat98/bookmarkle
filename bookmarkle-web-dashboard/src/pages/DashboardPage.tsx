@@ -71,20 +71,16 @@ export const DashboardPage: React.FC = () => {
     setBookmarkCollections(collections);
   }, [collections, setBookmarkSelectedCollection, setBookmarkCollections]);
 
-  // 컬렉션 데이터 가져오기
+  // 컬렉션 및 북마크 데이터 병렬 로드
   useEffect(() => {
-    if (user?.uid) {
-      fetchCollections(user.uid);
-    }
-  }, [user?.uid, fetchCollections]);
+    if (!user?.uid) return;
 
-  // 북마크 구독 설정
-  useEffect(() => {
-    if (user?.uid) {
-      const unsubscribe = subscribeToBookmarks(user.uid);
-      return unsubscribe;
-    }
-  }, [user?.uid, subscribeToBookmarks]);
+    // Start both operations in parallel
+    fetchCollections(user.uid);
+    const unsubscribe = subscribeToBookmarks(user.uid);
+
+    return () => unsubscribe();
+  }, [user?.uid, fetchCollections, subscribeToBookmarks]);
 
   // 정렬 상태 관리
   const [currentSort, setCurrentSort] = useState<SortOption>({
