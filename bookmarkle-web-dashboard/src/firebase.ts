@@ -281,38 +281,6 @@ export async function clearFirebaseStorage() {
       `✅ sessionStorage cleared: ${sessionKeysToRemove.length} keys removed`
     );
 
-    // 3. IndexedDB는 비동기로 처리 (로그아웃을 블로킹하지 않음)
-    if ("indexedDB" in window) {
-      try {
-        interface IDBDatabaseInfo {
-          name: string;
-        }
-        const databases = await (
-          indexedDB as { databases: () => Promise<IDBDatabaseInfo[]> }
-        ).databases();
-        const firebaseDbs = databases.filter(
-          (db: IDBDatabaseInfo) =>
-            db.name &&
-            (db.name.includes("firebase") ||
-              db.name.includes("firebaseLocalStorageDb") ||
-              db.name.includes("__firebase"))
-        );
-
-        for (const db of firebaseDbs) {
-          if (db.name) {
-            console.log(`  🗑️ Deleting IndexedDB: ${db.name}`);
-            indexedDB.deleteDatabase(db.name);
-            console.log(`  ✅ Deleted: ${db.name}`);
-          }
-        }
-        console.log(
-          `✅ IndexedDB cleared: ${firebaseDbs.length} databases deleted`
-        );
-      } catch (error) {
-        console.warn("⚠️ IndexedDB clear failed:", error);
-      }
-    }
-
     console.log("✅ Firebase storage clearing completed successfully");
   } catch (error) {
     console.error("❌ Error clearing Firebase storage:", error);
