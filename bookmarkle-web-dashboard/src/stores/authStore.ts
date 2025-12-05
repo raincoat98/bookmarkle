@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { watchAuth } from "../firebase";
+import { watchAuth, auth } from "../firebase";
 import type { User } from "firebase/auth";
 import type { FirestoreUser } from "../types";
 import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
@@ -164,13 +164,20 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   initializeAuth: () => {
     let authCallbackFired = false;
 
-    // 5초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    // 현재 인증 상태 즉시 확인 (동기적, 이미 로그인된 사용자 즉시 감지)
+    if (auth.currentUser) {
+      set({ user: auth.currentUser, loading: false });
+      authCallbackFired = true;
+    }
+
+    // 1초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    // (극히 드문 Firebase 초기화 실패 상황 대비)
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
         console.log("⚠️ Auth callback timeout - setting loading to false");
         set({ loading: false });
       }
-    }, 5000);
+    }, 1000);
 
     const unsubscribe = watchAuth((user) => {
       authCallbackFired = true;

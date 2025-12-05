@@ -21,6 +21,18 @@ export function ExtensionAuthContainer({
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
+
+      // 로그인 전 sessionStorage 정리 (로그아웃 후 재로그인 시 신호 재전송 가능)
+      if (typeof sessionStorage !== "undefined") {
+        const keys = Object.keys(sessionStorage);
+        keys.forEach((key) => {
+          if (key.startsWith("extension_auth_sent")) {
+            sessionStorage.removeItem(key);
+            console.log(`✅ Cleared sessionStorage: ${key}`);
+          }
+        });
+      }
+
       await login();
       onAuthSuccess?.();
     } catch (error: unknown) {
