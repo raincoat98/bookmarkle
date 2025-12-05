@@ -11,7 +11,7 @@ import { ExtensionAuthContainer } from "../components/auth/ExtensionAuthContaine
 import { ExtensionLoginStatus } from "../components/auth/ExtensionLoginStatus";
 
 export const ExtensionLoginPage = () => {
-  const { user, loading } = useAuthStore();
+  const { user, loading, setLoading } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -22,19 +22,32 @@ export const ExtensionLoginPage = () => {
   );
   const extensionId = useMemo(() => getExtensionId(location), [location]);
 
+  // 무한로딩 방지: 5초 후 로딩 강제 종료
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log("⚠️ Loading timeout - forcing loading to false");
+        setLoading(false);
+      }
+    }, 5000);
+
+    return () => clearTimeout(timeoutId);
+  }, [loading, setLoading]);
+
   // Signal iframe readiness to offscreen document on page load
-  // Also reset extension auth flags on mount/unmount for clean state
   useEffect(() => {
     if (extensionIsContext) {
-      // Send IFRAME_READY signal to parent (offscreen.js)
+      // Send IFRAME_READY signal to parent (offscreen.js) immediately on mount
       window.parent.postMessage(
         { type: "IFRAME_READY" },
         "*"
       );
-      console.log("📨 IFRAME_READY signal sent to parent");
+      console.log("📨 IFRAME_READY signal sent to parent on page load");
     }
+  }, [extensionIsContext]);
 
-    // Cleanup: clear extension auth flags on unmount
+  // Cleanup: clear extension auth flags on unmount
+  useEffect(() => {
     return () => {
       if (extensionIsContext && typeof sessionStorage !== "undefined") {
         const keys = Object.keys(sessionStorage);

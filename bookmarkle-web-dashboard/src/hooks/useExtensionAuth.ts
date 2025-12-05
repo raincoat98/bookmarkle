@@ -30,12 +30,28 @@ export function useExtensionAuth({
       return;
     }
 
-    // 로그아웃 시 ref 리셋
+    // 로그아웃 시 ref 리셋 및 sessionStorage 정리
     if (!user) {
       if (sentToExtensionRef.current) {
         console.log("🔄 User logged out - resetting extension auth state");
       }
       sentToExtensionRef.current = false;
+
+      // 로그아웃 시 모든 extension_auth_sent_* 키 제거
+      if (typeof sessionStorage !== "undefined") {
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && key.startsWith(EXTENSION_AUTH_STORAGE_KEY)) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach((key) => {
+          sessionStorage.removeItem(key);
+          console.log(`🧹 Cleared sessionStorage on logout: ${key}`);
+        });
+      }
+
       return;
     }
 

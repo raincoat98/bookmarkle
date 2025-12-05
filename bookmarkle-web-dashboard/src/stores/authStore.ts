@@ -10,6 +10,23 @@ import {
   signupWithEmail,
   logout as fbLogout,
 } from "../firebase";
+import { getRedirectResult } from "firebase/auth";
+
+// 사용자 정보를 Firestore에 저장 (로컬 함수)
+async function saveUserToFirestore(user: User) {
+  const userRef = doc(db, "users", user.uid);
+  const userData = {
+    uid: user.uid,
+    email: user.email,
+    displayName: user.displayName,
+    photoURL: user.photoURL,
+    emailVerified: user.emailVerified,
+    provider: user.providerData[0]?.providerId || "email",
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(userRef, userData, { merge: true });
+}
 
 interface AuthState {
   user: User | null;
@@ -94,6 +111,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // Google 로그인
   login: async () => {
     try {
+      console.log("🔄 Calling loginWithGoogle()...");
       await loginWithGoogle();
       // Firestore save is handled by firebase.ts, no need to save again
     } catch (error) {
@@ -164,24 +182,34 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   initializeAuth: () => {
     let authCallbackFired = false;
 
-    // 현재 인증 상태 즉시 확인 (동기적, 이미 로그인된 사용자 즉시 감지)
-    if (auth.currentUser) {
-      console.log("✅ Current user found immediately:", auth.currentUser.email);
-      set({ user: auth.currentUser, loading: false });
-      authCallbackFired = true;
-    } else {
-      console.log("⏳ No current user, waiting for auth callback...");
-    }
+    // 리다이렉트 로그인 결과 확인 (signInWithRedirect 폴백 후 돌아온 경우)
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          console.log("✅ Redirect login successful:", result.user.email);
+          // Firestore save for redirect result
+          saveUserToFirestore(result.user).catch((error) => {
+            console.error("Firestore save failed after redirect:", error);
+          });
+        }
+      })
+      .catch((error: unknown) => {
+        const err = error as { code?: string; message?: string };
+        // INAPP_LINK_FAILURE는 정상적인 경우임 (리다이렉트 결과가 없음)
+        if (err?.code !== "auth/inapp-link-failure") {
+          console.error("❌ Redirect result error:", err?.code, err?.message);
+        }
+      });
 
-    // 3초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
-    // (iframe 환경에서는 Firebase 초기화가 더 오래 걸릴 수 있음)
+    // 5초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
-        console.log("⚠️ Auth callback timeout (3s) - setting loading to false");
+        console.log("⚠️ Auth callback timeout (5s) - setting loading to false");
         set({ loading: false });
       }
-    }, 3000);
+    }, 5000);
 
+    // 인증 상태 감시
     const unsubscribe = watchAuth((user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);

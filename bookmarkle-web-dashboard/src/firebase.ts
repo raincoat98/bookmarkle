@@ -9,6 +9,7 @@ import {
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
   type User,
@@ -81,18 +82,44 @@ async function saveUserToFirestore(user: User, isNewUser: boolean = false) {
 
 // 팝업 차단/사파리 이슈 시 redirect로 대체 가능
 export async function loginWithGoogle() {
-  await setPersistence(auth, browserLocalPersistence);
-  const result = await signInWithPopup(auth, googleProvider);
+  try {
+    // 팝업으로 로그인 시도
+    console.log("🔄 Attempting signInWithPopup...");
+    const result = await signInWithPopup(auth, googleProvider);
 
-  // 사용자 정보를 Firestore에 저장 (오류가 발생해도 로그인은 성공)
-  // Don't await - let it run in background (non-blocking)
-  if (result.user) {
-    saveUserToFirestore(result.user, false).catch((error) => {
-      console.error("Firestore 저장 실패 (로그인은 성공):", error);
-    });
+    if (result.user) {
+      console.log("✅ Login successful:", result.user.email);
+      saveUserToFirestore(result.user, false).catch((error) => {
+        console.error("Firestore 저장 실패 (로그인은 성공):", error);
+      });
+    }
+
+    return result;
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string };
+
+    // 팝업이 차단되거나 COOP 정책 위반 시 리다이렉트로 폴백
+    if (
+      err?.code === "auth/popup-blocked" ||
+      err?.code === "auth/popup-closed-by-user" ||
+      (err?.message && err.message.includes("Cross-Origin-Opener-Policy"))
+    ) {
+      console.log("⚠️ Popup blocked/COOP error, falling back to redirect...");
+      // signInWithRedirect는 페이지를 이동시킴
+      try {
+        await signInWithRedirect(auth, googleProvider);
+      } catch (redirectError) {
+        console.error("❌ Redirect login failed:", redirectError);
+        throw redirectError;
+      }
+      // signInWithRedirect succeeds with navigation, won't reach here
+      return;
+    }
+
+    // 네트워크 에러나 기타 에러는 그대로 throw
+    console.error("❌ Google login failed:", err?.code, err?.message);
+    throw error;
   }
-
-  return result;
 }
 
 // 이메일/패스워드 로그인
@@ -144,6 +171,7 @@ export function resetPassword(email: string) {
 }
 
 export async function logout() {
+  // Firebase 세션 완전 클리어
   await clearFirebaseStorage();
 
   // 확장 프로그램에 LOGOUT_SUCCESS 메시지 전송
@@ -182,7 +210,13 @@ export async function logout() {
     console.warn("Error notifying extension about logout:", error);
   }
 
-  return signOut(auth);
+  // Firebase Auth 로그아웃
+  const signOutResult = await signOut(auth);
+
+  // 로그아웃 완료 후 구글 프로바이더 상태 초기화
+  console.log("🔄 Resetting GoogleAuthProvider state after logout");
+
+  return signOutResult;
 }
 
 /**
@@ -191,49 +225,85 @@ export async function logout() {
  */
 export async function clearFirebaseStorage() {
   try {
-    console.log("Clearing Firebase local storage...");
+    console.log("🧹 Starting comprehensive Firebase storage cleanup...");
 
-    // localStorage에서 Firebase 관련 키 제거
+    // 1. localStorage에서 Firebase 관련 키 제거
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (
         key &&
-        (key.startsWith("firebase:") || key.startsWith("firebaseui:"))
+        (key.startsWith("firebase:") ||
+          key.startsWith("firebaseui:") ||
+          key.includes("firebase-session") ||
+          key.includes("__firebase"))
       ) {
         keysToRemove.push(key);
       }
     }
-    keysToRemove.forEach((key) => localStorage.removeItem(key));
-    console.log("localStorage cleared:", keysToRemove.length, "keys removed");
+    keysToRemove.forEach((key) => {
+      localStorage.removeItem(key);
+      console.log(`  ✅ Removed localStorage: ${key}`);
+    });
+    console.log(`✅ localStorage cleared: ${keysToRemove.length} keys removed`);
 
-    // IndexedDB는 비동기로 처리 (로그아웃을 블로킹하지 않음)
+    // 2. sessionStorage에서 Firebase 관련 키 제거
+    const sessionKeysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (
+        key &&
+        (key.startsWith("firebase:") ||
+          key.startsWith("firebaseui:") ||
+          key.includes("firebase-session") ||
+          key.includes("__firebase"))
+      ) {
+        sessionKeysToRemove.push(key);
+      }
+    }
+    sessionKeysToRemove.forEach((key) => {
+      sessionStorage.removeItem(key);
+      console.log(`  ✅ Removed sessionStorage: ${key}`);
+    });
+    console.log(
+      `✅ sessionStorage cleared: ${sessionKeysToRemove.length} keys removed`
+    );
+
+    // 3. IndexedDB는 비동기로 처리 (로그아웃을 블로킹하지 않음)
     if ("indexedDB" in window) {
       try {
-        const databases = await indexedDB.databases();
+        interface IDBDatabaseInfo {
+          name: string;
+        }
+        const databases = await (
+          indexedDB as { databases: () => Promise<IDBDatabaseInfo[]> }
+        ).databases();
         const firebaseDbs = databases.filter(
-          (db) =>
+          (db: IDBDatabaseInfo) =>
             db.name &&
             (db.name.includes("firebase") ||
-              db.name.includes("firebaseLocalStorageDb"))
+              db.name.includes("firebaseLocalStorageDb") ||
+              db.name.includes("__firebase"))
         );
 
         for (const db of firebaseDbs) {
           if (db.name) {
-            console.log("Deleting IndexedDB:", db.name);
-            const deleteReq = indexedDB.deleteDatabase(db.name);
-            deleteReq.onsuccess = () => console.log("Deleted:", db.name);
-            deleteReq.onerror = () => console.warn("Failed to delete:", db.name);
+            console.log(`  🗑️ Deleting IndexedDB: ${db.name}`);
+            indexedDB.deleteDatabase(db.name);
+            console.log(`  ✅ Deleted: ${db.name}`);
           }
         }
+        console.log(
+          `✅ IndexedDB cleared: ${firebaseDbs.length} databases deleted`
+        );
       } catch (error) {
-        console.warn("IndexedDB clear failed:", error);
+        console.warn("⚠️ IndexedDB clear failed:", error);
       }
     }
 
-    console.log("Firebase storage clearing completed");
+    console.log("✅ Firebase storage clearing completed successfully");
   } catch (error) {
-    console.error("Error clearing Firebase storage:", error);
+    console.error("❌ Error clearing Firebase storage:", error);
   }
 }
 
