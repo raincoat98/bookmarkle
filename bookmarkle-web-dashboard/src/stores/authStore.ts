@@ -166,22 +166,32 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
 
     // 현재 인증 상태 즉시 확인 (동기적, 이미 로그인된 사용자 즉시 감지)
     if (auth.currentUser) {
+      console.log("✅ Current user found immediately:", auth.currentUser.email);
       set({ user: auth.currentUser, loading: false });
       authCallbackFired = true;
+    } else {
+      console.log("⏳ No current user, waiting for auth callback...");
     }
 
-    // 1초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
-    // (극히 드문 Firebase 초기화 실패 상황 대비)
+    // 3초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    // (iframe 환경에서는 Firebase 초기화가 더 오래 걸릴 수 있음)
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
-        console.log("⚠️ Auth callback timeout - setting loading to false");
+        console.log("⚠️ Auth callback timeout (3s) - setting loading to false");
         set({ loading: false });
       }
-    }, 1000);
+    }, 3000);
 
     const unsubscribe = watchAuth((user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);
+
+      if (user) {
+        console.log("✅ Auth callback fired: user logged in -", user.email);
+      } else {
+        console.log("✅ Auth callback fired: user logged out");
+      }
+
       set({ user, loading: false });
 
       // 사용자 변경 시 상태 확인 (백그라운드에서 실행)
