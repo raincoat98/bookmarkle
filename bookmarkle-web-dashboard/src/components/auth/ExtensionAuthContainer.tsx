@@ -33,14 +33,56 @@ export function ExtensionAuthContainer({
       if (
         firebaseError.code === "auth/popup-closed-by-user" ||
         firebaseError.code === "auth/popup-blocked" ||
-        (firebaseError.message && firebaseError.message.includes("Cross-Origin-Opener-Policy"))
+        (firebaseError.message && (
+          firebaseError.message.includes("Cross-Origin-Opener-Policy") ||
+          firebaseError.message.includes("blocked by browser") ||
+          firebaseError.message.includes("popup blocked") ||
+          firebaseError.message.includes("cross-origin") ||
+          firebaseError.message.includes("Pending promise was never set")
+        ))
       ) {
-        console.log("ℹ️ Popup blocked/COOP error, redirect initiated");
+        console.log("ℹ️ Popup blocked/COOP/iframe error, redirect initiated");
+        console.log("🔍 Error details:", {
+          code: firebaseError.code,
+          message: firebaseError.message,
+        });
+        // offscreen.js에 폴백 중 메시지 전송 (redirect 전)
+        try {
+          window.parent.postMessage(
+            {
+              type: "AUTH_FALLBACK",
+              code: "popup-blocked-redirect-fallback",
+              message: "팝업이 차단되어 다시 시도 중입니다...",
+              details: firebaseError.message,
+            },
+            "*"
+          );
+        } catch (e) {
+          console.error("Failed to send fallback message to parent:", e);
+        }
         // redirect는 페이지를 떠나므로 에러 표시 불필요
         return;
       }
 
       console.error("❌ Google login error:", error);
+
+      // offscreen.js에 에러 메시지 전송
+      try {
+        const errorObj = error as Record<string, unknown>;
+        window.parent.postMessage(
+          {
+            type: "AUTH_ERROR",
+            code: firebaseError.code || "unknown",
+            message: firebaseError.message || "로그인에 실패했습니다",
+            details: (errorObj?.toString?.() as string) || String(error),
+          },
+          "*"
+        );
+        console.log("📤 Auth error sent to parent offscreen");
+      } catch (e) {
+        console.error("Failed to send error to parent:", e);
+      }
+
       toast.error("Google 로그인에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);

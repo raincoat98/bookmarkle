@@ -46,6 +46,55 @@ export const ExtensionLoginPage = () => {
     }
   }, [extensionIsContext]);
 
+  // Handle unhandled promise rejections from Firebase
+  useEffect(() => {
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      const error = event.reason;
+      const errorMessage = error?.message || String(error);
+
+      console.error("🔥 Unhandled promise rejection:", error);
+
+      // Firebase 내부 에러는 무시 (이미 처리됨)
+      // - INTERNAL ASSERTION FAILED: Firebase 내부 assertion 에러
+      // - Pending promise was never set: 팝업 차단 시 Firebase의 poll 함수 에러
+      // - undefined is not an object: Safari에서의 popup 접근 실패
+      if (
+        errorMessage.includes("INTERNAL ASSERTION FAILED") ||
+        errorMessage.includes("Pending promise was never set") ||
+        errorMessage.includes("undefined is not an object") ||
+        errorMessage.includes("Cannot read property 'closed'") ||
+        errorMessage.includes("Cannot read properties of null")
+      ) {
+        console.log("✅ Firebase internal error detected and suppressed (already handled by fallback)");
+        // 이 에러는 이미 signInWithRedirect로 폴백되었으므로 무시
+        return;
+      }
+
+      // Extension 컨텍스트에서 실제 에러 발생 시 부모에 알림
+      if (extensionIsContext && typeof window.parent?.postMessage === "function") {
+        try {
+          window.parent.postMessage(
+            {
+              type: "AUTH_ERROR",
+              code: "unhandled-promise-rejection",
+              message: errorMessage || "예기치 않은 에러가 발생했습니다",
+              details: error?.toString?.(),
+            },
+            "*"
+          );
+        } catch (e) {
+          console.error("Failed to send error to parent:", e);
+        }
+      }
+    };
+
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
+  }, [extensionIsContext]);
+
   // Cleanup: clear extension auth flags on unmount
   useEffect(() => {
     return () => {
@@ -67,6 +116,16 @@ export const ExtensionLoginPage = () => {
     isExtensionContext: extensionIsContext,
     extensionId,
   });
+
+  // Debug logging
+  useEffect(() => {
+    console.log("🔍 ExtensionLoginPage state:", {
+      user: user?.email,
+      userId: user?.uid,
+      isLoading: loading,
+      isExtensionContext: extensionIsContext,
+    });
+  }, [user, loading, extensionIsContext]);
 
   useExtensionMessage({ user });
 

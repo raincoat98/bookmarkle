@@ -24,11 +24,18 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
   // Keep userRef in sync with current user
   useEffect(() => {
+    console.log("🔄 useExtensionMessage user updated:", user?.uid);
     userRef.current = user;
   }, [user]);
 
   // Setup message listener once on mount
   useEffect(() => {
+    console.log("📌 useExtensionMessage hook mounted, initial user:", {
+      hasUser: !!user,
+      userId: user?.uid,
+      userEmail: user?.email,
+    });
+
     const handleMessage = async (event: MessageEvent) => {
       // Filter Firebase internal messages
       if (typeof event.data === "string" && isFirebaseInternalMessage(event.data)) {
@@ -86,10 +93,14 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
   async function handleGetCollections() {
     console.log("📬 Received getCollections request from offscreen");
-    console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+    console.log("📬 userRef.current state:", {
+      hasUser: !!userRef.current,
+      userId: userRef.current?.uid,
+      userEmail: userRef.current?.email,
+    });
 
     if (!userRef.current?.uid) {
-      console.error("❌ No user ID to fetch collections");
+      console.error("❌ No user ID to fetch collections - will send error");
       sendToExtensionParent(
         createErrorResponse("COLLECTIONS_ERROR", "No user ID")
       );
@@ -104,18 +115,24 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         collections.length,
         "items"
       );
-      console.log("📦 Sending collections to offscreen:", collections);
+
+      if (collections.length === 0) {
+        console.warn("⚠️ No collections found for user");
+      } else {
+        console.log("📦 Collections:", collections.map(c => ({ id: c.id, name: c.name })));
+      }
 
       sendToExtensionParent({
         type: "COLLECTIONS_DATA",
         collections: collections,
       } as any);
-      console.log("✅ Collections message sent to offscreen");
+      console.log("✅ Collections data sent back to offscreen");
     } catch (error) {
       console.error("❌ Error fetching collections:", error);
       console.error("❌ Error details:", {
         message: error instanceof Error ? error.message : String(error),
         code: (error as any)?.code,
+        stack: error instanceof Error ? error.stack : undefined,
       });
       sendToExtensionParent(
         createErrorResponse(

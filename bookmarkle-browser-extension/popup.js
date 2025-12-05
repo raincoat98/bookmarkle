@@ -567,8 +567,25 @@ async function loadCollections(forceRefresh = false) {
       type: "GET_AUTH_STATE",
     });
 
+    console.log("🔍 GET_AUTH_STATE 응답:", {
+      hasUser: !!authResult?.user,
+      userId: authResult?.user?.uid,
+      collectionsFromAuth: authResult?.collections?.length || 0,
+    });
+
     if (!authResult?.user?.uid) {
       console.error("사용자 정보가 없습니다");
+      return;
+    }
+
+    // authResult에서 받은 컬렉션이 있으면 먼저 사용
+    if (
+      authResult?.collections &&
+      authResult.collections.length > 0 &&
+      !forceRefresh
+    ) {
+      console.log("✅ GET_AUTH_STATE에서 받은 컬렉션 사용:", authResult.collections.length);
+      renderCollections(authResult.collections);
       return;
     }
 
@@ -1466,19 +1483,26 @@ if ($sponsorButton) {
 
 // 페이지 로드 시 다국어 초기화
 document.addEventListener("DOMContentLoaded", () => {
+  console.log("📄 Popup DOM loaded");
   initI18n();
   initLanguageModal();
+  // 사용자 인증 상태 확인 (로그인 상태면 컬렉션 로드)
+  refreshUser();
 });
 
 // 즉시 실행 (DOM이 이미 로드된 경우)
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", () => {
+    console.log("📄 Popup DOM loaded (deferred)");
     initI18n();
     initLanguageModal();
+    refreshUser();
   });
 } else {
+  console.log("📄 Popup DOM already loaded");
   initI18n();
   initLanguageModal();
+  refreshUser();
 }
 
 // ===== Extension 로그인/로그아웃 메시지 처리 =====

@@ -113,7 +113,7 @@ async function hasOffscreen() {
 /**
  * Offscreen 문서가 준비될 때까지 대기 (event-driven)
  */
-async function waitForOffscreenReady(maxWait = 5000, silent = false) {
+async function waitForOffscreenReady(maxWait = 1000, silent = false) {
   try {
     await Promise.race([
       offscreenReadyPromise,
@@ -136,14 +136,29 @@ async function waitForOffscreenReady(maxWait = 5000, silent = false) {
  */
 async function setupOffscreen(silent = false) {
   if (await hasOffscreen()) {
-    // 이미 존재하면 준비 확인만
-    await waitForOffscreenReady(5000, silent);
+    // 이미 존재하면 빠르게 반환 (PING으로 활성 상태 확인)
+    try {
+      const response = await Promise.race([
+        chrome.runtime.sendMessage({ type: "PING" }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("PING timeout")), 500)
+        ),
+      ]);
+      if (response?.ready) {
+        if (!silent) console.log("✅ Offscreen is ready");
+        return;
+      }
+    } catch (error) {
+      // PING 실패해도 진행 (offscreen이 준비되지 않았을 수 있음)
+    }
+    // PING이 실패하면 waitForOffscreenReady로 짧게 대기
+    await waitForOffscreenReady(500, true);
     return;
   }
 
   if (creatingOffscreen) {
     await creatingOffscreen;
-    await waitForOffscreenReady(5000, silent);
+    await waitForOffscreenReady(500, silent);
     return;
   }
 
@@ -161,7 +176,7 @@ async function setupOffscreen(silent = false) {
   creatingOffscreen = null;
 
   // offscreen이 준비될 때까지 대기
-  await waitForOffscreenReady(5000, silent);
+  await waitForOffscreenReady(1000, silent);
 }
 
 /**
@@ -176,7 +191,7 @@ async function closeOffscreen() {
 /**
  * Offscreen으로 메시지를 보내고 재시도 로직 포함
  */
-async function sendMessageToOffscreen(message, maxRetries = 3) {
+async function sendMessageToOffscreen(message, maxRetries = 2) {
   console.log("🔥 sendMessageToOffscreen called with:", message);
   for (let i = 0; i < maxRetries; i++) {
     try {
@@ -189,8 +204,8 @@ async function sendMessageToOffscreen(message, maxRetries = 3) {
       if (i === maxRetries - 1) {
         throw error;
       }
-      // Exponential backoff: 100ms, 200ms, 400ms instead of 500ms, 500ms, 500ms
-      const backoffMs = 100 * Math.pow(2, i);
+      // Faster backoff: 50ms instead of exponential
+      const backoffMs = 50;
       console.log(
         `Retrying in ${backoffMs}ms (${i + 1}/${maxRetries})`
       );

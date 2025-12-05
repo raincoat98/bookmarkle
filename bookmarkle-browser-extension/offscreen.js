@@ -172,11 +172,38 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const data =
           typeof ev.data === "string" ? JSON.parse(ev.data) : ev.data;
 
-        // AUTH_RESULT 타입만 처리 (다른 메시지는 무시)
-        if (data.type === "AUTH_RESULT" || data.user) {
+        // AUTH_RESULT, AUTH_ERROR, AUTH_FALLBACK 타입 또는 user 객체를 포함한 응답만 처리
+        // 다른 메시지(예: LOGOUT_SUCCESS, 컬렉션 요청 등)는 무시
+        const isAuthResult = data?.type === "AUTH_RESULT";
+        const isAuthError = data?.type === "AUTH_ERROR";
+        const isAuthFallback = data?.type === "AUTH_FALLBACK";
+        const isLoginSuccess = data?.user && data?.idToken && data?.type !== "LOGIN_SUCCESS"; // LOGIN_SUCCESS는 별도 처리
+
+        if (isAuthResult || isAuthError || isAuthFallback || isLoginSuccess) {
+          if (messageResolved) {
+            console.log("⚠️ Message already resolved, ignoring duplicate:", data.type);
+            return; // 이미 응답한 경우 무시
+          }
+
           window.removeEventListener("message", handleIframeMessage);
           messageResolved = true;
           clearTimeout(timeoutId);
+
+          // 폴백 처리 (redirect 진행 중)
+          if (isAuthFallback) {
+            console.log("🔄 AUTH_FALLBACK received - popup blocked, using redirect fallback");
+            console.log("📝 Fallback details:", data);
+            // redirect는 페이지를 떠나므로 즉시 응답하지 않고 대기
+            // 리다이렉트 후 돌아오면 getRedirectResult()가 처리함
+            return;
+          }
+
+          // 에러 처리
+          if (isAuthError) {
+            console.error("🚨 AUTH_ERROR received from iframe:", data);
+            sendResponse(data);
+            return;
+          }
 
           // 로그인 성공 시 사용자 정보와 토큰 저장
           if (data.user) {
@@ -188,6 +215,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
                 currentIdToken: data.idToken,
               });
             }
+            console.log("✅ Auth successful:", data.user.email);
           }
 
           sendResponse(data); // background로 결과 반환
@@ -197,7 +225,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           window.removeEventListener("message", handleIframeMessage);
           messageResolved = true;
           clearTimeout(timeoutId);
-          sendResponse({ name: "ParseError", message: e.message });
+          console.error("🔥 Error parsing iframe message:", e);
+          sendResponse({ type: "AUTH_ERROR", name: "ParseError", message: e.message });
         }
       }
     }
@@ -462,7 +491,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     // 북마크 저장 요청
     const origin = new URL(PUBLIC_SIGN_URL).origin;
     let messageResolved = false;
-    const timeout = 30000; // 30초 타임아웃
+    const timeout = 10000; // 10초 타임아웃 (줄임)
 
     function handleSaveBookmarkMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터

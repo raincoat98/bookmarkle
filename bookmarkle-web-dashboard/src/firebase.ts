@@ -96,20 +96,32 @@ export async function loginWithGoogle() {
 
     return result;
   } catch (error: unknown) {
-    const err = error as { code?: string; message?: string };
+    const err = error as { code?: string; message?: string; name?: string };
 
     // 팝업이 차단되거나 COOP 정책 위반 시 리다이렉트로 폴백
     if (
       err?.code === "auth/popup-blocked" ||
       err?.code === "auth/popup-closed-by-user" ||
-      (err?.message && err.message.includes("Cross-Origin-Opener-Policy"))
+      (err?.message && err.message.includes("Cross-Origin-Opener-Policy")) ||
+      // iframe 내에서의 팝업 차단도 감지
+      (err?.message && (
+        err.message.includes("blocked by browser") ||
+        err.message.includes("popup blocked") ||
+        err.message.includes("cross-origin") ||
+        err.message.includes("Pending promise was never set")
+      ))
     ) {
-      console.log("⚠️ Popup blocked/COOP error, falling back to redirect...");
+      console.log("⚠️ Popup blocked/COOP/iframe error, falling back to redirect...");
+      console.log("🔍 Full error details:", {
+        code: err?.code,
+        message: err?.message,
+        name: err?.name,
+      });
       // signInWithRedirect는 페이지를 이동시킴
       try {
         await signInWithRedirect(auth, googleProvider);
       } catch (redirectError) {
-        console.error("❌ Redirect login failed:", redirectError);
+        console.error("❌ Redirect login also failed:", redirectError);
         throw redirectError;
       }
       // signInWithRedirect succeeds with navigation, won't reach here
