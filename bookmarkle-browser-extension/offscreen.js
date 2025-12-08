@@ -456,7 +456,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           {
             getCollections: true,
             userId: msg.userId,
-            idToken: currentIdToken, // ID 토큰 함께 전달
+            idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
           },
           origin
         );

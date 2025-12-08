@@ -51,7 +51,10 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
         // Route to appropriate handler
         if ("getCollections" in data && data.getCollections) {
-          await handleGetCollections(("userId" in data ? data.userId : null) as string | null);
+          await handleGetCollections(
+            ("userId" in data ? data.userId : null) as string | null,
+            ("idToken" in data ? data.idToken : null) as string | null
+          );
         } else if ("getBookmarks" in data && data.getBookmarks) {
           await handleGetBookmarks(
             ("collectionId" in data ? data.collectionId : null) as string | null,
@@ -104,40 +107,74 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   // HANDLERS
   // ========================================================================
 
-  async function handleGetCollections(userId?: string | null) {
+  async function handleGetCollections(userId?: string | null, idToken?: string | null) {
     console.log("📬 Received getCollections request from offscreen");
     console.log("📬 Request userId:", userId);
-    console.log("📬 userRef.current state:", {
-      hasUser: !!userRef.current,
-      userId: userRef.current?.uid,
-      userEmail: userRef.current?.email,
-    });
+    console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
-    // Use provided userId or fall back to userRef.current
     const effectiveUserId = userId || userRef.current?.uid;
 
-    if (!effectiveUserId) {
-      console.error("❌ No user ID to fetch collections - will send error");
+    if (!effectiveUserId || !idToken) {
+      console.error("❌ Missing userId or idToken for collections");
       sendToExtensionParent(
-        createErrorResponse("COLLECTIONS_ERROR", "No user ID")
+        createErrorResponse("COLLECTIONS_ERROR", "Missing authentication")
       );
       return;
     }
 
     try {
-      console.log("📬 Fetching collections for user:", effectiveUserId);
-      const collections = await fetchCollections(effectiveUserId);
-      console.log(
-        "✅ Collections fetched successfully:",
-        collections.length,
-        "items"
+      console.log("📬 Fetching collections via Firestore REST API...");
+      
+      const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/collections?pageSize=1000`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${idToken}`,
+          },
+        }
       );
 
-      if (collections.length === 0) {
-        console.warn("⚠️ No collections found for user");
-      } else {
-        console.log("📦 Collections:", collections.map(c => ({ id: c.id, name: c.name })));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Firestore API error: ${JSON.stringify(errorData)}`);
       }
+
+      const result = await response.json();
+      const documents = result.documents || [];
+      
+      // Convert Firestore REST format to collection objects
+      const collections = documents
+        .map((doc: any) => {
+          const fields = doc.fields || {};
+          const docId = doc.name.split("/").pop();
+          
+          // Only return collections for this user
+          if (fields.userId?.stringValue !== effectiveUserId) {
+            return null;
+          }
+          
+          return {
+            id: docId,
+            name: fields.name?.stringValue || "",
+            userId: fields.userId?.stringValue || "",
+            description: fields.description?.stringValue || "",
+            icon: fields.icon?.stringValue || null,
+            color: fields.color?.stringValue || null,
+            isDefault: fields.isDefault?.booleanValue || false,
+            order: fields.order?.integerValue ? parseInt(fields.order.integerValue) : 0,
+            createdAt: fields.createdAt?.timestampValue 
+              ? new Date(fields.createdAt.timestampValue) 
+              : new Date(),
+            updatedAt: fields.updatedAt?.timestampValue 
+              ? new Date(fields.updatedAt.timestampValue) 
+              : new Date(),
+          };
+        })
+        .filter((c: any) => c !== null);
+
+      console.log("✅ Collections fetched successfully:", collections.length, "items");
 
       sendToExtensionParent({
         type: "COLLECTIONS_DATA",
@@ -149,7 +186,6 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       console.error("❌ Error details:", {
         message: error instanceof Error ? error.message : String(error),
         code: (error as any)?.code,
-        stack: error instanceof Error ? error.stack : undefined,
       });
       sendToExtensionParent(
         createErrorResponse(

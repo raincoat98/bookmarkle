@@ -182,6 +182,18 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   initializeAuth: () => {
     let authCallbackFired = false;
 
+    // Extension iframe context에서는 auth watcher를 설정하지 않음
+    // (popup에서 로그인하면 바로 로그아웃 이벤트가 발생하는 문제 방지)
+    const isExtensionIframe = 
+      window.location.pathname.includes('/extension-login') && 
+      new URLSearchParams(window.location.search).has('extensionId');
+    
+    if (isExtensionIframe) {
+      console.log("🔍 Extension iframe detected - skipping auth state watcher");
+      set({ loading: false });
+      return () => {}; // noop unsubscribe
+    }
+
     // 리다이렉트 로그인 결과 확인 (signInWithRedirect 폴백 후 돌아온 경우)
     getRedirectResult(auth)
       .then((result) => {

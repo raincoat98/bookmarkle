@@ -691,11 +691,17 @@ async function validateCollection(collectionId, userId) {
 
   // 캐시에 없으면 실시간으로 Firestore에서 조회
   console.log("🔍 [background] 캐시에 없음 - Firestore에서 실시간 조회 중...");
+  
+  // Chrome Storage에서 idToken 가져오기
+  const storageData = await chrome.storage.local.get(["currentIdToken"]);
+  const idToken = storageData.currentIdToken;
+  
   await setupOffscreen();
   const collectionsResult = await sendMessageToOffscreen({
     target: "offscreen",
     type: "GET_COLLECTIONS",
     userId: userId,
+    idToken: idToken, // idToken 추가
   });
 
   console.log("🔍 [background] 컬렉션 조회 결과:", collectionsResult.type);
@@ -1061,11 +1067,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "GET_COLLECTIONS") {
         // 컬렉션 데이터 요청을 offscreen으로 전달
+        // Chrome Storage에서 idToken 가져오기
+        const storageData = await chrome.storage.local.get(["currentIdToken"]);
+        const idToken = storageData.currentIdToken;
+        
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
           type: "GET_COLLECTIONS",
           userId: msg.userId,
+          idToken: idToken, // idToken 추가
         });
         sendResponse(result);
         return true; // async 응답을 위해 true 반환
