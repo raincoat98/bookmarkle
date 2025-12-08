@@ -32,6 +32,35 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
+      
+      // Extension에 로그아웃 메시지 브로드캐스트
+      try {
+        // window.opener가 있으면 전송
+        if (window.opener && !window.opener.closed) {
+          window.opener.postMessage(
+            {
+              type: "LOGOUT_SUCCESS",
+            },
+            window.location.origin
+          );
+          console.log("✅ LOGOUT_SUCCESS 메시지를 window.opener로 전송");
+        }
+        
+        // Chrome Extension에도 직접 전송 시도
+        const extensionId = import.meta.env.VITE_EXTENSION_ID;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const chromeAPI = (window as any).chrome;
+        if (typeof chromeAPI !== "undefined" && chromeAPI.runtime && extensionId) {
+          chromeAPI.runtime.sendMessage(extensionId, {
+            type: "LOGOUT_SUCCESS",
+          }).catch((error: Error) => {
+            console.log("Extension 메시지 전송 실패:", error.message);
+          });
+        }
+      } catch (error) {
+        console.error("Extension 메시지 전송 실패:", error);
+      }
+      
       await onLogout();
       // Firebase auth state listener will handle the redirect
     } catch (error) {

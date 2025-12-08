@@ -933,6 +933,36 @@ chrome.runtime.onMessageExternal.addListener(
       }
       return true;
     }
+    
+    if (request.type === "LOGOUT_SUCCESS") {
+      console.log("✅ LOGOUT_SUCCESS from web dashboard");
+      
+      // Chrome Storage에서 사용자 정보 제거
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.remove(
+          ["currentUser", "currentIdToken", "cachedCollections", "collections"],
+          () => {
+            console.log("✅ User data cleared from Chrome Storage");
+            
+            // 모든 탭에 로그아웃 알림 브로드캐스트
+            chrome.tabs.query({}, (tabs) => {
+              tabs.forEach((tab) => {
+                chrome.tabs.sendMessage(tab.id, {
+                  type: "LOGOUT_COMPLETED",
+                }).catch(() => {
+                  // 탭이 로드되지 않았거나 메시지를 받을 리스너가 없을 수 있음
+                });
+              });
+            });
+            
+            sendResponse({ success: true });
+          }
+        );
+      } else {
+        sendResponse({ success: false, error: "Storage API unavailable" });
+      }
+      return true;
+    }
   }
 );
 
