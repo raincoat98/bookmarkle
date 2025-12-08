@@ -9,7 +9,6 @@ import {
 import {
   fetchCollections,
   fetchBookmarks,
-  saveBookmarkDirect,
   createCollection,
   getUserNotificationSettings,
 } from "../utils/firestoreService";
@@ -61,9 +60,11 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         } else if ("saveBookmark" in data && data.saveBookmark) {
           console.log("🔍 saveBookmark message data:", data);
           console.log("🔍 userId in message:", "userId" in data ? data.userId : "NOT FOUND");
+          console.log("🔍 idToken in message:", "idToken" in data ? "✅ Present" : "❌ Missing");
           await handleSaveBookmark(
             ("bookmarkData" in data ? data.bookmarkData : null) as unknown,
-            ("userId" in data ? data.userId : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null,
+            ("idToken" in data ? data.idToken : null) as string | null
           );
         } else if ("createCollection" in data && data.createCollection) {
           await handleCreateCollection(
@@ -214,34 +215,65 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
   }
 
-  async function handleSaveBookmark(bookmarkData: unknown, userId?: string | null) {
+  async function handleSaveBookmark(bookmarkData: unknown, userId?: string | null, idToken?: string | null) {
     console.log("📬 Received saveBookmark request from offscreen");
     console.log("📬 Bookmark data:", bookmarkData);
     console.log("📬 Request userId parameter:", userId);
-    console.log("📬 userRef.current?.uid:", userRef.current?.uid);
-    console.log("📬 auth.currentUser?.uid:", auth.currentUser?.uid);
+    console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
-    // Use provided userId or fall back to userRef.current or auth.currentUser
     const effectiveUserId = userId || userRef.current?.uid || auth.currentUser?.uid;
     console.log("📬 Effective userId:", effectiveUserId);
-    console.log("📬 User ID check:", effectiveUserId ? "✅ Available" : "❌ Missing");
 
-    if (!effectiveUserId) {
-      console.error("❌ No user ID to save bookmark");
+    if (!effectiveUserId || !idToken) {
+      console.error("❌ Missing userId or idToken");
       sendToExtensionParent(
-        createErrorResponse("BOOKMARK_SAVE_ERROR", "No user ID")
+        createErrorResponse("BOOKMARK_SAVE_ERROR", "Missing authentication")
       );
       return;
     }
 
     try {
-      console.log("📬 Saving bookmark for user:", effectiveUserId);
+      console.log("📬 Saving bookmark via Firestore REST API with idToken...");
+      
+      // Firestore REST API를 사용하여 idToken으로 인증된 요청 보내기
+      const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
       const bookmarkPayload = {
-        ...(bookmarkData as Record<string, unknown>),
-        userId: effectiveUserId,
+        fields: {
+          userId: { stringValue: effectiveUserId },
+          title: { stringValue: (bookmarkData as any).title || "" },
+          url: { stringValue: (bookmarkData as any).url || "" },
+          description: { stringValue: (bookmarkData as any).description || "" },
+          collectionId: (bookmarkData as any).collectionId 
+            ? { stringValue: (bookmarkData as any).collectionId }
+            : { nullValue: null },
+          favicon: (bookmarkData as any).favicon
+            ? { stringValue: (bookmarkData as any).favicon }
+            : { nullValue: null },
+          createdAt: { timestampValue: new Date().toISOString() },
+          updatedAt: { timestampValue: new Date().toISOString() },
+        },
       };
 
-      const bookmarkId = await saveBookmarkDirect(bookmarkPayload as Parameters<typeof saveBookmarkDirect>[0]);
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/bookmarks`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify(bookmarkPayload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Firestore API error: ${JSON.stringify(errorData)}`);
+      }
+
+      const result = await response.json();
+      const bookmarkId = result.name.split("/").pop();
+      
       console.log("✅ Bookmark saved successfully with ID:", bookmarkId);
       console.log("📦 Sending bookmark saved confirmation to offscreen");
 
