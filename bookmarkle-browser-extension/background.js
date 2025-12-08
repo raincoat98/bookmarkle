@@ -38,6 +38,9 @@ const DEFAULT_NOTIFICATION_SETTINGS = {
 let isCreatingMenus = false;
 let menuCreationPromise = null;
 
+// 중복 로그인 방지
+let lastLoginUserId = null;
+
 // ============================================================================
 // 유틸리티 함수
 // ============================================================================
@@ -167,13 +170,21 @@ async function setupOffscreen(silent = false) {
     offscreenReadyResolver = resolve;
   });
 
-  creatingOffscreen = chrome.offscreen.createDocument({
-    url: OFFSCREEN_PATH,
-    reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
-    justification: "Firebase signInWithPopup in iframe (MV3 limitation)",
-  });
-  await creatingOffscreen;
-  creatingOffscreen = null;
+  try {
+    creatingOffscreen = chrome.offscreen.createDocument({
+      url: OFFSCREEN_PATH,
+      reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
+      justification: "Firebase signInWithPopup in iframe (MV3 limitation)",
+    });
+    await creatingOffscreen;
+  } catch (error) {
+    // 이미 offscreen이 생성 중이거나 존재하는 경우 무시
+    if (!error.message?.includes("Only a single offscreen")) {
+      console.error("Offscreen 생성 실패:", error);
+    }
+  } finally {
+    creatingOffscreen = null;
+  }
 
   // offscreen이 준비될 때까지 대기
   await waitForOffscreenReady(1000, silent);
@@ -193,6 +204,10 @@ async function closeOffscreen() {
  */
 async function sendMessageToOffscreen(message, maxRetries = 2) {
   console.log("🔥 sendMessageToOffscreen called with:", message);
+  
+  // offscreen이 없으면 생성
+  await setupOffscreen(true);
+  
   for (let i = 0; i < maxRetries; i++) {
     try {
       console.log(`🔥 Attempt ${i + 1}: Sending message`);
@@ -660,17 +675,17 @@ async function validateCollection(collectionId, userId) {
 
   console.log("🔍 [background] 컬렉션 검증 시작:", collectionId);
 
-  // 캐시된 컬렉션 먼저 확인
-  const cachedResult = await chrome.storage.local.get(["cachedCollections"]);
-  const cachedCollections = cachedResult.cachedCollections || [];
-  console.log("🔍 [background] 캐시된 컬렉션 수:", cachedCollections.length);
+  // Chrome Storage에서 컬렉션 가져오기
+  const storageResult = await chrome.storage.local.get(["cachedCollections"]);
+  const cachedCollections = storageResult.cachedCollections || [];
+  console.log("🔍 [background] Storage 캐시된 컬렉션 수:", cachedCollections.length);
 
   let collectionExists = cachedCollections.some(
     (col) => col.id === collectionId
   );
 
   if (collectionExists) {
-    console.log("✅ [background] 캐시에서 컬렉션 존재 확인:", collectionId);
+    console.log("✅ [background] Storage 캐시에서 컬렉션 존재 확인:", collectionId);
     return { valid: true };
   }
 
@@ -804,10 +819,10 @@ async function handleSaveBookmark(msg) {
   }
 
   // 북마크 저장 요청을 offscreen으로 전달
-  await setupOffscreen();
   const result = await sendMessageToOffscreen({
     target: "offscreen",
     type: "SAVE_BOOKMARK",
+    userId: authResult.currentUser.uid,
     bookmarkData: msg.bookmarkData,
   });
 
@@ -831,6 +846,14 @@ chrome.runtime.onMessageExternal.addListener(
     console.log("🌐 [onMessageExternal] Received:", request?.type, "from:", sender?.url);
 
     if (request.type === "LOGIN_SUCCESS" && request.user) {
+      // 중복 로그인 방지
+      if (lastLoginUserId === request.user.uid) {
+        console.log("⏭️ Duplicate LOGIN_SUCCESS ignored for:", request.user.email);
+        sendResponse({ success: true, duplicate: true });
+        return true;
+      }
+      lastLoginUserId = request.user.uid;
+      
       console.log("✅ LOGIN_SUCCESS received:", request.user.email);
       
       // 로그인 성공 시 알림 설정 캐시 무효화
@@ -869,6 +892,9 @@ chrome.runtime.onMessageExternal.addListener(
 
     if (request.type === "LOGOUT_SUCCESS") {
       console.log("✅ LOGOUT_SUCCESS received");
+      
+      // Reset duplicate login prevention
+      lastLoginUserId = null;
       
       // Chrome Storage에서 사용자 정보, 토큰, 컬렉션 제거
       if (chrome.storage && chrome.storage.local) {
@@ -1309,12 +1335,6 @@ chrome.tabs.onCreated.addListener(async (tab) => {
 // 확장 프로그램 설치 시 컨텍스트 메뉴 생성
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log("확장 프로그램 설치/업데이트됨:", details.reason);
-  await createContextMenus();
-});
-
-// 확장 프로그램 시작 시 컨텍스트 메뉴 생성
-chrome.runtime.onStartup.addListener(async () => {
-  console.log("확장 프로그램 시작됨");
   await createContextMenus();
 });
 

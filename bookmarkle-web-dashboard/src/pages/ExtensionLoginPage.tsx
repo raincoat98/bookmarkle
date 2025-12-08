@@ -34,7 +34,7 @@ export const ExtensionLoginPage = () => {
     return () => clearTimeout(timeoutId);
   }, [loading, setLoading]);
 
-  // Signal iframe readiness to offscreen document on page load
+  // Signal iframe readiness to offscreen document on EVERY mount
   useEffect(() => {
     if (extensionIsContext) {
       // Send IFRAME_READY signal to parent (offscreen.js) immediately on mount
@@ -44,6 +44,7 @@ export const ExtensionLoginPage = () => {
       );
       console.log("📨 IFRAME_READY signal sent to parent on page load");
     }
+    // No dependencies - run on every mount
   }, [extensionIsContext]);
 
   // Handle unhandled promise rejections from Firebase
@@ -95,19 +96,10 @@ export const ExtensionLoginPage = () => {
     };
   }, [extensionIsContext]);
 
-  // Cleanup: clear extension auth flags on unmount
+  // Cleanup: clear extension auth flags only on actual logout (not on remount)
   useEffect(() => {
-    return () => {
-      if (extensionIsContext && typeof sessionStorage !== "undefined") {
-        const keys = Object.keys(sessionStorage);
-        keys.forEach((key) => {
-          if (key.startsWith("extension_auth_sent")) {
-            sessionStorage.removeItem(key);
-            console.log(`🧹 Cleared sessionStorage on unmount: ${key}`);
-          }
-        });
-      }
-    };
+    // Don't clear on unmount - only clear when user explicitly logs out
+    // This prevents issues when component remounts during navigation
   }, [extensionIsContext]);
 
   // Setup extension hooks

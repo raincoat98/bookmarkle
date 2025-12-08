@@ -183,8 +183,18 @@ export function resetPassword(email: string) {
 }
 
 export async function logout() {
-  // Firebase 세션 완전 클리어
-  await clearFirebaseStorage();
+  // Extension context 확인
+  const isExtension = 
+ window.location.search.includes("source=extension") ||
+    window.location.pathname.includes("/extension-login");
+
+  // Extension context가 아닐 때만 Firebase 세션 클리어
+  if (!isExtension) {
+    console.log("🧹 Clearing Firebase storage (non-extension context)");
+    await clearFirebaseStorage();
+  } else {
+    console.log("⏭️ Skipping Firebase storage clear (extension context)");
+  }
 
   // 확장 프로그램에 LOGOUT_SUCCESS 메시지 전송
   try {

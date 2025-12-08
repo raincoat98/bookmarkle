@@ -1,9 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import {
   sendToExtensionParent,
   createLoginSuccessMessage,
-  getExtensionId,
 } from "../utils/extensionMessaging";
 import { fetchCollections } from "../utils/firestoreService";
 import type { User } from "firebase/auth";
@@ -23,6 +22,59 @@ export function useExtensionAuth({
 }: UseExtensionAuthOptions) {
   const location = useLocation();
   const sentToExtensionRef = useRef(false);
+
+  const sendLoginData = useCallback(async () => {
+    try {
+      if (!user?.uid) {
+        console.log("❌ sendLoginData: No user");
+        return;
+      }
+
+      console.log("🔐 Starting login data send for:", user.email);
+
+      // Parallelize token and collections fetch
+      const results = await Promise.allSettled([
+        getIdToken(user),
+        fetchCollections(user.uid),
+      ]);
+
+      const idToken =
+        results[0].status === "fulfilled" ? results[0].value : "";
+      const collections =
+        results[1].status === "fulfilled" ? results[1].value : [];
+
+      console.log("✅ Token fetched:", !!idToken);
+      console.log("✅ Collections fetched:", collections.length, "items");
+
+      if (results[1].status === "rejected") {
+        console.error(
+          "⚠️ Failed to fetch collections:",
+          results[1].reason
+        );
+        // Collection load failure doesn't block login info transmission
+      }
+
+      // Create message data
+      const messageData = createLoginSuccessMessage(user, idToken, collections);
+
+      // Send to both background.js and parent (offscreen.js)
+      const extensionId =  import.meta.env.VITE_EXTENSION_ID;
+
+      console.log("📤 Preparing to send with extensionId:", extensionId);
+
+      // 1. Send to background.js via chrome.runtime.sendMessage (if extensionId available)
+      if (extensionId) {
+        sendViaRuntimeAPI(extensionId, messageData);
+      } else {
+        console.log("⚠️ No extensionId - skipping background.js direct send (will use postMessage only)");
+      }
+      
+      // 2. Send to parent (offscreen.js) via postMessage
+      sendViaPostMessage(messageData);
+    } catch (error) {
+      console.error("❌ Error sending data to Extension:", error);
+    }
+  }, [user, extensionId, location]);
 
   // Auto-send on user login
   useEffect(() => {
@@ -61,8 +113,10 @@ export function useExtensionAuth({
 
     console.log(`📊 Auth state check for ${user.email}:`, {
       sessionKey,
-      wasSentInSession: !!wasSentInSession,
+      wasSentInSession: wasSentInSession,
+      wasSentInSessionBoolean: !!wasSentInSession,
       refAlreadySent: sentToExtensionRef.current,
+      willSend: !wasSentInSession && !sentToExtensionRef.current,
     });
 
     if (!wasSentInSession && !sentToExtensionRef.current) {
@@ -71,60 +125,12 @@ export function useExtensionAuth({
       console.log(
         "📍 useEffect triggered: user logged in, sending to extension"
       );
+      console.log("🔐 Session key saved:", sessionKey, "= true");
       sendLoginData();
     } else {
       console.log("⏭️ Skipping: auth already sent or marked");
     }
-  }, [user, isExtensionContext]);
-
-  const sendLoginData = async () => {
-    try {
-      if (!user?.uid) {
-        console.log("❌ sendLoginData: No user");
-        return;
-      }
-
-      console.log("🔐 Starting login data send for:", user.email);
-
-      // Parallelize token and collections fetch
-      const results = await Promise.allSettled([
-        getIdToken(user),
-        fetchCollections(user.uid),
-      ]);
-
-      const idToken =
-        results[0].status === "fulfilled" ? results[0].value : "";
-      const collections =
-        results[1].status === "fulfilled" ? results[1].value : [];
-
-      console.log("✅ Token fetched:", !!idToken);
-      console.log("✅ Collections fetched:", collections.length, "items");
-
-      if (results[1].status === "rejected") {
-        console.error(
-          "⚠️ Failed to fetch collections:",
-          results[1].reason
-        );
-        // Collection load failure doesn't block login info transmission
-      }
-
-      // Create message data
-      const messageData = createLoginSuccessMessage(user, idToken, collections);
-
-      // Send via appropriate method
-      const finalExtensionId = extensionId || getExtensionId(location);
-
-      console.log("📤 Preparing to send with extensionId:", finalExtensionId);
-
-      if (finalExtensionId && typeof window !== "undefined") {
-        sendViaRuntimeAPI(finalExtensionId, messageData);
-      } else {
-        sendViaPostMessage(messageData);
-      }
-    } catch (error) {
-      console.error("❌ Error sending data to Extension:", error);
-    }
-  };
+  }, [user, isExtensionContext, sendLoginData]);
 
   return { sendLoginData };
 }
@@ -168,21 +174,20 @@ function sendViaRuntimeAPI(extensionId: string, messageData: unknown) {
         },
         () => {
           if (chromeRuntime.runtime?.lastError) {
-            console.log(
-              "ℹ️ Direct send failed, fallback to parent postMessage"
+            console.error(
+              "❌ Failed to send login data to background:",
+              chromeRuntime.runtime?.lastError
             );
-            // Fallback to iframe mode
-            sendViaPostMessage(messageData);
           } else {
             console.log("✅ Message sent to background.js (direct mode)");
           }
         }
       );
     } catch (error) {
-      console.log("⚠️ Direct send failed:", error);
-      // Fallback to iframe mode
-      sendViaPostMessage(messageData);
+      console.error("❌ Direct send failed:", error);
     }
+  } else {
+    console.warn("⚠️ chrome.runtime.sendMessage not available");
   }
 }
 

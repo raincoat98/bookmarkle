@@ -13,6 +13,7 @@ import {
   createCollection,
   getUserNotificationSettings,
 } from "../utils/firestoreService";
+import { auth } from "../firebase";
 import type { User } from "firebase/auth";
 
 interface UseExtensionMessageOptions {
@@ -51,13 +52,24 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
         // Route to appropriate handler
         if ("getCollections" in data && data.getCollections) {
-          await handleGetCollections();
+          await handleGetCollections(("userId" in data ? data.userId : null) as string | null);
         } else if ("getBookmarks" in data && data.getBookmarks) {
-          await handleGetBookmarks(("collectionId" in data ? data.collectionId : null) as string | null);
+          await handleGetBookmarks(
+            ("collectionId" in data ? data.collectionId : null) as string | null,
+            ("userId" in data ? data.userId : null) as string | null
+          );
         } else if ("saveBookmark" in data && data.saveBookmark) {
-          await handleSaveBookmark(("bookmarkData" in data ? data.bookmarkData : null) as unknown);
+          console.log("🔍 saveBookmark message data:", data);
+          console.log("🔍 userId in message:", "userId" in data ? data.userId : "NOT FOUND");
+          await handleSaveBookmark(
+            ("bookmarkData" in data ? data.bookmarkData : null) as unknown,
+            ("userId" in data ? data.userId : null) as string | null
+          );
         } else if ("createCollection" in data && data.createCollection) {
-          await handleCreateCollection(("collectionData" in data ? data.collectionData : null) as unknown);
+          await handleCreateCollection(
+            ("collectionData" in data ? data.collectionData : null) as unknown,
+            ("userId" in data ? data.userId : null) as string | null
+          );
         } else if ("getNotificationSettings" in data && data.getNotificationSettings) {
           await handleGetNotificationSettings();
         }
@@ -91,15 +103,19 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   // HANDLERS
   // ========================================================================
 
-  async function handleGetCollections() {
+  async function handleGetCollections(userId?: string | null) {
     console.log("📬 Received getCollections request from offscreen");
+    console.log("📬 Request userId:", userId);
     console.log("📬 userRef.current state:", {
       hasUser: !!userRef.current,
       userId: userRef.current?.uid,
       userEmail: userRef.current?.email,
     });
 
-    if (!userRef.current?.uid) {
+    // Use provided userId or fall back to userRef.current
+    const effectiveUserId = userId || userRef.current?.uid;
+
+    if (!effectiveUserId) {
       console.error("❌ No user ID to fetch collections - will send error");
       sendToExtensionParent(
         createErrorResponse("COLLECTIONS_ERROR", "No user ID")
@@ -108,8 +124,8 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
 
     try {
-      console.log("📬 Fetching collections for user:", userRef.current.uid);
-      const collections = await fetchCollections(userRef.current.uid);
+      console.log("📬 Fetching collections for user:", effectiveUserId);
+      const collections = await fetchCollections(effectiveUserId);
       console.log(
         "✅ Collections fetched successfully:",
         collections.length,
@@ -143,14 +159,18 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
   }
 
-  async function handleGetBookmarks(collectionId: string | null) {
+  async function handleGetBookmarks(collectionId: string | null, userId?: string | null) {
     console.log(
       "📬 Received getBookmarks request from offscreen, collectionId:",
       collectionId
     );
+    console.log("📬 Request userId:", userId);
     console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
 
-    if (!userRef.current?.uid) {
+    // Use provided userId or fall back to userRef.current
+    const effectiveUserId = userId || userRef.current?.uid;
+
+    if (!effectiveUserId) {
       console.error("❌ No user ID to fetch bookmarks");
       sendToExtensionParent(
         createErrorResponse("BOOKMARKS_ERROR", "No user ID")
@@ -161,11 +181,11 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     try {
       console.log(
         "📬 Fetching bookmarks for user:",
-        userRef.current.uid,
+        effectiveUserId,
         "collection:",
         collectionId
       );
-      const bookmarks = await fetchBookmarks(userRef.current.uid, collectionId);
+      const bookmarks = await fetchBookmarks(effectiveUserId, collectionId);
       console.log(
         "✅ Bookmarks fetched successfully:",
         bookmarks.length,
@@ -194,12 +214,19 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
   }
 
-  async function handleSaveBookmark(bookmarkData: unknown) {
+  async function handleSaveBookmark(bookmarkData: unknown, userId?: string | null) {
     console.log("📬 Received saveBookmark request from offscreen");
     console.log("📬 Bookmark data:", bookmarkData);
-    console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+    console.log("📬 Request userId parameter:", userId);
+    console.log("📬 userRef.current?.uid:", userRef.current?.uid);
+    console.log("📬 auth.currentUser?.uid:", auth.currentUser?.uid);
 
-    if (!userRef.current?.uid) {
+    // Use provided userId or fall back to userRef.current or auth.currentUser
+    const effectiveUserId = userId || userRef.current?.uid || auth.currentUser?.uid;
+    console.log("📬 Effective userId:", effectiveUserId);
+    console.log("📬 User ID check:", effectiveUserId ? "✅ Available" : "❌ Missing");
+
+    if (!effectiveUserId) {
       console.error("❌ No user ID to save bookmark");
       sendToExtensionParent(
         createErrorResponse("BOOKMARK_SAVE_ERROR", "No user ID")
@@ -208,10 +235,10 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
 
     try {
-      console.log("📬 Saving bookmark for user:", userRef.current.uid);
+      console.log("📬 Saving bookmark for user:", effectiveUserId);
       const bookmarkPayload = {
         ...(bookmarkData as Record<string, unknown>),
-        userId: userRef.current.uid,
+        userId: effectiveUserId,
       };
 
       const bookmarkId = await saveBookmarkDirect(bookmarkPayload as Parameters<typeof saveBookmarkDirect>[0]);
@@ -238,12 +265,16 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
   }
 
-  async function handleCreateCollection(collectionData: unknown) {
+  async function handleCreateCollection(collectionData: unknown, userId?: string | null) {
     console.log("📬 Received createCollection request from offscreen");
     console.log("📬 Collection data:", collectionData);
+    console.log("📬 Request userId:", userId);
     console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
 
-    if (!userRef.current?.uid) {
+    // Use provided userId or fall back to userRef.current
+    const effectiveUserId = userId || userRef.current?.uid;
+
+    if (!effectiveUserId) {
       console.error("❌ No user ID to create collection");
       sendToExtensionParent(
         createErrorResponse("COLLECTION_CREATE_ERROR", "No user ID")
@@ -252,10 +283,10 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
 
     try {
-      console.log("📬 Creating collection for user:", userRef.current.uid);
+      console.log("📬 Creating collection for user:", effectiveUserId);
       const collectionPayload = {
         ...(collectionData as Record<string, unknown>),
-        userId: userRef.current.uid,
+        userId: effectiveUserId,
       };
 
       const collectionId = await createCollection(collectionPayload as Parameters<typeof createCollection>[0]);

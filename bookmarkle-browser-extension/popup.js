@@ -464,12 +464,22 @@ function showMainContent() {
   // 빠른 실행 모드 상태 로드
   loadQuickModeState();
 
-  // 컬렉션 데이터 로드 (팝업 열릴 때마다 새로고침)
-  loadCollections(true);
+  // 컬렉션 데이터 로드 (캐시 우선 사용)
+  loadCollections(false);
 }
+
+// 페이지 로드시 사용자 상태 확인 및 다국어 초기화
+let isRefreshingUser = false; // 중복 refreshUser 방지
 
 // 사용자 인증 상태 확인
 async function refreshUser() {
+  // 이미 실행 중이면 스킵
+  if (isRefreshingUser) {
+    console.log("⏭️ refreshUser already in progress, skipping");
+    return;
+  }
+  
+  isRefreshingUser = true;
   try {
     const result = await chrome.runtime.sendMessage({ type: "GET_AUTH_STATE" });
     console.log("✅ GET_AUTH_STATE 응답:", result);
@@ -493,6 +503,8 @@ async function refreshUser() {
   } catch (error) {
     console.error("인증 상태 확인 에러:", error);
     showLoginUI();
+  } finally {
+    isRefreshingUser = false;
   }
 }
 

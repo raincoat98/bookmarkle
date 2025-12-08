@@ -14,18 +14,29 @@ let iframeReadyPromise = new Promise((resolve) => {
 });
 
 const iframe = document.createElement("iframe");
-iframe.src = PUBLIC_SIGN_URL;
+// Add extensionId to URL for chrome.runtime.sendMessage
+const iframeUrl = new URL(PUBLIC_SIGN_URL);
+iframeUrl.searchParams.set('extensionId', chrome.runtime.id);
+iframe.src = iframeUrl.toString();
 iframe.style.display = "none"; // iframe 숨기기
 document.documentElement.appendChild(iframe);
 
 // Helper function to mark iframe as ready (prevent double-fire)
 function markIframeReady() {
-  if (isIframeReady) return; // Prevent double-fire
+  console.log("📍 markIframeReady called, isIframeReady:", isIframeReady);
+  
+  if (isIframeReady) {
+    console.log("⚠️ Iframe already marked as ready, skipping");
+    return;
+  }
 
   isIframeReady = true;
   if (iframeReadyResolver) {
+    console.log("✅ Resolving iframe ready promise");
     iframeReadyResolver();
     iframeReadyResolver = null;
+  } else {
+    console.warn("⚠️ No iframeReadyResolver available");
   }
   console.log("✅ Iframe is ready");
   // background에 준비 완료 신호 보내기
@@ -52,8 +63,13 @@ window.addEventListener("message", (ev) => {
 
     // iframe 준비 신호 처리
     if (data.type === "IFRAME_READY") {
-      console.log("✅ IFRAME_READY signal received");
-      markIframeReady();
+      console.log("✅ IFRAME_READY signal received from React page");
+      // Always mark as ready, even if already resolved
+      if (!isIframeReady) {
+        markIframeReady();
+      } else {
+        console.log("ℹ️ Iframe already ready, but acknowledging signal");
+      }
       return;
     }
 
@@ -81,7 +97,7 @@ window.addEventListener("message", (ev) => {
           currentIdToken: data.idToken,
           cachedCollections: data.collections || [],
         });
-        console.log("✅ User data and collections saved to Chrome Storage");
+        console.log("✅ User data and collections saved to Chrome Storage (offscreen)");
       }
 
       // background에 로그인 완료 알림 (컬렉션 포함)
@@ -135,13 +151,26 @@ if (chrome.storage && chrome.storage.local) {
 
 // iframe이 준비될 때까지 기다리는 헬퍼 함수 (event-driven)
 function ensureIframeReady() {
+  console.log("🔍 ensureIframeReady called, current state:", {
+    isIframeReady,
+    hasResolver: !!iframeReadyResolver,
+  });
+
+  // If already ready, return immediately
+  if (isIframeReady) {
+    console.log("✅ Iframe already ready, returning immediately");
+    return Promise.resolve();
+  }
+
+  // If not ready, wait for the promise
+  console.log("⏳ Waiting for iframe to be ready...");
   return Promise.race([
     iframeReadyPromise,
     new Promise((resolve) => {
       setTimeout(() => {
-        console.warn("⚠️ Iframe not ready after 3 seconds, proceeding anyway");
+        console.warn("⚠️ Iframe not ready after 10 seconds, proceeding anyway");
         resolve();
-      }, 3000);
+      }, 10000);
     }),
   ]);
 }
@@ -418,14 +447,32 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     }, timeout);
 
     window.addEventListener("message", handleCollectionsMessage, false);
-    iframe.contentWindow.postMessage(
-      {
-        getCollections: true,
-        userId: msg.userId,
-        idToken: currentIdToken, // ID 토큰 함께 전달
-      },
-      origin
-    );
+    
+    // Ensure iframe is ready before sending message
+    (async () => {
+      try {
+        await ensureIframeReady();
+        iframe.contentWindow.postMessage(
+          {
+            getCollections: true,
+            userId: msg.userId,
+            idToken: currentIdToken, // ID 토큰 함께 전달
+          },
+          origin
+        );
+      } catch (error) {
+        if (!messageResolved) {
+          window.removeEventListener("message", handleCollectionsMessage);
+          messageResolved = true;
+          clearTimeout(timeoutId);
+          sendResponse({
+            type: "COLLECTIONS_ERROR",
+            code: "iframe-not-ready",
+            message: "Iframe is not ready",
+          });
+        }
+      }
+    })();
 
     return true; // async 응답
   }
@@ -479,15 +526,33 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     }, timeout);
 
     window.addEventListener("message", handleBookmarksMessage, false);
-    iframe.contentWindow.postMessage(
-      {
-        getBookmarks: true,
-        userId: msg.userId,
-        collectionId: msg.collectionId,
-        idToken: currentIdToken, // ID 토큰 함께 전달
-      },
-      origin
-    );
+    
+    // Ensure iframe is ready before sending message
+    (async () => {
+      try {
+        await ensureIframeReady();
+        iframe.contentWindow.postMessage(
+          {
+            getBookmarks: true,
+            userId: msg.userId,
+            collectionId: msg.collectionId,
+            idToken: currentIdToken, // ID 토큰 함께 전달
+          },
+          origin
+        );
+      } catch (error) {
+        if (!messageResolved) {
+          window.removeEventListener("message", handleBookmarksMessage);
+          messageResolved = true;
+          clearTimeout(timeoutId);
+          sendResponse({
+            type: "BOOKMARKS_ERROR",
+            code: "iframe-not-ready",
+            message: "Iframe is not ready",
+          });
+        }
+      }
+    })();
 
     return true; // async 응답
   }
@@ -496,7 +561,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     // 북마크 저장 요청
     const origin = new URL(PUBLIC_SIGN_URL).origin;
     let messageResolved = false;
-    const timeout = 10000; // 10초 타임아웃 (줄임)
+    const timeout = 10000; // 10초 타임아웃
 
     function handleSaveBookmarkMessage(ev) {
       // Firebase 내부 메시지 노이즈 필터
@@ -545,13 +610,40 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
     window.addEventListener("message", handleSaveBookmarkMessage, false);
 
-    const messageToSend = {
-      saveBookmark: true,
-      bookmarkData: msg.bookmarkData,
-      idToken: currentIdToken, // ID 토큰 함께 전달
-    };
+    // Ensure iframe is ready before sending
+    (async () => {
+      try {
+        console.log("🔍 SAVE_BOOKMARK: Starting ensureIframeReady...");
+        await ensureIframeReady();
+        console.log("✅ SAVE_BOOKMARK: Iframe is ready, sending message...");
+        
+        const messageToSend = {
+          saveBookmark: true,
+          userId: msg.userId,
+          bookmarkData: msg.bookmarkData,
+          idToken: currentIdToken,
+        };
 
-    iframe.contentWindow.postMessage(messageToSend, origin);
+        console.log("📤 SAVE_BOOKMARK: Message to send:", messageToSend);
+        console.log("📤 SAVE_BOOKMARK: iframe exists?", !!iframe);
+        console.log("📤 SAVE_BOOKMARK: iframe.contentWindow exists?", !!iframe.contentWindow);
+        console.log("📤 SAVE_BOOKMARK: origin:", origin);
+
+        iframe.contentWindow.postMessage(messageToSend, origin);
+        console.log("📤 SAVE_BOOKMARK message sent to iframe with userId:", msg.userId);
+      } catch (error) {
+        if (!messageResolved) {
+          window.removeEventListener("message", handleSaveBookmarkMessage);
+          messageResolved = true;
+          clearTimeout(timeoutId);
+          sendResponse({
+            type: "BOOKMARK_SAVE_ERROR",
+            code: "iframe-not-ready",
+            message: "Iframe is not ready",
+          });
+        }
+      }
+    })();
 
     return true; // async 응답
   }

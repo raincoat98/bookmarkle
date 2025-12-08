@@ -90,10 +90,12 @@ export function ExtensionAuthContainer({
   };
 
   const handleEmailLoginSuccess = () => {
+    console.log("✅ Email login successful in extension context");
     onAuthSuccess?.();
   };
 
   const handleEmailSignupSuccess = () => {
+    console.log("✅ Email signup successful in extension context");
     onAuthSuccess?.();
   };
 

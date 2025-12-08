@@ -201,7 +201,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         }
       });
 
-    // 1초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    // 3초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
         console.log("⚠️ Auth callback timeout (1s) - setting loading to false");
