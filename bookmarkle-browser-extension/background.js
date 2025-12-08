@@ -825,12 +825,17 @@ async function handleSaveBookmark(msg) {
 // 이벤트 리스너 등록
 // ============================================================================
 
-// 외부 웹사이트에서 로그인 완료 시 호출되는 메시지 처리
+// 외부 웹사이트에서 로그인/로그아웃 메시지 처리 (통합된 단일 리스너)
 chrome.runtime.onMessageExternal.addListener(
   (request, sender, sendResponse) => {
+    console.log("🌐 [onMessageExternal] Received:", request?.type, "from:", sender?.url);
+
     if (request.type === "LOGIN_SUCCESS" && request.user) {
+      console.log("✅ LOGIN_SUCCESS received:", request.user.email);
+      
       // 로그인 성공 시 알림 설정 캐시 무효화
       invalidateNotificationSettingsCache();
+      
       // Chrome Storage에 사용자 정보, 토큰, 컬렉션 저장
       if (chrome.storage && chrome.storage.local) {
         const dataToSave = {
@@ -845,16 +850,13 @@ chrome.runtime.onMessageExternal.addListener(
         // 컬렉션이 있으면 함께 저장
         if (request.collections) {
           dataToSave.cachedCollections = request.collections;
-          console.log(
-            "Saving collections to storage:",
-            request.collections.length
-          );
+          console.log("✅ Saving collections to storage:", request.collections.length);
         }
 
         chrome.storage.local.set(dataToSave, () => {
-          console.log("User login saved from external site:", request.user);
+          console.log("✅ User login data saved to Chrome Storage");
           if (request.collections) {
-            console.log("Collections cached:", request.collections.length);
+            console.log("✅ Collections cached:", request.collections.length);
           }
           sendResponse({ success: true });
         });
@@ -866,84 +868,16 @@ chrome.runtime.onMessageExternal.addListener(
     }
 
     if (request.type === "LOGOUT_SUCCESS") {
+      console.log("✅ LOGOUT_SUCCESS received");
+      
       // Chrome Storage에서 사용자 정보, 토큰, 컬렉션 제거
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.remove(
           ["currentUser", "currentIdToken", "cachedCollections"],
           () => {
-            console.log("✅ User logout completed from external site");
+            console.log("✅ User data cleared from Chrome Storage");
             invalidateNotificationSettingsCache();
 
-            // popup에 LOGOUT 완료 알림 전송
-            try {
-              chrome.runtime.sendMessage(
-                { type: "LOGOUT_COMPLETED" },
-                (response) => {
-                  if (chrome.runtime.lastError) {
-                    console.warn("⚠️ Popup might be closed:", chrome.runtime.lastError);
-                  } else {
-                    console.log("✅ LOGOUT_COMPLETED sent to popup");
-                  }
-                }
-              );
-            } catch (error) {
-              console.warn("⚠️ Failed to send LOGOUT_COMPLETED to popup:", error);
-            }
-
-            sendResponse({ success: true });
-          }
-        );
-      } else {
-        console.error("Chrome Storage API가 사용할 수 없습니다");
-        sendResponse({ success: false, error: "Storage API unavailable" });
-      }
-      return true;
-    }
-  }
-);
-
-// 웹 대시보드(ExtensionLoginSuccessPage)에서 온 LOGIN_SUCCESS 메시지도 처리
-chrome.runtime.onMessageExternal.addListener(
-  (request, sender, sendResponse) => {
-    console.log("🌐 [onMessageExternal] Received:", request?.type, "from:", sender?.url);
-
-    if (request.type === "LOGIN_SUCCESS" && request.user) {
-      console.log("✅ LOGIN_SUCCESS from web dashboard:", request.user.email);
-
-      if (chrome.storage && chrome.storage.local) {
-        const dataToSave = {
-          currentUser: request.user,
-        };
-
-        if (request.idToken) {
-          dataToSave.currentIdToken = request.idToken;
-        }
-
-        if (request.collections) {
-          dataToSave.cachedCollections = request.collections;
-          console.log("✅ Saving collections from web dashboard:", request.collections.length);
-        }
-
-        chrome.storage.local.set(dataToSave, () => {
-          console.log("✅ Login data saved from web dashboard");
-          sendResponse({ success: true });
-        });
-      } else {
-        sendResponse({ success: false, error: "Storage API unavailable" });
-      }
-      return true;
-    }
-    
-    if (request.type === "LOGOUT_SUCCESS") {
-      console.log("✅ LOGOUT_SUCCESS from web dashboard");
-      
-      // Chrome Storage에서 사용자 정보 제거
-      if (chrome.storage && chrome.storage.local) {
-        chrome.storage.local.remove(
-          ["currentUser", "currentIdToken", "cachedCollections", "collections"],
-          () => {
-            console.log("✅ User data cleared from Chrome Storage");
-            
             // 모든 탭에 로그아웃 알림 브로드캐스트
             chrome.tabs.query({}, (tabs) => {
               tabs.forEach((tab) => {
@@ -954,15 +888,18 @@ chrome.runtime.onMessageExternal.addListener(
                 });
               });
             });
-            
+
             sendResponse({ success: true });
           }
         );
       } else {
+        console.error("Chrome Storage API가 사용할 수 없습니다");
         sendResponse({ success: false, error: "Storage API unavailable" });
       }
       return true;
     }
+    
+    return false;
   }
 );
 
