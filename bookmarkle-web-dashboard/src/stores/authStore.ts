@@ -182,18 +182,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   initializeAuth: () => {
     let authCallbackFired = false;
 
-    // Extension iframe context에서는 auth watcher를 설정하지 않음
-    // (popup에서 로그인하면 바로 로그아웃 이벤트가 발생하는 문제 방지)
-    const isExtensionIframe = 
-      window.location.pathname.includes('/extension-login') && 
-      new URLSearchParams(window.location.search).has('extensionId');
-    
-    if (isExtensionIframe) {
-      console.log("🔍 Extension iframe detected - skipping auth state watcher");
-      set({ loading: false });
-      return () => {}; // noop unsubscribe
-    }
-
     // 리다이렉트 로그인 결과 확인 (signInWithRedirect 폴백 후 돌아온 경우)
     getRedirectResult(auth)
       .then((result) => {
@@ -213,7 +201,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         }
       });
 
-    // 3초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
+    // 1초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
         console.log("⚠️ Auth callback timeout (1s) - setting loading to false");
@@ -225,6 +213,17 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
     const unsubscribe = watchAuth((user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);
+
+      // Extension iframe에서는 로그아웃 이벤트 무시 (리마운트로 인한 false positive 방지)
+      const isExtensionIframe = 
+        window.location.pathname.includes('/extension-login') && 
+        new URLSearchParams(window.location.search).has('extensionId');
+      
+      if (isExtensionIframe && !user) {
+        console.log("🔍 Extension iframe - ignoring logout event from remount");
+        set({ loading: false });
+        return;
+      }
 
       if (user) {
         console.log("✅ Auth callback fired: user logged in -", user.email);
