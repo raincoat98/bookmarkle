@@ -1075,7 +1075,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           userId: msg.userId,
         });
         sendResponse(result);
-        return;
+        return true; // async 응답을 위해 true 반환
       }
 
       if (msg?.type === "GET_BOOKMARKS") {
@@ -1088,13 +1088,13 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           collectionId: msg.collectionId,
         });
         sendResponse(result);
-        return;
+        return true; // async 응답을 위해 true 반환
       }
 
       if (msg?.type === "SAVE_BOOKMARK") {
         const result = await handleSaveBookmark(msg);
         sendResponse(result);
-        return;
+        return true; // async 응답을 위해 true 반환
       }
 
       if (msg?.type === "CREATE_COLLECTION") {
