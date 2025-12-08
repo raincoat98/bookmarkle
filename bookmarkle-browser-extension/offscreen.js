@@ -271,11 +271,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   if (msg.type === "GET_AUTH_STATE") {
-    // 저장된 사용자 상태 반환
-    sendResponse({
-      user: currentUser,
+    // 저장된 사용자 상태 및 컬렉션 반환
+    chrome.storage.local.get(["currentUser", "cachedCollections"], (result) => {
+      sendResponse({
+        user: result.currentUser || currentUser,
+        collections: result.cachedCollections || []
+      });
     });
-    return true;
+    return true; // async 응답
   }
 
   if (msg.type === "LOGOUT") {

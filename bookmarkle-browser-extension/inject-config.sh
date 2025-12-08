@@ -68,6 +68,7 @@ JS_FILES=(
     "$BUILD_DIR/newtab.js"
     "$BUILD_DIR/options.js"
     "$BUILD_DIR/offscreen.js"
+    "$BUILD_DIR/popup.js"
 )
 
 if [[ "$OSTYPE" == "darwin"* ]]; then

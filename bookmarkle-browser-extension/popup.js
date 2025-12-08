@@ -1,3 +1,6 @@
+// 빌드 시 주입되는 환경 변수
+const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
+
 // 다국어 번역 데이터
 const translations = {
   ko: {
@@ -432,7 +435,7 @@ const $themeIcon = document.getElementById("themeIcon");
 // 로그인 버튼 클릭 이벤트
 $btn.addEventListener("click", async () => {
   // signin-popup 페이지로 리다이렉트하여 로그인 처리
-  const loginUrl = `https://bookmarkhub-5ea6c.web.app/extension-login-success?source=extension&extensionId=${chrome.runtime.id}`;
+  const loginUrl = `${PUBLIC_SIGN_URL}&extensionId=${chrome.runtime.id}`;
   chrome.tabs.create({ url: loginUrl });
 
   // 팝업 창 닫기 (시작 페이지에서는 유지)
@@ -469,12 +472,21 @@ function showMainContent() {
 async function refreshUser() {
   try {
     const result = await chrome.runtime.sendMessage({ type: "GET_AUTH_STATE" });
+    console.log("✅ GET_AUTH_STATE 응답:", result);
+    
     if (result?.error) {
       console.error("Storage API 에러:", result.error);
+      showLoginUI();
       return;
     }
+    
     if (result?.user) {
       renderUser(result.user);
+      
+      // 컬렉션 정보도 함께 캐시 (있는 경우)
+      if (result.collections && result.collections.length > 0) {
+        console.log(`✅ ${result.collections.length}개의 컬렉션 정보 확인됨`);
+      }
     } else {
       showLoginUI();
     }
