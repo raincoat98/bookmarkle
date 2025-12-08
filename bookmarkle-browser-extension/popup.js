@@ -489,13 +489,21 @@ function renderUser(user) {
   // 사용자 정보 표시
   $user.innerHTML = `
     <div class="flex items-center">
-      <img src="${user.photoURL || ""}" 
-           class="w-6 h-6 rounded-full mr-2" 
-           onerror="this.style.display='none'">
+      <img src="${user.photoURL || ""}"
+           class="w-6 h-6 rounded-full mr-2"
+           alt="User profile">
       <span class="text-sm font-medium text-gray-700">
         ${user.displayName || user.email}
       </span>
     </div>`;
+
+  // 사용자 프로필 이미지 로드 오류 처리
+  const userImg = $user.querySelector("img");
+  if (userImg) {
+    userImg.addEventListener("error", () => {
+      userImg.style.display = "none";
+    });
+  }
 
   // 메인 콘텐츠 표시
   showMainContent();
