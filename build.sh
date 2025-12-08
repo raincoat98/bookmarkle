@@ -118,25 +118,25 @@ build_dashboard() {
 # 북마클 브라우저 확장 빌드 함수
 build_my_extension() {
     log_info "🧩 북마클 브라우저 확장 빌드 및 패키징..."
-
+    
     if [ ! -d "bookmarkle-browser-extension" ]; then
         log_error "bookmarkle-browser-extension 디렉토리가 없습니다!"
         return 1
     fi
-
+    
     cd bookmarkle-browser-extension
-
+    
     # manifest.json 확인
     if [ ! -f "manifest.json" ]; then
         log_error "manifest.json이 없습니다!"
         cd "$ROOT_DIR"
         return 1
     fi
-
+    
     # manifest.json 유효성 검사
     if command -v node &> /dev/null; then
         log_info "manifest.json 유효성 검사 중..."
-        if node -e "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))" 2>/dev/null; then
+        if node -e "JSON.parse(require('fs').readFileSync('manifest.json', 'utf8'))"; then
             log_success "manifest.json 유효성 검사 완료"
         else
             log_error "manifest.json에 JSON 문법 오류가 있습니다"
@@ -144,18 +144,25 @@ build_my_extension() {
             return 1
         fi
     fi
-
-    # 핵심 파일들 확인
-    CORE_FILES=("manifest.json" "background.js" "popup.html")
-    for file in "${CORE_FILES[@]}"; do
+    
+    # 필수 파일들 확인
+    REQUIRED_FILES=("background.js" "popup.html" "popup.js")
+    for file in "${REQUIRED_FILES[@]}"; do
         if [ ! -f "$file" ]; then
-            log_error "필수 파일이 없습니다: $file"
-            cd "$ROOT_DIR"
-            return 1
+            log_warning "권장 파일이 없습니다: $file"
+        else
+            # JavaScript 파일 문법 검증
+            if [[ "$file" == *.js ]] && command -v node &> /dev/null; then
+                if node -c "$file"; then
+                    log_success "$file 문법 검증 완료"
+                else
+                    log_error "$file에 문법 오류가 있습니다"
+                    cd "$ROOT_DIR"
+                    return 1
+                fi
+            fi
         fi
     done
-
-    log_success "필수 파일 확인 완료"
     
     # 빌드 디렉토리 생성
     BUILD_DIR="../build/bookmarkle-browser-extension"
@@ -164,23 +171,36 @@ build_my_extension() {
     
     # 파일들 복사 (불필요한 파일 제외)
     log_info "Extension 파일들을 빌드 디렉토리로 복사 중..."
-    rsync -av \
-        --exclude='.DS_Store' \
-        --exclude='.git*' \
-        --exclude='node_modules' \
-        --exclude='*.log' \
-        --exclude='.env*' \
-        --exclude='firebase-config.js' \
-        . "$BUILD_DIR/" 2>/dev/null || true
+    rsync -av --exclude='*.DS_Store' --exclude='*.git*' --exclude='node_modules' --exclude='*.log' --exclude='.env' --exclude='.env.*' --exclude='*.env' . "$BUILD_DIR/"
     
-    # 보안 파일들 추가 정리
-    find "$BUILD_DIR" -name '.env*' -delete 2>/dev/null || true
-    find "$BUILD_DIR" -name 'firebase-config.js' -delete 2>/dev/null || true
-    log_success "민감한 파일 제거 완료"
+    # .env 파일이 복사되었는지 확인하고 삭제
+    if [ -f "$BUILD_DIR/.env" ] || [ -f "$BUILD_DIR/.env.local" ] || [ -f "$BUILD_DIR/.env.production" ]; then
+        log_warning ".env 파일이 발견되었습니다. 삭제 중..."
+        rm -f "$BUILD_DIR/.env" "$BUILD_DIR/.env.*" "$BUILD_DIR"/*.env 2>/dev/null || true
+        log_success ".env 파일 제거 완료"
+    fi
     
-    # 다국어 파일 확인
+    # 환경 변수로 빌드 디렉토리의 config.js 주입 (소스는 그대로 유지)
+    if [ -f "inject-config.sh" ] && [ -f "$BUILD_DIR/config.js" ]; then
+        log_info "빌드 디렉토리의 config.js에 환경 변수 주입 중..."
+        if ./inject-config.sh "$BUILD_DIR"; then
+            log_success "빌드 디렉토리의 config.js 환경 변수 주입 완료"
+        else
+            log_error "config.js 환경 변수 주입 실패"
+            cd "$ROOT_DIR"
+            return 1
+        fi
+    else
+        log_warning "inject-config.sh 스크립트 또는 config.js를 찾을 수 없습니다."
+    fi
+    
+    # _locales 폴더가 제대로 복사되었는지 확인
     if [ -d "$BUILD_DIR/_locales" ]; then
-        log_success "다국어 파일 확인 완료"
+        log_success "_locales 폴더 복사 확인 완료"
+    elif [ -d "_locales" ]; then
+        log_info "_locales 폴더를 별도로 복사 중..."
+        cp -r _locales "$BUILD_DIR/"
+        log_success "_locales 폴더 복사 완료"
     else
         log_warning "_locales 폴더를 찾을 수 없습니다"
     fi
