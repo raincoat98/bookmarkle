@@ -536,7 +536,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             getBookmarks: true,
             userId: msg.userId,
             collectionId: msg.collectionId,
-            idToken: currentIdToken, // ID 토큰 함께 전달
+            idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
           },
           origin
         );
@@ -705,7 +705,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         createCollection: true,
         userId: msg.userId,
         collectionData: msg.collectionData,
-        idToken: currentIdToken, // ID 토큰 함께 전달
+        idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
       },
       origin
     );

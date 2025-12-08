@@ -1084,12 +1084,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "GET_BOOKMARKS") {
         // 북마크 데이터 요청을 offscreen으로 전달
+        // Chrome Storage에서 idToken 가져오기
+        const storageData = await chrome.storage.local.get(["currentIdToken"]);
+        const idToken = storageData.currentIdToken;
+        
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
           type: "GET_BOOKMARKS",
           userId: msg.userId,
           collectionId: msg.collectionId,
+          idToken: idToken, // idToken 추가
         });
         sendResponse(result);
         return true; // async 응답을 위해 true 반환
@@ -1103,11 +1108,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "CREATE_COLLECTION") {
         // 컬렉션 생성 요청을 offscreen으로 전달
+        // Chrome Storage에서 idToken 가져오기
+        const storageData = await chrome.storage.local.get(["currentIdToken"]);
+        const idToken = storageData.currentIdToken;
+        
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
           type: "CREATE_COLLECTION",
           collectionData: msg.collectionData,
+          userId: msg.userId,
+          idToken: idToken, // idToken 추가
         });
         sendResponse(result);
         return;

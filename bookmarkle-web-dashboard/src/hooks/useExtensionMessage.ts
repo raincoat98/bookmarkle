@@ -7,9 +7,6 @@ import {
   createIframeReadyMessage,
 } from "../utils/extensionMessaging";
 import {
-  fetchCollections,
-  fetchBookmarks,
-  createCollection,
   getUserNotificationSettings,
 } from "../utils/firestoreService";
 import { auth } from "../firebase";
@@ -58,7 +55,8 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         } else if ("getBookmarks" in data && data.getBookmarks) {
           await handleGetBookmarks(
             ("collectionId" in data ? data.collectionId : null) as string | null,
-            ("userId" in data ? data.userId : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null,
+            ("idToken" in data ? data.idToken : null) as string | null
           );
         } else if ("saveBookmark" in data && data.saveBookmark) {
           console.log("🔍 saveBookmark message data:", data);
@@ -72,7 +70,8 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         } else if ("createCollection" in data && data.createCollection) {
           await handleCreateCollection(
             ("collectionData" in data ? data.collectionData : null) as unknown,
-            ("userId" in data ? data.userId : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null,
+            ("idToken" in data ? data.idToken : null) as string | null
           );
         } else if ("getNotificationSettings" in data && data.getNotificationSettings) {
           await handleGetNotificationSettings();
@@ -196,39 +195,86 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
   }
 
-  async function handleGetBookmarks(collectionId: string | null, userId?: string | null) {
+  async function handleGetBookmarks(collectionId: string | null, userId?: string | null, idToken?: string | null) {
     console.log(
       "📬 Received getBookmarks request from offscreen, collectionId:",
       collectionId
     );
     console.log("📬 Request userId:", userId);
-    console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+    console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
-    // Use provided userId or fall back to userRef.current
     const effectiveUserId = userId || userRef.current?.uid;
 
-    if (!effectiveUserId) {
-      console.error("❌ No user ID to fetch bookmarks");
+    if (!effectiveUserId || !idToken) {
+      console.error("❌ Missing userId or idToken for bookmarks");
       sendToExtensionParent(
-        createErrorResponse("BOOKMARKS_ERROR", "No user ID")
+        createErrorResponse("BOOKMARKS_ERROR", "Missing authentication")
       );
       return;
     }
 
     try {
-      console.log(
-        "📬 Fetching bookmarks for user:",
-        effectiveUserId,
-        "collection:",
-        collectionId
-      );
-      const bookmarks = await fetchBookmarks(effectiveUserId, collectionId);
-      console.log(
-        "✅ Bookmarks fetched successfully:",
-        bookmarks.length,
-        "items"
-      );
-      console.log("📦 Sending bookmarks to offscreen:", bookmarks);
+      console.log("📬 Fetching bookmarks via Firestore REST API...");
+      
+      const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+      
+      // Query with userId filter (and optionally collectionId)
+      let url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/bookmarks?pageSize=1000`;
+      
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${idToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Firestore API error: ${JSON.stringify(errorData)}`);
+      }
+
+      const result = await response.json();
+      const documents = result.documents || [];
+      
+      // Convert Firestore REST format to bookmark objects and filter
+      const bookmarks = documents
+        .map((doc: any) => {
+          const fields = doc.fields || {};
+          const docId = doc.name.split("/").pop();
+          
+          // Filter by userId
+          if (fields.userId?.stringValue !== effectiveUserId) {
+            return null;
+          }
+          
+          // Filter by collectionId if specified
+          if (collectionId !== null) {
+            const bookmarkCollectionId = fields.collectionId?.stringValue || null;
+            if (bookmarkCollectionId !== collectionId) {
+              return null;
+            }
+          }
+          
+          return {
+            id: docId,
+            userId: fields.userId?.stringValue || "",
+            title: fields.title?.stringValue || "",
+            url: fields.url?.stringValue || "",
+            description: fields.description?.stringValue || "",
+            collectionId: fields.collectionId?.stringValue || null,
+            favicon: fields.favicon?.stringValue || null,
+            tags: fields.tags?.arrayValue?.values?.map((v: any) => v.stringValue) || [],
+            createdAt: fields.createdAt?.timestampValue 
+              ? new Date(fields.createdAt.timestampValue) 
+              : new Date(),
+            updatedAt: fields.updatedAt?.timestampValue 
+              ? new Date(fields.updatedAt.timestampValue) 
+              : new Date(),
+          };
+        })
+        .filter((b: any) => b !== null);
+
+      console.log("✅ Bookmarks fetched successfully:", bookmarks.length, "items");
 
       sendToExtensionParent({
         type: "BOOKMARKS_DATA",
@@ -333,31 +379,64 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     }
   }
 
-  async function handleCreateCollection(collectionData: unknown, userId?: string | null) {
+  async function handleCreateCollection(collectionData: unknown, userId?: string | null, idToken?: string | null) {
     console.log("📬 Received createCollection request from offscreen");
     console.log("📬 Collection data:", collectionData);
     console.log("📬 Request userId:", userId);
-    console.log("📬 User ID check:", userRef.current?.uid ? "✅ Available" : "❌ Missing");
+    console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
-    // Use provided userId or fall back to userRef.current
     const effectiveUserId = userId || userRef.current?.uid;
 
-    if (!effectiveUserId) {
-      console.error("❌ No user ID to create collection");
+    if (!effectiveUserId || !idToken) {
+      console.error("❌ Missing userId or idToken for collection creation");
       sendToExtensionParent(
-        createErrorResponse("COLLECTION_CREATE_ERROR", "No user ID")
+        createErrorResponse("COLLECTION_CREATE_ERROR", "Missing authentication")
       );
       return;
     }
 
     try {
-      console.log("📬 Creating collection for user:", effectiveUserId);
+      console.log("📬 Creating collection via Firestore REST API...");
+      
+      const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
       const collectionPayload = {
-        ...(collectionData as Record<string, unknown>),
-        userId: effectiveUserId,
+        fields: {
+          userId: { stringValue: effectiveUserId },
+          name: { stringValue: (collectionData as any).name || "" },
+          description: { stringValue: (collectionData as any).description || "" },
+          icon: (collectionData as any).icon
+            ? { stringValue: (collectionData as any).icon }
+            : { nullValue: null },
+          color: (collectionData as any).color
+            ? { stringValue: (collectionData as any).color }
+            : { nullValue: null },
+          isDefault: { booleanValue: (collectionData as any).isDefault || false },
+          order: { integerValue: (collectionData as any).order || 0 },
+          createdAt: { timestampValue: new Date().toISOString() },
+          updatedAt: { timestampValue: new Date().toISOString() },
+        },
       };
 
-      const collectionId = await createCollection(collectionPayload as Parameters<typeof createCollection>[0]);
+      const response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/collections`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${idToken}`,
+          },
+          body: JSON.stringify(collectionPayload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(`Firestore API error: ${JSON.stringify(errorData)}`);
+      }
+
+      const result = await response.json();
+      const collectionId = result.name.split("/").pop();
+      
       console.log("✅ Collection created successfully with ID:", collectionId);
       console.log("📦 Sending collection created confirmation to offscreen");
 
