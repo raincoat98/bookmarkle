@@ -351,25 +351,30 @@ sequenceDiagram
     U->>Pop: 1️⃣ 로그인 버튼
     Pop->>U: 2️⃣ Dashboard 새 탭 오픈
 
-    Dash->>Dash: 3️⃣ 확장 컨텍스트 감지
-    Dash->>Off: 4️⃣ IFRAME_READY
+    BG->>Off: 3️⃣ ensureOffscreenDocument()
+    Off->>BG: 4️⃣ OFFSCREEN_READY
+    Note over BG: isOffscreenReady = true (캐싱)
 
-    U->>Dash: 5️⃣ Google 로그인
-    Dash->>FB: 6️⃣ signInWithPopup()
-    FB-->>Dash: 7️⃣ ID Token + User
+    Dash->>Dash: 5️⃣ 확장 컨텍스트 감지
+    Dash->>Off: 6️⃣ IFRAME_READY
 
-    Dash->>FB: 8️⃣ fetchCollections()
-    FB-->>Dash: 9️⃣ Collections
+    U->>Dash: 7️⃣ Google 로그인
+    Dash->>FB: 8️⃣ signInWithPopup()
+    FB-->>Dash: 9️⃣ ID Token + User
 
-    Dash->>Off: 🔟 LOGIN_SUCCESS
-    Off->>Off: 1️⃣1️⃣ 저장 (chrome.storage)
-    Off->>BG: 1️⃣2️⃣ 완료
-    BG->>Pop: 1️⃣3️⃣ 상태 업데이트
+    Dash->>FB: 🔟 fetchCollections()
+    FB-->>Dash: 1️⃣1️⃣ Collections
 
-    Pop->>Pop: 1️⃣4️⃣ 프로필 렌더링
-    Pop-->>U: 1️⃣5️⃣ ✅ 로그인 완료
+    Dash->>Off: 1️⃣2️⃣ LOGIN_SUCCESS
+    Off->>Off: 1️⃣3️⃣ 저장 (chrome.storage)
+    Off->>BG: 1️⃣4️⃣ 완료
+    BG->>Pop: 1️⃣5️⃣ 상태 업데이트
+
+    Pop->>Pop: 1️⃣6️⃣ 프로필 렌더링
+    Pop-->>U: 1️⃣7️⃣ ✅ 로그인 완료
 
     Note over Dash,FB: Firebase SDK는 Iframe에서만 실행
+    Note over BG,Off: PING 제거로 통신 횟수 감소
 ```
 
 ### 📚 북마크 저장 시퀀스 (Bookmark Saving)
@@ -387,7 +392,13 @@ sequenceDiagram
     Pop->>Pop: 2️⃣ 페이지 정보 수집
 
     Pop->>BG: 3️⃣ SAVE_BOOKMARK
-    BG->>Off: 4️⃣ setupOffscreen
+    Note over BG: performance.now() 시작
+    
+    alt isOffscreenReady === true
+        BG->>Off: 4️⃣ 즉시 전송 (캐시 히트)
+    else
+        BG->>Off: 4️⃣ setupOffscreen 후 전송
+    end
 
     Off->>Dash: 5️⃣ saveBookmark 요청
     Dash->>FS: 6️⃣ saveBookmarkDirect()
@@ -395,15 +406,17 @@ sequenceDiagram
 
     Dash->>Off: 8️⃣ BOOKMARK_SAVED
     Off->>BG: 9️⃣ 응답
+    Note over BG: performance.now() 종료<br/>시간 측정 로그
     BG->>Pop: 🔟 최종 응답
 
     Pop->>Pop: 1️⃣1️⃣ 성공 토스트
     Pop-->>U: 1️⃣2️⃣ ✅ 완료
 
     Note over Off,Dash: 타임아웃: 10초
+    Note over BG,Off: maxRetries: 1 (재시도 최소화)
 ```
 
-### 📂 컬렉션 조회 (with Cache)
+### 📂 컬렉션 조회 (with Cache & Deduplication)
 
 ```mermaid
 graph TD
@@ -412,20 +425,25 @@ graph TD
     B -->|✅ 히트| C["chrome.storage.local<br/>에서 로드"]
     C --> D["UI 즉시 렌더링"]
 
-    B -->|❌ 미스| E["GET_COLLECTIONS<br/>요청"]
-    E --> F["Background<br/>→ Offscreen<br/>→ Dashboard"]
-    F --> G["Firestore 조회"]
-    G --> H["중복 제거<br/>requestDeduplication"]
-    H --> I["응답 반환"]
-    I --> J["캐시 저장<br/>chrome.storage"]
-    J --> D
+    B -->|❌ 미스| E{"중복 요청<br/>확인"}
+    E -->|진행 중| F["대기<br/>(requestDeduplication)"]
+    F --> G["이전 요청 결과 공유"]
+    G --> D
 
-    D --> K["✅ 렌더링 완료"]
+    E -->|신규| H["GET_COLLECTIONS<br/>요청"]
+    H --> I["Background (캐시 확인)<br/>→ Offscreen<br/>→ Dashboard"]
+    I --> J["Firestore 조회"]
+    J --> K["응답 반환"]
+    K --> L["캐시 저장<br/>chrome.storage"]
+    L --> D
+
+    D --> M["✅ 렌더링 완료"]
 
     style A fill:#87ceeb,stroke:#333,stroke-width:2px
     style C fill:#90ee90,stroke:#333,stroke-width:2px
-    style E fill:#ffd700,stroke:#333,stroke-width:2px
-    style K fill:#32cd32,stroke:#333,stroke-width:2px,color:#fff
+    style E fill:#ff8c00,stroke:#333,stroke-width:2px
+    style H fill:#ffd700,stroke:#333,stroke-width:2px
+    style M fill:#32cd32,stroke:#333,stroke-width:2px,color:#fff
 ```
 
 ### 📤 메시지 타입 분류
@@ -436,6 +454,10 @@ graph LR
         A1["START_POPUP_AUTH"]
         A2["LOGIN_SUCCESS"]
         A3["LOGOUT_SUCCESS"]
+        A4["LOGOUT_FIREBASE"]
+        A5["IFRAME_READY"]
+        A6["OFFSCREEN_READY"]
+        A7["AUTH_ERROR"]
     end
 
     subgraph Collections["📂 컬렉션"]
@@ -487,31 +509,46 @@ graph TD
     style I fill:#ff6347,stroke:#333,stroke-width:2px,color:#fff
 ```
 
-**타임아웃 설정**:
+**타임아웃 설정** (최적화됨):
 
-| 작업 | 시간 | 재시도 |
-|------|------|--------|
-| AUTH 팝업 | 60초 | - |
-| 컬렉션 조회 | 30초 | 2회 |
-| 북마크 저장 | 10초 | 2회 |
-| 설정 조회 | 15초 | 2회 |
+| 작업 | 시간 | 재시도 | 비고 |
+|------|------|--------|------|
+| AUTH 팝업 | 60초 | - | 사용자 입력 대기 |
+| 컬렉션 조회 | 30초 | 1회 | 재시도 감소 |
+| 북마크 저장 | 10초 | 1회 | 재시도 감소 |
+| 설정 조회 | 15초 | 1회 | 재시도 감소 |
+| iframe 준비 | 5초 | - | 10초→5초 단축 |
+
+**최적화 포인트**:
+- ✅ Offscreen 상태 캐싱 (`isOffscreenReady`)
+- ✅ PING 메시지 제거 (불필요한 통신 감소)
+- ✅ 재시도 횟수 감소 (2회→1회)
+- ✅ iframe 타임아웃 단축 (10초→5초)
+- ✅ 성공 로그 제거 (콘솔 노이즈 감소)
 
 ### 🔑 핵심 통신 파일
 
 **Extension 측**:
 ```
-background.js      ← 메시지 라우팅, 세션 관리
-offscreen.js       ← Firebase 브릿지, iframe 관리
+background.js      ← 메시지 라우팅, 세션 관리, offscreen 상태 캐싱
+offscreen.js       ← Firebase 브릿지, iframe 관리, 로그아웃 시 iframe 재로드
 popup.js           ← UI, 사용자 인터랙션
 ```
 
 **Dashboard 측**:
 ```
-useExtensionAuth.ts      ← 로그인 데이터 전송
-useExtensionMessage.ts   ← 요청 처리
+useExtensionAuth.ts      ← 로그인 데이터 전송, 타입 안전성 개선
+useExtensionMessage.ts   ← 요청 처리, 불필요한 로그 제거
 extensionMessaging.ts    ← 메시지 타입 정의
 firestoreService.ts      ← Firestore 작업
+firebase.ts              ← Firebase 초기화, 인증 처리, 팝업 차단 핸들링
 ```
+
+**주요 최적화 사항**:
+- `background.js`: `isOffscreenReady` 플래그로 불필요한 PING 제거
+- `offscreen.js`: `ensureIframeReady` 타임아웃 10초→5초 단축, 로그아웃 시 iframe 캐시 버스팅
+- `useExtensionMessage.ts`: 성공 로그 제거로 콘솔 노이즈 감소
+- `firebase.ts`: 중복 코드 제거, 타입 안전성 개선, 에러 처리 통합
 
 ## 🔍 문제 해결
 
