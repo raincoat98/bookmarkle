@@ -6,6 +6,8 @@ import type { Collection, Bookmark } from "../types";
 
 export interface GetCollectionsRequest {
   getCollections: true;
+  userId?: string | null;
+  forceRefreshToken?: boolean;
 }
 
 export interface GetBookmarksRequest {

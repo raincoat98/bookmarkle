@@ -250,7 +250,14 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   // --------------------------
 
   const handleGetCollections = useCallback(
-    async (userId?: string | null) => {
+    async (userId?: string | null, forceRefreshToken?: boolean) => {
+      console.log("🔍 [iframe] handleGetCollections called:", {
+        requestedUserId: userId,
+        userRefUid: userRef.current?.uid,
+        authCurrentUser: auth.currentUser?.uid,
+        forceRefreshToken
+      });
+      
       const effectiveUserId = userId || userRef.current?.uid || null;
       
       const authInfo = ensureAuth(effectiveUserId, "COLLECTIONS_ERROR");
@@ -259,18 +266,24 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       const { userId: uid } = authInfo;
 
       try {
-        // userId가 있으면 auth.currentUser 없이도 진행
         let idToken: string;
         
-        if (auth.currentUser && auth.currentUser.uid === uid) {
-          // 현재 로그인된 사용자와 일치하면 토큰 가져오기
-          idToken = await auth.currentUser.getIdToken(true);
+        // userRef.current를 직접 사용 (auth.currentUser 대기 불필요)
+        if (userRef.current && userRef.current.uid === uid) {
+          console.log("🔐 [iframe] Getting ID token from userRef...");
+          idToken = await userRef.current.getIdToken(forceRefreshToken || true);
+          console.log("✅ [iframe] ID token obtained successfully from userRef");
+        } else if (auth.currentUser && auth.currentUser.uid === uid) {
+          // fallback: auth.currentUser 사용
+          console.log("🔐 [iframe] Getting ID token from auth.currentUser...");
+          idToken = await auth.currentUser.getIdToken(forceRefreshToken || true);
+          console.log("✅ [iframe] ID token obtained successfully from auth.currentUser");
         } else {
-          // 불일치하거나 currentUser가 없으면 에러
-          console.error("❌ Auth state mismatch:", {
+          // 둘 다 없으면 에러
+          console.error("❌ [iframe] No valid user object found:", {
             requestedUserId: uid,
-            currentUserId: auth.currentUser?.uid,
-            hasCurrentUser: !!auth.currentUser
+            userRefUid: userRef.current?.uid,
+            authCurrentUserUid: auth.currentUser?.uid,
           });
           sendToExtensionParent(createErrorResponse("COLLECTIONS_ERROR", "Authentication state mismatch. Please reload the extension."));
           return;
@@ -676,7 +689,8 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
         if ("getCollections" in data && data.getCollections) {
           await handleGetCollections(
-            ("userId" in data ? data.userId : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null,
+            ("forceRefreshToken" in data ? data.forceRefreshToken : false) as boolean
           );
         } else if ("getBookmarks" in data && data.getBookmarks) {
           await handleGetBookmarks(
