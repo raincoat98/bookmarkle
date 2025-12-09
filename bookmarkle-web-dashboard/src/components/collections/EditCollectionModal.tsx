@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { Collection, CollectionFormData } from "../../types";
 import { IconPicker } from "./IconPicker";
 import * as LucideIcons from "lucide-react";
@@ -38,6 +39,7 @@ export const EditCollectionModal = ({
   collection,
   collections,
 }: EditCollectionModalProps) => {
+  const { t } = useTranslation();
   const [formData, setFormData] = useState<CollectionFormData>({
     name: "",
     description: "",
@@ -71,7 +73,7 @@ export const EditCollectionModal = ({
       onClose();
     } catch (error) {
       console.error("Error updating collection:", error);
-      toast.error("컬렉션 수정 중 오류가 발생했습니다.");
+      toast.error(t("collections.updateError"));
     } finally {
       setLoading(false);
     }
@@ -104,7 +106,7 @@ export const EditCollectionModal = ({
       <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            컬렉션 수정
+            {t("collections.editCollection")}
           </h3>
 
           <form onSubmit={handleSubmit} className="space-y-4">

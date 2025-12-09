@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { AlertTriangle, Chrome, Globe } from "lucide-react";
 import {
   detectBrowser,
@@ -13,6 +14,7 @@ interface BrowserCompatibilityWarningProps {
 export const BrowserCompatibilityWarning: React.FC<
   BrowserCompatibilityWarningProps
 > = ({ className = "" }) => {
+  const { t } = useTranslation();
   const browserInfo = detectBrowser();
   const message = getBrowserCompatibilityMessage(browserInfo);
   const recommendedBrowsers = getRecommendedBrowsers();
@@ -30,12 +32,12 @@ export const BrowserCompatibilityWarning: React.FC<
         <AlertTriangle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
         <div className="flex-1">
           <h4 className="text-sm font-medium text-amber-800 mb-2">
-            브라우저 호환성 안내
+            {t("common.browserCompatibility")}
           </h4>
           <p className="text-sm text-amber-700 mb-3">{message}</p>
 
           <div className="space-y-2">
-            <p className="text-xs text-amber-600 font-medium">권장 브라우저:</p>
+            <p className="text-xs text-amber-600 font-medium">{t("common.recommendedBrowsers")}</p>
             <div className="flex flex-wrap gap-2">
               {recommendedBrowsers.map((browser: string) => (
                 <div
@@ -55,9 +57,9 @@ export const BrowserCompatibilityWarning: React.FC<
 
           {browserInfo.isInAppBrowser && (
             <div className="mt-3 p-2 bg-amber-100 rounded text-xs text-amber-700">
-              <strong>💡 팁:</strong> 현재 앱에서{" "}
-              <strong>"브라우저에서 열기"</strong> 또는
-              <strong> "외부 브라우저로 열기"</strong> 옵션을 찾아보세요.
+              <strong>💡 {t("common.info")}:</strong> {t("common.tipOpenInBrowser")}{" "}
+              <strong>"{t("common.openInBrowser")}"</strong> {t("common.orExternal")}{" "}
+              <strong>"{t("common.openInExternalBrowser")}"</strong> {t("common.optionToFind")}
             </div>
           )}
         </div>

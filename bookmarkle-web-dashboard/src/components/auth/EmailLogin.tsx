@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { loginWithEmail, resetPassword } from "../../firebase";
 
 interface EmailLoginProps {
@@ -10,6 +11,7 @@ export default function EmailLogin({
   onSuccess,
   onSwitchToSignup,
 }: EmailLoginProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,7 +29,7 @@ export default function EmailLogin({
     } catch (err: unknown) {
       console.error("로그인 실패:", err);
       const error = err as { code?: string };
-      setError(getErrorMessage(error.code || ""));
+      setError(getErrorMessage(error.code || "", t));
     } finally {
       setLoading(false);
     }
@@ -35,7 +37,7 @@ export default function EmailLogin({
 
   const handleResetPassword = async () => {
     if (!email.trim()) {
-      setError("비밀번호 재설정을 위해 이메일을 입력해주세요.");
+      setError(t("auth.enterEmailForReset"));
       return;
     }
 
@@ -48,44 +50,27 @@ export default function EmailLogin({
     } catch (err: unknown) {
       console.error("비밀번호 재설정 실패:", err);
       const error = err as { code?: string };
-      setError(getErrorMessage(error.code || ""));
+      setError(getErrorMessage(error.code || "", t));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getErrorMessage = (code: string): string => {
-    switch (code) {
-      case "auth/user-not-found":
-        return "등록되지 않은 이메일입니다.";
-      case "auth/wrong-password":
-        return "잘못된 비밀번호입니다.";
-      case "auth/invalid-email":
-        return "유효하지 않은 이메일 형식입니다.";
-      case "auth/user-disabled":
-        return "비활성화된 계정입니다.";
-      case "auth/too-many-requests":
-        return "너무 많은 시도로 인해 일시적으로 차단되었습니다.";
-      default:
-        return "로그인 중 오류가 발생했습니다.";
     }
   };
 
   if (resetSent) {
     return (
       <div className="text-center py-5">
-        <h3 className="font-semibold mb-3">📧 비밀번호 재설정 이메일 전송됨</h3>
+        <h3 className="font-semibold mb-3">📧 {t("auth.resetPasswordSent")}</h3>
         <p className="mb-2">
-          <strong>{email}</strong>으로 비밀번호 재설정 링크를 전송했습니다.
+          <strong>{email}</strong>{t("auth.resetPasswordDesc")}
         </p>
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-          이메일을 확인하고 링크를 클릭하여 비밀번호를 재설정하세요.
+          {t("auth.resetPasswordInstr")}
         </p>
         <button
           onClick={() => setResetSent(false)}
           className="btn-primary mt-4"
         >
-          로그인으로 돌아가기
+          {t("auth.backToLogin")}
         </button>
       </div>
     );
@@ -94,7 +79,7 @@ export default function EmailLogin({
   return (
     <form onSubmit={handleSubmit}>
       <h3 className="text-center mb-6 font-semibold text-gray-900 dark:text-white">
-        이메일 로그인
+        {t("auth.emailLogin")}
       </h3>
 
       {error && (
@@ -108,7 +93,7 @@ export default function EmailLogin({
           htmlFor="email"
           className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
-          이메일
+          {t("auth.email")}
         </label>
         <input
           id="email"
@@ -118,7 +103,7 @@ export default function EmailLogin({
           required
           disabled={loading}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-          placeholder="example@email.com"
+          placeholder={t("auth.emailPlaceholder")}
         />
       </div>
 
@@ -127,7 +112,7 @@ export default function EmailLogin({
           htmlFor="password"
           className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
-          비밀번호
+          {t("auth.password")}
         </label>
         <input
           id="password"
@@ -137,7 +122,7 @@ export default function EmailLogin({
           required
           disabled={loading}
           className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
-          placeholder="비밀번호를 입력하세요"
+          placeholder={t("auth.passwordPlaceholder")}
         />
       </div>
 
@@ -146,7 +131,7 @@ export default function EmailLogin({
         disabled={loading || !email.trim() || !password.trim()}
         className="btn-primary w-full mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {loading ? "로그인 중..." : "로그인"}
+        {loading ? t("auth.loggingIn") : t("auth.login")}
       </button>
 
       <div className="space-y-2 mb-6 flex justify-between">
@@ -156,7 +141,7 @@ export default function EmailLogin({
           disabled={loading}
           className="w-full text-center text-gray-300 hover:text-gray-100 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          비밀번호 찾기
+          {t("auth.findPassword")}
         </button>
 
         {onSwitchToSignup && (
@@ -166,10 +151,28 @@ export default function EmailLogin({
             disabled={loading}
             className="w-full text-center text-gray-300 hover:text-gray-100 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            회원가입
+            {t("auth.signUp")}
           </button>
         )}
       </div>
     </form>
   );
+}
+
+// Helper function
+function getErrorMessage(code: string, t: (key: string) => string): string {
+  switch (code) {
+    case "auth/user-not-found":
+      return t("auth.errorUserNotFound");
+    case "auth/wrong-password":
+      return t("auth.errorWrongPassword");
+    case "auth/invalid-email":
+      return t("auth.errorInvalidEmail");
+    case "auth/user-disabled":
+      return t("auth.errorUserDisabled");
+    case "auth/too-many-requests":
+      return t("auth.errorTooManyRequests");
+    default:
+      return t("auth.loginError");
+  }
 }

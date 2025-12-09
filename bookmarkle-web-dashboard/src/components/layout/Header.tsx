@@ -5,6 +5,7 @@ import {
   useSubscriptionStore,
 } from "../../stores";
 import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Menu,
@@ -29,6 +30,7 @@ interface HeaderProps {
 }
 
 export const Header = ({ showMenuButton = false }: HeaderProps) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
@@ -268,7 +270,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <LogOut className="w-4 h-4" />
-                      <span>{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
+                      <span>{isLoggingOut ? t("auth.loggingOut") : t("auth.logout")}</span>
                     </button>
                     </motion.div>
                 )}

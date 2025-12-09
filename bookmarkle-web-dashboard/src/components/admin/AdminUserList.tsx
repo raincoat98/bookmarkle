@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import type { AdminUser } from "../../types";
 import {
   Search,
@@ -24,6 +25,7 @@ export function AdminUserList({
   loading,
   onToggleUserStatus,
 }: AdminUserListProps) {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [earlyUserMap, setEarlyUserMap] = useState<Record<string, boolean>>({});
@@ -73,7 +75,7 @@ export function AdminUserList({
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
-          placeholder="이메일 또는 이름으로 검색..."
+          placeholder={t("admin.searchPlaceholder")}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
@@ -86,7 +88,7 @@ export function AdminUserList({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                전체 사용자
+                {t("admin.totalUsers")}
               </p>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.length}
@@ -100,7 +102,7 @@ export function AdminUserList({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                프리미엄 사용자
+                {t("admin.premiumUsers")}
               </p>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {
@@ -121,7 +123,7 @@ export function AdminUserList({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                얼리 유저
+                {t("admin.earlyUsers")}
               </p>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {Object.values(earlyUserMap).filter(Boolean).length}
@@ -135,7 +137,7 @@ export function AdminUserList({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                총 북마크
+                {t("admin.totalBookmarks")}
               </p>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.reduce((sum, user) => sum + user.bookmarkCount, 0)}
@@ -149,7 +151,7 @@ export function AdminUserList({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                총 컬렉션
+                {t("admin.totalCollections")}
               </p>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {users.reduce((sum, user) => sum + user.collectionCount, 0)}
@@ -167,31 +169,31 @@ export function AdminUserList({
             <thead className="bg-gray-50 dark:bg-gray-900">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  사용자
+                  {t("admin.userInfo")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  이메일
+                  {t("admin.email")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  북마크
+                  {t("admin.bookmarks")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  컬렉션
+                  {t("admin.collections")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  구독
+                  {t("admin.subscription")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  얼리 유저
+                  {t("admin.earlyUser")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  가입일
+                  {t("admin.joinDate")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  상태
+                  {t("admin.status")}
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  작업
+                  {t("admin.actions")}
                 </th>
               </tr>
             </thead>
@@ -203,8 +205,8 @@ export function AdminUserList({
                     className="px-6 py-12 text-center text-gray-500 dark:text-gray-400"
                   >
                     {searchTerm
-                      ? "검색 결과가 없습니다."
-                      : "등록된 사용자가 없습니다."}
+                      ? t("admin.noSearchResults")
+                      : t("admin.noRegisteredUsers")}
                   </td>
                 </tr>
               ) : (
@@ -220,7 +222,7 @@ export function AdminUserList({
                         </div>
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {user.displayName || "이름 없음"}
+                            {user.displayName || t("admin.noName")}
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             ID: {user.uid.substring(0, 8)}...
@@ -253,17 +255,17 @@ export function AdminUserList({
                         <div className="flex items-center space-x-2">
                           <Crown className="h-4 w-4 text-yellow-500" />
                           <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                            프리미엄
+                            {t("admin.premium")}
                           </span>
                           {user.subscription.billingCycle === "yearly" && (
                             <span className="text-xs text-gray-500 dark:text-gray-400">
-                              (연간)
+                              ({t("admin.yearlyShort")})
                             </span>
                           )}
                         </div>
                       ) : (
                         <span className="text-sm text-gray-500 dark:text-gray-400">
-                          무료
+                          {t("admin.free")}
                         </span>
                       )}
                     </td>
@@ -272,7 +274,7 @@ export function AdminUserList({
                         <div className="flex items-center space-x-2">
                           <Gift className="h-4 w-4 text-orange-500" />
                           <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                            얼리 유저
+                            {t("admin.earlyUser")}
                           </span>
                         </div>
                       ) : (
@@ -295,7 +297,7 @@ export function AdminUserList({
                             : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                         }`}
                       >
-                        {user.isActive ? "활성" : "비활성"}
+                        {user.isActive ? t("admin.active") : t("admin.inactive")}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -303,7 +305,7 @@ export function AdminUserList({
                         onClick={() => setSelectedUser(user)}
                         className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
                       >
-                        상세보기
+                        {t("admin.viewDetails")}
                       </button>
                       <button
                         onClick={() =>
@@ -315,18 +317,18 @@ export function AdminUserList({
                             : "text-green-600 hover:text-green-800 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300"
                         }`}
                         title={
-                          user.isActive ? "사용자 비활성화" : "사용자 활성화"
+                          user.isActive ? t("admin.deactivateUser") : t("admin.activateUser")
                         }
                       >
                         {user.isActive ? (
                           <>
                             <UserX className="h-3 w-3 mr-1" />
-                            비활성화
+                            {t("admin.deactivate")}
                           </>
                         ) : (
                           <>
                             <UserCheck className="h-3 w-3 mr-1" />
-                            활성화
+                            {t("admin.activate")}
                           </>
                         )}
                       </button>
@@ -346,7 +348,7 @@ export function AdminUserList({
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  사용자 상세 정보
+                  {t("admin.userDetails")}
                 </h3>
                 <button
                   onClick={() => setSelectedUser(null)}
@@ -372,7 +374,7 @@ export function AdminUserList({
             <div className="p-6 space-y-4">
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  사용자 ID
+                  {t("admin.userId")}
                 </label>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white font-mono">
                   {selectedUser.uid}
@@ -381,16 +383,16 @@ export function AdminUserList({
 
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  이름
+                  {t("admin.name")}
                 </label>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedUser.displayName || "이름 없음"}
+                  {selectedUser.displayName || t("admin.noName")}
                 </p>
               </div>
 
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  이메일
+                  {t("admin.email")}
                 </label>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
                   {selectedUser.email || "N/A"}
@@ -400,7 +402,7 @@ export function AdminUserList({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    북마크 수
+                    {t("admin.bookmarkCount")}
                   </label>
                   <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {selectedUser.bookmarkCount}
@@ -409,7 +411,7 @@ export function AdminUserList({
 
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    컬렉션 수
+                    {t("admin.collectionCount")}
                   </label>
                   <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
                     {selectedUser.collectionCount}
@@ -419,7 +421,7 @@ export function AdminUserList({
 
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  구독 상태
+                  {t("admin.subscriptionStatus")}
                 </label>
                 <div className="mt-1 flex items-center space-x-2">
                   {selectedUser.subscription &&
@@ -430,14 +432,14 @@ export function AdminUserList({
                       <Crown className="h-5 w-5 text-yellow-500" />
                       <div>
                         <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                          프리미엄
+                          {t("admin.premium")}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {selectedUser.subscription.billingCycle === "monthly"
-                            ? "월간 구독"
-                            : "연간 구독"}
+                            ? t("admin.monthly")
+                            : t("admin.yearly")}
                           {selectedUser.subscription.endDate &&
-                            ` · 만료일: ${selectedUser.subscription.endDate.toLocaleDateString(
+                            ` · ${t("admin.expiryDate")}: ${selectedUser.subscription.endDate.toLocaleDateString(
                               "ko-KR"
                             )}`}
                         </p>
@@ -445,7 +447,7 @@ export function AdminUserList({
                     </>
                   ) : (
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      무료
+                      {t("admin.free")}
                     </span>
                   )}
                 </div>
@@ -453,7 +455,7 @@ export function AdminUserList({
 
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  얼리 유저 상태
+                  {t("admin.earlyUserStatus")}
                 </label>
                 <div className="mt-1 flex items-center space-x-2">
                   {earlyUserMap[selectedUser.uid] ? (
@@ -461,16 +463,16 @@ export function AdminUserList({
                       <Gift className="h-5 w-5 text-orange-500" />
                       <div>
                         <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                          얼리 유저
+                          {t("admin.earlyUser")}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          베타 기간 중 가입한 사용자입니다
+                          {t("admin.earlyUserDesc")}
                         </p>
                       </div>
                     </>
                   ) : (
                     <span className="text-sm text-gray-600 dark:text-gray-400">
-                      일반 사용자
+                      {t("admin.regularUser")}
                     </span>
                   )}
                 </div>
@@ -478,7 +480,7 @@ export function AdminUserList({
 
               <div>
                 <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  가입일
+                  {t("admin.joinDate")}
                 </label>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">
                   {selectedUser.createdAt.toLocaleString("ko-KR")}
@@ -488,7 +490,7 @@ export function AdminUserList({
               {selectedUser.lastLoginAt && (
                 <div>
                   <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    마지막 로그인
+                    {t("admin.lastLogin")}
                   </label>
                   <p className="mt-1 text-sm text-gray-900 dark:text-white">
                     {selectedUser.lastLoginAt.toLocaleString("ko-KR")}
@@ -502,7 +504,7 @@ export function AdminUserList({
                 onClick={() => setSelectedUser(null)}
                 className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
-                닫기
+                {t("common.close")}
               </button>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { signupWithEmail } from "../../firebase";
 
 interface EmailSignupProps {
@@ -10,6 +11,7 @@ export default function EmailSignup({
   onSuccess,
   onSwitchToLogin,
 }: EmailSignupProps) {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,11 +20,11 @@ export default function EmailSignup({
   const [error, setError] = useState("");
 
   const validateForm = (): string | null => {
-    if (!email.trim()) return "이메일을 입력해주세요.";
-    if (!password.trim()) return "비밀번호를 입력해주세요.";
-    if (password.length < 6) return "비밀번호는 최소 6자 이상이어야 합니다.";
-    if (password !== confirmPassword) return "비밀번호가 일치하지 않습니다.";
-    if (!displayName.trim()) return "이름을 입력해주세요.";
+    if (!email.trim()) return t("auth.errorInvalidEmail");
+    if (!password.trim()) return t("auth.errorWeakPassword");
+    if (password.length < 6) return t("auth.errorWeakPassword");
+    if (password !== confirmPassword) return t("auth.passwordMismatch");
+    if (!displayName.trim()) return t("auth.name");
     return null;
   };
 
@@ -44,24 +46,9 @@ export default function EmailSignup({
     } catch (err: unknown) {
       console.error("회원가입 실패:", err);
       const error = err as { code?: string };
-      setError(getErrorMessage(error.code || ""));
+      setError(getErrorMessage(error.code || "", t));
     } finally {
       setLoading(false);
-    }
-  };
-
-  const getErrorMessage = (code: string): string => {
-    switch (code) {
-      case "auth/email-already-in-use":
-        return "이미 사용 중인 이메일입니다.";
-      case "auth/invalid-email":
-        return "유효하지 않은 이메일 형식입니다.";
-      case "auth/operation-not-allowed":
-        return "이메일/비밀번호 회원가입이 비활성화되어 있습니다.";
-      case "auth/weak-password":
-        return "비밀번호가 너무 약합니다. 더 강한 비밀번호를 사용하세요.";
-      default:
-        return "회원가입 중 오류가 발생했습니다.";
     }
   };
 
@@ -69,19 +56,19 @@ export default function EmailSignup({
     password: string
   ): { strength: string; color: string } => {
     if (password.length === 0) return { strength: "", color: "" };
-    if (password.length < 6) return { strength: "약함", color: "#f44336" };
-    if (password.length < 8) return { strength: "보통", color: "#ff9800" };
+    if (password.length < 6) return { strength: t("auth.weak"), color: "#f44336" };
+    if (password.length < 8) return { strength: t("auth.medium"), color: "#ff9800" };
     if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
-      return { strength: "보통", color: "#ff9800" };
+      return { strength: t("auth.medium"), color: "#ff9800" };
     }
-    return { strength: "강함", color: "#4caf50" };
+    return { strength: t("auth.strong"), color: "#4caf50" };
   };
 
   const passwordStrength = getPasswordStrength(password);
 
   return (
     <form onSubmit={handleSubmit}>
-      <h3 className="text-center mb-6 font-semibold text-gray-900 dark:text-white">회원가입</h3>
+      <h3 className="text-center mb-6 font-semibold text-gray-900 dark:text-white">{t("auth.emailSignup")}</h3>
 
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300 px-3 py-3 rounded mb-4 text-sm">
@@ -92,9 +79,9 @@ export default function EmailSignup({
       <div className="mb-4">
         <label
           htmlFor="displayName"
-          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
-          이름
+          {t("auth.name")}
         </label>
         <input
           id="displayName"
@@ -111,9 +98,9 @@ export default function EmailSignup({
       <div className="mb-4">
         <label
           htmlFor="email"
-          className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
         >
-          이메일
+          {t("auth.email")}
         </label>
         <input
           id="email"
@@ -132,7 +119,7 @@ export default function EmailSignup({
           htmlFor="password"
           className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
-          비밀번호
+          {t("auth.password")}
         </label>
         <input
           id="password"
@@ -147,14 +134,14 @@ export default function EmailSignup({
         {password && (
           <div
             className={`text-xs mt-1 font-medium ${
-              passwordStrength.strength === "강함"
+              passwordStrength.strength === t("auth.strong")
                 ? "text-green-600 dark:text-green-400"
-                : passwordStrength.strength === "보통"
+                : passwordStrength.strength === t("auth.medium")
                 ? "text-orange-600 dark:text-orange-400"
                 : "text-red-600 dark:text-red-400"
             }`}
           >
-            비밀번호 강도: {passwordStrength.strength}
+            {t("auth.passwordStrength")}: {passwordStrength.strength}
           </div>
         )}
       </div>
@@ -164,7 +151,7 @@ export default function EmailSignup({
           htmlFor="confirmPassword"
           className="block mb-2 font-medium text-sm text-gray-900 dark:text-white"
         >
-          비밀번호 확인
+          {t("auth.confirmPassword")}
         </label>
         <input
           id="confirmPassword"
@@ -182,7 +169,7 @@ export default function EmailSignup({
         />
         {confirmPassword && password !== confirmPassword && (
           <div className="text-xs mt-1 text-red-600 dark:text-red-400">
-            비밀번호가 일치하지 않습니다
+            {t("auth.passwordMismatch")}
           </div>
         )}
       </div>
@@ -194,11 +181,11 @@ export default function EmailSignup({
         }
         className="w-full bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600 text-white font-medium py-2 rounded mb-3 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 transition-colors"
       >
-        {loading ? "회원가입 중..." : "회원가입"}
+        {loading ? t("auth.signingUp") : t("auth.signUp")}
       </button>
 
       <div className="text-center text-sm text-gray-600 dark:text-gray-400">
-        이미 계정이 있으신가요?{" "}
+        {t("auth.alreadyHaveAccount")}{" "}
         {onSwitchToLogin && (
           <button
             type="button"
@@ -206,10 +193,26 @@ export default function EmailSignup({
             disabled={loading}
             className="text-brand-600 dark:text-brand-400 hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            로그인
+            {t("auth.login")}
           </button>
         )}
       </div>
     </form>
   );
+}
+
+// Helper function for error messages
+function getErrorMessage(code: string, t: (key: string) => string): string {
+  switch (code) {
+    case "auth/email-already-in-use":
+      return t("auth.errorEmailInUse");
+    case "auth/invalid-email":
+      return t("auth.errorInvalidEmail");
+    case "auth/operation-not-allowed":
+      return t("auth.errorUnknown");
+    case "auth/weak-password":
+      return t("auth.errorWeakPassword");
+    default:
+      return t("auth.errorUnknown");
+  }
 }
