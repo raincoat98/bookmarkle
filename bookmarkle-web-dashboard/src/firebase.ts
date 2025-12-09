@@ -39,6 +39,12 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
 
+// 관리자 이메일 목록
+const ADMIN_EMAILS = [
+  import.meta.env.VITE_ADMIN_EMAIL || "admin@bookmarkle.com",
+  "ww57403@gmail.com",
+];
+
 // 사용자 정보를 Firestore에 저장
 async function saveUserToFirestore(user: User, isNewUser: boolean = false) {
   const userRef = doc(db, "users", user.uid);
@@ -80,223 +86,158 @@ async function saveUserToFirestore(user: User, isNewUser: boolean = false) {
   }
 }
 
-// 팝업 차단/사파리 이슈 시 redirect로 대체 가능
+/**
+ * Google 계정으로 로그인 (팝업 → 리다이렉트 폴백)
+ */
 export async function loginWithGoogle() {
   try {
-    // 팝업으로 로그인 시도
     console.log("🔄 Attempting signInWithPopup...");
     const result = await signInWithPopup(auth, googleProvider);
-
-    if (result.user) {
-      console.log("✅ Login successful:", result.user.email);
-      saveUserToFirestore(result.user, false).catch((error) => {
-        console.error("Firestore 저장 실패 (로그인은 성공):", error);
-      });
-    }
-
+    
+    console.log("✅ Login successful:", result.user.email);
+    await saveUserToFirestore(result.user, false);
+    
     return result;
   } catch (error: unknown) {
     const err = error as { code?: string; message?: string; name?: string };
 
-    // 팝업이 차단되거나 COOP 정책 위반 시 리다이렉트로 폴백
-    if (
+    // 팝업 차단 관련 에러 체크
+    const isPopupBlockedError = 
       err?.code === "auth/popup-blocked" ||
       err?.code === "auth/popup-closed-by-user" ||
-      (err?.message && err.message.includes("Cross-Origin-Opener-Policy")) ||
-      // iframe 내에서의 팝업 차단도 감지
-      (err?.message && (
-        err.message.includes("blocked by browser") ||
-        err.message.includes("popup blocked") ||
-        err.message.includes("cross-origin") ||
-        err.message.includes("Pending promise was never set")
-      ))
-    ) {
-      console.log("⚠️ Popup blocked/COOP/iframe error, falling back to redirect...");
-      console.log("🔍 Full error details:", {
-        code: err?.code,
-        message: err?.message,
-        name: err?.name,
-      });
-      // signInWithRedirect는 페이지를 이동시킴
-      try {
-        await signInWithRedirect(auth, googleProvider);
-      } catch (redirectError) {
-        console.error("❌ Redirect login also failed:", redirectError);
-        throw redirectError;
-      }
-      // signInWithRedirect succeeds with navigation, won't reach here
-      return;
+      err?.message?.includes("Cross-Origin-Opener-Policy") ||
+      err?.message?.includes("blocked by browser") ||
+      err?.message?.includes("popup blocked") ||
+      err?.message?.includes("cross-origin") ||
+      err?.message?.includes("Pending promise was never set");
+
+    if (isPopupBlockedError) {
+      console.log("⚠️ Popup blocked, falling back to redirect...");
+      await signInWithRedirect(auth, googleProvider);
+      return; // 리다이렉트는 페이지 이동으로 여기 도달 안 함
     }
 
-    // 네트워크 에러나 기타 에러는 그대로 throw
     console.error("❌ Google login failed:", err?.code, err?.message);
     throw error;
   }
 }
 
-// 이메일/패스워드 로그인
+/**
+ * 이메일/패스워드 로그인
+ */
 export async function loginWithEmail(email: string, password: string) {
   await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
-
-  // 사용자 정보를 Firestore에 저장 (non-blocking)
-  if (result.user) {
-    saveUserToFirestore(result.user, false).catch((error) => {
-      console.error("Firestore 저장 실패 (로그인은 성공):", error);
-    });
-  }
-
+  
+  await saveUserToFirestore(result.user, false);
+  
   return result;
 }
 
-// 회원가입
+/**
+ * 이메일/패스워드 회원가입
+ */
 export async function signupWithEmail(
   email: string,
   password: string,
   displayName?: string
 ) {
   await setPersistence(auth, browserLocalPersistence);
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password
-  );
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
 
-  // 사용자 프로필 업데이트 (표시 이름)
-  if (displayName && userCredential.user) {
+  // 표시 이름 설정
+  if (displayName) {
     await updateProfile(userCredential.user, { displayName });
   }
 
-  // 사용자 정보를 Firestore에 저장 (신규 사용자, non-blocking)
-  if (userCredential.user) {
-    saveUserToFirestore(userCredential.user, true).catch((error) => {
-      console.error("Firestore 저장 실패 (가입은 성공):", error);
-    });
-  }
+  // 신규 사용자 정보 저장
+  await saveUserToFirestore(userCredential.user, true);
 
   return userCredential;
 }
 
-// 비밀번호 재설정
+/**
+ * 비밀번호 재설정 이메일 발송
+ */
 export function resetPassword(email: string) {
   return sendPasswordResetEmail(auth, email);
 }
 
+/**
+ * 로그아웃 (Extension 컨텍스트 감지 및 세션 클리어)
+ */
 export async function logout() {
-  // Extension context 확인
   const isExtension = 
- window.location.search.includes("source=extension") ||
+    window.location.search.includes("source=extension") ||
     window.location.pathname.includes("/extension-login");
 
-  // Extension context가 아닐 때만 Firebase 세션 클리어
+  // Extension이 아닌 경우만 Firebase 저장소 클리어
   if (!isExtension) {
     console.log("🧹 Clearing Firebase storage (non-extension context)");
     await clearFirebaseStorage();
-  } else {
-    console.log("⏭️ Skipping Firebase storage clear (extension context)");
   }
 
-  // 확장 프로그램에 LOGOUT_SUCCESS 메시지 전송
-  try {
-    const extensionId = import.meta.env.VITE_EXTENSION_ID;
-
-    if (extensionId && typeof window !== "undefined") {
-      const chromeRuntime = (window as unknown as Record<string, unknown>)
-        .chrome as
-        | {
-            runtime?: {
-              sendMessage?: (
-                extensionId: string,
-                msg: unknown,
-                callback: () => void
-              ) => void;
-            };
-          }
-        | undefined;
-
-      if (chromeRuntime?.runtime?.sendMessage) {
-        try {
-          chromeRuntime.runtime.sendMessage(
-            extensionId,
-            { type: "LOGOUT_SUCCESS" },
-            () => {
-              console.log("✅ LOGOUT_SUCCESS sent to extension");
-            }
-          );
-        } catch (error) {
-          console.warn("Failed to send LOGOUT_SUCCESS to extension:", error);
-        }
-      }
-    }
-  } catch (error) {
-    console.warn("Error notifying extension about logout:", error);
-  }
+  // Extension에 로그아웃 알림
+  notifyExtensionLogout();
 
   // Firebase Auth 로그아웃
-  const signOutResult = await signOut(auth);
+  await signOut(auth);
+  console.log("✅ Logout completed");
+}
 
-  // 로그아웃 완료 후 구글 프로바이더 상태 초기화
-  console.log("🔄 Resetting GoogleAuthProvider state after logout");
+/**
+ * Extension에 로그아웃 메시지 전송
+ */
+function notifyExtensionLogout() {
+  const extensionId = import.meta.env.VITE_EXTENSION_ID;
+  if (!extensionId || typeof window === "undefined") return;
 
-  return signOutResult;
+  try {
+    const chrome = (window as { chrome?: { runtime?: { sendMessage?: (extensionId: string, message: unknown, callback: () => void) => void } } }).chrome;
+    chrome?.runtime?.sendMessage?.(extensionId, { type: "LOGOUT_SUCCESS" }, () => {
+      console.log("✅ LOGOUT_SUCCESS sent to extension");
+    });
+  } catch (error) {
+    console.warn("Failed to notify extension about logout:", error);
+  }
 }
 
 /**
  * Firebase 로컬 저장소 완전 클리어
- * signInWithPopup.js에서 이관됨
  */
 export async function clearFirebaseStorage() {
   try {
-    console.log("🧹 Starting comprehensive Firebase storage cleanup...");
+    console.log("🧹 Starting Firebase storage cleanup...");
 
-    // 1. localStorage에서 Firebase 관련 키 제거
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (
-        key &&
-        (key.startsWith("firebase:") ||
-          key.startsWith("firebaseui:") ||
-          key.includes("firebase-session") ||
-          key.includes("__firebase"))
-      ) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach((key) => {
-      localStorage.removeItem(key);
-      console.log(`  ✅ Removed localStorage: ${key}`);
-    });
-    console.log(`✅ localStorage cleared: ${keysToRemove.length} keys removed`);
+    const isFirebaseKey = (key: string) => 
+      key.startsWith("firebase:") ||
+      key.startsWith("firebaseui:") ||
+      key.includes("firebase-session") ||
+      key.includes("__firebase");
 
-    // 2. sessionStorage에서 Firebase 관련 키 제거
-    const sessionKeysToRemove: string[] = [];
-    for (let i = 0; i < sessionStorage.length; i++) {
-      const key = sessionStorage.key(i);
-      if (
-        key &&
-        (key.startsWith("firebase:") ||
-          key.startsWith("firebaseui:") ||
-          key.includes("firebase-session") ||
-          key.includes("__firebase"))
-      ) {
-        sessionKeysToRemove.push(key);
-      }
-    }
-    sessionKeysToRemove.forEach((key) => {
-      sessionStorage.removeItem(key);
-      console.log(`  ✅ Removed sessionStorage: ${key}`);
-    });
-    console.log(
-      `✅ sessionStorage cleared: ${sessionKeysToRemove.length} keys removed`
-    );
+    // localStorage 클리어
+    const localKeys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
+      .filter((key): key is string => !!key && isFirebaseKey(key));
+    
+    localKeys.forEach(key => localStorage.removeItem(key));
+    console.log(`✅ localStorage cleared: ${localKeys.length} keys`);
 
-    console.log("✅ Firebase storage clearing completed successfully");
+    // sessionStorage 클리어
+    const sessionKeys = Array.from({ length: sessionStorage.length }, (_, i) => sessionStorage.key(i))
+      .filter((key): key is string => !!key && isFirebaseKey(key));
+    
+    sessionKeys.forEach(key => sessionStorage.removeItem(key));
+    console.log(`✅ sessionStorage cleared: ${sessionKeys.length} keys`);
+
+    console.log("✅ Firebase storage cleanup completed");
   } catch (error) {
     console.error("❌ Error clearing Firebase storage:", error);
   }
 }
 
+/**
+ * Firebase Auth 상태 변경 감시
+ */
 export function watchAuth(cb: (user: User | null) => void) {
   return onAuthStateChanged(auth, cb);
 }
@@ -417,73 +358,41 @@ export async function setUserWeatherLocation(
   );
 }
 
-// 관리자 ID 목록 (환경 변수 또는 하드코딩)
-const ADMIN_EMAILS = [
-  import.meta.env.VITE_ADMIN_EMAIL || "admin@bookmarkle.com",
-  "ww57403@gmail.com", // 임시 하드코딩 추가
-];
-
-// 관리자 확인 함수
+/**
+ * 이메일 기반 관리자 확인 (동기)
+ */
 export function isAdmin(user: User | null): boolean {
-  if (!user || !user.email) {
-    console.log("isAdmin: 사용자가 없거나 이메일이 없음", {
-      user: user?.email,
-    });
-    return false;
-  }
-
-  const isAdminUser = ADMIN_EMAILS.includes(user.email);
-  console.log("isAdmin 체크:", {
-    userEmail: user.email,
-    adminEmails: ADMIN_EMAILS,
-    isAdmin: isAdminUser,
-  });
-
-  return isAdminUser;
+  return !!user?.email && ADMIN_EMAILS.includes(user.email);
 }
 
-// 관리자 권한 확인 (비동기 - Firestore에서 확인)
-export async function checkAdminStatus(uid: string): Promise<boolean> {
+/**
+ * Firestore에서 관리자 권한 확인 (비동기)
+ */
+export async function isAdminUser(user: User | null): Promise<boolean> {
+  if (!user) return false;
+
+  // 이메일 기반 우선 체크
+  if (ADMIN_EMAILS.includes(user.email || "")) {
+    return true;
+  }
+
+  // Firestore users 컬렉션의 isAdmin 필드 체크
   try {
-    const adminDoc = await getDoc(doc(db, "admins", uid));
-    return adminDoc.exists();
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    return userDoc.exists() && userDoc.data()?.isAdmin === true;
   } catch (error) {
     console.error("관리자 권한 확인 오류:", error);
     return false;
   }
 }
 
-// Firestore에서 사용자 데이터를 가져와서 isAdmin 필드 체크
-export async function isAdminFromFirestore(
-  user: User | null
-): Promise<boolean> {
-  if (!user) return false;
-
+/**
+ * UID로 admins 컬렉션에서 관리자 권한 확인
+ */
+export async function checkAdminStatus(uid: string): Promise<boolean> {
   try {
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      return userData.isAdmin === true;
-    }
-    return false;
-  } catch (error) {
-    console.error("Firestore에서 관리자 권한 확인 오류:", error);
-    return false;
-  }
-}
-
-// 관리자 권한 확인 (사용자 객체로)
-export async function isAdminUser(user: User | null): Promise<boolean> {
-  if (!user) return false;
-
-  // 이메일 기반 체크 (기본)
-  if (ADMIN_EMAILS.includes(user.email || "")) {
-    return true;
-  }
-
-  // Firestore isAdmin 필드 체크
-  try {
-    return await isAdminFromFirestore(user);
+    const adminDoc = await getDoc(doc(db, "admins", uid));
+    return adminDoc.exists();
   } catch (error) {
     console.error("관리자 권한 확인 오류:", error);
     return false;
