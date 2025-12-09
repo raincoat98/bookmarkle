@@ -24,27 +24,22 @@ export const ExtensionLoginPage = () => {
 
   // 무한로딩 방지: 5초 후 로딩 강제 종료
   useEffect(() => {
+    if (!loading) return;
+
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log("⚠️ Loading timeout - forcing loading to false");
-        setLoading(false);
-      }
+      console.log("⚠️ Loading timeout - forcing loading to false");
+      setLoading(false);
     }, 5000);
 
     return () => clearTimeout(timeoutId);
   }, [loading, setLoading]);
 
-  // Signal iframe readiness to offscreen document on EVERY mount
+  // Signal iframe readiness to offscreen document
   useEffect(() => {
-    if (extensionIsContext) {
-      // Send IFRAME_READY signal to parent (offscreen.js) immediately on mount
-      window.parent.postMessage(
-        { type: "IFRAME_READY" },
-        "*"
-      );
-      console.log("📨 IFRAME_READY signal sent to parent on page load");
-    }
-    // No dependencies - run on every mount
+    if (!extensionIsContext) return;
+
+    window.parent.postMessage({ type: "IFRAME_READY" }, "*");
+    console.log("📨 IFRAME_READY signal sent to parent");
   }, [extensionIsContext]);
 
   // Handle unhandled promise rejections from Firebase
@@ -56,50 +51,27 @@ export const ExtensionLoginPage = () => {
       console.error("🔥 Unhandled promise rejection:", error);
 
       // Firebase 내부 에러는 무시 (이미 처리됨)
-      // - INTERNAL ASSERTION FAILED: Firebase 내부 assertion 에러
-      // - Pending promise was never set: 팝업 차단 시 Firebase의 poll 함수 에러
-      // - undefined is not an object: Safari에서의 popup 접근 실패
-      if (
-        errorMessage.includes("INTERNAL ASSERTION FAILED") ||
-        errorMessage.includes("Pending promise was never set") ||
-        errorMessage.includes("undefined is not an object") ||
-        errorMessage.includes("Cannot read property 'closed'") ||
-        errorMessage.includes("Cannot read properties of null")
-      ) {
-        console.log("✅ Firebase internal error detected and suppressed (already handled by fallback)");
-        // 이 에러는 이미 signInWithRedirect로 폴백되었으므로 무시
+      const firebaseInternalErrors = [
+        "INTERNAL ASSERTION FAILED",
+        "Pending promise was never set",
+        "undefined is not an object",
+        "Cannot read property 'closed'",
+        "Cannot read properties of null"
+      ];
+
+      if (firebaseInternalErrors.some(err => errorMessage.includes(err))) {
+        console.log("✅ Firebase internal error suppressed (already handled)");
         return;
       }
 
       // Extension 컨텍스트에서 실제 에러 발생 시 부모에 알림
-      if (extensionIsContext && typeof window.parent?.postMessage === "function") {
-        try {
-          window.parent.postMessage(
-            {
-              type: "AUTH_ERROR",
-              code: "unhandled-promise-rejection",
-              message: errorMessage || "예기치 않은 에러가 발생했습니다",
-              details: error?.toString?.(),
-            },
-            "*"
-          );
-        } catch (e) {
-          console.error("Failed to send error to parent:", e);
-        }
+      if (extensionIsContext) {
+        notifyParentError(errorMessage, error);
       }
     };
 
     window.addEventListener("unhandledrejection", handleUnhandledRejection);
-
-    return () => {
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
-    };
-  }, [extensionIsContext]);
-
-  // Cleanup: clear extension auth flags only on actual logout (not on remount)
-  useEffect(() => {
-    // Don't clear on unmount - only clear when user explicitly logs out
-    // This prevents issues when component remounts during navigation
+    return () => window.removeEventListener("unhandledrejection", handleUnhandledRejection);
   }, [extensionIsContext]);
 
   // Setup extension hooks
@@ -108,16 +80,6 @@ export const ExtensionLoginPage = () => {
     isExtensionContext: extensionIsContext,
     extensionId,
   });
-
-  // Debug logging
-  useEffect(() => {
-    console.log("🔍 ExtensionLoginPage state:", {
-      user: user?.email,
-      userId: user?.uid,
-      isLoading: loading,
-      isExtensionContext: extensionIsContext,
-    });
-  }, [user, loading, extensionIsContext]);
 
   useExtensionMessage({ user });
 
@@ -128,7 +90,7 @@ export const ExtensionLoginPage = () => {
   );
   const handleCloseWindow = useCallback(() => window.close(), []);
 
-  // Wait for auth initialization to complete
+  // Wait for auth initialization
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-accent-100 dark:from-gray-900 dark:via-brand-900 dark:to-gray-800 flex items-center justify-center">
@@ -140,14 +102,12 @@ export const ExtensionLoginPage = () => {
     );
   }
 
-  // Render appropriate view
+  // Render login form or status
   if (!user) {
     return (
       <ExtensionAuthContainer
         isExtensionContext={extensionIsContext}
-        onAuthSuccess={() => {
-          // Auto-send is handled by useExtensionAuth hook
-        }}
+        onAuthSuccess={() => {/* Auto-handled by useExtensionAuth */}}
       />
     );
   }
@@ -161,3 +121,26 @@ export const ExtensionLoginPage = () => {
     />
   );
 };
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * 부모 window에 에러 메시지 전송
+ */
+function notifyParentError(errorMessage: string, error: unknown) {
+  try {
+    window.parent.postMessage(
+      {
+        type: "AUTH_ERROR",
+        code: "unhandled-promise-rejection",
+        message: errorMessage || "예기치 않은 에러가 발생했습니다",
+        details: error?.toString?.(),
+      },
+      "*"
+    );
+  } catch (e) {
+    console.error("Failed to send error to parent:", e);
+  }
+}

@@ -78,9 +78,7 @@ export function useExtensionAuth({
 
   // Auto-send on user login
   useEffect(() => {
-    if (!isExtensionContext) {
-      return;
-    }
+    if (!isExtensionContext) return;
 
     // 로그아웃 시 ref 리셋 및 sessionStorage 정리
     if (!user) {
@@ -88,47 +86,19 @@ export function useExtensionAuth({
         console.log("🔄 User logged out - resetting extension auth state");
       }
       sentToExtensionRef.current = false;
-
-      // 로그아웃 시 모든 extension_auth_sent_* 키 제거
-      if (typeof sessionStorage !== "undefined") {
-        const keysToRemove: string[] = [];
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i);
-          if (key && key.startsWith(EXTENSION_AUTH_STORAGE_KEY)) {
-            keysToRemove.push(key);
-          }
-        }
-        keysToRemove.forEach((key) => {
-          sessionStorage.removeItem(key);
-          console.log(`🧹 Cleared sessionStorage on logout: ${key}`);
-        });
-      }
-
+      clearExtensionAuthStorage();
       return;
     }
 
     // Check if we've already sent auth for this user in this session
     const sessionKey = `${EXTENSION_AUTH_STORAGE_KEY}_${user.uid}`;
-    const wasSentInSession = sessionStorage.getItem(sessionKey);
-
-    console.log(`📊 Auth state check for ${user.email}:`, {
-      sessionKey,
-      wasSentInSession: wasSentInSession,
-      wasSentInSessionBoolean: !!wasSentInSession,
-      refAlreadySent: sentToExtensionRef.current,
-      willSend: !wasSentInSession && !sentToExtensionRef.current,
-    });
+    const wasSentInSession = !!sessionStorage.getItem(sessionKey);
 
     if (!wasSentInSession && !sentToExtensionRef.current) {
       sentToExtensionRef.current = true;
       sessionStorage.setItem(sessionKey, "true");
-      console.log(
-        "📍 useEffect triggered: user logged in, sending to extension"
-      );
-      console.log("🔐 Session key saved:", sessionKey, "= true");
+      console.log("📍 Sending auth to extension for:", user.email);
       sendLoginData();
-    } else {
-      console.log("⏭️ Skipping: auth already sent or marked");
     }
   }, [user, isExtensionContext, sendLoginData]);
 
@@ -139,64 +109,78 @@ export function useExtensionAuth({
 // HELPER FUNCTIONS
 // ============================================================================
 
+/**
+ * sessionStorage에서 extension auth 관련 키 모두 제거
+ */
+function clearExtensionAuthStorage() {
+  if (typeof sessionStorage === "undefined") return;
+
+  const keysToRemove = Array.from({ length: sessionStorage.length }, (_, i) => sessionStorage.key(i))
+    .filter((key): key is string => !!key && key.startsWith(EXTENSION_AUTH_STORAGE_KEY));
+  
+  keysToRemove.forEach(key => {
+    sessionStorage.removeItem(key);
+    console.log(`🧹 Cleared: ${key}`);
+  });
+}
+
+/**
+ * Firebase ID 토큰 가져오기
+ */
 async function getIdToken(user: User): Promise<string> {
   try {
     return await user.getIdToken();
   } catch (error) {
     console.error("Failed to get ID token:", error);
+    return "";
   }
-  return "";
 }
 
+/**
+ * Chrome Extension API를 통해 background.js로 메시지 전송
+ */
 function sendViaRuntimeAPI(extensionId: string, messageData: unknown) {
-  const chromeRuntime = (
-    window as unknown as Record<string, unknown>
-  ).chrome as
-    | {
-        runtime?: {
-          sendMessage?: (
-            extensionId: string,
-            msg: unknown,
-            callback: () => void
-          ) => void;
-          lastError?: unknown;
-        };
-      }
-    | undefined;
+  type ChromeRuntime = {
+    runtime?: {
+      sendMessage?: (extensionId: string, msg: unknown, callback: () => void) => void;
+      lastError?: { message?: string };
+    };
+  };
 
-  if (chromeRuntime?.runtime?.sendMessage) {
-    try {
-      chromeRuntime.runtime.sendMessage(
-        extensionId,
-        {
-          type: "LOGIN_SUCCESS",
-          ...(messageData as Record<string, unknown>),
-        },
-        () => {
-          if (chromeRuntime.runtime?.lastError) {
-            console.error(
-              "❌ Failed to send login data to background:",
-              chromeRuntime.runtime?.lastError
-            );
-          } else {
-            console.log("✅ Message sent to background.js (direct mode)");
-          }
-        }
-      );
-    } catch (error) {
-      console.error("❌ Direct send failed:", error);
-    }
-  } else {
+  const chrome = (window as { chrome?: ChromeRuntime }).chrome;
+
+  if (!chrome?.runtime?.sendMessage) {
     console.warn("⚠️ chrome.runtime.sendMessage not available");
+    return;
   }
-}
-
-function sendViaPostMessage(messageData: unknown) {
-  console.log("📤 Sending login data to Extension:", messageData);
 
   try {
-    sendToExtensionParent(messageData as any);
-    console.log("✅ Message sent to parent window (iframe mode)");
+    chrome.runtime.sendMessage(
+      extensionId,
+      {
+        type: "LOGIN_SUCCESS",
+        ...(messageData as Record<string, unknown>),
+      },
+      () => {
+        if (chrome.runtime?.lastError) {
+          console.error("❌ Failed to send to background:", chrome.runtime.lastError.message);
+        } else {
+          console.log("✅ Message sent to background.js");
+        }
+      }
+    );
+  } catch (error) {
+    console.error("❌ Direct send failed:", error);
+  }
+}
+
+/**
+ * postMessage를 통해 parent (offscreen.js)로 메시지 전송
+ */
+function sendViaPostMessage(messageData: unknown) {
+  try {
+    sendToExtensionParent(messageData as Record<string, unknown>);
+    console.log("✅ Message sent to parent window");
   } catch (error) {
     console.error("❌ Parent postMessage failed:", error);
   }

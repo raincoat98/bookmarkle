@@ -21,81 +21,24 @@ export function ExtensionAuthContainer({
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      console.log("🔐 Google login button clicked");
+      console.log("🔐 Google login initiated");
       await login();
-      console.log("✅ Login completed successfully");
+      console.log("✅ Login completed");
       onAuthSuccess?.();
     } catch (error: unknown) {
-      const firebaseError = error as FirebaseError;
-
-      // 팝업 차단 시 redirect로 이동하므로 에러가 아님
-      // COOP 정책 위반, 팝업 차단 등의 경우 redirect로 폴백됨
-      if (
-        firebaseError.code === "auth/popup-closed-by-user" ||
-        firebaseError.code === "auth/popup-blocked" ||
-        (firebaseError.message && (
-          firebaseError.message.includes("Cross-Origin-Opener-Policy") ||
-          firebaseError.message.includes("blocked by browser") ||
-          firebaseError.message.includes("popup blocked") ||
-          firebaseError.message.includes("cross-origin") ||
-          firebaseError.message.includes("Pending promise was never set")
-        ))
-      ) {
-        console.log("ℹ️ Popup blocked/COOP/iframe error, redirect initiated");
-        console.log("🔍 Error details:", {
-          code: firebaseError.code,
-          message: firebaseError.message,
-        });
-        // offscreen.js에 폴백 중 메시지 전송 (redirect 전)
-        try {
-          window.parent.postMessage(
-            {
-              type: "AUTH_FALLBACK",
-              code: "popup-blocked-redirect-fallback",
-              message: "팝업이 차단되어 다시 시도 중입니다...",
-              details: firebaseError.message,
-            },
-            "*"
-          );
-        } catch (e) {
-          console.error("Failed to send fallback message to parent:", e);
-        }
-        // redirect는 페이지를 떠나므로 에러 표시 불필요
-        return;
-      }
-
-      console.error("❌ Google login error:", error);
-
-      // offscreen.js에 에러 메시지 전송
-      try {
-        const errorObj = error as Record<string, unknown>;
-        window.parent.postMessage(
-          {
-            type: "AUTH_ERROR",
-            code: firebaseError.code || "unknown",
-            message: firebaseError.message || "로그인에 실패했습니다",
-            details: (errorObj?.toString?.() as string) || String(error),
-          },
-          "*"
-        );
-        console.log("📤 Auth error sent to parent offscreen");
-      } catch (e) {
-        console.error("Failed to send error to parent:", e);
-      }
-
-      toast.error("Google 로그인에 실패했습니다. 다시 시도해주세요.");
+      handleLoginError(error);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEmailLoginSuccess = () => {
-    console.log("✅ Email login successful in extension context");
+    console.log("✅ Email login successful");
     onAuthSuccess?.();
   };
 
   const handleEmailSignupSuccess = () => {
-    console.log("✅ Email signup successful in extension context");
+    console.log("✅ Email signup successful");
     onAuthSuccess?.();
   };
 
@@ -173,4 +116,80 @@ export function ExtensionAuthContainer({
       </div>
     </div>
   );
+}
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * 팝업 차단 관련 에러 여부 확인
+ */
+function isPopupBlockedError(error: FirebaseError): boolean {
+  return (
+    error.code === "auth/popup-closed-by-user" ||
+    error.code === "auth/popup-blocked" ||
+    error.message?.includes("Cross-Origin-Opener-Policy") ||
+    error.message?.includes("blocked by browser") ||
+    error.message?.includes("popup blocked") ||
+    error.message?.includes("cross-origin") ||
+    error.message?.includes("Pending promise was never set")
+  );
+}
+
+/**
+ * 로그인 에러 처리
+ */
+function handleLoginError(error: unknown) {
+  const firebaseError = error as FirebaseError;
+
+  // 팝업 차단 시 redirect로 폴백됨 (에러 아님)
+  if (isPopupBlockedError(firebaseError)) {
+    console.log("ℹ️ Popup blocked, redirect initiated");
+    notifyParentFallback(firebaseError.message);
+    return; // redirect는 페이지를 떠나므로 에러 표시 불필요
+  }
+
+  console.error("❌ Google login error:", error);
+  notifyParentError(firebaseError);
+  toast.error("Google 로그인에 실패했습니다. 다시 시도해주세요.");
+}
+
+/**
+ * offscreen.js에 폴백 메시지 전송
+ */
+function notifyParentFallback(message?: string) {
+  try {
+    window.parent.postMessage(
+      {
+        type: "AUTH_FALLBACK",
+        code: "popup-blocked-redirect-fallback",
+        message: "팝업이 차단되어 다시 시도 중입니다...",
+        details: message,
+      },
+      "*"
+    );
+  } catch (e) {
+    console.error("Failed to send fallback message:", e);
+  }
+}
+
+/**
+ * offscreen.js에 에러 메시지 전송
+ */
+function notifyParentError(error: FirebaseError) {
+  try {
+    window.parent.postMessage(
+      {
+        type: "AUTH_ERROR",
+        code: error.code || "unknown",
+        message: error.message || "로그인에 실패했습니다",
+        details: error.toString(),
+      },
+      "*"
+    );
+    console.log("📤 Auth error sent to parent");
+  } catch (e) {
+    console.error("Failed to send error to parent:", e);
+  }
 }
