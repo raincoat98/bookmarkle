@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import {
   sendToExtensionParent,
   createLoginSuccessMessage,
+  type ExtensionResponse,
 } from "../utils/extensionMessaging";
 import { fetchCollections } from "../utils/firestoreService";
 import type { User } from "firebase/auth";
@@ -179,7 +180,8 @@ function sendViaRuntimeAPI(extensionId: string, messageData: unknown) {
  */
 function sendViaPostMessage(messageData: unknown) {
   try {
-    sendToExtensionParent(messageData as Record<string, unknown>);
+    // ExtensionResponse 타입으로 캐스팅
+    sendToExtensionParent(messageData as ExtensionResponse);
     console.log("✅ Message sent to parent window");
   } catch (error) {
     console.error("❌ Parent postMessage failed:", error);
