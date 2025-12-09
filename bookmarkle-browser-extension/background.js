@@ -914,6 +914,18 @@ chrome.runtime.onMessageExternal.addListener(
       return true;
     }
 
+    if (request.type === "TOKEN_REFRESHED") {
+      console.log("🔄 TOKEN_REFRESHED received from offscreen");
+      
+      // Chrome Storage에 갱신된 토큰 저장
+      if (chrome.storage && chrome.storage.local && request.idToken) {
+        chrome.storage.local.set({ currentIdToken: request.idToken }, () => {
+          console.log("✅ Refreshed idToken saved to Chrome Storage");
+        });
+      }
+      return true;
+    }
+
     if (request.type === "LOGOUT_SUCCESS") {
       console.log("✅ LOGOUT_SUCCESS received");
       

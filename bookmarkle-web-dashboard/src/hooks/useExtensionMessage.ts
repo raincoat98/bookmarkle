@@ -257,9 +257,22 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId = userId || userRef.current?.uid || null;
+      
+      // idToken이 없거나 유효하지 않을 수 있으므로 현재 사용자에게서 새로운 토큰 가져오기
+      let validToken = idToken;
+      if (!validToken && auth.currentUser) {
+        console.log("🔄 Refreshing idToken from Firebase Auth...");
+        try {
+          validToken = await auth.currentUser.getIdToken(true);
+          console.log("✅ Fresh idToken obtained");
+        } catch (error) {
+          console.error("❌ Failed to refresh idToken:", error);
+        }
+      }
+      
       const authInfo = ensureAuth(
         effectiveUserId,
-        idToken,
+        validToken,
         "COLLECTIONS_ERROR"
       );
       if (!authInfo) return;
@@ -268,6 +281,15 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
       try {
         console.log("📬 Fetching collections via Firestore REST API...");
+        
+        // 갱신된 토큰을 background에 전송하여 저장
+        if (validToken !== idToken && validToken) {
+          console.log("🔄 Sending refreshed token to background...");
+          sendToExtensionParent({
+            type: "TOKEN_REFRESHED",
+            idToken: validToken,
+          } as any);
+        }
 
         const requestBody = {
           structuredQuery: {
@@ -334,9 +356,22 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId = userId || userRef.current?.uid || null;
+      
+      // idToken 갱신
+      let validToken = idToken;
+      if (!validToken && auth.currentUser) {
+        console.log("🔄 Refreshing idToken from Firebase Auth...");
+        try {
+          validToken = await auth.currentUser.getIdToken(true);
+          console.log("✅ Fresh idToken obtained");
+        } catch (error) {
+          console.error("❌ Failed to refresh idToken:", error);
+        }
+      }
+      
       const authInfo = ensureAuth(
         effectiveUserId,
-        idToken,
+        validToken,
         "BOOKMARKS_ERROR"
       );
       if (!authInfo) return;
@@ -437,9 +472,22 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
       const effectiveUserId =
         userId || userRef.current?.uid || auth.currentUser?.uid || null;
+      
+      // idToken 갱신
+      let validToken = idToken;
+      if (!validToken && auth.currentUser) {
+        console.log("🔄 Refreshing idToken from Firebase Auth...");
+        try {
+          validToken = await auth.currentUser.getIdToken(true);
+          console.log("✅ Fresh idToken obtained");
+        } catch (error) {
+          console.error("❌ Failed to refresh idToken:", error);
+        }
+      }
+      
       const authInfo = ensureAuth(
         effectiveUserId,
-        idToken,
+        validToken,
         "BOOKMARK_SAVE_ERROR"
       );
       if (!authInfo) return;
@@ -510,9 +558,22 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId = userId || userRef.current?.uid || null;
+      
+      // idToken 갱신
+      let validToken = idToken;
+      if (!validToken && auth.currentUser) {
+        console.log("🔄 Refreshing idToken from Firebase Auth...");
+        try {
+          validToken = await auth.currentUser.getIdToken(true);
+          console.log("✅ Fresh idToken obtained");
+        } catch (error) {
+          console.error("❌ Failed to refresh idToken:", error);
+        }
+      }
+      
       const authInfo = ensureAuth(
         effectiveUserId,
-        idToken,
+        validToken,
         "COLLECTION_CREATE_ERROR"
       );
       if (!authInfo) return;
@@ -577,9 +638,22 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
     const effectiveUserId = userId || userRef.current?.uid || null;
+    
+    // idToken 갱신
+    let validToken = idToken;
+    if (!validToken && auth.currentUser) {
+      console.log("🔄 Refreshing idToken from Firebase Auth...");
+      try {
+        validToken = await auth.currentUser.getIdToken(true);
+        console.log("✅ Fresh idToken obtained");
+      } catch (error) {
+        console.error("❌ Failed to refresh idToken:", error);
+      }
+    }
+    
     const authInfo = ensureAuth(
       effectiveUserId,
-      idToken,
+      validToken,
       "NOTIFICATION_SETTINGS_ERROR"
     );
     if (!authInfo) return;
