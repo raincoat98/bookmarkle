@@ -10,6 +10,7 @@ const OFFSCREEN_PATH = "offscreen.html";
 
 // 동시 생성 방지
 let creatingOffscreen = null;
+let isOffscreenReady = false;
 
 // Offscreen ready event handling
 let offscreenReadyResolver = null;
@@ -138,23 +139,14 @@ async function waitForOffscreenReady(maxWait = 1000, silent = false) {
  * Offscreen 문서 생성 및 설정
  */
 async function setupOffscreen(silent = false) {
+  // 이미 준비되어 있으면 즉시 반환
+  if (isOffscreenReady && await hasOffscreen()) {
+    if (!silent) console.log("Offscreen 이미 준비됨 (캐시)");
+    return;
+  }
+
   if (await hasOffscreen()) {
-    // 이미 존재하면 빠르게 반환 (PING으로 활성 상태 확인)
-    try {
-      const response = await Promise.race([
-        chrome.runtime.sendMessage({ type: "PING" }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("PING timeout")), 500)
-        ),
-      ]);
-      if (response?.ready) {
-        if (!silent) console.log("✅ Offscreen is ready");
-        return;
-      }
-    } catch (error) {
-      // PING 실패해도 진행 (offscreen이 준비되지 않았을 수 있음)
-    }
-    // PING이 실패하면 waitForOffscreenReady로 짧게 대기
+    // offscreen 존재하지만 준비 신호 대기 중
     await waitForOffscreenReady(500, true);
     return;
   }
@@ -195,6 +187,7 @@ async function setupOffscreen(silent = false) {
  */
 async function closeOffscreen() {
   if (await hasOffscreen()) {
+    isOffscreenReady = false;
     await chrome.offscreen.closeDocument();
   }
 }
@@ -202,29 +195,20 @@ async function closeOffscreen() {
 /**
  * Offscreen으로 메시지를 보내고 재시도 로직 포함
  */
-async function sendMessageToOffscreen(message, maxRetries = 2) {
-  console.log("🔥 sendMessageToOffscreen called with:", message);
-  
-  // offscreen이 없으면 생성
-  await setupOffscreen(true);
+async function sendMessageToOffscreen(message, maxRetries = 1) {
+  // 첫 시도 전에만 offscreen 확인
+  if (!isOffscreenReady) {
+    await setupOffscreen(true);
+  }
   
   for (let i = 0; i < maxRetries; i++) {
     try {
-      console.log(`🔥 Attempt ${i + 1}: Sending message`);
-      const result = await chrome.runtime.sendMessage(message);
-      console.log("🔥 Message sent successfully");
-      return result;
+      return await chrome.runtime.sendMessage(message);
     } catch (error) {
-      console.error(`🔥 Attempt ${i + 1} failed:`, error);
-      if (i === maxRetries - 1) {
-        throw error;
-      }
-      // Faster backoff: 50ms instead of exponential
-      const backoffMs = 50;
-      console.log(
-        `Retrying in ${backoffMs}ms (${i + 1}/${maxRetries})`
-      );
-      await new Promise((resolve) => setTimeout(resolve, backoffMs));
+      console.error(`메시지 전송 실패 (${i + 1}/${maxRetries}):`, error.message);
+      if (i === maxRetries - 1) throw error;
+      await setupOffscreen(true);
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
   }
 }
@@ -795,6 +779,7 @@ async function handleBookmarkSaveSuccess(bookmarkData, userId) {
  * 북마크 저장 요청 처리 (offscreen으로 위임)
  */
 async function handleSaveBookmark(msg) {
+  const startTime = performance.now();
   console.log("🚀 [background] SAVE_BOOKMARK 요청 수신, offscreen으로 라우팅");
   
   // 사용자 정보 가져오기
@@ -840,7 +825,8 @@ async function handleSaveBookmark(msg) {
 
   // 저장 성공 시 아이콘에 체크 표시 (비동기로 처리)
   if (result?.type === "BOOKMARK_SAVED") {
-    console.log("✅ [background] 북마크 저장 성공");
+    const totalTime = performance.now() - startTime;
+    console.log(`✅ [background] 북마크 저장 성공 (${totalTime.toFixed(0)}ms)`);
     // 알림 설정 캐시 무효화 (최신 설정으로 알림 표시)
     invalidateNotificationSettingsCache();
     handleBookmarkSaveSuccess(msg.bookmarkData, userId);
@@ -936,7 +922,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   // Handle OFFSCREEN_READY signal
   if (msg?.type === "OFFSCREEN_READY") {
-    console.log("✅ Offscreen is ready");
+    console.log("✅ OFFSCREEN_READY received in background");
+    isOffscreenReady = true;
     if (offscreenReadyResolver) {
       offscreenReadyResolver();
       offscreenReadyResolver = null;

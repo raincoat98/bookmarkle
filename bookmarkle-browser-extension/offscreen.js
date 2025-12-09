@@ -116,6 +116,9 @@ window.addEventListener("message", (ev) => {
       currentUser = null;
       lastLoginUserId = null; // Reset for next login
 
+      // iframe 준비 상태 리셋
+      isIframeReady = false;
+
       // background에 로그아웃 신호 전달
       chrome.runtime.sendMessage({
         type: "LOGOUT_SUCCESS",
@@ -143,26 +146,19 @@ if (chrome.storage && chrome.storage.local) {
 
 // iframe이 준비될 때까지 기다리는 헬퍼 함수 (event-driven)
 function ensureIframeReady() {
-  console.log("🔍 ensureIframeReady called, current state:", {
-    isIframeReady,
-    hasResolver: !!iframeReadyResolver,
-  });
-
   // If already ready, return immediately
   if (isIframeReady) {
-    console.log("✅ Iframe already ready, returning immediately");
     return Promise.resolve();
   }
 
   // If not ready, wait for the promise
-  console.log("⏳ Waiting for iframe to be ready...");
   return Promise.race([
     iframeReadyPromise,
     new Promise((resolve) => {
       setTimeout(() => {
-        console.warn("⚠️ Iframe not ready after 10 seconds, proceeding anyway");
+        console.warn("⚠️ Iframe not ready after 5 seconds, proceeding anyway");
         resolve();
-      }, 10000);
+      }, 5000);
     }),
   ]);
 }
@@ -360,6 +356,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           if (chrome.storage && chrome.storage.local) {
             chrome.storage.local.remove(["currentUser"]);
           }
+
+          // iframe 준비 상태 리셋 (다음 로그인을 위해)
+          isIframeReady = false;
+          
+          // iframe 리로드하여 완전히 초기화
+          console.log("🔄 Reloading iframe for clean state");
+          const iframeUrl = new URL(PUBLIC_SIGN_URL);
+          iframeUrl.searchParams.set('extensionId', chrome.runtime.id);
+          iframeUrl.searchParams.set('_t', Date.now().toString()); // Cache bust
+          iframe.src = iframeUrl.toString();
 
           sendResponse(data);
         }
@@ -607,24 +613,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     // Ensure iframe is ready before sending
     (async () => {
       try {
-        console.log("🔍 SAVE_BOOKMARK: Starting ensureIframeReady...");
         await ensureIframeReady();
-        console.log("✅ SAVE_BOOKMARK: Iframe is ready, sending message...");
         
-        const messageToSend = {
+        iframe.contentWindow.postMessage({
           saveBookmark: true,
           userId: msg.userId,
           bookmarkData: msg.bookmarkData,
           forceRefreshToken: true,
-        };
-
-        console.log("📤 SAVE_BOOKMARK: Message to send:", messageToSend);
-        console.log("📤 SAVE_BOOKMARK: iframe exists?", !!iframe);
-        console.log("📤 SAVE_BOOKMARK: iframe.contentWindow exists?", !!iframe.contentWindow);
-        console.log("📤 SAVE_BOOKMARK: origin:", origin);
-
-        iframe.contentWindow.postMessage(messageToSend, origin);
-        console.log("📤 SAVE_BOOKMARK message sent to iframe with userId:", msg.userId);
+        }, origin);
       } catch (error) {
         if (!messageResolved) {
           window.removeEventListener("message", handleSaveBookmarkMessage);

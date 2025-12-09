@@ -251,9 +251,6 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
   const handleGetCollections = useCallback(
     async (userId?: string | null) => {
-      console.log("📬 Received getCollections request from offscreen");
-      console.log("📬 Request userId:", userId);
-
       const effectiveUserId = userId || userRef.current?.uid || null;
       
       const authInfo = ensureAuth(effectiveUserId, "COLLECTIONS_ERROR");
@@ -261,16 +258,23 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
       const { userId: uid } = authInfo;
 
-      if (!auth.currentUser) {
-        console.error("❌ No authenticated user");
-        sendToExtensionParent(createErrorResponse("COLLECTIONS_ERROR", "Not authenticated"));
-        return;
-      }
-
       try {
-        // 항상 최신 토큰 가져오기
-        const idToken = await auth.currentUser.getIdToken(true);
-        console.log("🔄 Fetched fresh idToken from Firebase Auth");
+        // userId가 있으면 auth.currentUser 없이도 진행
+        let idToken: string;
+        
+        if (auth.currentUser && auth.currentUser.uid === uid) {
+          // 현재 로그인된 사용자와 일치하면 토큰 가져오기
+          idToken = await auth.currentUser.getIdToken(true);
+        } else {
+          // 불일치하거나 currentUser가 없으면 에러
+          console.error("❌ Auth state mismatch:", {
+            requestedUserId: uid,
+            currentUserId: auth.currentUser?.uid,
+            hasCurrentUser: !!auth.currentUser
+          });
+          sendToExtensionParent(createErrorResponse("COLLECTIONS_ERROR", "Authentication state mismatch. Please reload the extension."));
+          return;
+        }
 
         const requestBody = {
           structuredQuery: {
@@ -298,14 +302,11 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
           })
           .map((r) => mapCollectionDocument(r.document!));
 
-        console.log("✅ Collections data:", collections);
-
         const collectionsResponse: CollectionsDataResponse = {
           type: "COLLECTIONS_DATA",
           collections,
         };
         sendToExtensionParent(collectionsResponse);
-        console.log("✅ Collections data sent back to offscreen");
       } catch (error) {
         console.error("❌ Error fetching collections:", error);
         console.error("❌ Error details:", {
@@ -327,12 +328,6 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       collectionId: string | null,
       userId?: string | null
     ) => {
-      console.log(
-        "📬 Received getBookmarks request from offscreen, collectionId:",
-        collectionId
-      );
-      console.log("📬 Request userId:", userId);
-
       const effectiveUserId = userId || userRef.current?.uid || null;
       
       const authInfo = ensureAuth(effectiveUserId, "BOOKMARKS_ERROR");
@@ -347,9 +342,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       }
 
       try {
-        // 항상 최신 토큰 가져오기
         const idToken = await auth.currentUser.getIdToken(true);
-        console.log("🔄 Fetched fresh idToken from Firebase Auth");
 
         interface FieldFilter {
           fieldFilter: {
@@ -404,15 +397,12 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
           .filter((r) => r.document)
           .map((r) => mapBookmarkDocument(r.document!));
 
-        console.log("✅ Bookmarks fetched successfully:", bookmarks.length);
-
         const bookmarksResponse: BookmarksDataResponse = {
           type: "BOOKMARKS_DATA",
           bookmarks,
           collectionId,
         };
         sendToExtensionParent(bookmarksResponse);
-        console.log("✅ Bookmarks message sent to offscreen");
       } catch (error) {
         console.error("❌ Error fetching bookmarks:", error);
         console.error("❌ Error details:", {
@@ -434,10 +424,6 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       bookmarkData: unknown,
       userId?: string | null
     ) => {
-      console.log("📬 Received saveBookmark request from offscreen");
-      console.log("📬 Bookmark data:", bookmarkData);
-      console.log("📬 Request userId parameter:", userId);
-
       const effectiveUserId =
         userId || userRef.current?.uid || auth.currentUser?.uid || null;
       
@@ -454,9 +440,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       }
 
       try {
-        // 항상 최신 토큰 가져오기
         const idToken = await auth.currentUser.getIdToken(true);
-        console.log("🔄 Fetched fresh idToken from Firebase Auth");
 
         const fields: Record<string, FirestoreField> = {
           userId: { stringValue: uid },
@@ -481,15 +465,11 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
           "saveBookmark"
         );
 
-        console.log("✅ Bookmark saved successfully with ID:", id);
-        console.log("📦 Sending bookmark saved confirmation to offscreen");
-
         const saveResponse: BookmarkSavedResponse = {
           type: "BOOKMARK_SAVED",
           bookmarkId: id,
         };
         sendToExtensionParent(saveResponse);
-        console.log("✅ Bookmark saved message sent to offscreen");
       } catch (error) {
         console.error("❌ Error saving bookmark:", error);
         console.error("❌ Error details:", {
@@ -557,15 +537,11 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
           "createCollection"
         );
 
-        console.log("✅ Collection created successfully with ID:", id);
-        console.log("📦 Sending collection created confirmation to offscreen");
-
         const createResponse: CollectionCreatedResponse = {
           type: "COLLECTION_CREATED",
           collectionId: id,
         };
         sendToExtensionParent(createResponse);
-        console.log("✅ Collection created message sent to offscreen");
       } catch (error) {
         console.error("❌ Error creating collection:", error);
         console.error("❌ Error details:", {
@@ -638,14 +614,11 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         bookmarkNotifications: bookmarkNotifications,
       };
 
-      console.log("✅ Notification settings fetched successfully:", settings);
-
       const settingsResponse: NotificationSettingsDataResponse = {
         type: "NOTIFICATION_SETTINGS_DATA",
         ...settings,
       };
       sendToExtensionParent(settingsResponse);
-      console.log("✅ Notification settings message sent to offscreen");
     } catch (error) {
       console.error("❌ Error fetching notification settings:", error);
       console.error("❌ Error details:", {
