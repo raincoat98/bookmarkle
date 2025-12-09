@@ -258,16 +258,21 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
       const effectiveUserId = userId || userRef.current?.uid || null;
       
-      // idToken이 없거나 유효하지 않을 수 있으므로 현재 사용자에게서 새로운 토큰 가져오기
-      let validToken = idToken;
-      if (!validToken && auth.currentUser) {
-        console.log("🔄 Refreshing idToken from Firebase Auth...");
+      // 항상 최신 토큰 가져오기 (401 에러 방지)
+      let validToken: string | null = null;
+      if (auth.currentUser) {
+        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
         try {
           validToken = await auth.currentUser.getIdToken(true);
-          console.log("✅ Fresh idToken obtained");
+          console.log("✅ Fresh idToken obtained:", validToken ? "✅ Present" : "❌ Missing");
         } catch (error) {
           console.error("❌ Failed to refresh idToken:", error);
+          // 폴백: 전달받은 토큰 사용
+          validToken = idToken || null;
         }
+      } else {
+        // 현재 사용자가 없으면 전달받은 토큰 사용
+        validToken = idToken || null;
       }
       
       const authInfo = ensureAuth(
@@ -357,16 +362,19 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
       const effectiveUserId = userId || userRef.current?.uid || null;
       
-      // idToken 갱신
-      let validToken = idToken;
-      if (!validToken && auth.currentUser) {
-        console.log("🔄 Refreshing idToken from Firebase Auth...");
+      // 항상 최신 토큰 가져오기
+      let validToken: string | null = null;
+      if (auth.currentUser) {
+        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
         try {
           validToken = await auth.currentUser.getIdToken(true);
           console.log("✅ Fresh idToken obtained");
         } catch (error) {
           console.error("❌ Failed to refresh idToken:", error);
+          validToken = idToken || null;
         }
+      } else {
+        validToken = idToken || null;
       }
       
       const authInfo = ensureAuth(
@@ -473,16 +481,19 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
       const effectiveUserId =
         userId || userRef.current?.uid || auth.currentUser?.uid || null;
       
-      // idToken 갱신
-      let validToken = idToken;
-      if (!validToken && auth.currentUser) {
-        console.log("🔄 Refreshing idToken from Firebase Auth...");
+      // 항상 최신 토큰 가져오기
+      let validToken: string | null = null;
+      if (auth.currentUser) {
+        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
         try {
           validToken = await auth.currentUser.getIdToken(true);
           console.log("✅ Fresh idToken obtained");
         } catch (error) {
           console.error("❌ Failed to refresh idToken:", error);
+          validToken = idToken || null;
         }
+      } else {
+        validToken = idToken || null;
       }
       
       const authInfo = ensureAuth(
@@ -559,16 +570,19 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
       const effectiveUserId = userId || userRef.current?.uid || null;
       
-      // idToken 갱신
-      let validToken = idToken;
-      if (!validToken && auth.currentUser) {
-        console.log("🔄 Refreshing idToken from Firebase Auth...");
+      // 항상 최신 토큰 가져오기
+      let validToken: string | null = null;
+      if (auth.currentUser) {
+        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
         try {
           validToken = await auth.currentUser.getIdToken(true);
           console.log("✅ Fresh idToken obtained");
         } catch (error) {
           console.error("❌ Failed to refresh idToken:", error);
+          validToken = idToken || null;
         }
+      } else {
+        validToken = idToken || null;
       }
       
       const authInfo = ensureAuth(
@@ -639,16 +653,19 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
     const effectiveUserId = userId || userRef.current?.uid || null;
     
-    // idToken 갱신
-    let validToken = idToken;
-    if (!validToken && auth.currentUser) {
-      console.log("🔄 Refreshing idToken from Firebase Auth...");
+    // 항상 최신 토큰 가져오기
+    let validToken: string | null = null;
+    if (auth.currentUser) {
+      console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
       try {
         validToken = await auth.currentUser.getIdToken(true);
         console.log("✅ Fresh idToken obtained");
       } catch (error) {
         console.error("❌ Failed to refresh idToken:", error);
+        validToken = idToken || null;
       }
+    } else {
+      validToken = idToken || null;
     }
     
     const authInfo = ensureAuth(
