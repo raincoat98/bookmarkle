@@ -26,7 +26,15 @@ export function ExtensionAuthContainer({
       console.log("✅ Login completed");
       onAuthSuccess?.();
     } catch (error: unknown) {
-      handleLoginError(error);
+      const firebaseError = error as FirebaseError;
+      console.error("❌ Google login error:", error);
+      
+      // Extension context에서만 parent에 에러 알림
+      if (isExtensionContext) {
+        notifyParentError(firebaseError);
+      }
+      
+      toast.error("Google 로그인에 실패했습니다. 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -44,6 +52,23 @@ export function ExtensionAuthContainer({
 
   const toggleMode = () => {
     setIsSignup(!isSignup);
+  };
+
+  const notifyParentError = (error: FirebaseError) => {
+    try {
+      window.parent.postMessage(
+        {
+          type: "AUTH_ERROR",
+          code: error.code || "unknown",
+          message: error.message || "로그인에 실패했습니다",
+          details: error.toString(),
+        },
+        "*"
+      );
+      console.log("📤 Auth error sent to parent");
+    } catch (e) {
+      console.error("Failed to send error to parent:", e);
+    }
   };
 
   return (
@@ -116,80 +141,4 @@ export function ExtensionAuthContainer({
       </div>
     </div>
   );
-}
-
-// ============================================================================
-// HELPER FUNCTIONS
-// ============================================================================
-
-/**
- * 팝업 차단 관련 에러 여부 확인
- */
-function isPopupBlockedError(error: FirebaseError): boolean {
-  return (
-    error.code === "auth/popup-closed-by-user" ||
-    error.code === "auth/popup-blocked" ||
-    error.message?.includes("Cross-Origin-Opener-Policy") ||
-    error.message?.includes("blocked by browser") ||
-    error.message?.includes("popup blocked") ||
-    error.message?.includes("cross-origin") ||
-    error.message?.includes("Pending promise was never set")
-  );
-}
-
-/**
- * 로그인 에러 처리
- */
-function handleLoginError(error: unknown) {
-  const firebaseError = error as FirebaseError;
-
-  // 팝업 차단 시 redirect로 폴백됨 (에러 아님)
-  if (isPopupBlockedError(firebaseError)) {
-    console.log("ℹ️ Popup blocked, redirect initiated");
-    notifyParentFallback(firebaseError.message);
-    return; // redirect는 페이지를 떠나므로 에러 표시 불필요
-  }
-
-  console.error("❌ Google login error:", error);
-  notifyParentError(firebaseError);
-  toast.error("Google 로그인에 실패했습니다. 다시 시도해주세요.");
-}
-
-/**
- * offscreen.js에 폴백 메시지 전송
- */
-function notifyParentFallback(message?: string) {
-  try {
-    window.parent.postMessage(
-      {
-        type: "AUTH_FALLBACK",
-        code: "popup-blocked-redirect-fallback",
-        message: "팝업이 차단되어 다시 시도 중입니다...",
-        details: message,
-      },
-      "*"
-    );
-  } catch (e) {
-    console.error("Failed to send fallback message:", e);
-  }
-}
-
-/**
- * offscreen.js에 에러 메시지 전송
- */
-function notifyParentError(error: FirebaseError) {
-  try {
-    window.parent.postMessage(
-      {
-        type: "AUTH_ERROR",
-        code: error.code || "unknown",
-        message: error.message || "로그인에 실패했습니다",
-        details: error.toString(),
-      },
-      "*"
-    );
-    console.log("📤 Auth error sent to parent");
-  } catch (e) {
-    console.error("Failed to send error to parent:", e);
-  }
 }
