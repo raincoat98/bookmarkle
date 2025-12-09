@@ -33,6 +33,33 @@ const translations = {
     support: "후원하기",
     reportBug: "버그 등록하기",
     separator: "|",
+    collectionRefreshed: "컬렉션이 새로고침되었습니다",
+    refreshFailed: "새로고침 실패",
+    saving: "저장 중...",
+    adding: "추가 중...",
+    collectionLoadFailed: "컬렉션 로드 실패",
+    collectionLoadError: "컬렉션 로드 중 오류 발생",
+    noSearchResults: "검색 결과가 없습니다",
+    enterCollectionName: "컬렉션 이름을 입력해주세요",
+    loginRequired: "로그인이 필요합니다",
+    collectionCreated: "컬렉션이 생성되었습니다!",
+    createFailed: "생성 실패",
+    collectionCreateError: "컬렉션 생성 중 오류가 발생했습니다",
+    collectionAddFailed: "컬렉션 추가 실패",
+    pageInfoUnavailable: "페이지 정보를 가져올 수 없습니다",
+    collectionNotExist: "선택한 컬렉션이 존재하지 않습니다. 컬렉션을 새로고침합니다.",
+    savedComplete: "저장 완료!",
+    bookmarkSaved: "북마크가 성공적으로 저장되었습니다!",
+    saveFailed: "저장 실패",
+    bookmarkSaveError: "북마크 저장 중 오류가 발생했습니다",
+    bookmarkSaveFailedMsg: "북마크 저장에 실패했습니다",
+    newCollectionTitle: "새 컬렉션 추가",
+    collectionNameLabel: "컬렉션 이름",
+    collectionNamePlaceholder: "컬렉션 이름을 입력하세요",
+    iconOptional: "아이콘 (선택사항)",
+    iconPlaceholder: "아이콘을 입력하세요 (예: 📁, 💻, ⭐)",
+    languageSettingsTitle: "언어 설정",
+    loading: "로딩 중...",
   },
   en: {
     appName: "Bookmarkle",
@@ -64,6 +91,33 @@ const translations = {
     support: "Support",
     reportBug: "Report Bug",
     separator: "|",
+    collectionRefreshed: "Collections refreshed",
+    refreshFailed: "Refresh failed",
+    saving: "Saving...",
+    adding: "Adding...",
+    collectionLoadFailed: "Failed to load collections",
+    collectionLoadError: "Error loading collections",
+    noSearchResults: "No results found",
+    enterCollectionName: "Please enter a collection name",
+    loginRequired: "Login required",
+    collectionCreated: "Collection created!",
+    createFailed: "Failed to create",
+    collectionCreateError: "An error occurred while creating collection",
+    collectionAddFailed: "Failed to add collection",
+    pageInfoUnavailable: "Unable to get page information",
+    collectionNotExist: "Selected collection does not exist. Refreshing collections.",
+    savedComplete: "Saved!",
+    bookmarkSaved: "Bookmark saved successfully!",
+    saveFailed: "Save failed",
+    bookmarkSaveError: "An error occurred while saving bookmark",
+    bookmarkSaveFailedMsg: "Failed to save bookmark",
+    newCollectionTitle: "Add New Collection",
+    collectionNameLabel: "Collection Name",
+    collectionNamePlaceholder: "Enter collection name",
+    iconOptional: "Icon (Optional)",
+    iconPlaceholder: "Enter an icon (e.g., 📁, 💻, ⭐)",
+    languageSettingsTitle: "Language Settings",
+    loading: "Loading...",
   },
   ja: {
     appName: "ブックマークル",
@@ -95,6 +149,33 @@ const translations = {
     support: "サポート",
     reportBug: "バグ報告",
     separator: "|",
+    collectionRefreshed: "コレクションが更新されました",
+    refreshFailed: "更新失敗",
+    saving: "保存中...",
+    adding: "追加中...",
+    collectionLoadFailed: "コレクション読み込み失敗",
+    collectionLoadError: "コレクション読み込み中エラー",
+    noSearchResults: "検索結果がありません",
+    enterCollectionName: "コレクション名を入力してください",
+    loginRequired: "ログインが必要です",
+    collectionCreated: "コレクションが作成されました！",
+    createFailed: "作成失敗",
+    collectionCreateError: "コレクション作成中にエラーが発生しました",
+    collectionAddFailed: "コレクション追加失敗",
+    pageInfoUnavailable: "ページ情報を取得できません",
+    collectionNotExist: "選択したコレクションが存在しません。コレクションを更新します。",
+    savedComplete: "保存完了！",
+    bookmarkSaved: "ブックマークが正常に保存されました！",
+    saveFailed: "保存失敗",
+    bookmarkSaveError: "ブックマーク保存中にエラーが発生しました",
+    bookmarkSaveFailedMsg: "ブックマークの保存に失敗しました",
+    newCollectionTitle: "新しいコレクションを追加",
+    collectionNameLabel: "コレクション名",
+    collectionNamePlaceholder: "コレクション名を入力してください",
+    iconOptional: "アイコン（オプション）",
+    iconPlaceholder: "アイコンを入力してください（例：📁、💻、⭐）",
+    languageSettingsTitle: "言語設定",
+    loading: "読み込み中...",
   },
 };
 
@@ -644,7 +725,7 @@ async function loadCollections(forceRefresh = false) {
 
     if (result?.type === "COLLECTIONS_ERROR") {
       console.error("컬렉션 로드 실패:", result.message);
-      showToast("컬렉션 로드 실패", "error");
+      showToast(translations[currentLanguage].collectionLoadFailed, "error");
       return;
     }
 
@@ -657,7 +738,7 @@ async function loadCollections(forceRefresh = false) {
     }
   } catch (error) {
     console.error("컬렉션 로드 중 에러:", error);
-    showToast("컬렉션 로드 중 오류 발생", "error");
+    showToast(translations[currentLanguage].collectionLoadError, "error");
   } finally {
     // 로딩 종료
     if ($loadingIndicator) {
@@ -812,7 +893,7 @@ function filterCollections(searchTerm) {
     // 검색 결과가 없을 때
     const noResultDiv = document.createElement("div");
     noResultDiv.className = "py-3 px-3 text-center text-sm text-gray-500";
-    noResultDiv.textContent = "검색 결과가 없습니다";
+    noResultDiv.textContent = translations[currentLanguage].noSearchResults;
     $optionsList.appendChild(noResultDiv);
   } else {
     // 필터링된 컬렉션 표시
@@ -926,10 +1007,10 @@ if ($refreshCollectionBtn) {
       // 강제 새로고침
       await loadCollections(true);
       // 수동 새로고침 시에만 토스트 표시
-      showToast("컬렉션이 새로고침되었습니다", "success");
+      showToast(translations[currentLanguage].collectionRefreshed, "success");
     } catch (error) {
       console.error("컬렉션 새로고침 실패:", error);
-      showToast("새로고침 실패", "error");
+      showToast(translations[currentLanguage].refreshFailed, "error");
     } finally {
       // 버튼 활성화
       $refreshCollectionBtn.disabled = false;
@@ -981,7 +1062,7 @@ if ($confirmCollectionBtn) {
       const collectionIcon = $collectionIconInput?.value?.trim() || "📁";
 
       if (!collectionName) {
-        showToast("컬렉션 이름을 입력해주세요", "error");
+        showToast(translations[currentLanguage].enterCollectionName, "error");
         return;
       }
 
@@ -991,13 +1072,13 @@ if ($confirmCollectionBtn) {
       });
 
       if (!authResult?.user?.uid) {
-        showToast("로그인이 필요합니다", "error");
+        showToast(translations[currentLanguage].loginRequired, "error");
         return;
       }
 
       // 버튼 비활성화
       $confirmCollectionBtn.disabled = true;
-      $confirmCollectionBtn.textContent = "추가 중...";
+      $confirmCollectionBtn.textContent = translations[currentLanguage].adding;
 
       // 컬렉션 생성 요청
       const result = await chrome.runtime.sendMessage({
@@ -1010,7 +1091,7 @@ if ($confirmCollectionBtn) {
       });
 
       if (result?.type === "COLLECTION_CREATED") {
-        showToast(`✓ "${collectionName}" 컬렉션이 생성되었습니다!`, "success");
+        showToast(`✓ "${collectionName}" ${translations[currentLanguage].collectionCreated}`, "success");
         // 컬렉션 목록 새로고침
         await loadCollections(true);
         // 새로 생성된 컬렉션 자동 선택
@@ -1020,17 +1101,17 @@ if ($confirmCollectionBtn) {
         // 모달 닫기
         closeCollectionModal();
       } else if (result?.type === "COLLECTION_CREATE_ERROR") {
-        showToast(`❌ 생성 실패: ${result.message}`, "error");
+        showToast(`❌ ${translations[currentLanguage].createFailed}: ${result.message}`, "error");
       } else {
-        showToast("❌ 컬렉션 생성 중 오류가 발생했습니다", "error");
+        showToast(`❌ ${translations[currentLanguage].collectionCreateError}`, "error");
       }
     } catch (error) {
       console.error("컬렉션 추가 중 에러:", error);
-      showToast("컬렉션 추가 실패", "error");
+      showToast(translations[currentLanguage].collectionAddFailed, "error");
     } finally {
       // 버튼 활성화
       $confirmCollectionBtn.disabled = false;
-      $confirmCollectionBtn.textContent = "추가";
+      $confirmCollectionBtn.textContent = translations[currentLanguage].add;
     }
   });
 }
@@ -1108,13 +1189,13 @@ if ($saveBookmarkButton) {
 
       // 현재 페이지 데이터 확인
       if (!window.currentPageData) {
-        showToast("페이지 정보를 가져올 수 없습니다", "error");
+        showToast(translations[currentLanguage].pageInfoUnavailable, "error");
         return;
       }
 
       // 버튼 비활성화 및 로딩 표시
       $saveBookmarkButton.disabled = true;
-      $saveBookmarkButton.textContent = "저장 중...";
+      $saveBookmarkButton.textContent = translations[currentLanguage].saving;
 
       // 북마크 데이터 준비
       const selectedCollectionId = $collectionSelect?.value;
@@ -1150,14 +1231,14 @@ if ($saveBookmarkButton) {
 
         if (!collectionExists) {
           showToast(
-            "❌ 선택한 컬렉션이 존재하지 않습니다. 컬렉션을 새로고침합니다.",
+            `❌ ${translations[currentLanguage].collectionNotExist}`,
             "error"
           );
           // 컬렉션 새로고침
           await loadCollections(true);
           // 버튼 활성화
           $saveBookmarkButton.disabled = false;
-          $saveBookmarkButton.textContent = "북마크 저장";
+          $saveBookmarkButton.textContent = translations[currentLanguage].saveBookmark;
           return;
         }
       }
@@ -1185,12 +1266,12 @@ if ($saveBookmarkButton) {
 
       if (result?.type === "BOOKMARK_SAVED") {
         // 버튼에 성공 표시
-        $saveBookmarkButton.textContent = "✓ 저장 완료!";
+        $saveBookmarkButton.textContent = `✓ ${translations[currentLanguage].savedComplete}`;
         $saveBookmarkButton.style.background =
           "linear-gradient(135deg, #10b981 0%, #059669 100%)";
 
         // Toast 메시지 표시
-        showToast("✓ 북마크가 성공적으로 저장되었습니다!", "success");
+        showToast(`✓ ${translations[currentLanguage].bookmarkSaved}`, "success");
 
         // 입력 필드 초기화
         if ($memoInput) $memoInput.value = "";
@@ -1206,7 +1287,7 @@ if ($saveBookmarkButton) {
           }
         }, 1500);
       } else if (result?.type === "BOOKMARK_SAVE_ERROR") {
-        showToast(`❌ 저장 실패: ${result.message}`, "error");
+        showToast(`❌ ${translations[currentLanguage].saveFailed}: ${result.message}`, "error");
 
         // 컬렉션 관련 오류인 경우 자동으로 새로고침
         if (
@@ -1221,16 +1302,16 @@ if ($saveBookmarkButton) {
           }, 1000);
         }
       } else {
-        showToast("❌ 북마크 저장 중 오류가 발생했습니다", "error");
+        showToast(`❌ ${translations[currentLanguage].bookmarkSaveError}`, "error");
       }
     } catch (error) {
       console.error("북마크 저장 중 에러:", error);
-      showToast("북마크 저장에 실패했습니다", "error");
+      showToast(translations[currentLanguage].bookmarkSaveFailedMsg, "error");
     } finally {
       // 버튼 활성화
       if ($saveBookmarkButton) {
         $saveBookmarkButton.disabled = false;
-        $saveBookmarkButton.textContent = "북마크 저장";
+        $saveBookmarkButton.textContent = translations[currentLanguage].saveBookmark;
       }
     }
   });

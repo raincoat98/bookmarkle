@@ -273,7 +273,7 @@
                         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span class="text-sm text-gray-600">로딩 중...</span>
+                      <span class="text-sm text-gray-600" data-i18n="loading">로딩 중...</span>
                     </div>
                   </div>
                   <!-- 컬렉션 옵션 리스트 -->
@@ -406,10 +406,10 @@
       class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center"
     >
       <div class="bg-white rounded-lg p-6 w-80 max-w-[90%]">
-        <h3 class="text-lg font-semibold mb-4">새 컬렉션 추가</h3>
+        <h3 class="text-lg font-semibold mb-4" data-i18n="newCollectionTitle">새 컬렉션 추가</h3>
 
         <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-2"
+          <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="collectionNameLabel"
             >컬렉션 이름</label
           >
           <input
@@ -417,11 +417,12 @@
             type="text"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="컬렉션 이름을 입력하세요"
+            data-i18n-placeholder="collectionNamePlaceholder"
           />
         </div>
 
         <div class="mb-6">
-          <label class="block text-sm font-medium text-gray-700 mb-2"
+          <label class="block text-sm font-medium text-gray-700 mb-2" data-i18n="iconOptional"
             >아이콘 (선택사항)</label
           >
           <input
@@ -429,6 +430,7 @@
             type="text"
             class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
             placeholder="아이콘을 입력하세요 (예: 📁, 💻, ⭐)"
+            data-i18n-placeholder="iconPlaceholder"
             value="📁"
           />
         </div>
@@ -458,7 +460,7 @@
       class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center"
     >
       <div class="bg-white rounded-lg p-6 w-80 max-w-sm mx-4">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">언어 설정</h3>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4" data-i18n="languageSettingsTitle">언어 설정</h3>
 
         <div class="space-y-3 mb-6">
           <label class="flex items-center space-x-3 cursor-pointer">
