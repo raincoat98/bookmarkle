@@ -696,7 +696,9 @@ async function loadCollections(forceRefresh = false) {
     });
 
     if (!authResult?.user?.uid) {
-      console.error("사용자 정보가 없습니다");
+      console.error("사용자 정보가 없습니다 - 로그인 필요");
+      showToast(translations[currentLanguage].loginRequired, "error");
+      showLoginUI();
       return;
     }
 
@@ -725,7 +727,14 @@ async function loadCollections(forceRefresh = false) {
 
     if (result?.type === "COLLECTIONS_ERROR") {
       console.error("컬렉션 로드 실패:", result.message);
-      showToast(translations[currentLanguage].collectionLoadFailed, "error");
+      
+      // 인증 오류인 경우 로그인 UI로 전환
+      if (result.code === "auth/unauthenticated" || result.message?.includes("인증") || result.message?.includes("로그인")) {
+        showToast(translations[currentLanguage].loginRequired, "error");
+        showLoginUI();
+      } else {
+        showToast(translations[currentLanguage].collectionLoadFailed, "error");
+      }
       return;
     }
 
@@ -1072,7 +1081,10 @@ if ($confirmCollectionBtn) {
       });
 
       if (!authResult?.user?.uid) {
+        console.error("사용자 정보가 없습니다 - 로그인 필요");
         showToast(translations[currentLanguage].loginRequired, "error");
+        closeCollectionModal();
+        showLoginUI();
         return;
       }
 
@@ -1101,6 +1113,14 @@ if ($confirmCollectionBtn) {
         // 모달 닫기
         closeCollectionModal();
       } else if (result?.type === "COLLECTION_CREATE_ERROR") {
+        // 인증 오류인 경우 로그인 UI로 전환
+        if (result.code === "auth/unauthenticated" || result.message?.includes("인증") || result.message?.includes("로그인")) {
+          showToast(translations[currentLanguage].loginRequired, "error");
+          closeCollectionModal();
+          showLoginUI();
+          return;
+        }
+        
         showToast(`❌ ${translations[currentLanguage].createFailed}: ${result.message}`, "error");
       } else {
         showToast(`❌ ${translations[currentLanguage].collectionCreateError}`, "error");
@@ -1183,7 +1203,9 @@ if ($saveBookmarkButton) {
       });
 
       if (!authResult?.user?.uid) {
-        showToast("로그인이 필요합니다", "error");
+        console.error("사용자 정보가 없습니다 - 로그인 필요");
+        showToast(translations[currentLanguage].loginRequired, "error");
+        showLoginUI();
         return;
       }
 
@@ -1287,6 +1309,13 @@ if ($saveBookmarkButton) {
           }
         }, 1500);
       } else if (result?.type === "BOOKMARK_SAVE_ERROR") {
+        // 인증 오류인 경우 로그인 UI로 전환
+        if (result.code === "auth/unauthenticated" || result.message?.includes("인증") || result.message?.includes("로그인")) {
+          showToast(translations[currentLanguage].loginRequired, "error");
+          showLoginUI();
+          return;
+        }
+        
         showToast(`❌ ${translations[currentLanguage].saveFailed}: ${result.message}`, "error");
 
         // 컬렉션 관련 오류인 경우 자동으로 새로고침

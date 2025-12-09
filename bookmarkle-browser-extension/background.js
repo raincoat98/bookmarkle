@@ -785,10 +785,10 @@ async function handleSaveBookmark(msg) {
   // 사용자 정보 가져오기
   const authResult = await chrome.storage.local.get(["currentUser"]);
   if (!authResult?.currentUser?.uid) {
-    console.error("❌ [background] 사용자 정보 없음");
+    console.error("❌ [background] 사용자 정보 없음 - 로그인 필요");
     return {
       type: "BOOKMARK_SAVE_ERROR",
-      code: "auth/not-authenticated",
+      code: "auth/unauthenticated",
       message: "로그인이 필요합니다.",
     };
   }
@@ -1048,6 +1048,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const storageData = await chrome.storage.local.get(["currentUser"]);
         const userId = storageData.currentUser?.uid;
         
+        if (!userId) {
+          console.error("❌ [background] GET_COLLECTIONS - 사용자 정보 없음");
+          sendResponse({
+            type: "COLLECTIONS_ERROR",
+            code: "auth/unauthenticated",
+            message: "로그인이 필요합니다.",
+          });
+          return true;
+        }
+        
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
@@ -1085,6 +1095,16 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         const storageData = await chrome.storage.local.get(["currentUser"]);
         const userId = storageData.currentUser?.uid;
         
+        if (!userId) {
+          console.error("❌ [background] CREATE_COLLECTION - 사용자 정보 없음");
+          sendResponse({
+            type: "COLLECTION_CREATE_ERROR",
+            code: "auth/unauthenticated",
+            message: "로그인이 필요합니다.",
+          });
+          return true;
+        }
+        
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
@@ -1093,7 +1113,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           userId: userId,
         });
         sendResponse(result);
-        return;
+        return true;
       }
     } catch (error) {
       console.error("Background script error:", error);
