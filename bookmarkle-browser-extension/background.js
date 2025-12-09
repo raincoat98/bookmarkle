@@ -254,15 +254,10 @@ async function getNotificationSettings(userId) {
   try {
     await setupOffscreen();
     
-    // Get idToken from storage
-    const storageData = await chrome.storage.local.get(["currentIdToken"]);
-    const idToken = storageData.currentIdToken;
-    
     const settingsResult = await sendMessageToOffscreen({
       target: "offscreen",
       type: "GET_NOTIFICATION_SETTINGS",
       userId: userId,
-      idToken: idToken,
     });
 
     if (settingsResult?.type === "NOTIFICATION_SETTINGS_DATA") {
@@ -682,9 +677,8 @@ async function validateCollection(collectionId, userId) {
 
   console.log("🔍 [background] 컬렉션 검증 시작:", collectionId);
 
-  // Chrome Storage에서 currentUser와 idToken 가져오기
-  const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
-  const idToken = storageData.currentIdToken;
+  // Chrome Storage에서 currentUser 가져오기
+  const storageData = await chrome.storage.local.get(["currentUser"]);
   const storageUserId = storageData.currentUser?.uid;
   
   // userId가 제공되지 않았으면 storage에서 가져온 값 사용
@@ -711,7 +705,6 @@ async function validateCollection(collectionId, userId) {
     target: "offscreen",
     type: "GET_COLLECTIONS",
     userId: finalUserId,
-    idToken: idToken,
   });
 
   console.log("🔍 [background] 컬렉션 조회 결과:", collectionsResult.type);
@@ -804,8 +797,8 @@ async function handleBookmarkSaveSuccess(bookmarkData, userId) {
 async function handleSaveBookmark(msg) {
   console.log("🚀 [background] SAVE_BOOKMARK 요청 수신, offscreen으로 라우팅");
   
-  // 사용자 정보 및 토큰 가져오기
-  const authResult = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
+  // 사용자 정보 가져오기
+  const authResult = await chrome.storage.local.get(["currentUser"]);
   if (!authResult?.currentUser?.uid) {
     console.error("❌ [background] 사용자 정보 없음");
     return {
@@ -815,17 +808,7 @@ async function handleSaveBookmark(msg) {
     };
   }
 
-  if (!authResult?.currentIdToken) {
-    console.error("❌ [background] idToken 없음");
-    return {
-      type: "BOOKMARK_SAVE_ERROR",
-      code: "auth/no-token",
-      message: "인증 토큰이 없습니다. 다시 로그인하세요.",
-    };
-  }
-
   const userId = authResult.currentUser.uid;
-  const idToken = authResult.currentIdToken;
 
   // 컬렉션이 선택된 경우 존재 여부 검증
   const collectionId = msg.bookmarkData?.collectionId;
@@ -853,7 +836,6 @@ async function handleSaveBookmark(msg) {
     type: "SAVE_BOOKMARK",
     userId: userId,
     bookmarkData: msg.bookmarkData,
-    idToken: idToken,
   });
 
   // 저장 성공 시 아이콘에 체크 표시 (비동기로 처리)
@@ -892,36 +874,18 @@ chrome.runtime.onMessageExternal.addListener(
       // 로그인 성공 시 알림 설정 캐시 무효화
       invalidateNotificationSettingsCache();
       
-      // Chrome Storage에 사용자 정보, 토큰, 컬렉션 저장
+      // Chrome Storage에 사용자 정보 저장
       if (chrome.storage && chrome.storage.local) {
-        const dataToSave = {
-          currentUser: request.user,
-        };
-
-        // idToken이 있으면 함께 저장
-        if (request.idToken) {
-          dataToSave.currentIdToken = request.idToken;
-        }
-
-        chrome.storage.local.set(dataToSave, () => {
-          console.log("✅ User login data saved to Chrome Storage");
-          sendResponse({ success: true });
-        });
+        chrome.storage.local.set(
+          { currentUser: request.user },
+          () => {
+            console.log("✅ User login data saved to Chrome Storage");
+            sendResponse({ success: true });
+          }
+        );
       } else {
         console.error("Chrome Storage API가 사용할 수 없습니다");
         sendResponse({ success: false, error: "Storage API unavailable" });
-      }
-      return true;
-    }
-
-    if (request.type === "TOKEN_REFRESHED") {
-      console.log("🔄 TOKEN_REFRESHED received from offscreen");
-      
-      // Chrome Storage에 갱신된 토큰 저장
-      if (chrome.storage && chrome.storage.local && request.idToken) {
-        chrome.storage.local.set({ currentIdToken: request.idToken }, () => {
-          console.log("✅ Refreshed idToken saved to Chrome Storage");
-        });
       }
       return true;
     }
@@ -936,7 +900,7 @@ chrome.runtime.onMessageExternal.addListener(
       console.log("🚪 Clearing all user data from Chrome Storage");
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.remove(
-          ["currentUser", "currentIdToken"],
+          ["currentUser"],
           () => {
             console.log("✅ User data cleared from Chrome Storage");
             invalidateNotificationSettingsCache();
@@ -992,7 +956,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           await new Promise((resolve) => {
             chrome.storage.local.set({
               currentUser: msg.user,
-              currentIdToken: msg.idToken,
             }, () => {
               console.log("✅ User data saved to Chrome Storage");
               resolve();
@@ -1058,7 +1021,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           if (chrome.storage && chrome.storage.local) {
             await new Promise((resolve) => {
               chrome.storage.local.remove(
-                ["currentUser", "currentIdToken"],
+                ["currentUser"],
                 () => {
                   console.log("Chrome Storage에서 사용자 정보 제거 완료");
                   resolve();
@@ -1095,9 +1058,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "GET_COLLECTIONS") {
         // 컬렉션 데이터 요청을 offscreen으로 전달
-        // Chrome Storage에서 currentUser와 idToken 가져오기
-        const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
-        const idToken = storageData.currentIdToken;
+        const storageData = await chrome.storage.local.get(["currentUser"]);
         const userId = storageData.currentUser?.uid;
         
         await setupOffscreen();
@@ -1105,7 +1066,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           target: "offscreen",
           type: "GET_COLLECTIONS",
           userId: userId,
-          idToken: idToken,
         });
         sendResponse(result);
         return true; // async 응답을 위해 true 반환
@@ -1113,9 +1073,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "GET_BOOKMARKS") {
         // 북마크 데이터 요청을 offscreen으로 전달
-        // Chrome Storage에서 currentUser와 idToken 가져오기
-        const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
-        const idToken = storageData.currentIdToken;
+        const storageData = await chrome.storage.local.get(["currentUser"]);
         const userId = storageData.currentUser?.uid;
         
         await setupOffscreen();
@@ -1124,7 +1082,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           type: "GET_BOOKMARKS",
           userId: userId,
           collectionId: msg.collectionId,
-          idToken: idToken,
         });
         sendResponse(result);
         return true; // async 응답을 위해 true 반환
@@ -1138,13 +1095,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "CREATE_COLLECTION") {
         // 컬렉션 생성 요청을 offscreen으로 전달
-        // Chrome Storage에서 idToken 가져오기
-
-        const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
+        const storageData = await chrome.storage.local.get(["currentUser"]);
         const userId = storageData.currentUser?.uid;
-        const idToken = storageData.currentIdToken;
-
-
         
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
@@ -1152,7 +1104,6 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           type: "CREATE_COLLECTION",
           collectionData: msg.collectionData,
           userId: userId,
-          idToken: idToken, // idToken 추가
         });
         sendResponse(result);
         return;
@@ -1201,7 +1152,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 chrome.action.onClicked.addListener(async (tab) => {
   try {
     // 사용자 정보 및 토큰 확인
-    const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
+    const storageData = await chrome.storage.local.get(["currentUser"]);
     const currentUser = storageData.currentUser;
 
     if (!currentUser) {

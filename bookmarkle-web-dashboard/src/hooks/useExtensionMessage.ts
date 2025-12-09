@@ -219,18 +219,17 @@ function mapBookmarkDocument(doc: FirestoreDocument): Bookmark {
  */
 function ensureAuth(
   userId: string | null | undefined,
-  idToken: string | null | undefined,
   errorType: string
-): { userId: string; idToken: string } | null {
-  if (!userId || !idToken) {
-    console.error(`❌ Missing userId or idToken for ${errorType}`);
+): { userId: string } | null {
+  if (!userId) {
+    console.error(`❌ Missing userId for ${errorType}`);
     sendToExtensionParent(
       createErrorResponse(errorType, "Missing authentication")
     );
     return null;
   }
 
-  return { userId, idToken };
+  return { userId };
 }
 
 // =======================================================
@@ -251,50 +250,27 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   // --------------------------
 
   const handleGetCollections = useCallback(
-    async (userId?: string | null, idToken?: string | null) => {
+    async (userId?: string | null) => {
       console.log("📬 Received getCollections request from offscreen");
       console.log("📬 Request userId:", userId);
-      console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId = userId || userRef.current?.uid || null;
       
-      // 항상 최신 토큰 가져오기 (401 에러 방지)
-      let validToken: string | null = null;
-      if (auth.currentUser) {
-        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
-        try {
-          validToken = await auth.currentUser.getIdToken(true);
-          console.log("✅ Fresh idToken obtained:", validToken ? "✅ Present" : "❌ Missing");
-        } catch (error) {
-          console.error("❌ Failed to refresh idToken:", error);
-          // 폴백: 전달받은 토큰 사용
-          validToken = idToken || null;
-        }
-      } else {
-        // 현재 사용자가 없으면 전달받은 토큰 사용
-        validToken = idToken || null;
-      }
-      
-      const authInfo = ensureAuth(
-        effectiveUserId,
-        validToken,
-        "COLLECTIONS_ERROR"
-      );
+      const authInfo = ensureAuth(effectiveUserId, "COLLECTIONS_ERROR");
       if (!authInfo) return;
 
-      const { userId: uid, idToken: token } = authInfo;
+      const { userId: uid } = authInfo;
+
+      if (!auth.currentUser) {
+        console.error("❌ No authenticated user");
+        sendToExtensionParent(createErrorResponse("COLLECTIONS_ERROR", "Not authenticated"));
+        return;
+      }
 
       try {
-        console.log("📬 Fetching collections via Firestore REST API...");
-        
-        // 갱신된 토큰을 background에 전송하여 저장
-        if (validToken !== idToken && validToken) {
-          console.log("🔄 Sending refreshed token to background...");
-          sendToExtensionParent({
-            type: "TOKEN_REFRESHED",
-            idToken: validToken,
-          } as any);
-        }
+        // 항상 최신 토큰 가져오기
+        const idToken = await auth.currentUser.getIdToken(true);
+        console.log("🔄 Fetched fresh idToken from Firebase Auth");
 
         const requestBody = {
           structuredQuery: {
@@ -309,9 +285,8 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
           },
         };
 
-
         const results = await runFirestoreQuery(
-          token,
+          idToken,
           requestBody,
           "getCollections"
         );
@@ -350,44 +325,31 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   const handleGetBookmarks = useCallback(
     async (
       collectionId: string | null,
-      userId?: string | null,
-      idToken?: string | null
+      userId?: string | null
     ) => {
       console.log(
         "📬 Received getBookmarks request from offscreen, collectionId:",
         collectionId
       );
       console.log("📬 Request userId:", userId);
-      console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId = userId || userRef.current?.uid || null;
       
-      // 항상 최신 토큰 가져오기
-      let validToken: string | null = null;
-      if (auth.currentUser) {
-        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
-        try {
-          validToken = await auth.currentUser.getIdToken(true);
-          console.log("✅ Fresh idToken obtained");
-        } catch (error) {
-          console.error("❌ Failed to refresh idToken:", error);
-          validToken = idToken || null;
-        }
-      } else {
-        validToken = idToken || null;
-      }
-      
-      const authInfo = ensureAuth(
-        effectiveUserId,
-        validToken,
-        "BOOKMARKS_ERROR"
-      );
+      const authInfo = ensureAuth(effectiveUserId, "BOOKMARKS_ERROR");
       if (!authInfo) return;
 
-      const { userId: uid, idToken: token } = authInfo;
+      const { userId: uid } = authInfo;
+
+      if (!auth.currentUser) {
+        console.error("❌ No authenticated user");
+        sendToExtensionParent(createErrorResponse("BOOKMARKS_ERROR", "Not authenticated"));
+        return;
+      }
 
       try {
-        console.log("📬 Fetching bookmarks via Firestore REST API...");
+        // 항상 최신 토큰 가져오기
+        const idToken = await auth.currentUser.getIdToken(true);
+        console.log("🔄 Fetched fresh idToken from Firebase Auth");
 
         interface FieldFilter {
           fieldFilter: {
@@ -433,7 +395,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         };
 
         const results = await runFirestoreQuery(
-          token,
+          idToken,
           requestBody,
           "getBookmarks"
         );
@@ -470,44 +432,31 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   const handleSaveBookmark = useCallback(
     async (
       bookmarkData: unknown,
-      userId?: string | null,
-      idToken?: string | null
+      userId?: string | null
     ) => {
       console.log("📬 Received saveBookmark request from offscreen");
       console.log("📬 Bookmark data:", bookmarkData);
       console.log("📬 Request userId parameter:", userId);
-      console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId =
         userId || userRef.current?.uid || auth.currentUser?.uid || null;
       
-      // 항상 최신 토큰 가져오기
-      let validToken: string | null = null;
-      if (auth.currentUser) {
-        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
-        try {
-          validToken = await auth.currentUser.getIdToken(true);
-          console.log("✅ Fresh idToken obtained");
-        } catch (error) {
-          console.error("❌ Failed to refresh idToken:", error);
-          validToken = idToken || null;
-        }
-      } else {
-        validToken = idToken || null;
-      }
-      
-      const authInfo = ensureAuth(
-        effectiveUserId,
-        validToken,
-        "BOOKMARK_SAVE_ERROR"
-      );
+      const authInfo = ensureAuth(effectiveUserId, "BOOKMARK_SAVE_ERROR");
       if (!authInfo) return;
 
-      const { userId: uid, idToken: token } = authInfo;
+      const { userId: uid } = authInfo;
       const bookmark = bookmarkData as BookmarkData;
 
+      if (!auth.currentUser) {
+        console.error("❌ No authenticated user");
+        sendToExtensionParent(createErrorResponse("BOOKMARK_SAVE_ERROR", "Not authenticated"));
+        return;
+      }
+
       try {
-        console.log("📬 Saving bookmark via Firestore REST API with idToken...");
+        // 항상 최신 토큰 가져오기
+        const idToken = await auth.currentUser.getIdToken(true);
+        console.log("🔄 Fetched fresh idToken from Firebase Auth");
 
         const fields: Record<string, FirestoreField> = {
           userId: { stringValue: uid },
@@ -527,7 +476,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
         const { id } = await createFirestoreDocument(
           "bookmarks",
-          token,
+          idToken,
           fields,
           "saveBookmark"
         );
@@ -560,43 +509,30 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
   const handleCreateCollection = useCallback(
     async (
       collectionData: unknown,
-      userId?: string | null,
-      idToken?: string | null
+      userId?: string | null
     ) => {
       console.log("📬 Received createCollection request from offscreen");
       console.log("📬 Collection data:", collectionData);
       console.log("📬 Request userId:", userId);
-      console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
       const effectiveUserId = userId || userRef.current?.uid || null;
       
-      // 항상 최신 토큰 가져오기
-      let validToken: string | null = null;
-      if (auth.currentUser) {
-        console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
-        try {
-          validToken = await auth.currentUser.getIdToken(true);
-          console.log("✅ Fresh idToken obtained");
-        } catch (error) {
-          console.error("❌ Failed to refresh idToken:", error);
-          validToken = idToken || null;
-        }
-      } else {
-        validToken = idToken || null;
-      }
-      
-      const authInfo = ensureAuth(
-        effectiveUserId,
-        validToken,
-        "COLLECTION_CREATE_ERROR"
-      );
+      const authInfo = ensureAuth(effectiveUserId, "COLLECTION_CREATE_ERROR");
       if (!authInfo) return;
 
-      const { userId: uid, idToken: token } = authInfo;
+      const { userId: uid } = authInfo;
       const collection = collectionData as CollectionData;
 
+      if (!auth.currentUser) {
+        console.error("❌ No authenticated user");
+        sendToExtensionParent(createErrorResponse("COLLECTION_CREATE_ERROR", "Not authenticated"));
+        return;
+      }
+
       try {
-        console.log("📬 Creating collection via Firestore REST API...");
+        // 항상 최신 토큰 가져오기
+        const idToken = await auth.currentUser.getIdToken(true);
+        console.log("🔄 Fetched fresh idToken from Firebase Auth");
 
         const fields: Record<string, FirestoreField> = {
           userId: { stringValue: uid },
@@ -616,7 +552,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
         const { id } = await createFirestoreDocument(
           "collections",
-          token,
+          idToken,
           fields,
           "createCollection"
         );
@@ -646,39 +582,27 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
     []
   );
 
-  const handleGetNotificationSettings = useCallback(async (userId?: string | null, idToken?: string | null) => {
+  const handleGetNotificationSettings = useCallback(async (userId?: string | null) => {
     console.log("📬 Received getNotificationSettings request from offscreen");
     console.log("📬 Request userId:", userId);
-    console.log("📬 Request idToken:", idToken ? "✅ Present" : "❌ Missing");
 
     const effectiveUserId = userId || userRef.current?.uid || null;
     
-    // 항상 최신 토큰 가져오기
-    let validToken: string | null = null;
-    if (auth.currentUser) {
-      console.log("🔄 Always fetching fresh idToken from Firebase Auth...");
-      try {
-        validToken = await auth.currentUser.getIdToken(true);
-        console.log("✅ Fresh idToken obtained");
-      } catch (error) {
-        console.error("❌ Failed to refresh idToken:", error);
-        validToken = idToken || null;
-      }
-    } else {
-      validToken = idToken || null;
-    }
-    
-    const authInfo = ensureAuth(
-      effectiveUserId,
-      validToken,
-      "NOTIFICATION_SETTINGS_ERROR"
-    );
+    const authInfo = ensureAuth(effectiveUserId, "NOTIFICATION_SETTINGS_ERROR");
     if (!authInfo) return;
 
-    const { userId: uid, idToken: token } = authInfo;
+    const { userId: uid } = authInfo;
+
+    if (!auth.currentUser) {
+      console.error("❌ No authenticated user");
+      sendToExtensionParent(createErrorResponse("NOTIFICATION_SETTINGS_ERROR", "Not authenticated"));
+      return;
+    }
 
     try {
-      console.log("📬 Fetching notification settings via Firestore REST API for user:", uid);
+      // 항상 최신 토큰 가져오기
+      const idToken = await auth.currentUser.getIdToken(true);
+      console.log("🔄 Fetched fresh idToken from Firebase Auth");
       
       const projectId = getProjectId();
       const docPath = `users/${uid}/settings/main`;
@@ -687,7 +611,7 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
         `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/${docPath}`,
         {
           method: "GET",
-          headers: authHeader(token),
+          headers: authHeader(idToken),
         }
       );
 
@@ -779,16 +703,14 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
 
         if ("getCollections" in data && data.getCollections) {
           await handleGetCollections(
-            ("userId" in data ? data.userId : null) as string | null,
-            ("idToken" in data ? data.idToken : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null
           );
         } else if ("getBookmarks" in data && data.getBookmarks) {
           await handleGetBookmarks(
             ("collectionId" in data
               ? data.collectionId
               : null) as string | null,
-            ("userId" in data ? data.userId : null) as string | null,
-            ("idToken" in data ? data.idToken : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null
           );
         } else if ("saveBookmark" in data && data.saveBookmark) {
           console.log("🔍 saveBookmark message data:", data);
@@ -796,29 +718,22 @@ export function useExtensionMessage({ user }: UseExtensionMessageOptions) {
             "🔍 userId in message:",
             "userId" in data ? data.userId : "NOT FOUND"
           );
-          console.log(
-            "🔍 idToken in message:",
-            "idToken" in data ? "✅ Present" : "❌ Missing"
-          );
           await handleSaveBookmark(
             ("bookmarkData" in data
               ? data.bookmarkData
               : null) as unknown,
-            ("userId" in data ? data.userId : null) as string | null,
-            ("idToken" in data ? data.idToken : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null
           );
         } else if ("createCollection" in data && data.createCollection) {
           await handleCreateCollection(
             ("collectionData" in data
               ? data.collectionData
               : null) as unknown,
-            ("userId" in data ? data.userId : null) as string | null,
-            ("idToken" in data ? data.idToken : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null
           );
         } else if ("getNotificationSettings" in data && data.getNotificationSettings) {
           await handleGetNotificationSettings(
-            ("userId" in data ? data.userId : null) as string | null,
-            ("idToken" in data ? data.idToken : null) as string | null
+            ("userId" in data ? data.userId : null) as string | null
           );
         }
       } catch (error) {

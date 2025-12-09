@@ -3,7 +3,6 @@ const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 
 // 현재 사용자 상태 저장
 let currentUser = null;
-let currentIdToken = null;
 let isIframeReady = false;
 let lastLoginUserId = null; // Prevent duplicate LOGIN_SUCCESS processing
 
@@ -87,14 +86,12 @@ window.addEventListener("message", (ev) => {
         data.user.email
       );
 
-      // 사용자 정보와 토큰 저장
+      // 사용자 정보 저장
       currentUser = data.user;
-      currentIdToken = data.idToken;
 
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({
           currentUser: data.user,
-          currentIdToken: data.idToken,
         });
         console.log("✅ User data saved to Chrome Storage (offscreen)");
         console.log("📌 Logged in user:", data.user.email, "uid:", data.user.uid);
@@ -117,7 +114,6 @@ window.addEventListener("message", (ev) => {
 
       // 로컬 상태 정리
       currentUser = null;
-      currentIdToken = null;
       lastLoginUserId = null; // Reset for next login
 
       // background에 로그아웃 신호 전달
@@ -136,15 +132,11 @@ iframe.addEventListener("error", () => {
   console.error("SignIn popup iframe failed to load");
 });
 
-// Chrome Extension Storage에서 사용자 정보 및 토큰 로드
+// Chrome Extension Storage에서 사용자 정보 로드
 if (chrome.storage && chrome.storage.local) {
-  chrome.storage.local.get(["currentUser", "currentIdToken"], (result) => {
+  chrome.storage.local.get(["currentUser"], (result) => {
     if (result.currentUser) {
       currentUser = result.currentUser;
-    }
-    if (result.currentIdToken) {
-      currentIdToken = result.currentIdToken;
-      console.log("Loaded idToken from storage");
     }
   });
 }
@@ -234,14 +226,12 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             return;
           }
 
-          // 로그인 성공 시 사용자 정보와 토큰 저장
+          // 로그인 성공 시 사용자 정보 저장
           if (data.user) {
             currentUser = data.user;
-            currentIdToken = data.idToken;
             if (chrome.storage && chrome.storage.local) {
               chrome.storage.local.set({
                 currentUser: data.user,
-                currentIdToken: data.idToken,
               });
             }
             console.log("✅ Auth successful:", data.user.email);
@@ -314,10 +304,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     // 로그아웃 처리
     console.log("🚪 LOGOUT - clearing user data");
     currentUser = null;
-    currentIdToken = null;
     lastLoginUserId = null;
     if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.remove(["currentUser", "currentIdToken"]);
+      chrome.storage.local.remove(["currentUser"]);
     }
     sendResponse({ success: true });
     return true;
@@ -339,10 +328,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       // 로컬 상태 정리
       console.log("🚪 LOGOUT_FIREBASE timeout - clearing user data");
       currentUser = null;
-      currentIdToken = null;
       lastLoginUserId = null;
       if (chrome.storage && chrome.storage.local) {
-        chrome.storage.local.remove(["currentUser", "currentIdToken"]);
+        chrome.storage.local.remove(["currentUser"]);
       }
 
       sendResponse({
@@ -368,10 +356,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           // 로컬 상태도 정리
           console.log("🚪 LOGOUT_FIREBASE complete - clearing user data");
           currentUser = null;
-          currentIdToken = null;
           lastLoginUserId = null;
           if (chrome.storage && chrome.storage.local) {
-            chrome.storage.local.remove(["currentUser", "currentIdToken"]);
+            chrome.storage.local.remove(["currentUser"]);
           }
 
           sendResponse(data);
@@ -463,7 +450,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           {
             getCollections: true,
             userId: msg.userId,
-            idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
+            forceRefreshToken: true,
           },
           origin
         );
@@ -543,7 +530,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             getBookmarks: true,
             userId: msg.userId,
             collectionId: msg.collectionId,
-            idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
+            forceRefreshToken: true,
           },
           origin
         );
@@ -628,7 +615,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           saveBookmark: true,
           userId: msg.userId,
           bookmarkData: msg.bookmarkData,
-          idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
+          forceRefreshToken: true,
         };
 
         console.log("📤 SAVE_BOOKMARK: Message to send:", messageToSend);
@@ -712,7 +699,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         createCollection: true,
         userId: msg.userId,
         collectionData: msg.collectionData,
-        idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
+        forceRefreshToken: true,
       },
       origin
     );
@@ -794,7 +781,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           {
             getNotificationSettings: true,
             userId: msg.userId,
-            idToken: msg.idToken || currentIdToken,
+            forceRefreshToken: true,
           },
           origin
         );
