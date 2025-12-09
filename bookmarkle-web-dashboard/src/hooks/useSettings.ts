@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -261,10 +261,10 @@ export const useSettings = ({
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   // 백업 동기화 함수
-  const syncBackups = () => {
+  const syncBackups = useCallback(() => {
     setBackups(getAllBackups());
     setBackupStatus(getBackupStatus());
-  };
+  }, []);
 
   // 테마 변경 핸들러
   const handleThemeChange = (newTheme: "light" | "dark" | "auto") => {

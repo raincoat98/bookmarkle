@@ -95,9 +95,9 @@ window.addEventListener("message", (ev) => {
         chrome.storage.local.set({
           currentUser: data.user,
           currentIdToken: data.idToken,
-          cachedCollections: data.collections || [],
         });
-        console.log("✅ User data and collections saved to Chrome Storage (offscreen)");
+        console.log("✅ User data saved to Chrome Storage (offscreen)");
+        console.log("📌 Logged in user:", data.user.email, "uid:", data.user.uid);
       }
 
       // background에 로그인 완료 알림 (컬렉션 포함)
@@ -300,11 +300,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   }
 
   if (msg.type === "GET_AUTH_STATE") {
-    // 저장된 사용자 상태 및 컬렉션 반환
-    chrome.storage.local.get(["currentUser", "cachedCollections"], (result) => {
+    // 저장된 사용자 상태 반환
+    chrome.storage.local.get(["currentUser"], (result) => {
+      console.log("📌 GET_AUTH_STATE - returning user:", result.currentUser?.email, "uid:", result.currentUser?.uid);
       sendResponse({
         user: result.currentUser || currentUser,
-        collections: result.cachedCollections || []
       });
     });
     return true; // async 응답
@@ -312,8 +312,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
   if (msg.type === "LOGOUT") {
     // 로그아웃 처리
+    console.log("🚪 LOGOUT - clearing user data");
     currentUser = null;
     currentIdToken = null;
+    lastLoginUserId = null;
     if (chrome.storage && chrome.storage.local) {
       chrome.storage.local.remove(["currentUser", "currentIdToken"]);
     }
@@ -335,8 +337,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       window.removeEventListener("message", handleLogoutMessage);
 
       // 로컬 상태 정리
+      console.log("🚪 LOGOUT_FIREBASE timeout - clearing user data");
       currentUser = null;
       currentIdToken = null;
+      lastLoginUserId = null;
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.remove(["currentUser", "currentIdToken"]);
       }
@@ -362,8 +366,10 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           console.log("Firebase 로그아웃 응답 수신:", data.type);
 
           // 로컬 상태도 정리
+          console.log("🚪 LOGOUT_FIREBASE complete - clearing user data");
           currentUser = null;
           currentIdToken = null;
+          lastLoginUserId = null;
           if (chrome.storage && chrome.storage.local) {
             chrome.storage.local.remove(["currentUser", "currentIdToken"]);
           }
@@ -452,6 +458,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
     (async () => {
       try {
         await ensureIframeReady();
+        console.log("📤 GET_COLLECTIONS request - userId:", msg.userId);
         iframe.contentWindow.postMessage(
           {
             getCollections: true,
@@ -621,7 +628,7 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           saveBookmark: true,
           userId: msg.userId,
           bookmarkData: msg.bookmarkData,
-          idToken: currentIdToken,
+          idToken: msg.idToken || currentIdToken, // 메시지에서 받은 idToken 우선 사용
         };
 
         console.log("📤 SAVE_BOOKMARK: Message to send:", messageToSend);
@@ -778,13 +785,33 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       handleNotificationSettingsMessage,
       false
     );
-    iframe.contentWindow.postMessage(
-      {
-        getNotificationSettings: true,
-        idToken: currentIdToken, // ID 토큰 함께 전달
-      },
-      origin
-    );
+    
+    // Ensure iframe is ready before sending message
+    (async () => {
+      try {
+        await ensureIframeReady();
+        iframe.contentWindow.postMessage(
+          {
+            getNotificationSettings: true,
+            userId: msg.userId,
+            idToken: msg.idToken || currentIdToken,
+          },
+          origin
+        );
+      } catch (error) {
+        if (!messageResolved) {
+          window.removeEventListener("message", handleNotificationSettingsMessage);
+          messageResolved = true;
+          clearTimeout(timeoutId);
+          console.error("Failed to send notification settings request:", error);
+          sendResponse({
+            type: "NOTIFICATION_SETTINGS_ERROR",
+            code: "iframe-error",
+            message: "Failed to communicate with iframe",
+          });
+        }
+      }
+    })();
 
     return true; // async 응답
   }

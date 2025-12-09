@@ -253,9 +253,16 @@ async function getNotificationSettings(userId) {
 
   try {
     await setupOffscreen();
+    
+    // Get idToken from storage
+    const storageData = await chrome.storage.local.get(["currentIdToken"]);
+    const idToken = storageData.currentIdToken;
+    
     const settingsResult = await sendMessageToOffscreen({
       target: "offscreen",
       type: "GET_NOTIFICATION_SETTINGS",
+      userId: userId,
+      idToken: idToken,
     });
 
     if (settingsResult?.type === "NOTIFICATION_SETTINGS_DATA") {
@@ -675,33 +682,36 @@ async function validateCollection(collectionId, userId) {
 
   console.log("🔍 [background] 컬렉션 검증 시작:", collectionId);
 
-  // Chrome Storage에서 컬렉션 가져오기
-  const storageResult = await chrome.storage.local.get(["cachedCollections"]);
-  const cachedCollections = storageResult.cachedCollections || [];
-  console.log("🔍 [background] Storage 캐시된 컬렉션 수:", cachedCollections.length);
-
-  let collectionExists = cachedCollections.some(
-    (col) => col.id === collectionId
-  );
-
-  if (collectionExists) {
-    console.log("✅ [background] Storage 캐시에서 컬렉션 존재 확인:", collectionId);
-    return { valid: true };
+  // Chrome Storage에서 currentUser와 idToken 가져오기
+  const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
+  const idToken = storageData.currentIdToken;
+  const storageUserId = storageData.currentUser?.uid;
+  
+  // userId가 제공되지 않았으면 storage에서 가져온 값 사용
+  const finalUserId = userId || storageUserId;
+  
+  if (!finalUserId) {
+    console.error("❌ [background] userId 없음");
+    return {
+      valid: false,
+      error: {
+        type: "BOOKMARK_SAVE_ERROR",
+        code: "auth/not-authenticated",
+        message: "로그인이 필요합니다.",
+      },
+    };
   }
 
-  // 캐시에 없으면 실시간으로 Firestore에서 조회
-  console.log("🔍 [background] 캐시에 없음 - Firestore에서 실시간 조회 중...");
-  
-  // Chrome Storage에서 idToken 가져오기
-  const storageData = await chrome.storage.local.get(["currentIdToken"]);
-  const idToken = storageData.currentIdToken;
+  // 실시간으로 Firestore에서 조회
+  console.log("🔍 [background] offscreen을 통해 컬렉션 조회 중...");
+  console.log("📌 [background] Query userId:", finalUserId);
   
   await setupOffscreen();
   const collectionsResult = await sendMessageToOffscreen({
     target: "offscreen",
     type: "GET_COLLECTIONS",
-    userId: userId,
-    idToken: idToken, // idToken 추가
+    userId: finalUserId,
+    idToken: idToken,
   });
 
   console.log("🔍 [background] 컬렉션 조회 결과:", collectionsResult.type);
@@ -725,7 +735,7 @@ async function validateCollection(collectionId, userId) {
     collections.map((c) => c.id)
   );
 
-  collectionExists = collections.some((col) => col.id === collectionId);
+  const collectionExists = collections.some((col) => col.id === collectionId);
   console.log("🔍 [background] 컬렉션 존재 여부:", collectionExists);
 
   if (!collectionExists) {
@@ -789,11 +799,13 @@ async function handleBookmarkSaveSuccess(bookmarkData, userId) {
 }
 
 /**
- * 북마크 저장 요청 처리
+ * 북마크 저장 요청 처리 (offscreen으로 위임)
  */
 async function handleSaveBookmark(msg) {
-  // 사용자 정보 가져오기
-  const authResult = await chrome.storage.local.get(["currentUser"]);
+  console.log("🚀 [background] SAVE_BOOKMARK 요청 수신, offscreen으로 라우팅");
+  
+  // 사용자 정보 및 토큰 가져오기
+  const authResult = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
   if (!authResult?.currentUser?.uid) {
     console.error("❌ [background] 사용자 정보 없음");
     return {
@@ -802,6 +814,18 @@ async function handleSaveBookmark(msg) {
       message: "로그인이 필요합니다.",
     };
   }
+
+  if (!authResult?.currentIdToken) {
+    console.error("❌ [background] idToken 없음");
+    return {
+      type: "BOOKMARK_SAVE_ERROR",
+      code: "auth/no-token",
+      message: "인증 토큰이 없습니다. 다시 로그인하세요.",
+    };
+  }
+
+  const userId = authResult.currentUser.uid;
+  const idToken = authResult.currentIdToken;
 
   // 컬렉션이 선택된 경우 존재 여부 검증
   const collectionId = msg.bookmarkData?.collectionId;
@@ -813,10 +837,7 @@ async function handleSaveBookmark(msg) {
   );
 
   if (collectionId && collectionId.trim() !== "") {
-    const validation = await validateCollection(
-      collectionId,
-      authResult.currentUser.uid
-    );
+    const validation = await validateCollection(collectionId, userId);
     if (!validation.valid) {
       return validation.error;
     }
@@ -824,18 +845,23 @@ async function handleSaveBookmark(msg) {
     console.log("ℹ️ [background] 컬렉션이 선택되지 않음 - 검증 건너뛰기");
   }
 
-  // 북마크 저장 요청을 offscreen으로 전달
+  // offscreen으로 북마크 저장 요청 전달
+  console.log("📨 [background] offscreen으로 SAVE_BOOKMARK 전달");
+  await setupOffscreen();
   const result = await sendMessageToOffscreen({
     target: "offscreen",
     type: "SAVE_BOOKMARK",
-    userId: authResult.currentUser.uid,
+    userId: userId,
     bookmarkData: msg.bookmarkData,
+    idToken: idToken,
   });
 
-  // 저장 성공 시 아이콘에 체크 표시 (비동기로 처리하여 저장 응답 지연 방지)
+  // 저장 성공 시 아이콘에 체크 표시 (비동기로 처리)
   if (result?.type === "BOOKMARK_SAVED") {
-    // 응답을 먼저 보내고 알림은 나중에 처리
-    handleBookmarkSaveSuccess(msg.bookmarkData, authResult.currentUser.uid);
+    console.log("✅ [background] 북마크 저장 성공");
+    // 알림 설정 캐시 무효화 (최신 설정으로 알림 표시)
+    invalidateNotificationSettingsCache();
+    handleBookmarkSaveSuccess(msg.bookmarkData, userId);
     return result;
   }
 
@@ -861,6 +887,7 @@ chrome.runtime.onMessageExternal.addListener(
       lastLoginUserId = request.user.uid;
       
       console.log("✅ LOGIN_SUCCESS received:", request.user.email);
+      console.log("📌 Logged in userId:", request.user.uid);
       
       // 로그인 성공 시 알림 설정 캐시 무효화
       invalidateNotificationSettingsCache();
@@ -876,17 +903,8 @@ chrome.runtime.onMessageExternal.addListener(
           dataToSave.currentIdToken = request.idToken;
         }
 
-        // 컬렉션이 있으면 함께 저장
-        if (request.collections) {
-          dataToSave.cachedCollections = request.collections;
-          console.log("✅ Saving collections to storage:", request.collections.length);
-        }
-
         chrome.storage.local.set(dataToSave, () => {
           console.log("✅ User login data saved to Chrome Storage");
-          if (request.collections) {
-            console.log("✅ Collections cached:", request.collections.length);
-          }
           sendResponse({ success: true });
         });
       } else {
@@ -902,10 +920,11 @@ chrome.runtime.onMessageExternal.addListener(
       // Reset duplicate login prevention
       lastLoginUserId = null;
       
-      // Chrome Storage에서 사용자 정보, 토큰, 컬렉션 제거
+      // Chrome Storage에서 사용자 정보, 토큰 제거
+      console.log("🚪 Clearing all user data from Chrome Storage");
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.remove(
-          ["currentUser", "currentIdToken", "cachedCollections"],
+          ["currentUser", "currentIdToken"],
           () => {
             console.log("✅ User data cleared from Chrome Storage");
             invalidateNotificationSettingsCache();
@@ -962,9 +981,8 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
             chrome.storage.local.set({
               currentUser: msg.user,
               currentIdToken: msg.idToken,
-              cachedCollections: msg.collections || [],
             }, () => {
-              console.log("✅ User data and collections saved to Chrome Storage");
+              console.log("✅ User data saved to Chrome Storage");
               resolve();
             });
           });
@@ -1004,20 +1022,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       }
 
       if (msg?.type === "GET_AUTH_STATE") {
-        // Chrome Storage에서 직접 사용자 정보 및 컬렉션 조회
+        // Chrome Storage에서 직접 사용자 정보 조회
         if (chrome.storage && chrome.storage.local) {
-          chrome.storage.local.get(["currentUser", "cachedCollections"], (result) => {
+          chrome.storage.local.get(["currentUser"], (result) => {
             console.log("GET_AUTH_STATE - currentUser:", result.currentUser?.email);
-            console.log("GET_AUTH_STATE - cachedCollections:", result.cachedCollections?.length || 0);
             sendResponse({
-              user: result.currentUser || null,
-              collections: result.cachedCollections || []
+              user: result.currentUser || null
             });
           });
           return true; // async 응답
         } else {
           console.error("Chrome Storage API가 사용할 수 없습니다");
-          sendResponse({ user: null, collections: [], error: "Storage API unavailable" });
+          sendResponse({ user: null, error: "Storage API unavailable" });
           return;
         }
       }
@@ -1030,9 +1046,9 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
           if (chrome.storage && chrome.storage.local) {
             await new Promise((resolve) => {
               chrome.storage.local.remove(
-                ["currentUser", "currentIdToken", "cachedCollections", "collections"],
+                ["currentUser", "currentIdToken"],
                 () => {
-                  console.log("Chrome Storage에서 사용자 정보 및 컬렉션 제거 완료");
+                  console.log("Chrome Storage에서 사용자 정보 제거 완료");
                   resolve();
                 }
               );
@@ -1067,16 +1083,17 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "GET_COLLECTIONS") {
         // 컬렉션 데이터 요청을 offscreen으로 전달
-        // Chrome Storage에서 idToken 가져오기
-        const storageData = await chrome.storage.local.get(["currentIdToken"]);
+        // Chrome Storage에서 currentUser와 idToken 가져오기
+        const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
         const idToken = storageData.currentIdToken;
+        const userId = storageData.currentUser?.uid;
         
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
           type: "GET_COLLECTIONS",
-          userId: msg.userId,
-          idToken: idToken, // idToken 추가
+          userId: userId,
+          idToken: idToken,
         });
         sendResponse(result);
         return true; // async 응답을 위해 true 반환
@@ -1084,17 +1101,18 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
 
       if (msg?.type === "GET_BOOKMARKS") {
         // 북마크 데이터 요청을 offscreen으로 전달
-        // Chrome Storage에서 idToken 가져오기
-        const storageData = await chrome.storage.local.get(["currentIdToken"]);
+        // Chrome Storage에서 currentUser와 idToken 가져오기
+        const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
         const idToken = storageData.currentIdToken;
+        const userId = storageData.currentUser?.uid;
         
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
           type: "GET_BOOKMARKS",
-          userId: msg.userId,
+          userId: userId,
           collectionId: msg.collectionId,
-          idToken: idToken, // idToken 추가
+          idToken: idToken,
         });
         sendResponse(result);
         return true; // async 응답을 위해 true 반환
@@ -1109,15 +1127,19 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
       if (msg?.type === "CREATE_COLLECTION") {
         // 컬렉션 생성 요청을 offscreen으로 전달
         // Chrome Storage에서 idToken 가져오기
-        const storageData = await chrome.storage.local.get(["currentIdToken"]);
+
+        const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
+        const userId = storageData.currentUser?.uid;
         const idToken = storageData.currentIdToken;
+
+
         
         await setupOffscreen();
         const result = await sendMessageToOffscreen({
           target: "offscreen",
           type: "CREATE_COLLECTION",
           collectionData: msg.collectionData,
-          userId: msg.userId,
+          userId: userId,
           idToken: idToken, // idToken 추가
         });
         sendResponse(result);
@@ -1166,9 +1188,9 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
 // 확장 프로그램 아이콘 클릭 이벤트 (빠른실행모드 전용)
 chrome.action.onClicked.addListener(async (tab) => {
   try {
-    // 사용자 정보 확인
-    const result = await chrome.storage.local.get(["currentUser"]);
-    const currentUser = result.currentUser;
+    // 사용자 정보 및 토큰 확인
+    const storageData = await chrome.storage.local.get(["currentUser", "currentIdToken"]);
+    const currentUser = storageData.currentUser;
 
     if (!currentUser) {
       console.log("빠른실행모드: 로그인 필요 - 대시보드로 이동");
@@ -1201,6 +1223,9 @@ chrome.action.onClicked.addListener(async (tab) => {
 
     // offscreen 설정 및 저장
     await setupOffscreen();
+
+    // 알림 설정 캐시 무효화 (최신 설정으로 알림 표시)
+    invalidateNotificationSettingsCache();
 
     // 알림 설정 가져오기
     const notificationSettings = await getNotificationSettings(currentUser.uid);
@@ -1301,6 +1326,17 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   // 빠른 실행 모드 변경 감지
   if (changes.quickMode) {
     console.log("빠른실행모드 변경 감지:", changes.quickMode.newValue);
+    const newMode = changes.quickMode.newValue;
+    
+    // 메뉴 텍스트 업데이트
+    updateContextMenuItem("toggle-quick-mode", {
+      title: newMode
+        ? "⚡ 빠른 실행 모드 비활성화"
+        : "⚡ 빠른 실행 모드 활성화",
+    }).catch((error) => {
+      console.error("메뉴 업데이트 실패:", error);
+    });
+    
     updatePopupBehavior();
   }
 });

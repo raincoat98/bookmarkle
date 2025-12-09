@@ -593,7 +593,16 @@ if ($quickModeCheckbox) {
 
 // 컬렉션 데이터 로드
 async function loadCollections(forceRefresh = false) {
+  const $loadingIndicator = document.getElementById("collectionLoadingIndicator");
+  const $optionsList = document.getElementById("collectionOptionsList");
+  
   try {
+    // 로딩 시작
+    if ($loadingIndicator && $optionsList) {
+      $loadingIndicator.classList.remove("hidden");
+      $optionsList.classList.add("hidden");
+    }
+
     // 사용자 정보 가져오기
     const authResult = await chrome.runtime.sendMessage({
       type: "GET_AUTH_STATE",
@@ -621,26 +630,7 @@ async function loadCollections(forceRefresh = false) {
       return;
     }
 
-    // forceRefresh가 아니면 캐시된 컬렉션 확인
-    if (!forceRefresh) {
-      const cachedResult = await chrome.storage.local.get([
-        "cachedCollections",
-      ]);
-
-      if (
-        cachedResult?.cachedCollections &&
-        cachedResult.cachedCollections.length > 0
-      ) {
-        console.log(
-          "캐시된 컬렉션 사용:",
-          cachedResult.cachedCollections.length
-        );
-        renderCollections(cachedResult.cachedCollections);
-        return;
-      }
-    }
-
-    // 캐시가 없거나 강제 새로고침이면 서버에서 가져오기
+    // 항상 서버에서 최신 컬렉션 가져오기
     console.log(
       "🔍 [popup] 컬렉션 데이터 요청 중... userId:",
       authResult.user.uid
@@ -659,8 +649,6 @@ async function loadCollections(forceRefresh = false) {
     }
 
     if (result?.type === "COLLECTIONS_DATA" && result.collections) {
-      // Storage에 캐시 저장
-      chrome.storage.local.set({ cachedCollections: result.collections });
       renderCollections(result.collections);
       if (forceRefresh) {
         // forceRefresh 플래그가 있지만 토스트는 별도로 처리
@@ -670,6 +658,14 @@ async function loadCollections(forceRefresh = false) {
   } catch (error) {
     console.error("컬렉션 로드 중 에러:", error);
     showToast("컬렉션 로드 중 오류 발생", "error");
+  } finally {
+    // 로딩 종료
+    if ($loadingIndicator) {
+      $loadingIndicator.classList.add("hidden");
+    }
+    if ($optionsList) {
+      $optionsList.classList.remove("hidden");
+    }
   }
 }
 
@@ -680,10 +676,12 @@ let allCollections = [];
 function renderCollections(collections) {
   if (
     !$collectionDropdown ||
-    !$collectionOptionsContainer ||
     !$collectionSelectedText
   )
     return;
+
+  const $optionsList = document.getElementById("collectionOptionsList");
+  if (!$optionsList) return;
 
   // 전역 변수에 컬렉션 저장
   allCollections = collections;
@@ -692,7 +690,7 @@ function renderCollections(collections) {
   const currentValue = $collectionSelect.value;
 
   // 기존 옵션들 제거 (기본 옵션 제외)
-  $collectionOptionsContainer.innerHTML = `
+  $optionsList.innerHTML = `
     <div class="collection-option py-2 px-3 hover:bg-gray-100 cursor-pointer" data-value="">
       <div class="flex items-center">
         <span class="text-gray-500">📄</span>
@@ -713,7 +711,7 @@ function renderCollections(collections) {
   // 컬렉션 옵션들 추가
   collections.forEach((collection) => {
     const optionDiv = createCollectionOption(collection);
-    $collectionOptionsContainer.appendChild(optionDiv);
+    $optionsList.appendChild(optionDiv);
   });
 
   // 이전에 선택된 값이 여전히 존재하면 다시 선택, 없으면 "컬렉션 없음"으로 설정
@@ -784,7 +782,8 @@ function createCollectionOption(collection) {
 
 // 컬렉션 검색 필터링
 function filterCollections(searchTerm) {
-  if (!$collectionOptionsContainer) return;
+  const $optionsList = document.getElementById("collectionOptionsList");
+  if (!$optionsList) return;
 
   const lowerSearchTerm = searchTerm.toLowerCase().trim();
 
@@ -800,7 +799,7 @@ function filterCollections(searchTerm) {
   );
 
   // 필터링된 컬렉션 렌더링
-  $collectionOptionsContainer.innerHTML = `
+  $optionsList.innerHTML = `
     <div class="collection-option py-2 px-3 hover:bg-gray-100 cursor-pointer" data-value="">
       <div class="flex items-center">
         <span class="text-gray-500">📄</span>
@@ -814,12 +813,12 @@ function filterCollections(searchTerm) {
     const noResultDiv = document.createElement("div");
     noResultDiv.className = "py-3 px-3 text-center text-sm text-gray-500";
     noResultDiv.textContent = "검색 결과가 없습니다";
-    $collectionOptionsContainer.appendChild(noResultDiv);
+    $optionsList.appendChild(noResultDiv);
   } else {
     // 필터링된 컬렉션 표시
     filteredCollections.forEach((collection) => {
       const optionDiv = createCollectionOption(collection);
-      $collectionOptionsContainer.appendChild(optionDiv);
+      $optionsList.appendChild(optionDiv);
     });
   }
 }
@@ -904,8 +903,8 @@ if ($collectionSearchInput) {
   $collectionSearchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      const firstOption =
-        $collectionOptionsContainer.querySelector(".collection-option");
+      const $optionsList = document.getElementById("collectionOptionsList");
+      const firstOption = $optionsList?.querySelector(".collection-option");
       if (firstOption) {
         firstOption.click();
       }
@@ -1142,13 +1141,10 @@ if ($saveBookmarkButton) {
       console.log("최종 컬렉션 ID:", finalCollectionId);
       console.log("=== 컬렉션 선택 디버깅 끝 ===");
 
-      // 컬렉션이 선택된 경우에만 유효성 검증
+      // 컬렉션이 선택된 경우에만 유효성 검증 (실시간 조회)
       if (finalCollectionId) {
-        const cachedResult = await chrome.storage.local.get([
-          "cachedCollections",
-        ]);
-        const collections = cachedResult.cachedCollections || [];
-        const collectionExists = collections.some(
+        // 현재 로드된 컬렉션 목록에서 확인
+        const collectionExists = allCollections.some(
           (col) => col.id === finalCollectionId
         );
 
