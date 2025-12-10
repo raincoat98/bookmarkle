@@ -1,3 +1,4 @@
+const themeIcon = document.getElementById("themeIcon");
 // 토스트 메시지 표시 함수
 function showToast(message, type = "success") {
   const toast = document.getElementById("toast");
@@ -283,6 +284,36 @@ loginBtn.addEventListener("click", () => {
 // 로그아웃 버튼 클릭
 
 // ...existing code...
+// 테마 토글 버튼 요소 정의
+const themeToggle = document.getElementById("themeToggle");
+
+// 테마 토글 함수
+function setTheme(mode) {
+  // data-theme 속성으로 테마 적용
+  document.documentElement.setAttribute("data-theme", mode);
+  if (mode === "dark") {
+    if (themeIcon) themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+  } else {
+    if (themeIcon) themeIcon.innerHTML = '<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />';
+  }
+  localStorage.setItem("theme", mode);
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem("theme") || "light";
+  setTheme(current === "dark" ? "light" : "dark");
+}
+
+// 테마 버튼 클릭 이벤트
+if (themeToggle) {
+  themeToggle.addEventListener("click", toggleTheme);
+}
+
+// 페이지 로드 시 테마 적용
+(function () {
+  const savedTheme = localStorage.getItem("theme") || "light";
+  setTheme(savedTheme);
+})();
 saveBtn.addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.url) {
