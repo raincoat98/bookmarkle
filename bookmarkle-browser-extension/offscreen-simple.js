@@ -23,7 +23,6 @@ const firebaseConfig = {
 
 console.log("🔧 Firebase config loaded:", {
   apiKey: firebaseConfig.apiKey?.substring(0, 10) + "...",
-            sendResponse({ ok: true });
   projectId: firebaseConfig.projectId,
 });
 
