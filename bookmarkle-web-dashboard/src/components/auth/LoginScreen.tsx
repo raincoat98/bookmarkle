@@ -9,6 +9,21 @@ import {
   getBrowserCompatibilityMessage,
 } from "../../utils/browserDetection";
 
+declare global {
+  interface Window {
+    chrome?: {
+      runtime: {
+        sendMessage: (
+          extensionId: string,
+          message: unknown,
+          callback: (response?: unknown) => void
+        ) => void;
+        lastError?: { message: string };
+      };
+    };
+  }
+}
+
 export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
@@ -68,29 +83,34 @@ export const LoginScreen = () => {
           idToken,
         };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const chromeRuntime = (window as any).chrome?.runtime;
         console.log("📤 Preparing to send message:", {
           extensionId: extensionContext.extensionId,
-          hasChromeRuntime: typeof chrome !== "undefined" && !!chrome.runtime,
+          hasChromeRuntime: !!chromeRuntime,
         });
 
         // Send to extension background via chrome.runtime
-        if (extensionContext.extensionId && typeof chrome !== "undefined" && chrome.runtime) {
+        if (extensionContext.extensionId && chromeRuntime) {
           try {
             console.log("📨 Sending message to extension:", extensionContext.extensionId);
             setMessageSent(true); // 전송 시작 시 바로 플래그 설정
-            
-            chrome.runtime.sendMessage(
+
+            chromeRuntime.sendMessage(
               extensionContext.extensionId,
               {
                 type: "AUTH_STATE_CHANGED",
                 user: loginData.user,
                 idToken: loginData.idToken,
               },
-              (response) => {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              (response: any) => {
                 if (!isMounted) return;
-                
-                if (chrome.runtime.lastError) {
-                  console.error("❌ chrome.runtime.sendMessage error:", chrome.runtime.lastError);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (chromeRuntime && typeof chromeRuntime === 'object' && 'lastError' in chromeRuntime && (chromeRuntime as any).lastError) {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  console.error("❌ chrome.runtime.sendMessage error:", (chromeRuntime as any).lastError);
                   setMessageSent(false); // 실패 시 재시도 가능하도록
                 } else {
                   console.log("✅ Login data sent to extension", response);
@@ -106,8 +126,7 @@ export const LoginScreen = () => {
         } else {
           console.error("❌ Missing requirements:", {
             extensionId: extensionContext.extensionId,
-            chrome: typeof chrome !== "undefined",
-            runtime: typeof chrome !== "undefined" && !!chrome.runtime,
+            chromeRuntime: !!chromeRuntime,
           });
         }
       } catch (error) {
@@ -146,7 +165,6 @@ export const LoginScreen = () => {
     } catch (error: unknown) {
       const firebaseError = error as FirebaseError;
       const browserInfo = detectBrowser();
-
       if (firebaseError.code === "auth/popup-closed-by-user") {
         if (browserInfo.isInAppBrowser) {
           toast.error(
