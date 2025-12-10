@@ -1,3 +1,16 @@
+// 항상 최신 idToken을 받아오는 함수
+async function ensureFreshIdToken() {
+  if (auth.currentUser) {
+    currentIdToken = await auth.currentUser.getIdToken(true);
+    // chrome.storage.local에도 갱신
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({
+        currentIdToken,
+        lastLoginTime: Date.now()
+      });
+    }
+  }
+}
 
 const firebaseConfig = {
   apiKey: "_FIREBASE_API_KEY_",
@@ -10,7 +23,7 @@ const firebaseConfig = {
 
 console.log("🔧 Firebase config loaded:", {
   apiKey: firebaseConfig.apiKey?.substring(0, 10) + "...",
-  authDomain: firebaseConfig.authDomain,
+            sendResponse({ ok: true });
   projectId: firebaseConfig.projectId,
 });
 
@@ -189,6 +202,9 @@ async function saveBookmark({ url, title, collectionId, description, tags, favic
     throw new Error(error);
   }
 
+  // 항상 최신 idToken으로 갱신
+  await ensureFreshIdToken();
+
   if (!currentIdToken) {
     const error = "인증 토큰이 없습니다. 다시 로그인해주세요.";
     console.error("❌", error);
@@ -344,6 +360,9 @@ async function getCollections() {
   if (!currentUser) {
     return [];
   }
+
+  // 항상 최신 idToken으로 갱신
+  await ensureFreshIdToken();
 
   if (!currentIdToken) {
     console.warn("⚠️ No idToken for getting collections");

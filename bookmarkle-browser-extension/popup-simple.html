@@ -1,277 +1,188 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
-    <title>북마클 - 북마크 저장</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        width: 320px;
-        min-height: 400px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif;
-        padding: 16px;
-        background: #f9fafb;
-      }
-
-      .header {
-        text-align: center;
-        margin-bottom: 20px;
-      }
-
-      .header h1 {
-        font-size: 20px;
-        color: #1f2937;
-        margin-bottom: 4px;
-      }
-
-      .status {
-        font-size: 12px;
-        color: #6b7280;
-        padding: 6px 12px;
-        background: #fff;
-        border-radius: 6px;
-        margin-top: 8px;
-      }
-
-      .status.logged-in {
-        color: #059669;
-        background: #d1fae5;
-      }
-
-      .button {
-        width: 100%;
-        padding: 12px;
-        margin-bottom: 8px;
-        border: none;
-        border-radius: 8px;
-        font-size: 14px;
-        font-weight: 500;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-
-      .button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-
-      .button:active {
-        transform: translateY(0);
-      }
-
-      .button.primary {
-        background: #3b82f6;
-        color: white;
-      }
-
-      .button.primary:hover {
-        background: #2563eb;
-      }
-
-      .button.danger {
-        background: #ef4444;
-        color: white;
-      }
-
-      .button.danger:hover {
-        background: #dc2626;
-      }
-
-      .button.success {
-        background: #10b981;
-        color: white;
-      }
-
-      .button.success:hover {
-        background: #059669;
-      }
-
-      .button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .current-page {
-        background: white;
-        padding: 12px;
-        border-radius: 8px;
-        margin-bottom: 12px;
-        font-size: 13px;
-      }
-
-      .current-page .label {
-        color: #6b7280;
-        margin-bottom: 4px;
-        font-weight: 500;
-      }
-
-      .current-page .url {
-        color: #1f2937;
-        word-break: break-all;
-      }
-
-      .divider {
-        height: 1px;
-        background: #e5e7eb;
-        margin: 16px 0;
-      }
-
-      .info {
-        font-size: 11px;
-        color: #9ca3af;
-        text-align: center;
-        margin-top: 12px;
-      }
-
-      #login-section,
-      #bookmark-section {
-        display: none;
-      }
-
-      .collection-select {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 14px;
-        background: white;
-        cursor: pointer;
-      }
-
-      .collection-select:focus {
-        outline: none;
-        border-color: #3b82f6;
-      }
-
-      .tag-input-container {
-        width: 100%;
-        padding: 8px;
-        margin-bottom: 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        background: white;
-        min-height: 40px;
-      }
-
-      .tag-input-container:focus-within {
-        border-color: #3b82f6;
-      }
-
-      .tag-input {
-        border: none;
-        outline: none;
-        font-size: 14px;
-        width: 100%;
-        padding: 2px;
-      }
-
-      .tags-display {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-bottom: 6px;
-      }
-
-      .tag-item {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        background: #e0e7ff;
-        color: #3730a3;
-        border-radius: 4px;
-        font-size: 12px;
-      }
-
-      .tag-remove {
-        cursor: pointer;
-        color: #6366f1;
-        font-weight: bold;
-      }
-
-      .tag-remove:hover {
-        color: #4338ca;
-      }
-
-      .description-input {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 14px;
-        background: white;
-        resize: vertical;
-        min-height: 60px;
-        font-family: inherit;
-      }
-
-      .description-input:focus {
-        outline: none;
-        border-color: #3b82f6;
-      }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>북마클</title>
+ <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+        <link rel="stylesheet" href="popup-simple.css" />
+    <script src="./lucide.js"></script>
   </head>
-  <body>
-    <div class="header">
-      <h1>📑 북마클</h1>
-      <div class="status" id="status">로그인 상태 확인 중...</div>
-    </div>
+  <body class="bg-gradient-to-br from-violet-400 via-purple-400 to-blue-300 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md mx-auto p-3">
+      <div class="bg-white bg-opacity-90 rounded-2xl px-6 py-5 relative shadow-2xl">
+        <!-- 헤더 영역 -->
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center">
+            <div class="w-8 h-8 flex items-center justify-center bg-indigo-100 rounded-full mr-2">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
+              </svg>
+            </div>
+            <h3 class="text-base font-bold text-gray-800">북마클</h3>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="user-email" class="text-xs text-gray-500 font-medium"></span>
+            <button id="languageSettings" class="p-2 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center justify-center" title="언어 설정" style="font-size: 18px; min-width: 32px; min-height: 32px">🇰🇷</button>
+            <button id="themeToggle" class="theme-toggle-header" title="다크모드 전환">
+              <svg id="themeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <!-- 로그인 버튼 -->
+        <!-- 로그인 섹션 -->
+        <div id="login-section">
+          <button id="login-btn" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg shadow-lg flex items-center justify-center transition-all duration-200 transform hover:scale-105">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M15.545 6.558a9.42 9.42 0 0 1 .139 1.626c0 2.434-.87 4.492-2.384 5.885h.002C11.978 15.292 10.158 16 8 16A8 8 0 1 1 8 0a7.689 7.689 0 0 1 5.352 2.082l-2.284 2.284A4.347 4.347 0 0 0 8 3.166c-2.087 0-3.86 1.408-4.492 3.304a4.792 4.792 0 0 0 0 3.063c.632 1.896 2.405 3.301 4.492 3.301 1.078 0 2.004-.276 2.722-.764h-.003a3.702 3.702 0 0 0 1.599-2.431H8v-3.08h7.545z" />
+            </svg>
+            <span>Google 로그인</span>
+          </button>
+          <div class="info mt-2 text-sm text-gray-600">
+            • 북마크는 Firebase에 안전하게 저장됩니다<br />
+            • 여러 기기에서 동기화됩니다
+          </div>
+        </div>
+        <!-- 로그인 섹션 -->
+        <!-- 기존 login-section 중복 제거 -->
 
-    <!-- 로그인 섹션 -->
-    <div id="login-section">
-      <button class="button primary" id="login-btn">Google 로그인</button>
-      <div class="info">
-        • 북마크는 Firebase에 안전하게 저장됩니다<br />
-        • 여러 기기에서 동기화됩니다
+        <!-- 북마크 저장 섹션 -->
+        <div id="bookmark-section" class="hidden">
+          <div class="current-page">
+            <div class="label">현재 페이지</div>
+            <a class="url current-url-link" id="current-url" href="#" target="_blank" rel="noopener noreferrer">...</a>
+          </div>
+
+          <select class="collection-select" id="collection-select">
+            <option value="">컬렉션 선택...</option>
+          </select>
+
+          <textarea 
+            class="description-input" 
+            id="description-input" 
+            placeholder="설명 입력 (선택사항)..."
+          ></textarea>
+
+          <div class="tag-input-container">
+            <div class="tags-display" id="tags-display"></div>
+            <input 
+              type="text" 
+              class="tag-input font-medium border-none outline-none bg-transparent focus:ring-0" 
+              id="tag-input" 
+              placeholder="엔터로 태그 추가 (쉼표로 구분)"
+              autocomplete="off"
+            />
+          </div>
+
+            <button class="w-full bg-gradient-to-r from-indigo-500 to-purple-400 hover:from-indigo-600 hover:to-purple-500 text-white font-bold py-2 rounded-xl shadow-lg text-sm transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-300 focus:ring-offset-2"
+ id="save-btn">
+ 북마크 저장
+</button>
+        </div>
+        <div id="loginGuide" class="text-center py-2 hidden">
+            
+          <div class="text-xs text-gray-500">
+            <p>• 북마크는 Firebase에 안전하게 저장됩니다</p>
+            <p>• 여러 기기에서 동기화됩니다</p>
+            <p>• 개인정보는 보호됩니다</p>
+          </div>
+          <div class="mt-3 pt-3 border-t border-gray-200">
+            <div class="text-xs text-gray-500 text-center">
+              <p class="mb-1">🔒 <span id="privacyPolicyText">이 확장 프로그램은 사용자의 Google 계정 이메일 주소를 인증 목적으로만 사용하며, 어떠한 개인 데이터도 제3자에게 제공하지 않습니다.</span></p>
+              <p class="text-gray-400"><span id="contactText">문의:</span> <a href="mailto:ww57403@gmail.com" class="text-blue-500 hover:text-blue-600 underline">ww57403@gmail.com</a></p>
+            </div>
+          </div>
+        </div>
+        <div class="divider h-2"></div>
+        <!-- 하단 링크들 -->
+            <div>
+              <div class="flex justify-center gap-4 text-xs">
+                <!-- 후원하기 (비활성화) -->
+                <button
+                  id="sponsorButton"
+                  class="text-gray-400 cursor-not-allowed opacity-50 flex items-center gap-1"
+                  disabled
+                  title="후원 링크 준비 중"
+                >
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                    />
+                  </svg>
+                  <span>후원하기</span>
+                </button>
+
+                <!-- 구분선 -->
+                <span class="text-gray-300">|</span>
+
+                <!-- 버그 등록하기 -->
+                <button
+                  id="bugReportButton"
+                  class="text-gray-600 hover:text-indigo-600 transition-colors duration-200 flex items-center gap-1"
+                  title="버그 리포트 페이지로 이동"
+                >
+                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span>버그 등록하기</span>
+                </button>
+              </div>
+            </div>
       </div>
     </div>
-
-    <!-- 북마크 저장 섹션 -->
-    <div id="bookmark-section">
-      <div class="current-page">
-        <div class="label">현재 페이지</div>
-        <div class="url" id="current-url">...</div>
-      </div>
-
-      <select class="collection-select" id="collection-select">
-        <option value="">컬렉션 선택...</option>
-      </select>
-
-      <textarea 
-        class="description-input" 
-        id="description-input" 
-        placeholder="설명 입력 (선택사항)..."
-      ></textarea>
-
-      <div class="tag-input-container">
-        <div class="tags-display" id="tags-display"></div>
-        <input 
-          type="text" 
-          class="tag-input" 
-          id="tag-input" 
-          placeholder="태그 입력 (엔터로 추가)..."
-        />
-      </div>
-
-      <button class="button success" id="save-btn">북마크 저장</button>
-      <button class="button danger" id="logout-btn">로그아웃</button>
-
-      <div class="divider"></div>
-
-      <div class="info">
-        💡 Tip: 페이지에서 우클릭 → "북마크 저장"으로도<br />
-        저장할 수 있습니다!
+    
+    <div id="addCollectionModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 w-80 max-w-[90%]">
+        <h3 class="text-lg font-semibold mb-4">새 컬렉션 추가</h3>
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 mb-2">컬렉션 이름</label>
+          <input id="collectionNameInput" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="컬렉션 이름을 입력하세요" />
+        </div>
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-700 mb-2">아이콘 (선택사항)</label>
+          <input id="collectionIconInput" type="text" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" placeholder="아이콘을 입력하세요 (예: 📁, 💻, ⭐)" value="📁" />
+        </div>
+        <div class="flex gap-3 justify-end">
+          <button id="cancelCollectionBtn" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors duration-200">취소</button>
+          <button id="confirmCollectionBtn" class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-md transition-colors duration-200">추가</button>
+        </div>
       </div>
     </div>
 
-    <script type="module" src="popup-simple.js"></script>
+    <div id="languageModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+      <div class="bg-white rounded-lg p-6 w-80 max-w-sm mx-4">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">언어 설정</h3>
+        <div class="space-y-3 mb-6">
+          <label class="flex items-center space-x-3 cursor-pointer">
+            <input type="radio" name="language" value="ko" class="text-indigo-600 focus:ring-indigo-500" />
+            <span class="text-sm text-gray-700">🇰🇷 한국어</span>
+          </label>
+          <label class="flex items-center space-x-3 cursor-pointer">
+            <input type="radio" name="language" value="en" class="text-indigo-600 focus:ring-indigo-500" />
+            <span class="text-sm text-gray-700">🇺🇸 English</span>
+          </label>
+          <label class="flex items-center space-x-3 cursor-pointer">
+            <input type="radio" name="language" value="ja" class="text-indigo-600 focus:ring-indigo-500" />
+            <span class="text-sm text-gray-700">🇯🇵 日本語</span>
+          </label>
+        </div>
+        <div class="flex justify-end space-x-3">
+          <button id="languageCancelBtn" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors duration-200">취소</button>
+          <button id="languageSaveBtn" class="px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-md transition-colors duration-200">저장</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 hidden min-w-[200px] max-w-[300px] bg-gray-800 text-white text-sm rounded-lg px-4 py-3 shadow-xl border-l-4 border-green-400"></div>
+    <script type="module" src="./popup-simple.js"></script>
   </body>
 </html>
