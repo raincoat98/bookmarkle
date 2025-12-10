@@ -3,7 +3,19 @@ const themeIcon = document.getElementById("themeIcon");
 function showToast(message, type = "success") {
   const toast = document.getElementById("toast");
   if (!toast) return;
-  toast.textContent = message;
+    // 언어별 메시지 적용
+    const lang = getCurrentLanguage();
+    if (message === "북마크가 저장되었습니다!" || message === "Bookmark saved!" || message === "ブックマークが保存されました！") {
+      toast.textContent = languageTexts[lang].bookmarkSaved;
+    } else if (message === "북마크 저장 오류" || message === "Bookmark save error" || message === "ブックマーク保存エラー") {
+      toast.textContent = languageTexts[lang].bookmarkSaveError;
+    } else if (message === "컬렉션이 추가되었습니다!" || message === "Collection added!" || message === "コレクションが追加されました！") {
+      toast.textContent = languageTexts[lang].addCollection;
+    } else if (message === "컬렉션 이름을 입력하세요." || message === "Please enter a collection name." || message === "コレクション名を入力してください。") {
+      toast.textContent = languageTexts[lang].collectionNameRequired;
+    } else {
+      toast.textContent = message;
+    }
   toast.className = "";
   toast.classList.add("show");
   if (type === "error") {
@@ -35,6 +47,47 @@ const collectionSelect = document.getElementById("collection-select");
 const descriptionInput = document.getElementById("description-input");
 const tagInput = document.getElementById("tag-input");
 const tagsDisplay = document.getElementById("tags-display");
+const themeToggle = document.getElementById("themeToggle");
+const languageSettingsBtn = document.getElementById("languageSettings");
+const languageCancelBtn = document.getElementById("languageCancelBtn");
+const languageSaveBtn = document.getElementById("languageSaveBtn");
+
+// 언어 설정 버튼 클릭 시 언어 모달 열기
+if (languageSettingsBtn) {
+  languageSettingsBtn.addEventListener("click", () => {
+    const languageModal = document.getElementById("languageModal");
+    if (languageModal) languageModal.classList.remove("hidden");
+  });
+}
+
+// 언어 모달 취소 버튼
+if (languageCancelBtn) {
+  languageCancelBtn.addEventListener("click", () => {
+    const languageModal = document.getElementById("languageModal");
+    if (languageModal) languageModal.classList.add("hidden");
+  });
+}
+
+// 언어 모달 저장 버튼
+if (languageSaveBtn) {
+  languageSaveBtn.addEventListener("click", () => {
+    const selected = document.querySelector('input[name="language"]:checked');
+    if (selected) {
+      localStorage.setItem("language", selected.value);
+      applyLanguageUI(selected.value);
+    }
+    const languageModal = document.getElementById("languageModal");
+    if (languageModal) languageModal.classList.add("hidden");
+  });
+}
+// 언어 설정 버튼 클릭 시 언어 모달 열기
+if (languageSettingsBtn) {
+  languageSettingsBtn.addEventListener("click", () => {
+    const languageModal = document.getElementById("languageModal");
+    if (languageModal) languageModal.classList.remove("hidden");
+  });
+}
+
 
 // 컬렉션 추가 관련 요소
 const addCollectionModal = document.getElementById("addCollectionModal");
@@ -281,39 +334,6 @@ loginBtn.addEventListener("click", () => {
   chrome.tabs.create({ url: dashboardUrl });
 });
 
-// 로그아웃 버튼 클릭
-
-// ...existing code...
-// 테마 토글 버튼 요소 정의
-const themeToggle = document.getElementById("themeToggle");
-
-// 테마 토글 함수
-function setTheme(mode) {
-  // data-theme 속성으로 테마 적용
-  document.documentElement.setAttribute("data-theme", mode);
-  if (mode === "dark") {
-    if (themeIcon) themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
-  } else {
-    if (themeIcon) themeIcon.innerHTML = '<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />';
-  }
-  localStorage.setItem("theme", mode);
-}
-
-function toggleTheme() {
-  const current = localStorage.getItem("theme") || "light";
-  setTheme(current === "dark" ? "light" : "dark");
-}
-
-// 테마 버튼 클릭 이벤트
-if (themeToggle) {
-  themeToggle.addEventListener("click", toggleTheme);
-}
-
-// 페이지 로드 시 테마 적용
-(function () {
-  const savedTheme = localStorage.getItem("theme") || "light";
-  setTheme(savedTheme);
-})();
 saveBtn.addEventListener("click", async () => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab || !tab.url) {
@@ -392,3 +412,144 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   // BOOKMARK_SAVED, BOOKMARK_ERROR 리스너 제거 (응답으로 처리)
 });
+// ----------------------
+// 테마 관련 함수 및 이벤트
+// ----------------------
+
+function setTheme(mode) {
+  document.documentElement.setAttribute("data-theme", mode);
+  if (mode === "dark") {
+    if (themeIcon) themeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
+  } else {
+    if (themeIcon) themeIcon.innerHTML = '<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />';
+  }
+  localStorage.setItem("theme", mode);
+}
+
+function toggleTheme() {
+  const current = localStorage.getItem("theme") || "light";
+  setTheme(current === "dark" ? "light" : "dark");
+}
+
+// 테마 버튼 클릭 이벤트 (중복 방지)
+if (themeToggle && !themeToggle._themeHandlerAdded) {
+  themeToggle.addEventListener("click", toggleTheme);
+  themeToggle._themeHandlerAdded = true;
+}
+
+// 페이지 로드 시 테마 적용 (중복 방지)
+if (!window._themeApplied) {
+  const savedTheme = localStorage.getItem("theme") || "light";
+  setTheme(savedTheme);
+  window._themeApplied = true;
+}
+
+let languageTexts = {};
+
+// i18n.json을 비동기로 불러와 languageTexts에 저장
+async function loadLanguageTexts() {
+  try {
+    const res = await fetch('i18n.json');
+    languageTexts = await res.json();
+  } catch (e) {
+    console.error('i18n.json load error:', e);
+    languageTexts = {};
+  }
+}
+
+// 현재 언어 반환 함수 (localStorage 또는 기본값)
+function getCurrentLanguage() {
+  return localStorage.getItem('language') || 'ko';
+}
+
+// 기존 applyLanguageUI 함수는 languageTexts가 비어있으면 아무것도 하지 않음
+function applyLanguageUI(lang) {
+  if (!languageTexts[lang]) return;
+  // 주요 텍스트 변경
+  const privacyPolicyText = document.getElementById("privacyPolicyText");
+  const contactText = document.getElementById("contactText");
+  if (privacyPolicyText) privacyPolicyText.textContent = languageTexts[lang].privacyPolicy;
+  if (contactText) contactText.textContent = languageTexts[lang].contact;
+  // 언어 버튼 국기 변경
+  if (languageSettingsBtn) {
+    if (lang === "ko") languageSettingsBtn.textContent = "🇰🇷";
+    else if (lang === "en") languageSettingsBtn.textContent = "🇺🇸";
+    else if (lang === "ja") languageSettingsBtn.textContent = "🇯🇵";
+  }
+  // '현재 페이지' 라벨
+  const currentPageLabel = document.querySelector('.current-page .label');
+  if (currentPageLabel) currentPageLabel.textContent = languageTexts[lang].currentPageLabel;
+
+  // 하단 '후원하기' 버튼
+  const sponsorButton = document.getElementById('sponsorButton');
+  if (sponsorButton && sponsorButton.querySelector('span')) sponsorButton.querySelector('span').textContent = languageTexts[lang].sponsor;
+
+  // 하단 '버그 등록하기' 버튼
+  const bugReportButton = document.getElementById('bugReportButton');
+  if (bugReportButton && bugReportButton.querySelector('span')) bugReportButton.querySelector('span').textContent = languageTexts[lang].bugReport;
+
+  // 하단 구분선
+  const dividerSpans = document.querySelectorAll('.flex.justify-center.gap-4.text-xs > span');
+  dividerSpans.forEach(span => {
+    if (span.textContent.trim() === '|' || span.textContent.trim() === languageTexts['ko'].divider || span.textContent.trim() === languageTexts['en'].divider || span.textContent.trim() === languageTexts['ja'].divider) {
+      span.textContent = languageTexts[lang].divider;
+    }
+  });
+  // 버튼, 라벨, placeholder 등 전체 변환
+  const loginBtn = document.getElementById("login-btn");
+  if (loginBtn && loginBtn.querySelector("span")) loginBtn.querySelector("span").textContent = languageTexts[lang].login;
+  const saveBtn = document.getElementById("save-btn");
+  if (saveBtn) saveBtn.textContent = languageTexts[lang].bookmarkSaveBtn || "북마크 저장";
+  const collectionSelect = document.getElementById("collection-select");
+  if (collectionSelect && collectionSelect.options.length > 0) {
+    collectionSelect.options[0].textContent = languageTexts[lang].collectionSelect || "컬렉션 선택...";
+    for (let i = 0; i < collectionSelect.options.length; i++) {
+      if (collectionSelect.options[i].value === "__add_collection__") {
+        collectionSelect.options[i].textContent = languageTexts[lang].addCollectionOption || "+ 새 컬렉션 추가";
+      }
+    }
+  }
+  const descriptionInput = document.getElementById("description-input");
+  if (descriptionInput) descriptionInput.placeholder = languageTexts[lang].descriptionPlaceholder || "설명 입력 (선택사항)...";
+  const tagInput = document.getElementById("tag-input");
+  if (tagInput) tagInput.placeholder = languageTexts[lang].tagPlaceholder || "엔터로 태그 추가 (쉼표로 구분)";
+  // 컬렉션 모달
+  const addCollectionModal = document.getElementById("addCollectionModal");
+  if (addCollectionModal) {
+    const title = addCollectionModal.querySelector("h3");
+    if (title) title.textContent = languageTexts[lang].addCollectionTitle || "새 컬렉션 추가";
+    const labels = addCollectionModal.querySelectorAll("label");
+    if (labels.length > 0) labels[0].textContent = languageTexts[lang].collectionNameLabel || "컬렉션 이름";
+    if (labels.length > 1) labels[1].textContent = languageTexts[lang].collectionIconLabel || "아이콘 (선택사항)";
+    const nameInput = document.getElementById("collectionNameInput");
+    if (nameInput) nameInput.placeholder = languageTexts[lang].collectionNamePlaceholder || "컬렉션 이름을 입력하세요";
+    const iconInput = document.getElementById("collectionIconInput");
+    if (iconInput) iconInput.placeholder = languageTexts[lang].collectionIconPlaceholder || "아이콘을 입력하세요 (예: 📁, 💻, ⭐)";
+    const cancelBtn = document.getElementById("cancelCollectionBtn");
+    if (cancelBtn) cancelBtn.textContent = languageTexts[lang].cancelBtn || "취소";
+    const confirmBtn = document.getElementById("confirmCollectionBtn");
+    if (confirmBtn) confirmBtn.textContent = languageTexts[lang].addBtn || "추가";
+  }
+  // 언어 모달
+  const languageModal = document.getElementById("languageModal");
+  if (languageModal) {
+    const title = languageModal.querySelector("h3");
+    if (title) title.textContent = languageTexts[lang].languageTitle || "언어 설정";
+    const cancelBtn = document.getElementById("languageCancelBtn");
+    if (cancelBtn) cancelBtn.textContent = languageTexts[lang].cancelBtn || "취소";
+    const saveBtn = document.getElementById("languageSaveBtn");
+    if (saveBtn) saveBtn.textContent = languageTexts[lang].saveBtn || "저장";
+    const labels = languageModal.querySelectorAll("label span.text-sm");
+    if (labels.length > 0) labels[0].textContent = languageTexts[lang].langKo || "🇰🇷 한국어";
+    if (labels.length > 1) labels[1].textContent = languageTexts[lang].langEn || "🇺🇸 English";
+    if (labels.length > 2) labels[2].textContent = languageTexts[lang].langJa || "🇯🇵 日本語";
+  }
+}
+
+// 언어 설정 버튼 클릭 시 모달 열기 등 기존 이벤트 핸들러는 그대로 유지
+
+// 페이지 로드 시 i18n.json 불러오고 언어 적용
+(async function () {
+  await loadLanguageTexts();
+  applyLanguageUI(getCurrentLanguage());
+})();
