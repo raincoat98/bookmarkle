@@ -19,14 +19,14 @@ async function addCollection({ name, icon }) {
     const fields = {
       name: { stringValue: name },
       icon: { stringValue: icon || "Folder" },
-      description: { stringValue: "" }, // description 입력값 확장 시 payload에서 받도록 변경 가능
+      description: { stringValue: "" },
       isPinned: { booleanValue: false },
       parentId: { nullValue: null },
       userId: { stringValue: userId },
       createdAt: { timestampValue: now },
       updatedAt: { timestampValue: now },
     };
-    const response = await fetch(
+    let response = await fetch(
       `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/collections`,
       {
         method: "POST",
@@ -37,6 +37,20 @@ async function addCollection({ name, icon }) {
         body: JSON.stringify({ fields }),
       }
     );
+    if (response.status === 401) {
+      await ensureFreshIdToken();
+      response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/collections`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentIdToken}`,
+          },
+          body: JSON.stringify({ fields }),
+        }
+      );
+    }
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || "Firestore 컬렉션 추가 실패");
@@ -246,12 +260,9 @@ async function saveBookmark({ url, title, collectionId, description, tags, favic
       createdAt: { timestampValue: new Date().toISOString() },
     };
 
-    // collectionId가 있으면 추가
     if (collectionId) {
       fields.collection = { stringValue: collectionId };
     }
-
-    // tags가 있으면 추가
     if (tags && Array.isArray(tags) && tags.length > 0) {
       fields.tags = {
         arrayValue: {
@@ -259,14 +270,11 @@ async function saveBookmark({ url, title, collectionId, description, tags, favic
         }
       };
     }
-
-    // favicon이 있으면 추가
     if (favicon) {
       fields.favicon = { stringValue: favicon };
     }
 
-    // Firestore REST API 사용
-    const response = await fetch(
+    let response = await fetch(
       `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/bookmarks`,
       {
         method: "POST",
@@ -277,16 +285,26 @@ async function saveBookmark({ url, title, collectionId, description, tags, favic
         body: JSON.stringify({ fields }),
       }
     );
-
+    if (response.status === 401) {
+      await ensureFreshIdToken();
+      response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/bookmarks`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentIdToken}`,
+          },
+          body: JSON.stringify({ fields }),
+        }
+      );
+    }
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || "Firestore 저장 실패");
     }
-
     const result = await response.json();
     console.log("✅ Bookmark saved:", { url, title, id: result.name });
-    
-    // 성공 시 아무것도 브로드캐스트하지 않음 (응답으로만 처리)
     return result;
   } catch (e) {
     console.error("❌ Firestore error:", e);
@@ -317,8 +335,7 @@ async function listBookmarks() {
     const userId = currentUser.uid;
     console.log("📚 Loading bookmarks via REST API for:", userId);
 
-    // Firestore REST API로 쿼리
-    const response = await fetch(
+    let response = await fetch(
       `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
       {
         method: "POST",
@@ -340,12 +357,35 @@ async function listBookmarks() {
         }),
       }
     );
-
+    if (response.status === 401) {
+      await ensureFreshIdToken();
+      response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentIdToken}`,
+          },
+          body: JSON.stringify({
+            structuredQuery: {
+              from: [{ collectionId: "bookmarks" }],
+              where: {
+                fieldFilter: {
+                  field: { fieldPath: "userId" },
+                  op: "EQUAL",
+                  value: { stringValue: userId },
+                },
+              },
+            },
+          }),
+        }
+      );
+    }
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || "Firestore 조회 실패");
     }
-
     const data = await response.json();
     const bookmarks = data
       .filter((item) => item.document)
@@ -360,12 +400,10 @@ async function listBookmarks() {
           createdAt: fields.createdAt?.timestampValue || null,
         };
       });
-
     chrome.runtime.sendMessage({
       type: "BOOKMARKS_SYNC",
       bookmarks,
     });
-
     console.log("✅ Bookmarks loaded:", bookmarks.length);
   } catch (e) {
     console.error("❌ Firestore list error:", e);
@@ -395,8 +433,7 @@ async function getCollections() {
     const userId = currentUser.uid;
     console.log("📁 Loading collections via REST API for:", userId);
 
-    // Firestore REST API로 쿼리
-    const response = await fetch(
+    let response = await fetch(
       `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
       {
         method: "POST",
@@ -418,12 +455,35 @@ async function getCollections() {
         }),
       }
     );
-
+    if (response.status === 401) {
+      await ensureFreshIdToken();
+      response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${currentIdToken}`,
+          },
+          body: JSON.stringify({
+            structuredQuery: {
+              from: [{ collectionId: "collections" }],
+              where: {
+                fieldFilter: {
+                  field: { fieldPath: "userId" },
+                  op: "EQUAL",
+                  value: { stringValue: userId },
+                },
+              },
+            },
+          }),
+        }
+      );
+    }
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(errorData.error?.message || "Firestore 컬렉션 조회 실패");
     }
-
     const data = await response.json();
     const collections = data
       .filter((item) => item.document)
@@ -438,7 +498,6 @@ async function getCollections() {
           userId: fields.userId?.stringValue || "",
         };
       });
-
     console.log("✅ Collections loaded:", collections.length);
     return collections;
   } catch (e) {
