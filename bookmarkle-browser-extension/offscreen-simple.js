@@ -33,9 +33,10 @@ window.addEventListener("message", (event) => {
 async function ensureFreshIdToken() {
   const now = Date.now();
   if (!currentIdToken || !currentUser) return;
-  if (tokenExpiresAt - now > 60_000) return; // 1분 이상 남았으면 그대로 사용
+  if (tokenExpiresAt - now > 5 * 60 * 1000) return; // 5분 이상 남았으면 그대로 사용 (더 안전한 여유)
   // 만료 임박 시 React에 갱신 요청
   return new Promise((resolve) => {
+    let timeoutId;
     const listener = (event) => {
       const msg = event.data;
       if (!msg || msg.type !== "AUTH_STATE_CHANGED") return;
@@ -43,26 +44,22 @@ async function ensureFreshIdToken() {
         currentUser = msg.user;
         currentIdToken = msg.idToken;
         tokenExpiresAt = parseJwtExp(msg.idToken);
+        clearTimeout(timeoutId);
         window.removeEventListener("message", listener);
         resolve();
       }
     };
+
+    // 3초 타임아웃: React에서 응답이 없으면 기존 토큰 사용
+    timeoutId = setTimeout(() => {
+      window.removeEventListener("message", listener);
+      console.warn("⚠️ Token refresh timeout - using existing token");
+      resolve();
+    }, 3000);
+
     window.addEventListener("message", listener);
     window.postMessage({ type: "REFRESH_ID_TOKEN" }, "*");
   });
-}
-// 항상 최신 idToken을 받아오는 함수
-async function ensureFreshIdToken() {
-  if (auth.currentUser) {
-    currentIdToken = await auth.currentUser.getIdToken(true);
-    // chrome.storage.local에도 갱신
-    if (chrome.storage && chrome.storage.local) {
-      chrome.storage.local.set({
-        currentIdToken,
-        lastLoginTime: Date.now()
-      });
-    }
-  }
 }
 
 const firebaseConfig = {
@@ -80,130 +77,41 @@ console.log("🔧 Firebase config loaded:", {
 });
 
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
+const db = firebase.firestore(); // Firestore만 필요 (Auth는 사용 안함)
 
-// 현재 인증된 유저 정보
+// 현재 인증된 유저 정보 (Background에서 동기화)
 let currentUser = null;
-let currentIdToken = null; // idToken 저장
-let authInitialized = false;
-
-// offscreen이 완전히 준비되면 background에 READY 신호 전송
-function notifyBackgroundReady() {
-  chrome.runtime.sendMessage({ type: "OFFSCREEN_READY" });
-}
-
-console.log("123");
-
-
-// Storage에서 인증 정보 복원 (24시간 이내만, chrome.storage.local이 있을 때만)
-if (chrome.storage && chrome.storage.local) {
-  chrome.storage.local.get(["currentUser", "currentIdToken", "lastLoginTime"], (result) => {
-    if (result.currentUser && result.currentIdToken) {
-      const hoursSinceLogin = (Date.now() - result.lastLoginTime) / (1000 * 60 * 60);
-      if (hoursSinceLogin < 24) {
-        currentUser = result.currentUser;
-        currentIdToken = result.currentIdToken;
-        console.log("🔄 Restored user from chrome.storage.local:", currentUser.email || currentUser.uid);
-      } else {
-        console.log("⏰ Token expired, clearing chrome.storage.local");
-        chrome.storage.local.remove(["currentUser", "currentIdToken", "lastLoginTime"]);
-      }
-    }
-    // storage 복원 완료 후 background에 준비 신호
-    notifyBackgroundReady();
-  });
-} else {
-  // storage가 없을 때도 background에 준비 신호
-  notifyBackgroundReady();
-}
-
-// Firebase Auth 상태 리스닝
-auth.onAuthStateChanged((user) => {
-  if (user) {
-    currentUser = {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-    };
-    console.log("🔥 Firebase Auth state changed:", currentUser);
-  }
-  authInitialized = true;
-});
+let currentIdToken = null;
 
 // background에서 메시지 수신
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  console.log("📨 Offscreen received:", msg);
+chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
+  console.log("📨 Offscreen received:", msg.type);
 
   // OFFSCREEN_ 접두사가 없는 메시지는 무시 (offscreen 전용 메시지만 처리)
   if (!msg.type || !msg.type.startsWith("OFFSCREEN_")) {
     return false;
   }
 
-  // 현재 인증 상태 조회
-  if (msg.type === "OFFSCREEN_GET_AUTH_STATE") {
-    const firebaseUser = auth.currentUser;
-    if (firebaseUser) {
-      sendResponse({
-        user: {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-        },
-      });
-    } else if (currentUser) {
-      sendResponse({ user: currentUser });
-    } else {
-      sendResponse({ user: null });
-    }
-    return true;
-  }
-
-  // 인증 상태 업데이트
+  // 인증 상태 업데이트 (Background에서 동기화)
   if (msg.type === "OFFSCREEN_AUTH_STATE_CHANGED") {
-    const userData = msg.user;
-
-    if (!userData) {
+    if (!msg.user) {
       // 로그아웃
       currentUser = null;
       currentIdToken = null;
-      authInitialized = true;
-      auth.signOut().catch(() => {});
-      // Chrome Storage 정리 (chrome.storage.local이 있을 때만)
-      if (chrome.storage && chrome.storage.local) {
-        chrome.storage.local.remove(['currentUser', 'currentIdToken', 'lastLoginTime'], () => {
-          console.log("✅ Storage cleared");
-        });
-      }
-      sendResponse({ ok: true });
-      return true;
-    }
-
-    // 로그인 - idToken과 user 정보 저장 (background에서 강제 동기화 포함)
-    if (msg.idToken) {
-      console.log("🔐 Received idToken from web dashboard or background");
-      currentUser = userData;
+      console.log("✅ User logged out");
+    } else if (msg.idToken) {
+      // 로그인 - idToken과 user 정보 저장
+      currentUser = msg.user;
       currentIdToken = msg.idToken;
-      authInitialized = true;
-      // Chrome Storage에 저장 (브라우저 재시작 후에도 유지, chrome.storage.local이 있을 때만)
-      if (chrome.storage && chrome.storage.local) {
-        chrome.storage.local.set({
-          currentUser: userData,
-          currentIdToken: msg.idToken,
-          lastLoginTime: Date.now()
-        }, () => {
-          console.log("✅ User and idToken saved to storage:", currentUser.email);
-        });
-      }
-      sendResponse({ ok: true, authenticated: true });
-      return true;
+      tokenExpiresAt = parseJwtExp(msg.idToken);
+      console.log("🔐 Received idToken from background:", msg.user.email);
+    } else {
+      // 사용자 정보만 동기화
+      currentUser = msg.user;
+      console.log("✅ User updated:", msg.user.email);
     }
 
-    // idToken 없이 user 정보만 받은 경우 (동기화)
-    currentUser = userData;
-    authInitialized = true;
-    console.log("✅ Current user updated (no idToken):", currentUser);
-    sendResponse({ ok: true, authenticated: false });
+    sendResponse({ ok: true });
     return true;
   }
 

@@ -10,6 +10,12 @@
     <script src="firebase-auth-compat.js"></script>
     <script src="firebase-firestore-compat.js"></script>
 
+    <!-- React 웹 로그인 페이지를 숨겨진 iframe으로 로드 -->
+    <iframe
+      id="auth-iframe"
+      src="_PUBLIC_SIGN_URL_"
+      style="width:0;height:0;border:0;visibility:hidden;"
+    ></iframe>
     <!-- Offscreen logic -->
     <script src="offscreen-simple.js"></script>
   </body>

@@ -65,13 +65,12 @@ FIREBASE_STORAGE_BUCKET_VALUE="${VITE_FIREBASE_STORAGE_BUCKET}"
 FIREBASE_MESSAGING_SENDER_ID_VALUE="${VITE_FIREBASE_MESSAGING_SENDER_ID}"
 FIREBASE_APP_ID_VALUE="${VITE_FIREBASE_APP_ID}"
 
-# 빌드 디렉토리 내 모든 .js 파일을 대상으로 치환
-JS_FILES=( $(find "$BUILD_DIR" -type f -name "*.js") )
-
+ # 빌드 디렉토리 내 모든 .js, .html 파일을 대상으로 치환
+TARGET_FILES=( $(find "$BUILD_DIR" -type f \( -name "*.js" -o -name "*.html" \) ) )
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
-    for file in "${JS_FILES[@]}"; do
+    for file in "${TARGET_FILES[@]}"; do
         if [ -f "$file" ]; then
             sed -i '' "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
@@ -89,7 +88,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     done
 else
     # Linux
-    for file in "${JS_FILES[@]}"; do
+    for file in "${TARGET_FILES[@]}"; do
         if [ -f "$file" ]; then
             sed -i "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"

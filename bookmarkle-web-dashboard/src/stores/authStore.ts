@@ -9,6 +9,22 @@ import {
   signupWithEmail,
   logout as fbLogout,
 } from "../firebase";
+import { getExtensionId } from "../utils/extensionId";
+
+declare global {
+  interface WindowWithChrome extends Window {
+    chrome?: {
+      runtime: {
+        sendMessage: (
+          extensionId: string,
+          message: unknown,
+          callback?: (response?: unknown) => void
+        ) => void;
+        lastError?: { message: string };
+      };
+    };
+  }
+}
 
 interface AuthState {
   user: User | null;
@@ -102,6 +118,28 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   logout: async () => {
     try {
       await fbLogout();
+
+      // 확장에 로그아웃 알림
+      const chromeRuntime = (window as WindowWithChrome).chrome?.runtime;
+      const extensionId = getExtensionId();
+
+      if (extensionId && chromeRuntime) {
+        try {
+          chromeRuntime.sendMessage(extensionId, {
+            type: "AUTH_STATE_CHANGED",
+            user: null,
+          });
+        } catch {
+          // 확장이 없을 수 있으므로 에러 무시
+        }
+      }
+
+      // Offscreen에도 전송
+      window.postMessage({
+        type: "AUTH_STATE_CHANGED",
+        user: null,
+        idToken: null,
+      }, "*");
     } catch (error) {
       console.error("로그아웃 실패:", error);
       throw error;

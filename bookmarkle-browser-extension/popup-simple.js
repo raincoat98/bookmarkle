@@ -85,16 +85,19 @@ async function loadCollections() {
     console.log("⏳ Collections already loading, skip");
     return;
   }
-  
+
   isLoadingCollections = true;
-  
+
   try {
     const response = await chrome.runtime.sendMessage({ type: "GET_COLLECTIONS" });
-    
+
     if (response?.ok && response.collections) {
       collections = response.collections;
       updateCollectionSelect();
       console.log("✅ Collections loaded:", collections.length);
+    } else if (!response?.ok && response?.error?.includes("로그인이 필요")) {
+      // 로그인이 필요한 경우 로그인 UI로 전환
+      updateUI(null);
     }
   } catch (error) {
     console.error("Failed to load collections:", error);
@@ -182,7 +185,7 @@ if (tagsDisplay) {
     currentUrlDiv.setAttribute('title', tab.url);
   }
 
-  // 인증 상태 요청 - offscreen으로 직접 요청
+  // 인증 상태 요청
   try {
     const response = await chrome.runtime.sendMessage({ type: "GET_AUTH_STATE" });
     if (response?.user) {
@@ -248,7 +251,14 @@ saveBtn.addEventListener("click", async () => {
     }
 
     if (!response || !response.ok) {
-      showToast(response?.error || "북마크 저장 실패", "error");
+      const errorMessage = response?.error || "북마크 저장 실패";
+      showToast(errorMessage, "error");
+
+      // 로그인이 필요한 경우 로그인 UI로 전환
+      if (errorMessage.includes("로그인이 필요")) {
+        updateUI(null);
+      }
+
       saveBtn.disabled = false;
       saveBtn.innerHTML = originalText;
       return;

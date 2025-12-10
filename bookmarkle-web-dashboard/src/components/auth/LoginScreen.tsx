@@ -8,15 +8,16 @@ import {
   detectBrowser,
   getBrowserCompatibilityMessage,
 } from "../../utils/browserDetection";
+import { getExtensionId } from "../../utils/extensionId";
 
 declare global {
-  interface Window {
+  interface WindowWithChrome extends Window {
     chrome?: {
       runtime: {
         sendMessage: (
           extensionId: string,
           message: unknown,
-          callback: (response?: unknown) => void
+          callback?: (response?: unknown) => void
         ) => void;
         lastError?: { message: string };
       };
@@ -46,54 +47,16 @@ export const LoginScreen = () => {
 
   // Show success message if logged in via extension
   const [extensionLoginSuccess, setExtensionLoginSuccess] = useState(false);
-  const [messageSent, setMessageSent] = useState(false); // 중복 전송 방지
 
-  // 확장(offscreen)에서 토큰 갱신 요청(REFRESH_ID_TOKEN) 받으면 최신 토큰 재전송
+  // 토큰 갱신 및 확장 메시지 처리
   useEffect(() => {
     const handleExtensionMessage = async (event: MessageEvent) => {
-      if (event.data?.type !== "REFRESH_ID_TOKEN") return;
-      if (!user) return;
-      const idToken = await user.getIdToken(true);
-      window.postMessage({
-        type: "AUTH_STATE_CHANGED",
-        user: {
-          uid: user.uid,
-          email: user.email || "",
-          displayName: user.displayName || "",
-          photoURL: user.photoURL || "",
-        },
-        idToken,
-      }, "*");
-    };
-    window.addEventListener("message", handleExtensionMessage);
+      const { type } = event.data || {};
 
-    // 최초 로그인 시 확장에 인증 정보 전송
-    if (extensionContext.isExtension && user && !messageSent) {
-      (async () => {
-        const idToken = await user.getIdToken();
-        // chrome.runtime.sendMessage 방식 유지
-        const chromeRuntime = (window as any).chrome?.runtime;
-        if (extensionContext.extensionId && chromeRuntime) {
-          setMessageSent(true);
-          chromeRuntime.sendMessage(
-            extensionContext.extensionId,
-            {
-              type: "AUTH_STATE_CHANGED",
-              user: {
-                uid: user.uid,
-                email: user.email || "",
-                displayName: user.displayName || "",
-                photoURL: user.photoURL || "",
-              },
-              idToken,
-            },
-            () => {
-              setExtensionLoginSuccess(true);
-              toast.success("✅ 익스텐션에 로그인 정보 전송 완료!");
-            }
-          );
-        }
-        // window.postMessage로도 offscreen에 직접 전달 (iframe 구조 대응)
+      // 토큰 갱신 요청
+      if (type === "REFRESH_ID_TOKEN") {
+        if (!user) return;
+        const idToken = await user.getIdToken(true);
         window.postMessage({
           type: "AUTH_STATE_CHANGED",
           user: {
@@ -104,12 +67,69 @@ export const LoginScreen = () => {
           },
           idToken,
         }, "*");
-      })();
+      }
+    };
+
+    window.addEventListener("message", handleExtensionMessage);
+
+    // 최초 로그인 시 확장에 인증 정보 전송 (localStorage로 중복 전송 방지)
+    if (extensionContext.isExtension && user) {
+      const syncKey = `auth_synced_${user.uid}`;
+      const alreadySynced = sessionStorage.getItem(syncKey);
+
+      if (!alreadySynced) {
+        (async () => {
+          try {
+            const idToken = await user.getIdToken();
+            const userData = {
+              uid: user.uid,
+              email: user.email || "",
+              displayName: user.displayName || "",
+              photoURL: user.photoURL || "",
+            };
+
+            sessionStorage.setItem(syncKey, "true");
+
+            // Extension ID 추출 (중앙화된 유틸 함수 사용)
+            const extensionId = getExtensionId();
+
+            // 1. Background에 전송 (chrome.runtime.sendMessage - 신뢰성 높음)
+            const win = window as WindowWithChrome;
+            const chromeRuntime = win.chrome && win.chrome.runtime ? win.chrome.runtime : undefined;
+            if (extensionId && chromeRuntime) {
+              chromeRuntime.sendMessage(
+                extensionId,
+                {
+                  type: "AUTH_STATE_CHANGED",
+                  user: userData,
+                  idToken,
+                },
+                () => {
+                  if (!chromeRuntime.lastError) {
+                    setExtensionLoginSuccess(true);
+                    toast.success("✅ 익스텐션에 로그인 정보 전송 완료!");
+                  }
+                }
+              );
+            }
+
+            // 2. Offscreen에도 전송 (window.postMessage - 토큰 갱신 신호용)
+            window.postMessage({
+              type: "AUTH_STATE_CHANGED",
+              user: userData,
+              idToken,
+            }, "*");
+          } catch (error) {
+            console.error("Failed to send auth to extension:", error);
+            toast.error("익스텐션에 로그인 정보 전송 실패");
+          }
+        })();
+      }
     }
     return () => {
       window.removeEventListener("message", handleExtensionMessage);
     };
-  }, [user, extensionContext.isExtension, extensionContext.extensionId, messageSent]);
+  }, [user, extensionContext.isExtension, extensionContext.extensionId]);
 
   // 폼 데이터
   const [formData, setFormData] = useState({
