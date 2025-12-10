@@ -199,7 +199,7 @@ if (tagsDisplay) {
 // 로그인 버튼 클릭 -> 웹 대시보드 열기
 loginBtn.addEventListener("click", () => {
   // 웹 대시보드 URL에 extension 파라미터 추가
-  const dashboardUrl = `${PUBLIC_SIGN_URL}&&extensionId=${chrome.runtime.id}`;
+  const dashboardUrl = `${PUBLIC_SIGN_URL}&extensionId=${chrome.runtime.id}`;
 
   // 새 탭으로 열기
   chrome.tabs.create({ url: dashboardUrl });
