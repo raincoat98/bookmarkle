@@ -11,7 +11,6 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { BookmarksPage } from "./pages/BookmarksPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AdminPage } from "./pages/AdminPage";
-import { ExtensionLoginPage } from "./pages/ExtensionLoginPage";
 import { NotificationCenterPage } from "./pages/NotificationCenterPage";
 import { PricingPage } from "./pages/PricingPage";
 import { SubscriptionPage } from "./pages/SubscriptionPage";
@@ -72,6 +71,9 @@ function AppRoutes() {
   const location = useLocation();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
 
+  // Check if accessed from extension
+  const isExtensionContext = new URLSearchParams(location.search).get("extension") === "true";
+
   useEffect(() => {
     if (!user?.uid) return;
     getUserDefaultPage(user.uid)
@@ -80,7 +82,8 @@ function AppRoutes() {
   }, [user?.uid]);
 
   // 로그인한 사용자가 홈으로 접근할 때 기본 페이지로 리다이렉트
-  if (user && location.pathname === "/") {
+  // 단, extension context일 때는 리다이렉트하지 않음 (LoginScreen에서 처리)
+  if (user && location.pathname === "/" && !isExtensionContext) {
     return (
       <Navigate
         to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
@@ -94,15 +97,16 @@ function AppRoutes() {
     return <LoginScreen />;
   }
 
+  // Extension context에서 로그인한 경우 LoginScreen 유지
+  if (user && location.pathname === "/" && isExtensionContext) {
+    return <LoginScreen />;
+  }
+
   return (
     <LayoutWrapper>
       <Routes>
         {/* 공개 라우트 - 모든 사용자 접근 가능 */}
         <Route path="/about" element={<LandingPage />} />
-        <Route
-          path="/extension-login-success"
-          element={<ExtensionLoginPage />}
-        />
 
         {/* 로그인 필요 라우트 */}
         {!user ? (
@@ -173,15 +177,21 @@ function App() {
   const { subscribeToSubscription } = useSubscriptionStore();
   const backupIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const trashCleanupIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const authInitialized = useRef(false); // Auth 초기화 중복 방지
 
   useEffect(() => {
+    if (authInitialized.current) return; // 이미 초기화되었으면 스킵
+    
+    authInitialized.current = true;
     const unsubscribeAuth = initializeAuth();
     const unsubscribeTheme = initializeTheme();
+    
     return () => {
       unsubscribeAuth();
       unsubscribeTheme();
+      authInitialized.current = false; // cleanup 시 리셋
     };
-  }, [initializeAuth]);
+  }, [initializeAuth]); // ESLint 경고 해결
 
   useEffect(() => {
     if (!user?.uid) return;

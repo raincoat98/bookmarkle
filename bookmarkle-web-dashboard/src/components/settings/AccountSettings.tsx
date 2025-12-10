@@ -33,32 +33,24 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
     try {
       setIsLoggingOut(true);
       
-      // Extension에 로그아웃 메시지 브로드캐스트
+      // Extension에 로그아웃 메시지 전송
       try {
-        // window.opener가 있으면 전송
-        if (window.opener && !window.opener.closed) {
-          window.opener.postMessage(
-            {
-              type: "LOGOUT_SUCCESS",
-            },
-            window.location.origin
-          );
-          console.log("✅ LOGOUT_SUCCESS 메시지를 window.opener로 전송");
-        }
-        
-        // Chrome Extension에도 직접 전송 시도
         const extensionId = import.meta.env.VITE_EXTENSION_ID;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const chromeAPI = (window as any).chrome;
         if (typeof chromeAPI !== "undefined" && chromeAPI.runtime && extensionId) {
+          console.log("📤 Sending logout to extension:", extensionId);
           chromeAPI.runtime.sendMessage(extensionId, {
-            type: "LOGOUT_SUCCESS",
+            type: "AUTH_STATE_CHANGED",
+            user: null,
+          }).then(() => {
+            console.log("✅ Logout message sent to extension");
           }).catch((error: Error) => {
-            console.log("Extension 메시지 전송 실패:", error.message);
+            console.log("Extension 로그아웃 메시지 전송 실패:", error.message);
           });
         }
       } catch (error) {
-        console.error("Extension 메시지 전송 실패:", error);
+        console.error("Extension 로그아웃 메시지 전송 실패:", error);
       }
       
       await onLogout();

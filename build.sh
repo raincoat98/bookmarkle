@@ -173,6 +173,20 @@ build_my_extension() {
     log_info "Extension 파일들을 빌드 디렉토리로 복사 중..."
     rsync -av --exclude='*.DS_Store' --exclude='*.git*' --exclude='node_modules' --exclude='*.log' --exclude='.env' --exclude='.env.*' --exclude='*.env' . "$BUILD_DIR/"
     
+    # 환경 변수 치환 스크립트 실행
+    if [ -f "../bookmarkle-browser-extension/inject-config.sh" ]; then
+        log_info "환경 변수 치환(inject-config.sh) 실행 중..."
+        if ../bookmarkle-browser-extension/inject-config.sh "$BUILD_DIR"; then
+            log_success "환경 변수 치환 완료"
+        else
+            log_error "환경 변수 치환 실패"
+            cd "$ROOT_DIR"
+            return 1
+        fi
+    else
+        log_warning "inject-config.sh 스크립트를 찾을 수 없습니다."
+    fi
+
     # .env 파일이 복사되었는지 확인하고 삭제
     if [ -f "$BUILD_DIR/.env" ] || [ -f "$BUILD_DIR/.env.local" ] || [ -f "$BUILD_DIR/.env.production" ]; then
         log_warning ".env 파일이 발견되었습니다. 삭제 중..."
@@ -180,20 +194,7 @@ build_my_extension() {
         log_success ".env 파일 제거 완료"
     fi
     
-    # 환경 변수로 빌드 디렉토리의 config.js 주입 (소스는 그대로 유지)
-    if [ -f "inject-config.sh" ] && [ -f "$BUILD_DIR/config.js" ]; then
-        log_info "빌드 디렉토리의 config.js에 환경 변수 주입 중..."
-        if ./inject-config.sh "$BUILD_DIR"; then
-            log_success "빌드 디렉토리의 config.js 환경 변수 주입 완료"
-        else
-            log_error "config.js 환경 변수 주입 실패"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    else
-        log_warning "inject-config.sh 스크립트 또는 config.js를 찾을 수 없습니다."
-    fi
-    
+
     # _locales 폴더가 제대로 복사되었는지 확인
     if [ -d "$BUILD_DIR/_locales" ]; then
         log_success "_locales 폴더 복사 확인 완료"

@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 # 빌드 디렉토리의 config.js에 환경 변수 주입 스크립트
@@ -32,14 +33,8 @@ log_error() {
 # 빌드 디렉토리 경로 (첫 번째 인자 또는 현재 디렉토리)
 BUILD_DIR="${1:-.}"
 
-# config.js 파일 경로
-CONFIG_FILE="$BUILD_DIR/config.js"
 
-# config.js 파일 확인
-if [ ! -f "$CONFIG_FILE" ]; then
-    log_error "config.js 파일을 찾을 수 없습니다: $CONFIG_FILE"
-    exit 1
-fi
+
 
 log_info "환경 변수로 JavaScript 파일들에 설정 주입 중... (빌드 디렉토리: $BUILD_DIR)"
 
@@ -58,41 +53,56 @@ else
     log_warning ".env 파일을 찾을 수 없습니다: $ENV_FILE"
 fi
 
+
 PUBLIC_SIGN_URL_VALUE="${PUBLIC_SIGN_URL}"
 PUBLIC_START_PAGE_URL_VALUE="${PUBLIC_START_PAGE_URL}"
 
-# 치환할 파일 목록
-JS_FILES=(
-    "$CONFIG_FILE"
-    "$BUILD_DIR/background.js"
-    "$BUILD_DIR/newtab.js"
-    "$BUILD_DIR/options.js"
-    "$BUILD_DIR/offscreen.js"
-    "$BUILD_DIR/popup.js"
-)
+# Firebase 환경변수 값
+FIREBASE_API_KEY_VALUE="${VITE_FIREBASE_API_KEY}"
+FIREBASE_AUTH_DOMAIN_VALUE="${VITE_FIREBASE_AUTH_DOMAIN}"
+FIREBASE_PROJECT_ID_VALUE="${VITE_FIREBASE_PROJECT_ID}"
+FIREBASE_STORAGE_BUCKET_VALUE="${VITE_FIREBASE_STORAGE_BUCKET}"
+FIREBASE_MESSAGING_SENDER_ID_VALUE="${VITE_FIREBASE_MESSAGING_SENDER_ID}"
+FIREBASE_APP_ID_VALUE="${VITE_FIREBASE_APP_ID}"
+
+# 빌드 디렉토리 내 모든 .js 파일을 대상으로 치환
+JS_FILES=( $(find "$BUILD_DIR" -type f -name "*.js") )
+
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
     for file in "${JS_FILES[@]}"; do
         if [ -f "$file" ]; then
-            # "_PUBLIC_SIGN_URL_" 형식: 따옴표 없이 값만 치환 (문자열 리터럴)
             sed -i '' "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
-            # "__ENV_...__" 형식: 따옴표 없이 값만 치환
             sed -i '' "s|__ENV_PUBLIC_SIGN_URL__|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|__ENV_PUBLIC_START_PAGE_URL__|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
+
+            # Firebase 환경변수 치환
+            sed -i '' "s|_FIREBASE_API_KEY_|${FIREBASE_API_KEY_VALUE}|g" "$file"
+            sed -i '' "s|_FIREBASE_AUTH_DOMAIN_|${FIREBASE_AUTH_DOMAIN_VALUE}|g" "$file"
+            sed -i '' "s|_FIREBASE_PROJECT_ID_|${FIREBASE_PROJECT_ID_VALUE}|g" "$file"
+            sed -i '' "s|_FIREBASE_STORAGE_BUCKET_|${FIREBASE_STORAGE_BUCKET_VALUE}|g" "$file"
+            sed -i '' "s|_FIREBASE_MESSAGING_SENDER_ID_|${FIREBASE_MESSAGING_SENDER_ID_VALUE}|g" "$file"
+            sed -i '' "s|_FIREBASE_APP_ID_|${FIREBASE_APP_ID_VALUE}|g" "$file"
         fi
     done
 else
     # Linux
     for file in "${JS_FILES[@]}"; do
         if [ -f "$file" ]; then
-            # "_PUBLIC_SIGN_URL_" 형식: 따옴표 없이 값만 치환 (문자열 리터럴)
             sed -i "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
-            # "__ENV_...__" 형식: 따옴표 없이 값만 치환
             sed -i "s|__ENV_PUBLIC_SIGN_URL__|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|__ENV_PUBLIC_START_PAGE_URL__|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
+
+            # Firebase 환경변수 치환
+            sed -i "s|_FIREBASE_API_KEY_|${FIREBASE_API_KEY_VALUE}|g" "$file"
+            sed -i "s|_FIREBASE_AUTH_DOMAIN_|${FIREBASE_AUTH_DOMAIN_VALUE}|g" "$file"
+            sed -i "s|_FIREBASE_PROJECT_ID_|${FIREBASE_PROJECT_ID_VALUE}|g" "$file"
+            sed -i "s|_FIREBASE_STORAGE_BUCKET_|${FIREBASE_STORAGE_BUCKET_VALUE}|g" "$file"
+            sed -i "s|_FIREBASE_MESSAGING_SENDER_ID_|${FIREBASE_MESSAGING_SENDER_ID_VALUE}|g" "$file"
+            sed -i "s|_FIREBASE_APP_ID_|${FIREBASE_APP_ID_VALUE}|g" "$file"
         fi
     done
 fi
@@ -100,4 +110,10 @@ fi
 log_success "모든 JavaScript 파일에 환경 변수 주입 완료"
 log_info "PUBLIC_SIGN_URL: $PUBLIC_SIGN_URL_VALUE"
 log_info "PUBLIC_START_PAGE_URL: $PUBLIC_START_PAGE_URL_VALUE"
+log_info "FIREBASE_API_KEY: $FIREBASE_API_KEY_VALUE"
+log_info "FIREBASE_AUTH_DOMAIN: $FIREBASE_AUTH_DOMAIN_VALUE"
+log_info "FIREBASE_PROJECT_ID: $FIREBASE_PROJECT_ID_VALUE"
+log_info "FIREBASE_STORAGE_BUCKET: $FIREBASE_STORAGE_BUCKET_VALUE"
+log_info "FIREBASE_MESSAGING_SENDER_ID: $FIREBASE_MESSAGING_SENDER_ID_VALUE"
+log_info "FIREBASE_APP_ID: $FIREBASE_APP_ID_VALUE"
 

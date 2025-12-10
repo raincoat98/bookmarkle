@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>북마클 - 북마크 저장</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        width: 320px;
+        min-height: 400px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        padding: 16px;
+        background: #f9fafb;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .header h1 {
+        font-size: 20px;
+        color: #1f2937;
+        margin-bottom: 4px;
+      }
+
+      .status {
+        font-size: 12px;
+        color: #6b7280;
+        padding: 6px 12px;
+        background: #fff;
+        border-radius: 6px;
+        margin-top: 8px;
+      }
+
+      .status.logged-in {
+        color: #059669;
+        background: #d1fae5;
+      }
+
+      .button {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 8px;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+
+      .button:active {
+        transform: translateY(0);
+      }
+
+      .button.primary {
+        background: #3b82f6;
+        color: white;
+      }
+
+      .button.primary:hover {
+        background: #2563eb;
+      }
+
+      .button.danger {
+        background: #ef4444;
+        color: white;
+      }
+
+      .button.danger:hover {
+        background: #dc2626;
+      }
+
+      .button.success {
+        background: #10b981;
+        color: white;
+      }
+
+      .button.success:hover {
+        background: #059669;
+      }
+
+      .button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .current-page {
+        background: white;
+        padding: 12px;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        font-size: 13px;
+      }
+
+      .current-page .label {
+        color: #6b7280;
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+
+      .current-page .url {
+        color: #1f2937;
+        word-break: break-all;
+      }
+
+      .divider {
+        height: 1px;
+        background: #e5e7eb;
+        margin: 16px 0;
+      }
+
+      .info {
+        font-size: 11px;
+        color: #9ca3af;
+        text-align: center;
+        margin-top: 12px;
+      }
+
+      #login-section,
+      #bookmark-section {
+        display: none;
+      }
+
+      .collection-select {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        cursor: pointer;
+      }
+
+      .collection-select:focus {
+        outline: none;
+        border-color: #3b82f6;
+      }
+
+      .tag-input-container {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        background: white;
+        min-height: 40px;
+      }
+
+      .tag-input-container:focus-within {
+        border-color: #3b82f6;
+      }
+
+      .tag-input {
+        border: none;
+        outline: none;
+        font-size: 14px;
+        width: 100%;
+        padding: 2px;
+      }
+
+      .tags-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 6px;
+      }
+
+      .tag-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background: #e0e7ff;
+        color: #3730a3;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+
+      .tag-remove {
+        cursor: pointer;
+        color: #6366f1;
+        font-weight: bold;
+      }
+
+      .tag-remove:hover {
+        color: #4338ca;
+      }
+
+      .description-input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+      }
+
+      .description-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>📑 북마클</h1>
+      <div class="status" id="status">로그인 상태 확인 중...</div>
+    </div>
+
+    <!-- 로그인 섹션 -->
+    <div id="login-section">
+      <button class="button primary" id="login-btn">Google 로그인</button>
+      <div class="info">
+        • 북마크는 Firebase에 안전하게 저장됩니다<br />
+        • 여러 기기에서 동기화됩니다
+      </div>
+    </div>
+
+    <!-- 북마크 저장 섹션 -->
+    <div id="bookmark-section">
+      <div class="current-page">
+        <div class="label">현재 페이지</div>
+        <div class="url" id="current-url">...</div>
+      </div>
+
+      <select class="collection-select" id="collection-select">
+        <option value="">컬렉션 선택...</option>
+      </select>
+
+      <textarea 
+        class="description-input" 
+        id="description-input" 
+        placeholder="설명 입력 (선택사항)..."
+      ></textarea>
+
+      <div class="tag-input-container">
+        <div class="tags-display" id="tags-display"></div>
+        <input 
+          type="text" 
+          class="tag-input" 
+          id="tag-input" 
+          placeholder="태그 입력 (엔터로 추가)..."
+        />
+      </div>
+
+      <button class="button success" id="save-btn">북마크 저장</button>
+      <button class="button danger" id="logout-btn">로그아웃</button>
+
+      <div class="divider"></div>
+
+      <div class="info">
+        💡 Tip: 페이지에서 우클릭 → "북마크 저장"으로도<br />
+        저장할 수 있습니다!
+      </div>
+    </div>
+
+    <script type="module" src="popup-simple.js"></script>
+  </body>
+</html>

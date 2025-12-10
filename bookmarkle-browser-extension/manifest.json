@@ -12,6 +12,7 @@
     "128": "public/bookmark.png"
   },
   "action": {
+    "default_popup": "popup-simple.html",
     "default_icon": {
       "16": "public/bookmark.png",
       "32": "public/bookmark.png",
@@ -19,12 +20,8 @@
       "128": "public/bookmark.png"
     }
   },
-  "options_page": "options.html",
-  "chrome_url_overrides": {
-    "newtab": "newtab.html"
-  },
   "background": {
-    "service_worker": "background.js",
+    "service_worker": "background-simple.js",
     "type": "module"
   },
   "permissions": [
@@ -50,7 +47,7 @@
     ]
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' https://bookmarkhub-5ea6c.web.app http://localhost:3000; connect-src 'self' https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' https://bookmarkhub-5ea6c.web.app http://localhost:3000; connect-src 'self' https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
   },
   "minimum_chrome_version": "109"
 }
