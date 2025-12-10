@@ -1,3 +1,54 @@
+// 컬렉션 추가 (REST API)
+async function addCollection({ name, icon }) {
+  if (!currentUser) {
+    const error = "로그인이 필요합니다.";
+    console.error("❌", error);
+    throw new Error(error);
+  }
+
+  await ensureFreshIdToken();
+  if (!currentIdToken) {
+    const error = "인증 토큰이 없습니다. 다시 로그인해주세요.";
+    console.error("❌", error);
+    throw new Error(error);
+  }
+
+  try {
+    const userId = currentUser.uid;
+    const now = new Date().toISOString();
+    const fields = {
+      name: { stringValue: name },
+      icon: { stringValue: icon || "Folder" },
+      description: { stringValue: "" }, // description 입력값 확장 시 payload에서 받도록 변경 가능
+      isPinned: { booleanValue: false },
+      parentId: { nullValue: null },
+      userId: { stringValue: userId },
+      createdAt: { timestampValue: now },
+      updatedAt: { timestampValue: now },
+    };
+    const response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/collections`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${currentIdToken}`,
+        },
+        body: JSON.stringify({ fields }),
+      }
+    );
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || "Firestore 컬렉션 추가 실패");
+    }
+    const result = await response.json();
+    console.log("✅ Collection added:", { name, id: result.name });
+    return result;
+  } catch (e) {
+    console.error("❌ Firestore add collection error:", e);
+    throw e;
+  }
+}
 let tokenExpiresAt = 0;
 
 // JWT exp 파싱 함수
@@ -85,6 +136,17 @@ let currentIdToken = null;
 
 // background에서 메시지 수신
 chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
+    // 컬렉션 추가
+    if (msg.type === "OFFSCREEN_ADD_COLLECTION") {
+      addCollection(msg.payload)
+        .then((result) => {
+          sendResponse({ ok: true, result });
+        })
+        .catch((error) => {
+          sendResponse({ ok: false, error: error.message });
+        });
+      return true; // 비동기 응답 대기
+    }
   console.log("📨 Offscreen received:", msg.type);
 
   // OFFSCREEN_ 접두사가 없는 메시지는 무시 (offscreen 전용 메시지만 처리)

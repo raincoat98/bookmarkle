@@ -21,6 +21,7 @@ function showToast(message, type = "success") {
 // popup.js
 const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 
+
 const loginBtn = document.getElementById("login-btn");
 const saveBtn = document.getElementById("save-btn");
 const logoutBtn = document.getElementById("logout-btn");
@@ -33,6 +34,13 @@ const collectionSelect = document.getElementById("collection-select");
 const descriptionInput = document.getElementById("description-input");
 const tagInput = document.getElementById("tag-input");
 const tagsDisplay = document.getElementById("tags-display");
+
+// 컬렉션 추가 관련 요소
+const addCollectionModal = document.getElementById("addCollectionModal");
+const confirmCollectionBtn = document.getElementById("confirmCollectionBtn");
+const cancelCollectionBtn = document.getElementById("cancelCollectionBtn");
+const collectionNameInput = document.getElementById("collectionNameInput");
+const collectionIconInput = document.getElementById("collectionIconInput");
 
 let currentUser = null;
 let collections = [];
@@ -112,13 +120,77 @@ function updateCollectionSelect() {
   while (collectionSelect.options.length > 1) {
     collectionSelect.remove(1);
   }
-  
+
   // 컬렉션 옵션 추가
   collections.forEach(collection => {
     const option = document.createElement("option");
     option.value = collection.id;
     option.textContent = `${collection.icon || "📁"} ${collection.name}`;
     collectionSelect.appendChild(option);
+  });
+
+  // --- 컬렉션 추가 버튼 옵션 추가 ---
+  let addOption = document.getElementById("add-collection-option");
+  if (!addOption) {
+    addOption = document.createElement("option");
+    addOption.id = "add-collection-option";
+    addOption.value = "__add_collection__";
+    addOption.textContent = "+ 새 컬렉션 추가";
+    addOption.style.fontStyle = "italic";
+    collectionSelect.appendChild(addOption);
+  }
+}
+// 컬렉션 선택 시 "+ 새 컬렉션 추가" 선택 처리
+if (collectionSelect) {
+  collectionSelect.addEventListener("change", (e) => {
+    if (collectionSelect.value === "__add_collection__") {
+      // 모달 열기
+      if (addCollectionModal) addCollectionModal.classList.remove("hidden");
+      // 입력 초기화
+      if (collectionNameInput) collectionNameInput.value = "";
+      if (collectionIconInput) collectionIconInput.value = "📁";
+      // 선택 초기화
+      collectionSelect.value = "";
+    }
+  });
+}
+
+// 모달 취소 버튼
+if (cancelCollectionBtn) {
+  cancelCollectionBtn.addEventListener("click", () => {
+    if (addCollectionModal) addCollectionModal.classList.add("hidden");
+  });
+}
+
+// 모달 확인(추가) 버튼
+if (confirmCollectionBtn) {
+  confirmCollectionBtn.addEventListener("click", async () => {
+    const name = collectionNameInput?.value.trim();
+    const icon = collectionIconInput?.value.trim() || "📁";
+    if (!name) {
+      showToast("컬렉션 이름을 입력하세요.", "error");
+      return;
+    }
+    confirmCollectionBtn.disabled = true;
+    confirmCollectionBtn.textContent = "추가 중...";
+    try {
+      const response = await chrome.runtime.sendMessage({
+        type: "ADD_COLLECTION",
+        payload: { name, icon },
+      });
+      if (response?.ok) {
+        showToast("컬렉션이 추가되었습니다!", "success");
+        if (addCollectionModal) addCollectionModal.classList.add("hidden");
+        await loadCollections();
+      } else {
+        showToast(response?.error || "컬렉션 추가 실패", "error");
+      }
+    } catch (e) {
+      showToast("컬렉션 추가 오류", "error");
+    } finally {
+      confirmCollectionBtn.disabled = false;
+      confirmCollectionBtn.textContent = "추가";
+    }
   });
 }
 

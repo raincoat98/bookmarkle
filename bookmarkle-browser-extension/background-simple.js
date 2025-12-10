@@ -168,6 +168,28 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
 
 // popup/content/offscreen에서 오는 내부 메시지 처리
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  // 컬렉션 추가 요청 → offscreen으로 전달
+  if (msg.type === "ADD_COLLECTION") {
+    ensureOffscreenDocument()
+      .then(() => {
+        chrome.runtime.sendMessage({
+          type: "OFFSCREEN_ADD_COLLECTION",
+          payload: msg.payload,
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error("Offscreen add collection error:", chrome.runtime.lastError.message);
+            sendResponse({ ok: false, error: chrome.runtime.lastError.message });
+          } else {
+            sendResponse(response);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to add collection:", error);
+        sendResponse({ ok: false, error: error.message });
+      });
+    return true;
+  }
 
   // offscreen에서 온 OFFSCREEN_READY 메시지는 특별 처리
   if (msg.type === "OFFSCREEN_READY") {
