@@ -1,3 +1,56 @@
+let tokenExpiresAt = 0;
+
+// JWT exp 파싱 함수
+function parseJwtExp(idToken) {
+  try {
+    const [, payloadBase64] = idToken.split(".");
+    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+    const payload = JSON.parse(payloadJson);
+    return payload.exp * 1000;
+  } catch (e) { return 0; }
+}
+
+// React 웹에서 인증 정보 수신 (window.postMessage)
+window.addEventListener("message", (event) => {
+  const msg = event.data;
+  if (!msg || msg.type !== "AUTH_STATE_CHANGED") return;
+  if (msg.user && msg.idToken) {
+    currentUser = msg.user;
+    currentIdToken = msg.idToken;
+    tokenExpiresAt = parseJwtExp(msg.idToken);
+    authInitialized = true;
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({
+        currentUser,
+        currentIdToken,
+        lastLoginTime: Date.now()
+      });
+    }
+    console.log("✅ [offscreen] AUTH_STATE_CHANGED received from React:", currentUser.email);
+  }
+});
+// 항상 최신 idToken을 받아오는 함수 (만료 임박 시 React에 갱신 요청)
+async function ensureFreshIdToken() {
+  const now = Date.now();
+  if (!currentIdToken || !currentUser) return;
+  if (tokenExpiresAt - now > 60_000) return; // 1분 이상 남았으면 그대로 사용
+  // 만료 임박 시 React에 갱신 요청
+  return new Promise((resolve) => {
+    const listener = (event) => {
+      const msg = event.data;
+      if (!msg || msg.type !== "AUTH_STATE_CHANGED") return;
+      if (msg.user && msg.idToken) {
+        currentUser = msg.user;
+        currentIdToken = msg.idToken;
+        tokenExpiresAt = parseJwtExp(msg.idToken);
+        window.removeEventListener("message", listener);
+        resolve();
+      }
+    };
+    window.addEventListener("message", listener);
+    window.postMessage({ type: "REFRESH_ID_TOKEN" }, "*");
+  });
+}
 // 항상 최신 idToken을 받아오는 함수
 async function ensureFreshIdToken() {
   if (auth.currentUser) {

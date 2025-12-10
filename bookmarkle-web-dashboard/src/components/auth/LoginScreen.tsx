@@ -48,32 +48,54 @@ export const LoginScreen = () => {
   const [extensionLoginSuccess, setExtensionLoginSuccess] = useState(false);
   const [messageSent, setMessageSent] = useState(false); // 중복 전송 방지
 
-  // Send login data to extension when user logs in
+  // 확장(offscreen)에서 토큰 갱신 요청(REFRESH_ID_TOKEN) 받으면 최신 토큰 재전송
   useEffect(() => {
-    console.log("🔍 LoginScreen useEffect triggered", {
-      isExtension: extensionContext.isExtension,
-      extensionId: extensionContext.extensionId,
-      hasUser: !!user,
-      userEmail: user?.email,
-      messageSent,
-    });
+    const handleExtensionMessage = async (event: MessageEvent) => {
+      if (event.data?.type !== "REFRESH_ID_TOKEN") return;
+      if (!user) return;
+      const idToken = await user.getIdToken(true);
+      window.postMessage({
+        type: "AUTH_STATE_CHANGED",
+        user: {
+          uid: user.uid,
+          email: user.email || "",
+          displayName: user.displayName || "",
+          photoURL: user.photoURL || "",
+        },
+        idToken,
+      }, "*");
+    };
+    window.addEventListener("message", handleExtensionMessage);
 
-    if (!extensionContext.isExtension || !user || messageSent) {
-      console.log("⏭️ Skipping: not extension context, no user, or already sent");
-      return;
-    }
-
-    let isMounted = true; // Cleanup 체크용
-
-    const sendLoginDataToExtension = async () => {
-      try {
+    // 최초 로그인 시 확장에 인증 정보 전송
+    if (extensionContext.isExtension && user && !messageSent) {
+      (async () => {
         const idToken = await user.getIdToken();
-        console.log("🔑 Got ID token");
-
-        if (!isMounted) return; // 이미 unmount된 경우 중단
-
-        const loginData = {
-          type: "LOGIN_SUCCESS",
+        // chrome.runtime.sendMessage 방식 유지
+        const chromeRuntime = (window as any).chrome?.runtime;
+        if (extensionContext.extensionId && chromeRuntime) {
+          setMessageSent(true);
+          chromeRuntime.sendMessage(
+            extensionContext.extensionId,
+            {
+              type: "AUTH_STATE_CHANGED",
+              user: {
+                uid: user.uid,
+                email: user.email || "",
+                displayName: user.displayName || "",
+                photoURL: user.photoURL || "",
+              },
+              idToken,
+            },
+            () => {
+              setExtensionLoginSuccess(true);
+              toast.success("✅ 익스텐션에 로그인 정보 전송 완료!");
+            }
+          );
+        }
+        // window.postMessage로도 offscreen에 직접 전달 (iframe 구조 대응)
+        window.postMessage({
+          type: "AUTH_STATE_CHANGED",
           user: {
             uid: user.uid,
             email: user.email || "",
@@ -81,64 +103,11 @@ export const LoginScreen = () => {
             photoURL: user.photoURL || "",
           },
           idToken,
-        };
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const chromeRuntime = (window as any).chrome?.runtime;
-        console.log("📤 Preparing to send message:", {
-          extensionId: extensionContext.extensionId,
-          hasChromeRuntime: !!chromeRuntime,
-        });
-
-        // Send to extension background via chrome.runtime
-        if (extensionContext.extensionId && chromeRuntime) {
-          try {
-            console.log("📨 Sending message to extension:", extensionContext.extensionId);
-            setMessageSent(true); // 전송 시작 시 바로 플래그 설정
-
-            chromeRuntime.sendMessage(
-              extensionContext.extensionId,
-              {
-                type: "AUTH_STATE_CHANGED",
-                user: loginData.user,
-                idToken: loginData.idToken,
-              },
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              (response: any) => {
-                if (!isMounted) return;
-
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                if (chromeRuntime && typeof chromeRuntime === 'object' && 'lastError' in chromeRuntime && (chromeRuntime as any).lastError) {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  console.error("❌ chrome.runtime.sendMessage error:", (chromeRuntime as any).lastError);
-                  setMessageSent(false); // 실패 시 재시도 가능하도록
-                } else {
-                  console.log("✅ Login data sent to extension", response);
-                  setExtensionLoginSuccess(true);
-                  toast.success("✅ 익스텐션에 로그인 정보 전송 완료!");
-                }
-              }
-            );
-          } catch (error) {
-            console.error("❌ Failed to send via chrome.runtime:", error);
-            setMessageSent(false); // 실패 시 재시도 가능하도록
-          }
-        } else {
-          console.error("❌ Missing requirements:", {
-            extensionId: extensionContext.extensionId,
-            chromeRuntime: !!chromeRuntime,
-          });
-        }
-      } catch (error) {
-        console.error("❌ Failed to send login data to extension:", error);
-        setMessageSent(false); // 실패 시 재시도 가능하도록
-      }
-    };
-
-    sendLoginDataToExtension();
-
+        }, "*");
+      })();
+    }
     return () => {
-      isMounted = false; // Cleanup
+      window.removeEventListener("message", handleExtensionMessage);
     };
   }, [user, extensionContext.isExtension, extensionContext.extensionId, messageSent]);
 
