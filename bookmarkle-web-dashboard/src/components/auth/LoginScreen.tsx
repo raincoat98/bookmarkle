@@ -8,8 +8,6 @@ import {
   detectBrowser,
   getBrowserCompatibilityMessage,
 } from "../../utils/browserDetection";
-import { getExtensionId } from "../../utils/extensionId";
-
 declare global {
   interface WindowWithChrome extends Window {
     chrome?: {
