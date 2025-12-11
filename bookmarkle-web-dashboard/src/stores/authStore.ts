@@ -9,7 +9,6 @@ import {
   signupWithEmail,
   logout as fbLogout,
 } from "../firebase";
-import { getExtensionId } from "../utils/extensionId";
 
 declare global {
   interface WindowWithChrome extends Window {
@@ -122,36 +121,21 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   },
 
   // 로그아웃
-  logout: async () => {
-    try {
-      await fbLogout();
-
-      // 확장에 로그아웃 알림
-      const chromeRuntime = (window as WindowWithChrome).chrome?.runtime;
-      const extensionId = getExtensionId();
-
-      if (extensionId && chromeRuntime) {
-        try {
-          chromeRuntime.sendMessage(extensionId, {
-            type: "AUTH_STATE_CHANGED",
-            user: null,
-          });
-        } catch {
-          // 확장이 없을 수 있으므로 에러 무시
-        }
+    logout: async () => {
+      try {
+        await fbLogout();
+        // Offscreen에도 전송 (source: 'bookmarkhub', window.origin)
+        window.postMessage({
+          source: "bookmarkhub",
+          type: "AUTH_STATE_CHANGED",
+          user: null,
+          idToken: null,
+        }, window.origin);
+      } catch (error) {
+        console.error("로그아웃 실패:", error);
+        throw error;
       }
-
-      // Offscreen에도 전송
-      window.postMessage({
-        type: "AUTH_STATE_CHANGED",
-        user: null,
-        idToken: null,
-      }, "*");
-    } catch (error) {
-      console.error("로그아웃 실패:", error);
-      throw error;
-    }
-  },
+    },
 
   // 인증 상태 초기화 및 감시
   initializeAuth: () => {
@@ -166,7 +150,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     }, 1000);
 
     // 인증 상태 감시 (user)
-    const unsubscribeAuth = watchAuth((user) => {
+    const unsubscribeAuth = watchAuth(async (user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);
 
@@ -194,8 +178,27 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             console.error("사용자 상태 확인 실패:", error);
             set({ isActive: true, isActiveLoading: false });
           });
+        // 로그인 시 AUTH_STATE_CHANGED 메시지 전송 (source: 'bookmarkhub', window.origin)
+        const idToken = await user.getIdToken();
+        window.postMessage({
+          source: "bookmarkhub",
+          type: "AUTH_STATE_CHANGED",
+          user: {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+          },
+          idToken,
+        }, window.origin);
       } else {
         set({ isActive: null, isActiveLoading: false });
+        // 로그아웃 시 AUTH_STATE_CHANGED 메시지 전송 (source: 'bookmarkhub', window.origin)
+        window.postMessage({
+          source: "bookmarkhub",
+          type: "AUTH_STATE_CHANGED",
+          user: null,
+          idToken: null,
+        }, window.origin);
       }
     });
 

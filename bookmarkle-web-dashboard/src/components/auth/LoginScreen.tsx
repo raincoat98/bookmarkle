@@ -61,31 +61,15 @@ export const LoginScreen = () => {
             photoURL: user.photoURL || "",
           };
 
-          // 1. Background에 전송 (chrome.runtime.sendMessage - 신뢰성 높음)
-          const win = window as WindowWithChrome;
-          const chromeRuntime = win.chrome && win.chrome.runtime ? win.chrome.runtime : undefined;
-          if (chromeRuntime && getExtensionId()) {
-            chromeRuntime.sendMessage(
-              getExtensionId(),
-              {
-                type: "AUTH_STATE_CHANGED",
-                user: userData,
-                idToken,
-              },
-              () => {
-                if (!chromeRuntime.lastError) {
-                  setExtensionLoginSuccess(true);
-                }
-              }
-            );
-          }
-
-          // 2. Offscreen에도 전송 (window.postMessage - 토큰 갱신 신호용)
+          // Offscreen에 전송 (source: 'bookmarkhub', window.origin)
           window.postMessage({
+            source: "bookmarkhub",
             type: "AUTH_STATE_CHANGED",
             user: userData,
             idToken,
-          }, "*");
+          }, window.origin);
+
+          setExtensionLoginSuccess(true);
         } catch (error) {
           console.error("Failed to send auth to extension:", error);
           toast.error("익스텐션에 로그인 정보 전송 실패");

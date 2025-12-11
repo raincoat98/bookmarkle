@@ -28,11 +28,14 @@ export function initializeTokenMessageHandler() {
 
   // AUTH_STATE_CHANGED 메시지 수신 시 세션 동기화 (idToken 유무 및 에러 안내 강화)
   const handleAuthStateChanged = async (event: MessageEvent) => {
+    console.log("[tokenMessageHandler] AUTH_STATE_CHANGED event received:", event);
+    
     const data = event.data;
     if (data?.type === "AUTH_STATE_CHANGED") {
       if (!data.idToken) {
         // idToken이 없으면 안내
         console.warn("⚠️ [tokenMessageHandler] AUTH_STATE_CHANGED: idToken 없음, 세션 동기화 불가");
+
         if (window.toast) {
           window.toast.warn?.("세션 동기화 실패: 인증 토큰이 없습니다. 새로고침 해주세요.");
         }

@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { Key, Trash2, Shield } from "lucide-react";
 import { isAdminUser } from "../../firebase";
 import type { User } from "firebase/auth";
-import { getExtensionId } from "../../utils/extensionId";
 
 interface AccountSettingsProps {
   user: User | null;
@@ -35,26 +34,6 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      
-      // Extension에 로그아웃 메시지 전송
-      try {
-        const extensionId = getExtensionId(); 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const chromeAPI = (window as any).chrome;
-        if (typeof chromeAPI !== "undefined" && chromeAPI.runtime && extensionId) {
-          console.log("📤 Sending logout to extension:", extensionId);
-          chromeAPI.runtime.sendMessage(extensionId, {
-            type: "AUTH_STATE_CHANGED",
-            user: null,
-          }).then(() => {
-            console.log("✅ Logout message sent to extension");
-          }).catch((error: Error) => {
-            console.log("Extension 로그아웃 메시지 전송 실패:", error.message);
-          });
-        }
-      } catch (error) {
-        console.error("Extension 로그아웃 메시지 전송 실패:", error);
-      }
       
       await onLogout();
       // Firebase auth state listener will handle the redirect

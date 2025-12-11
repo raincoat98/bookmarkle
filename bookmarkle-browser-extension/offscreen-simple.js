@@ -100,8 +100,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("message", (event) => {
   const msg = event.data;
+  console.log(msg);
   if (!msg || msg.type !== "AUTH_STATE_CHANGED") return;
   if (msg.user && msg.idToken) {
+    // 로그인
     currentUser = msg.user;
     currentIdToken = msg.idToken;
     tokenExpiresAt = parseJwtExp(msg.idToken);
@@ -114,6 +116,16 @@ window.addEventListener("message", (event) => {
       });
     }
     console.log("✅ [offscreen] AUTH_STATE_CHANGED received from React:", currentUser.email);
+  } else {
+    // 로그아웃
+    currentUser = null;
+    currentIdToken = null;
+    tokenExpiresAt = 0;
+    authInitialized = true;
+    if (chrome.storage && chrome.storage.local) {
+      chrome.storage.local.remove(["currentUser", "currentIdToken", "lastLoginTime"]);
+    }
+    console.log("✅ [offscreen] User logged out via AUTH_STATE_CHANGED from React");
   }
 });
 

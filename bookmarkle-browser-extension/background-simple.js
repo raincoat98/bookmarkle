@@ -166,6 +166,29 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
 
 // popup/content/offscreen에서 오는 내부 메시지 처리
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    // content-bridge.js에서 오는 인증 메시지 처리
+    if (msg.type === "WEB_AUTH_STATE_CHANGED") {
+      if (msg.payload.user && msg.payload.idToken) {
+        saveAuthToStorage(msg.payload.user);
+        ensureOffscreenDocument().then(() => {
+          chrome.runtime.sendMessage({
+            type: "OFFSCREEN_AUTH_STATE_CHANGED",
+            user: msg.payload.user,
+            idToken: msg.payload.idToken,
+          });
+        });
+      } else {
+        clearAuth();
+        ensureOffscreenDocument().then(() => {
+          chrome.runtime.sendMessage({
+            type: "OFFSCREEN_AUTH_STATE_CHANGED",
+            user: null,
+          });
+        });
+      }
+      sendResponse({ ok: true });
+      return true;
+    }
   // 컬렉션 추가 요청 → offscreen으로 전달
   if (msg.type === "ADD_COLLECTION") {
     ensureOffscreenDocument()

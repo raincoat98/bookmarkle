@@ -21,7 +21,6 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { getExtensionId } from "./utils/extensionId";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -178,31 +177,10 @@ export async function logout() {
     await clearFirebaseStorage();
   }
 
-  // Extension에 로그아웃 알림
-  notifyExtensionLogout();
 
   // Firebase Auth 로그아웃
   await signOut(auth);
   console.log("✅ Logout completed");
-}
-
-/**
- * Extension에 로그아웃 메시지 전송
- */
-function notifyExtensionLogout() {
-  
-
-  const extensionId = getExtensionId();
-  if (!extensionId || typeof window === "undefined") return;
-
-  try {
-    const chrome = (window as { chrome?: { runtime?: { sendMessage?: (extensionId: string, message: unknown, callback: () => void) => void } } }).chrome;
-    chrome?.runtime?.sendMessage?.(extensionId, { type: "LOGOUT_SUCCESS" }, () => {
-      console.log("✅ LOGOUT_SUCCESS sent to extension");
-    });
-  } catch (error) {
-    console.warn("Failed to notify extension about logout:", error);
-  }
 }
 
 /**
