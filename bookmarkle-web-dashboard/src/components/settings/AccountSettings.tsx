@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Key, Trash2, Shield } from "lucide-react";
 import { isAdminUser } from "../../firebase";
 import type { User } from "firebase/auth";
+import { getExtensionId } from "../../utils/extensionId";
 
 interface AccountSettingsProps {
   user: User | null;
@@ -29,13 +30,15 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
     }
   }, [user]);
 
+  
+
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       
       // Extension에 로그아웃 메시지 전송
       try {
-        const extensionId = import.meta.env.VITE_EXTENSION_ID;
+        const extensionId = getExtensionId(); 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const chromeAPI = (window as any).chrome;
         if (typeof chromeAPI !== "undefined" && chromeAPI.runtime && extensionId) {

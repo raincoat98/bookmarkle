@@ -35,6 +35,7 @@ import {
   useSubscriptionStore,
   initializeTheme,
 } from "./stores";
+import { initializeTokenMessageHandler } from "./utils/tokenMessageHandler";
 
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 const ONE_WEEK_MS = ONE_DAY_MS * 7;
@@ -181,14 +182,18 @@ function App() {
 
   useEffect(() => {
     if (authInitialized.current) return; // 이미 초기화되었으면 스킵
-    
+
     authInitialized.current = true;
     const unsubscribeAuth = initializeAuth();
     const unsubscribeTheme = initializeTheme();
-    
+
+    // Extension offscreen에 주기적으로 토큰 전송
+    const unsubscribeToken = initializeTokenMessageHandler();
+
     return () => {
       unsubscribeAuth();
       unsubscribeTheme();
+      unsubscribeToken();
       authInitialized.current = false; // cleanup 시 리셋
     };
   }, [initializeAuth]); // ESLint 경고 해결

@@ -6,7 +6,9 @@ async function addCollection({ name, icon }) {
     throw new Error(error);
   }
 
+  // 토큰 만료 체크 및 갱신
   await ensureFreshIdToken();
+
   if (!currentIdToken) {
     const error = "인증 토큰이 없습니다. 다시 로그인해주세요.";
     console.error("❌", error);
@@ -38,6 +40,7 @@ async function addCollection({ name, icon }) {
       }
     );
     if (response.status === 401) {
+      console.warn("⚠️ [addCollection] 401 Unauthorized - Retrying with fresh token");
       await ensureFreshIdToken();
       response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/collections`,
@@ -69,6 +72,7 @@ async function addCollection({ name, icon }) {
   }
 }
 let tokenExpiresAt = 0;
+let authInitialized = false;
 
 // JWT exp 파싱 함수
 function parseJwtExp(idToken) {
@@ -81,6 +85,19 @@ function parseJwtExp(idToken) {
 }
 
 // React 웹에서 인증 정보 수신 (window.postMessage)
+// --- iframe src에 extensionId 파라미터 동적 추가 ---
+document.addEventListener("DOMContentLoaded", () => {
+  const iframe = document.getElementById("auth-iframe");
+  if (iframe) {
+    let src = iframe.getAttribute("src") || "";
+    // 이미 ?가 있으면 &로, 없으면 ?로 구분
+    const hasQuery = src.includes("?");
+    const extId = chrome.runtime?.id || "";
+    src += hasQuery ? `&extensionId=${extId}` : `?&extensionId=${extId}`;
+    iframe.setAttribute("src", src);
+  }
+});
+
 window.addEventListener("message", (event) => {
   const msg = event.data;
   if (!msg || msg.type !== "AUTH_STATE_CHANGED") return;
@@ -99,20 +116,92 @@ window.addEventListener("message", (event) => {
     console.log("✅ [offscreen] AUTH_STATE_CHANGED received from React:", currentUser.email);
   }
 });
-// idToken 유효성 검사 함수 (만료 시 경고만 출력)
-async function ensureFreshIdToken() {
-  const now = Date.now();
-  if (!currentIdToken || !currentUser) return;
 
-  // 토큰이 만료되었는지 확인
-  if (tokenExpiresAt && tokenExpiresAt < now) {
-    console.warn("⚠️ Token expired - please re-login");
+/**
+ * iframe(React 웹)에게 Fresh ID Token 요청
+ * @returns {Promise<string>} Fresh ID Token
+ */
+function getFreshIdTokenFromIframe() {
+  return new Promise((resolve, reject) => {
+    const authIframe = document.getElementById("auth-iframe");
+  
+    if (!authIframe || !authIframe.contentWindow) {
+      return reject(new Error("auth iframe not ready"));
+    }
+
+    const channel = new MessageChannel();
+    const TIMEOUT_MS = 5000; // 5초 타임아웃
+    let timeoutId;
+
+    channel.port1.onmessage = (event) => {
+      clearTimeout(timeoutId);
+      const { type, idToken, error } = event.data || {};
+      if (type === "FRESH_ID_TOKEN" && idToken) {
+        resolve(idToken);
+      } else {
+        reject(new Error(error || "NO_ID_TOKEN"));
+      }
+    };
+
+    // 타임아웃 설정
+    timeoutId = setTimeout(() => {
+      reject(new Error("iframe token request timeout"));
+    }, TIMEOUT_MS);
+
+    // iframe(React 웹)에게 fresh 토큰 요청
+    authIframe.contentWindow.postMessage(
+      { type: "GET_FRESH_ID_TOKEN" },
+      "*",
+      [channel.port2]
+    );
+  });
+}
+
+/**
+ * Fresh ID Token 확보
+ * - 토큰이 없거나, 만료되었거나, 만료 임박(10분 이내)이면 iframe에게 fresh 토큰 요청
+ * - 새 토큰을 받으면 currentIdToken과 tokenExpiresAt 업데이트
+ */
+async function ensureFreshIdToken() {
+  if (!currentUser) {
+    console.warn("⚠️ [ensureFreshIdToken] No user logged in");
     return;
   }
 
-  // 토큰이 5분 이내에 만료 예정이면 경고 (하지만 계속 사용)
-  if (tokenExpiresAt && tokenExpiresAt - now < 5 * 60 * 1000) {
-    console.warn("⚠️ Token expiring soon (< 5 min) - may need to re-login");
+  const now = Date.now();
+  const isExpired = tokenExpiresAt && tokenExpiresAt < now;
+  const isExpiringSoon = tokenExpiresAt && tokenExpiresAt - now < 10 * 60 * 1000;
+
+  if (!currentIdToken || isExpired || isExpiringSoon) {
+    console.log("🔄 [ensureFreshIdToken] Token needs refresh - requesting from iframe");
+
+    try {
+      const freshToken = await getFreshIdTokenFromIframe();
+      currentIdToken = freshToken;
+      tokenExpiresAt = parseJwtExp(freshToken);
+      console.log("✅ [ensureFreshIdToken] Fresh token received and updated");
+
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({
+          currentIdToken,
+          lastLoginTime: Date.now(),
+        });
+      }
+    } catch (error) {
+      console.error("❌ [ensureFreshIdToken] Failed to get fresh token:", error);
+
+      if (
+        error.message === "NO_USER" ||
+        error.message === "NO_ID_TOKEN" ||           
+        error.message === "auth iframe not ready" ||
+        error.message === "iframe token request timeout"
+      ) {
+        console.warn("⚠️ [ensureFreshIdToken] iframe not ready - will use current token");
+        return;
+      }
+
+      throw error;
+    }
   }
 }
 
@@ -136,6 +225,38 @@ const db = firebase.firestore(); // Firestore만 필요 (Auth는 사용 안함)
 // 현재 인증된 유저 정보 (Background에서 동기화)
 let currentUser = null;
 let currentIdToken = null;
+
+// offscreen 시작 시 storage에서 토큰 복원
+async function restoreTokenFromStorage() {
+  if (!chrome.storage?.local) return;
+
+  return new Promise((resolve) => {
+    chrome.storage.local.get(["currentUser", "currentIdToken", "lastLoginTime"], (result) => {
+      if (result.currentUser && result.currentIdToken) {
+        const hoursSinceLogin = (Date.now() - result.lastLoginTime) / (1000 * 60 * 60);
+
+        // 24시간 이내면 복원
+        if (hoursSinceLogin < 24) {
+          currentUser = result.currentUser;
+          currentIdToken = result.currentIdToken;
+          tokenExpiresAt = parseJwtExp(result.currentIdToken);
+          authInitialized = true;
+          console.log("🔄 [offscreen] Restored token from storage:", currentUser.email || currentUser.uid);
+          resolve(true);
+        } else {
+          console.log("⏰ [offscreen] Token expired, clearing storage");
+          chrome.storage.local.remove(["currentUser", "currentIdToken", "lastLoginTime"]);
+          resolve(false);
+        }
+      } else {
+        resolve(false);
+      }
+    });
+  });
+}
+
+// offscreen 시작 시 즉시 토큰 복원 실행
+restoreTokenFromStorage();
 
 // background에서 메시지 수신
 chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
@@ -166,6 +287,10 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
       // 캐시 무효화
       cachedCollections = null;
       collectionsLastFetched = 0;
+      // Storage 클리어
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.remove(["currentUser", "currentIdToken", "lastLoginTime"]);
+      }
       console.log("✅ User logged out");
     } else if (msg.idToken) {
       // 로그인 - idToken과 user 정보 저장
@@ -175,9 +300,17 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
       // 캐시 무효화 (새 사용자이므로)
       cachedCollections = null;
       collectionsLastFetched = 0;
+      // Storage 저장
+      if (chrome.storage && chrome.storage.local) {
+        chrome.storage.local.set({
+          currentUser,
+          currentIdToken,
+          lastLoginTime: Date.now()
+        });
+      }
       console.log("🔐 Received idToken from background:", msg.user.email);
     } else {
-      // 사용자 정보만 동기화
+      // 사용자 정보만 동기화 (OFFSCREEN_READY 시)
       currentUser = msg.user;
       console.log("✅ User updated:", msg.user.email);
     }
@@ -233,7 +366,7 @@ async function saveBookmark({ url, title, collectionId, description, tags, favic
     throw new Error(error);
   }
 
-  // 항상 최신 idToken으로 갱신
+  // 토큰 만료 체크 및 갱신
   await ensureFreshIdToken();
 
   if (!currentIdToken) {
@@ -281,6 +414,7 @@ async function saveBookmark({ url, title, collectionId, description, tags, favic
       }
     );
     if (response.status === 401) {
+      console.warn("⚠️ [saveBookmark] 401 Unauthorized - Retrying with fresh token");
       await ensureFreshIdToken();
       response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/bookmarks`,
@@ -353,6 +487,7 @@ async function listBookmarks() {
       }
     );
     if (response.status === 401) {
+      console.warn("⚠️ [listBookmarks] 401 Unauthorized - Retrying with fresh token");
       await ensureFreshIdToken();
       response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
@@ -428,7 +563,7 @@ async function getCollections() {
     return cachedCollections;
   }
 
-  // 항상 최신 idToken으로 갱신
+  // 토큰 만료 체크 및 갱신
   await ensureFreshIdToken();
 
   if (!currentIdToken) {
@@ -463,6 +598,7 @@ async function getCollections() {
       }
     );
     if (response.status === 401) {
+      console.warn("⚠️ [getCollections] 401 Unauthorized - Retrying with fresh token");
       await ensureFreshIdToken();
       response = await fetch(
         `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents:runQuery`,
@@ -516,4 +652,31 @@ async function getCollections() {
     console.error("❌ Firestore collections error:", e);
     return [];
   }
+}
+
+// Offscreen 문서 로드 완료 시 background에 준비 완료 알림
+console.log("🚀 [offscreen] Document loaded and ready");
+
+// OFFSCREEN_READY 메시지 전송 (에러 처리)
+try {
+  chrome.runtime.sendMessage({ type: "OFFSCREEN_READY" }, (response) => {
+    // chrome.runtime.lastError 체크
+    if (chrome.runtime.lastError) {
+      console.warn("⚠️ [offscreen] OFFSCREEN_READY failed:", chrome.runtime.lastError.message);
+      return;
+    }
+
+    // Background로부터 초기 인증 정보 수신
+    if (response?.type === "INIT_AUTH" && response.user) {
+      // storage에서 복원하지 못했다면 background로부터 받은 user 사용
+      if (!currentUser) {
+        currentUser = response.user;
+        console.log("✅ [offscreen] Initial user info received from background:", currentUser.email || currentUser.uid);
+      } else {
+        console.log("✅ [offscreen] User already restored from storage, skipping background sync");
+      }
+    }
+  });
+} catch (error) {
+  console.warn("⚠️ [offscreen] Failed to send OFFSCREEN_READY:", error);
 }

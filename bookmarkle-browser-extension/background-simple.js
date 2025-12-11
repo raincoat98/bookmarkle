@@ -2,12 +2,10 @@
 // Background가 주요 인증 상태를 관리하고, Popup은 Background에서 직접 조회
 
 const OFFSCREEN_URL = "offscreen-simple.html";
-const AUTH_CACHE_KEYS = ["currentUser", "currentIdToken", "tokenExpiresAt", "lastLoginTime"];
+const AUTH_CACHE_KEYS = ["currentUser", "lastLoginTime"];
 
 // 메모리: 빠른 접근용
 let currentUser = null;
-let currentIdToken = null;
-let tokenExpiresAt = 0;
 let offscreenSynced = false; // Offscreen 초기 동기화 완료 플래그
 
 // 확장 시작 시 크롬스토리지에서 인증 정보 복원
@@ -16,18 +14,16 @@ async function restoreAuthFromStorage() {
 
   return new Promise((resolve) => {
     chrome.storage.local.get(AUTH_CACHE_KEYS, (result) => {
-      if (result.currentUser && result.currentIdToken) {
+      if (result.currentUser) {
         const hoursSinceLogin = (Date.now() - result.lastLoginTime) / (1000 * 60 * 60);
 
         // 24시간 이내면 복원
         if (hoursSinceLogin < 24) {
           currentUser = result.currentUser;
-          currentIdToken = result.currentIdToken;
-          tokenExpiresAt = result.tokenExpiresAt || 0;
           console.log("🔄 Restored user from chrome.storage.local:", currentUser.email || currentUser.uid);
           resolve(true);
         } else {
-          console.log("⏰ Token expired, clearing chrome.storage.local");
+          console.log("⏰ Session expired, clearing chrome.storage.local");
           chrome.storage.local.remove(AUTH_CACHE_KEYS);
           resolve(false);
         }
@@ -39,17 +35,13 @@ async function restoreAuthFromStorage() {
 }
 
 // 인증 정보 저장 (메모리 + Storage)
-function saveAuthToStorage(user, idToken, expiresAt) {
+function saveAuthToStorage(user) {
   currentUser = user;
-  currentIdToken = idToken;
-  tokenExpiresAt = expiresAt || 0;
   offscreenSynced = false; // 새 인증 상태이므로 동기화 필요
 
-  if (chrome.storage?.local && user && idToken) {
+  if (chrome.storage?.local && user) {
     chrome.storage.local.set({
       currentUser: user,
-      currentIdToken: idToken,
-      tokenExpiresAt: expiresAt,
       lastLoginTime: Date.now(),
     }, () => {
       console.log("✅ Auth saved to storage:", user.email || user.uid);
@@ -60,8 +52,6 @@ function saveAuthToStorage(user, idToken, expiresAt) {
 // 인증 정보 삭제
 function clearAuth() {
   currentUser = null;
-  currentIdToken = null;
-  tokenExpiresAt = 0;
   offscreenSynced = false; // 로그아웃 상태 동기화 필요
 
   if (chrome.storage?.local) {
@@ -110,39 +100,30 @@ async function ensureOffscreenDocument() {
   }
 }
 
-// JWT exp 파싱 함수
-function parseJwtExp(idToken) {
-  try {
-    const [, payloadBase64] = idToken.split(".");
-    const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
-    const payload = JSON.parse(payloadJson);
-    return payload.exp * 1000; // seconds to milliseconds
-  } catch (e) {
-    return 0;
-  }
-}
-
 // 외부 웹 페이지(새 탭)에서 오는 인증 메시지 처리
 chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   console.log("📨 External message received:", msg.type, "from:", sender.url);
 
   if (msg.type === "AUTH_STATE_CHANGED") {
     if (msg.user && msg.idToken) {
-      // Background에 인증 정보 저장
-      const expiresAt = parseJwtExp(msg.idToken);
-      saveAuthToStorage(msg.user, msg.idToken, expiresAt);
+      // Background에 user 정보만 저장 (idToken은 offscreen이 관리)
+      saveAuthToStorage(msg.user);
 
-      // Offscreen에 동기화
+      // Offscreen에 user + idToken 전달 (초기 로그인 토큰)
       ensureOffscreenDocument()
         .then(() => {
           chrome.runtime.sendMessage({
             type: "OFFSCREEN_AUTH_STATE_CHANGED",
             user: msg.user,
             idToken: msg.idToken,
+          }, () => {
+            if (chrome.runtime.lastError) {
+              console.warn("⚠️ Failed to send auth to offscreen:", chrome.runtime.lastError.message);
+            }
           });
         })
         .catch((error) => {
-          console.error("Failed to sync auth to offscreen:", error);
+          console.error("Failed to create offscreen for auth sync:", error);
         });
 
       // Popup에 브로드캐스트
@@ -160,7 +141,14 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
           chrome.runtime.sendMessage({
             type: "OFFSCREEN_AUTH_STATE_CHANGED",
             user: null,
+          }, () => {
+            if (chrome.runtime.lastError) {
+              console.warn("⚠️ Failed to send logout to offscreen:", chrome.runtime.lastError.message);
+            }
           });
+        })
+        .catch((error) => {
+          console.error("Failed to create offscreen for logout:", error);
         });
 
       chrome.runtime.sendMessage({
@@ -204,18 +192,20 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // offscreen에서 온 OFFSCREEN_READY 메시지는 특별 처리
   if (msg.type === "OFFSCREEN_READY") {
     // 인증 상태를 offscreen에 동기화 (중복 방지)
-    if (!offscreenSynced && currentUser && currentIdToken) {
+    // 토큰은 offscreen이 직접 관리하므로, user 정보만 전달
+    if (!offscreenSynced && currentUser) {
       offscreenSynced = true;
-      chrome.runtime.sendMessage({
-        type: "OFFSCREEN_AUTH_STATE_CHANGED",
+      // sendResponse로 직접 user 정보 전달 (브로드캐스트 대신)
+      sendResponse({
+        type: "INIT_AUTH",
         user: currentUser,
-        idToken: currentIdToken,
-      }).catch(() => {
-        // 에러 발생 시 플래그 초기화 (다음 시도에서 재동기화)
-        offscreenSynced = false;
       });
+      return true; // 비동기 응답 대기
+    } else {
+      // 동기화할 user 정보 없음
+      sendResponse({ type: "INIT_AUTH", user: null });
+      return true;
     }
-    return false;
   }
 
   // offscreen에서 온 메시지는 무시 (무한 루프 방지)
@@ -415,7 +405,7 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   // 인증 상태 확인
-  if (!currentUser || !currentIdToken) {
+  if (!currentUser) {
     console.log("Not logged in");
     chrome.action.setBadgeText({ text: "?" });
     chrome.action.setBadgeBackgroundColor({ color: "#F59E0B" }); // 주황색

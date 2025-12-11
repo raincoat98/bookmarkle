@@ -21,6 +21,7 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
+import { getExtensionId } from "./utils/extensionId";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -189,7 +190,9 @@ export async function logout() {
  * Extension에 로그아웃 메시지 전송
  */
 function notifyExtensionLogout() {
-  const extensionId = import.meta.env.VITE_EXTENSION_ID;
+  
+
+  const extensionId = getExtensionId();
   if (!extensionId || typeof window === "undefined") return;
 
   try {
