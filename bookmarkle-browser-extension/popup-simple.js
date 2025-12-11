@@ -14,7 +14,10 @@ const bookmarkSection = document.getElementById("bookmark-section");
 const currentUrlDiv = document.getElementById("current-url");
 
 // 컬렉션 관련 요소
-const collectionSelect = document.getElementById("collection-select");
+const collectionDropdown = document.getElementById("collection-dropdown");
+const dropdownSelected = document.getElementById("dropdownSelected");
+const dropdownSelectedText = document.getElementById("dropdownSelectedText");
+const dropdownOptions = document.getElementById("dropdownOptions");
 const addCollectionModal = document.getElementById("addCollectionModal");
 const confirmCollectionBtn = document.getElementById("confirmCollectionBtn");
 const cancelCollectionBtn = document.getElementById("cancelCollectionBtn");
@@ -282,53 +285,70 @@ async function loadCollections() {
 }
 
 // 5-2. 컬렉션 선택 드롭다운 업데이트
-function updateCollectionSelect() {
-  // 기존 옵션 제거 (첫 번째 "선택..." 옵션 제외)
-  while (collectionSelect.options.length > 1) {
-    collectionSelect.remove(1);
-  }
-
-  // 컬렉션 옵션 추가
+function updateCollectionSelect(selectedId = "") {
+  if (!dropdownOptions) return;
+  dropdownOptions.innerHTML = "";
   collections.forEach(collection => {
-    const option = document.createElement("option");
-    option.value = collection.id;
-    option.textContent = `${collection.icon || "📁"} ${collection.name}`;
-    collectionSelect.appendChild(option);
+    const option = document.createElement("div");
+    option.className = "dropdown-option" + (selectedId === collection.id ? " selected" : "");
+    option.dataset.value = collection.id;
+    option.innerHTML = `<span>${collection.icon || "📁"}</span> <span>${collection.name}</span>`;
+    option.addEventListener("click", () => {
+      dropdownSelectedText.textContent = `${collection.icon || "📁"} ${collection.name}`;
+      dropdownOptions.classList.add("hidden");
+      dropdownSelected.classList.remove("active");
+      dropdownSelected.dataset.value = collection.id;
+    });
+    dropdownOptions.appendChild(option);
   });
-
-  // 컬렉션 추가 버튼 옵션 추가
-  let addOption = document.getElementById("add-collection-option");
-  if (!addOption) {
-    addOption = document.createElement("option");
-    addOption.id = "add-collection-option";
-    addOption.value = "__add_collection__";
-    addOption.textContent = "+ 새 컬렉션 추가";
-    addOption.style.fontStyle = "italic";
-    collectionSelect.appendChild(addOption);
-  }
+  // 컬렉션 추가 옵션
+  const addOption = document.createElement("div");
+  addOption.className = "dropdown-option add";
+  addOption.dataset.value = "__add_collection__";
+  addOption.textContent = "+ 새 컬렉션 추가";
+  addOption.addEventListener("click", () => {
+    dropdownOptions.classList.add("hidden");
+    dropdownSelected.classList.remove("active");
+    if (addCollectionModal) addCollectionModal.classList.remove("hidden");
+    if (collectionNameInput) collectionNameInput.value = "";
+    if (collectionIconInput) collectionIconInput.value = "📁";
+  });
+  dropdownOptions.appendChild(addOption);
 }
 
 // ========================
 // 6. 태그 관련 함수
 // ========================
 
-// 6-1. 태그 추가
+// 6-1. 태그 추가 (단일 태그)
 function addTag(tag) {
-  const trimmedTag = tag.trim();
-  if (!trimmedTag || tags.includes(trimmedTag)) return;
-
-  tags.push(trimmedTag);
-  renderTags();
-  tagInput.value = "";
+  const trimmed = tag.trim();
+  if (trimmed && !tags.includes(trimmed)) {
+    tags.push(trimmed);
+    renderTags();
+  }
 }
 
-// 6-2. 태그 제거
+// 6-2. 여러 태그 추가 (쉼표로 분리)
+function addMultipleTags(input) {
+  const newTags = input
+    .split(',')
+    .map(t => t.trim())
+    .filter(t => t.length > 0 && !tags.includes(t));
+
+  if (newTags.length > 0) {
+    tags.push(...newTags);
+    renderTags();
+  }
+}
+
+// 6-3. 태그 제거
 function removeTag(tagToRemove) {
   tags = tags.filter(tag => tag !== tagToRemove);
   renderTags();
 }
 
-// 6-3. 태그 렌더링
+// 6-4. 태그 렌더링
 function renderTags() {
   tagsDisplay.innerHTML = "";
   tags.forEach(tag => {
@@ -371,7 +391,7 @@ if (saveBtn) {
     </span>저장중...`;
 
     // 선택된 컬렉션 ID
-    const selectedCollectionId = collectionSelect.value || null;
+    const selectedCollectionId = dropdownSelected.dataset.value || null;
     const description = descriptionInput.value.trim();
 
     try {
@@ -409,10 +429,20 @@ if (saveBtn) {
         return;
       }
 
-      // 저장 성공 시 태그와 설명 초기화
+      // 저장 성공 시 태그, 설명, 컬렉션 선택 초기화
       tags = [];
       renderTags();
       descriptionInput.value = "";
+
+      // 컬렉션 선택 초기화
+      if (dropdownSelectedText) {
+        const lang = getCurrentLanguage();
+        dropdownSelectedText.textContent = languageTexts[lang]?.collectionSelect || "컬렉션 선택...";
+      }
+      if (dropdownSelected) {
+        dropdownSelected.dataset.value = "";
+      }
+
       showToast("북마크가 저장되었습니다!", "success");
       setTimeout(() => {
         updateUI(currentUser);
@@ -429,16 +459,16 @@ if (saveBtn) {
 }
 
 // 7-3. 컬렉션 선택 드롭다운
-if (collectionSelect) {
-  collectionSelect.addEventListener("change", (e) => {
-    if (collectionSelect.value === "__add_collection__") {
-      // 모달 열기
-      if (addCollectionModal) addCollectionModal.classList.remove("hidden");
-      // 입력 초기화
-      if (collectionNameInput) collectionNameInput.value = "";
-      if (collectionIconInput) collectionIconInput.value = "📁";
-      // 선택 초기화
-      collectionSelect.value = "";
+if (dropdownSelected) {
+  dropdownSelected.addEventListener("click", () => {
+    dropdownOptions.classList.toggle("hidden");
+    dropdownSelected.classList.toggle("active");
+  });
+  // 외부 클릭 시 닫기
+  document.addEventListener("click", (e) => {
+    if (!collectionDropdown.contains(e.target)) {
+      dropdownOptions.classList.add("hidden");
+      dropdownSelected.classList.remove("active");
     }
   });
 }
@@ -484,10 +514,35 @@ if (confirmCollectionBtn) {
 
 // 7-6. 태그 입력
 if (tagInput) {
+  // Enter 키로 태그 추가
   tagInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.isComposing) {
       e.preventDefault();
-      addTag(tagInput.value);
+      const value = tagInput.value.trim();
+      if (value) {
+        // 쉼표가 포함되어 있으면 여러 태그로 처리
+        if (value.includes(',')) {
+          addMultipleTags(value);
+        } else {
+          addTag(value);
+        }
+        tagInput.value = "";
+      }
+    }
+  });
+
+  // 쉼표 입력 시 즉시 태그 추가
+  tagInput.addEventListener("input", (e) => {
+    const value = e.target.value;
+    if (value.includes(',')) {
+      // 쉼표 이전 텍스트를 태그로 추가
+      const parts = value.split(',');
+      // 마지막 부분을 제외하고 모두 태그로 추가
+      for (let i = 0; i < parts.length - 1; i++) {
+        addTag(parts[i]);
+      }
+      // 마지막 부분(쉼표 이후 입력 중인 텍스트)만 남김
+      e.target.value = parts[parts.length - 1];
     }
   });
 }
@@ -538,7 +593,7 @@ if (languageSaveBtn) {
 }
 
 // 7-12. 백그라운드에서 오는 인증 상태 변경 수신
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "AUTH_STATE_CHANGED") {
     updateUI(msg.user);
   }

@@ -58,9 +58,19 @@
             <a class="url current-url-link" id="current-url" href="#" target="_blank" rel="noopener noreferrer">...</a>
           </div>
 
-          <select class="collection-select" id="collection-select">
-            <option value="">컬렉션 선택...</option>
-          </select>
+          <div class="collection-select-wrapper">
+            <div class="custom-dropdown" id="collection-dropdown">
+              <button type="button" id="dropdownSelected" class="dropdown-selected flex items-center justify-between w-full px-3 py-2 bg-gray-100 rounded-lg border border-gray-300 text-gray-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                <span id="dropdownSelectedText">컬렉션 선택...</span>
+                <svg class="w-4 h-4 ml-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div id="dropdownOptions" class="dropdown-options hidden absolute z-10 mt-1 w-full bg-white rounded-lg shadow-lg border border-gray-200">
+                <!-- 옵션이 JS에서 동적으로 생성됨 -->
+              </div>
+            </div>
+          </div>
 
           <textarea 
             class="description-input" 
@@ -68,7 +78,7 @@
             placeholder="설명 입력 (선택사항)..."
           ></textarea>
 
-          <div class="tag-input-container">
+          <div class="tag-input-container">  
             <div class="tags-display" id="tags-display"></div>
             <input 
               type="text" 
