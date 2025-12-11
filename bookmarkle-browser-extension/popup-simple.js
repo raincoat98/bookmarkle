@@ -163,14 +163,21 @@ function applyLanguageUI(lang) {
   const btnSave = document.getElementById("save-btn");
   if (btnSave) btnSave.textContent = languageTexts[lang].bookmarkSaveBtn || "북마크 저장";
 
-  const collSelect = document.getElementById("collection-select");
-  if (collSelect && collSelect.options.length > 0) {
-    collSelect.options[0].textContent = languageTexts[lang].collectionSelect || "컬렉션 선택...";
-    for (let i = 0; i < collSelect.options.length; i++) {
-      if (collSelect.options[i].value === "__add_collection__") {
-        collSelect.options[i].textContent = languageTexts[lang].addCollectionOption || "+ 새 컬렉션 추가";
-      }
+  // 커스텀 드롭다운(직접 렌더링된 div)도 다국어 적용
+  if (dropdownOptions) {
+    const addOptionDiv = dropdownOptions.querySelector('.dropdown-option.add');
+    if (addOptionDiv) {
+      addOptionDiv.textContent = languageTexts[lang].addCollectionOption || "+ 새 컬렉션 추가";
     }
+    // 첫 번째 placeholder 옵션도 적용 (있을 경우)
+    const firstOptionDiv = dropdownOptions.querySelector('.dropdown-option');
+    if (firstOptionDiv && firstOptionDiv.dataset.value === "") {
+      firstOptionDiv.textContent = languageTexts[lang].collectionSelect || "컬렉션 선택...";
+    }
+  }
+  // 선택된 placeholder(span)도 다국어 적용
+  if (dropdownSelectedText) {
+    dropdownSelectedText.textContent = languageTexts[lang].collectionSelect || "컬렉션 선택...";
   }
 
   const descInput = document.getElementById("description-input");
@@ -305,11 +312,12 @@ function updateCollectionSelect(selectedId = "") {
     });
     dropdownOptions.appendChild(option);
   });
-  // 컬렉션 추가 옵션
+  // 컬렉션 추가 옵션 (다국어 적용)
   const addOption = document.createElement("div");
   addOption.className = "dropdown-option add";
   addOption.dataset.value = "__add_collection__";
-  addOption.textContent = "+ 새 컬렉션 추가";
+  const lang = getCurrentLanguage();
+  addOption.textContent = (languageTexts[lang] && languageTexts[lang].addCollectionOption) || "+ 새 컬렉션 추가";
   addOption.addEventListener("click", () => {
     dropdownOptions.classList.add("hidden");
     dropdownSelected.classList.remove("active");
