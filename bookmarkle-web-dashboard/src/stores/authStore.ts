@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { watchAuth } from "../firebase";
+import { watchAuth, auth } from "../firebase";
 import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import {
@@ -26,8 +26,12 @@ declare global {
   }
 }
 
+
+import { onIdTokenChanged } from "firebase/auth";
+
 interface AuthState {
   user: User | null;
+  idToken: string | null;
   loading: boolean;
   isActive: boolean | null;
   isActiveLoading: boolean;
@@ -35,6 +39,7 @@ interface AuthState {
 
 interface AuthActions {
   setUser: (user: User | null) => void;
+  setIdToken: (idToken: string | null) => void;
   setLoading: (loading: boolean) => void;
   setIsActive: (isActive: boolean | null) => void;
   setIsActiveLoading: (isActiveLoading: boolean) => void;
@@ -53,12 +58,14 @@ interface AuthActions {
 export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // State
   user: null,
+  idToken: null,
   loading: true,
   isActive: null,
   isActiveLoading: false,
 
   // Actions
   setUser: (user) => set({ user }),
+  setIdToken: (idToken) => set({ idToken }),
   setLoading: (loading) => set({ loading }),
   setIsActive: (isActive) => set({ isActive }),
   setIsActiveLoading: (isActiveLoading) => set({ isActiveLoading }),
@@ -158,8 +165,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       }
     }, 1000);
 
-    // 인증 상태 감시
-    const unsubscribe = watchAuth((user) => {
+    // 인증 상태 감시 (user)
+    const unsubscribeAuth = watchAuth((user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);
 
@@ -192,6 +199,23 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       }
     });
 
-    return unsubscribe;
+    // idToken 변경 감시
+    const unsubscribeToken = onIdTokenChanged(
+      auth,
+      async (user) => {
+        if (user) {
+          const idToken = await user.getIdToken();
+          set({ idToken });
+        } else {
+          set({ idToken: null });
+        }
+      }
+    );
+
+    // 언마운트 시 모두 해제
+    return () => {
+      unsubscribeAuth();
+      unsubscribeToken();
+    };
   },
 }));
