@@ -497,7 +497,17 @@ if (cancelCollectionBtn) {
 if (confirmCollectionBtn) {
   confirmCollectionBtn.addEventListener("click", async () => {
     const name = collectionNameInput?.value.trim();
-    const icon = collectionIconInput?.value.trim() || "📁";
+    let icon = collectionIconInput?.value.trim() || "📁";
+    // 여러 이모지가 입력된 경우 마지막 이모지 하나만 사용
+    if (icon) {
+      // 이모지 유니코드 정규식 (grapheme split)
+      const emojiArr = Array.from(icon.matchAll(/\p{Extended_Pictographic}/gu), m => m[0]);
+      if (emojiArr.length > 0) {
+        icon = emojiArr[emojiArr.length - 1];
+      } else {
+        icon = icon[icon.length - 1]; // fallback: 마지막 문자
+      }
+    }
     if (!name) {
       showToast("컬렉션 이름을 입력하세요.", "error");
       return;
@@ -524,6 +534,23 @@ if (confirmCollectionBtn) {
     }
   });
 }
+
+// 이모지 하나만 입력 가능하도록 input 이벤트 리스너 추가
+if (collectionIconInput) {
+  collectionIconInput.addEventListener("input", (e) => {
+    const input = e.target;
+    if (input && typeof input.value === "string") {
+      // 이모지 유니코드 정규식 (grapheme split)
+      const emojiArr = Array.from(input.value.matchAll(/\p{Extended_Pictographic}/gu), m => m[0]);
+      if (emojiArr.length > 0) {
+        input.value = emojiArr[emojiArr.length - 1];
+      } else if (input.value.length > 1) {
+        input.value = input.value[input.value.length - 1];
+      }
+    }
+  });
+}
+
 
 // 7-6. 태그 입력
 if (tagInput) {
