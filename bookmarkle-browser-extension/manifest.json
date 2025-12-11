@@ -32,6 +32,16 @@
     "contextMenus",
     "notifications"
   ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://bookmarkhub-5ea6c.web.app/*",
+        "http://localhost:3000/*"
+      ],
+      "js": ["content-bridge.js"],
+      "run_at": "document_start"
+    }
+  ],
   "host_permissions": [
     "https://apis.google.com/*",
     "https://www.gstatic.com/*",
