@@ -82,9 +82,9 @@ body {
   font-size: 1.08rem;
   font-weight: 600;
   border-radius: 14px;
-  background: #10b981;
-  color: #fff;
-  border-left: 6px solid #10b981;
+  background: rgb(220, 252, 231); /* success 배경 */
+  color: #047857;
+  border-left: 6px solid #047857; /* 진한 success 테두리 */
   box-shadow: 0 8px 32px rgba(80, 80, 120, 0.18), 0 1.5px 8px rgba(80, 80, 120, 0.10);
   letter-spacing: 0.01em;
   transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55),
@@ -98,9 +98,19 @@ body {
 }
 
 #toast.error {
-  background: #ef4444;
-  color: #fff;
-  border-left: 6px solid #ef4444;
+  background: rgb(254, 226, 226) !important; /* error 배경 */
+  color: #b91c1c !important;
+  border-left: 6px solid #b91c1c !important; /* 진한 error 테두리 */
+}
+#toast.info {
+  background: rgb(219, 234, 254) !important; /* info 배경 */
+  color: #1d4ed8 !important;
+  border-left: 6px solid #1d4ed8 !important; /* 진한 info 테두리 */
+}
+#toast.warning {
+  background: rgb(254, 243, 199) !important; /* warning 배경 */
+  color: #b45309 !important;
+  border-left: 6px solid #b45309 !important; /* 진한 warning 테두리 */
 }
 
 #toast.show {
@@ -119,15 +129,27 @@ body {
 
 /* Dark Mode Toast */
 [data-theme="dark"] #toast {
-  background-color: var(--bg-secondary) !important;
+  background: rgb(6, 78, 59) !important;
   color: var(--text-primary) !important;
-  border-left-color: var(--success) !important;
+  border-left-color: #047857 !important;
 }
 
-[data-theme="dark"] #toast.error,
-[data-theme="dark"] #toast.bg-red-600 {
-  background-color: var(--error) !important;
-  border-left-color: var(--error) !important;
+[data-theme="dark"] #toast.error {
+  background: rgb(127, 29, 29) !important;
+  color: var(--text-primary) !important;
+  border-left-color: #b91c1c !important;
+}
+
+[data-theme="dark"] #toast.info {
+  background: rgb(30, 58, 138) !important;
+  color: var(--text-primary) !important;
+  border-left-color: #1d4ed8 !important;
+}
+
+[data-theme="dark"] #toast.warning {
+  background: rgb(120, 53, 15) !important;
+  color: var(--text-primary) !important;
+  border-left-color: #b45309 !important;
 }
 
 /* ========================================

@@ -70,16 +70,18 @@ function showToast(message, type = "success") {
     toast.textContent = message;
   }
 
+  // 기존 클래스 및 인라인 스타일 제거
   toast.className = "";
+  toast.removeAttribute("style");
+
+  // 타입에 따른 클래스 추가
   toast.classList.add("show");
   if (type === "error") {
-    toast.style.background = "#ef4444";
-    toast.style.color = "#fff";
-    toast.style.borderLeftColor = "#ef4444";
-  } else {
-    toast.style.background = "#10b981";
-    toast.style.color = "#fff";
-    toast.style.borderLeftColor = "#10b981";
+    toast.classList.add("error");
+  } else if (type === "info") {
+    toast.classList.add("info");
+  } else if (type === "warning") {
+    toast.classList.add("warning");
   }
 
   setTimeout(() => {
