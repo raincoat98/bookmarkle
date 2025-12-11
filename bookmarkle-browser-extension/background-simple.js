@@ -74,6 +74,16 @@ function clearAuth() {
 // 시작 시 저장된 인증 정보 복원
 restoreAuthFromStorage();
 
+// 시작 시 빠른 실행모드에 따라 팝업 설정
+chrome.storage.local.get(["quickMode"], (result) => {
+  const isQuickMode = result.quickMode || false;
+  if (isQuickMode) {
+    chrome.action.setPopup({ popup: "" }); // 팝업 비활성화
+  } else {
+    chrome.action.setPopup({ popup: "popup-simple.html" }); // 팝업 활성화
+  }
+});
+
 // offscreen 문서가 없으면 생성 (chrome.offscreen이 없으면 경고만 출력)
 async function ensureOffscreenDocument() {
   if (!chrome.offscreen) {
@@ -311,3 +321,143 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 });
 
 // offscreen에서 오는 메시지 브로드캐스트는 제거 (응답으로만 처리)
+
+// ============================================================
+// 컨텍스트 메뉴 설정 (확장 프로그램 아이콘 우클릭 시)
+// ============================================================
+
+// 컨텍스트 메뉴 생성
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: "openDashboard",
+    title: "대시보드로 가기",
+    contexts: ["action"], // 확장 프로그램 아이콘 우클릭
+  });
+
+  chrome.contextMenus.create({
+    id: "toggleQuickMode",
+    title: "빠른 실행모드 활성화",
+    type: "checkbox",
+    contexts: ["action"],
+  });
+
+  chrome.contextMenus.create({
+    id: "openGithub",
+    title: "깃허브",
+    contexts: ["action"],
+  });
+
+  // 빠른 실행모드 초기 상태 설정
+  chrome.storage.local.get(["quickMode"], (result) => {
+    const isQuickMode = result.quickMode || false;
+    chrome.contextMenus.update("toggleQuickMode", {
+      checked: isQuickMode,
+    });
+  });
+});
+
+// 컨텍스트 메뉴 클릭 이벤트 핸들러
+chrome.contextMenus.onClicked.addListener((info, _tab) => {
+  if (info.menuItemId === "openDashboard") {
+    // 대시보드로 가기 (newtab.html이 자동으로 대시보드로 리다이렉트)
+    chrome.tabs.create({ url: chrome.runtime.getURL("newtab.html") });
+  } else if (info.menuItemId === "toggleQuickMode") {
+    // 빠른 실행모드 토글
+    const isChecked = info.checked;
+    chrome.storage.local.set({ quickMode: isChecked }, () => {
+      console.log(`빠른 실행 모드 ${isChecked ? "활성화" : "비활성화"}`);
+
+      // 팝업 동적으로 활성화/비활성화
+      if (isChecked) {
+        chrome.action.setPopup({ popup: "" }); // 팝업 비활성화 → onClicked 이벤트 발생
+      } else {
+        chrome.action.setPopup({ popup: "popup-simple.html" }); // 팝업 활성화
+      }
+    });
+  } else if (info.menuItemId === "openGithub") {
+    // 깃허브로 이동
+    chrome.tabs.create({ url: "https://github.com/raincoat98/bookmarkle" });
+  }
+});
+
+// 빠른 실행모드 상태가 다른 곳에서 변경되었을 때 컨텍스트 메뉴 및 팝업 업데이트
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.quickMode) {
+    const isQuickMode = changes.quickMode.newValue || false;
+
+    // 컨텍스트 메뉴 체크박스 업데이트
+    chrome.contextMenus.update("toggleQuickMode", {
+      checked: isQuickMode,
+    });
+
+    // 팝업 동적으로 활성화/비활성화
+    if (isQuickMode) {
+      chrome.action.setPopup({ popup: "" }); // 팝업 비활성화
+    } else {
+      chrome.action.setPopup({ popup: "popup-simple.html" }); // 팝업 활성화
+    }
+  }
+});
+
+// ============================================================
+// 아이콘 클릭 이벤트 (빠른 실행모드일 때만 발생)
+// ============================================================
+chrome.action.onClicked.addListener(async (tab) => {
+  console.log("🚀 Icon clicked - quick save mode");
+
+  // 현재 탭 정보 확인
+  if (!tab || !tab.url) {
+    console.error("No active tab URL");
+    chrome.action.setBadgeText({ text: "✗" });
+    chrome.action.setBadgeBackgroundColor({ color: "#EF4444" });
+    setTimeout(() => chrome.action.setBadgeText({ text: "" }), 3000);
+    return;
+  }
+
+  // 인증 상태 확인
+  if (!currentUser || !currentIdToken) {
+    console.log("Not logged in");
+    chrome.action.setBadgeText({ text: "?" });
+    chrome.action.setBadgeBackgroundColor({ color: "#F59E0B" }); // 주황색
+    setTimeout(() => chrome.action.setBadgeText({ text: "" }), 3000);
+    return;
+  }
+
+  // 북마크 저장 (컬렉션은 null)
+  try {
+    await ensureOffscreenDocument();
+
+    const saveResponse = await new Promise((resolve) => {
+      chrome.runtime.sendMessage({
+        type: "OFFSCREEN_SAVE_BOOKMARK",
+        payload: {
+          url: tab.url,
+          title: tab.title || "",
+          collectionId: null,
+          description: "",
+          tags: [],
+          favicon: tab.favIconUrl || "",
+        },
+      }, (response) => {
+        resolve(response);
+      });
+    });
+
+    if (saveResponse?.ok) {
+      console.log("✅ Quick save success");
+      chrome.action.setBadgeText({ text: "✓" });
+      chrome.action.setBadgeBackgroundColor({ color: "#10B981" });
+      setTimeout(() => chrome.action.setBadgeText({ text: "" }), 3000);
+    } else {
+      console.error("Quick save failed:", saveResponse?.error);
+      chrome.action.setBadgeText({ text: "✗" });
+      chrome.action.setBadgeBackgroundColor({ color: "#EF4444" });
+      setTimeout(() => chrome.action.setBadgeText({ text: "" }), 3000);
+    }
+  } catch (error) {
+    console.error("Quick save error:", error);
+    chrome.action.setBadgeText({ text: "✗" });
+    chrome.action.setBadgeBackgroundColor({ color: "#EF4444" });
+    setTimeout(() => chrome.action.setBadgeText({ text: "" }), 3000);
+  }
+});
