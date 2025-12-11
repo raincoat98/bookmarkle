@@ -214,7 +214,7 @@ function applyLanguageUI(lang) {
 // ========================
 // 4. UI 업데이트 함수
 // ========================
-function updateUI(user) {
+function updateUI(user, shouldLoadCollections = true) {
   currentUser = user;
 
   if (user) {
@@ -232,8 +232,10 @@ function updateUI(user) {
       bookmarkSection.style.display = "block";
     }
     if (loginGuide) loginGuide.classList.add("hidden");
-    // 컬렉션 로드
-    loadCollections();
+    // 컬렉션 로드 (옵션)
+    if (shouldLoadCollections) {
+      loadCollections();
+    }
   } else {
     // 로그아웃 상태
     if (userEmailSpan) {
@@ -445,7 +447,8 @@ if (saveBtn) {
 
       showToast("북마크가 저장되었습니다!", "success");
       setTimeout(() => {
-        updateUI(currentUser);
+        // 북마크 저장 후에는 컬렉션을 다시 로드할 필요 없음
+        updateUI(currentUser, false);
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
       }, 1000);
