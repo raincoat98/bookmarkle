@@ -49,5 +49,12 @@
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' https://bookmarkhub-5ea6c.web.app http://localhost:3000; connect-src 'self' https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
   },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
   "minimum_chrome_version": "109"
 }
