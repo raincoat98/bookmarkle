@@ -1,0 +1,38 @@
+body {
+  width: 400px;
+  height: 520px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg-gradient);
+  color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.hidden {
+  display: none !important;
+}
+
+#loginGuide.hidden {
+  display: none;
+}
+
+.divider {
+  height: 1px;
+  background-color: var(--border-primary);
+  margin: 16px 0;
+}
+
+.info {
+  padding: 12px;
+  background-color: var(--bg-secondary);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.logged-in {
+  color: var(--success) !important;
+  font-weight: 600;
+}
