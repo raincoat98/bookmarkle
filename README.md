@@ -15,13 +15,21 @@
 ```
 📚 bookmarkle/
 ├── 🧩 bookmarkle-browser-extension/  # Chrome Extension (Manifest V3)
-│   ├── src/                         # 소스 코드
-│   ├── public/                      # 다국어 지원 파일 (_locales)
+│   ├── _locales/                    # 다국어 지원 파일 (i18n)
+│   ├── background/                  # Service Worker 모듈
+│   ├── firebase/                    # Firebase 설정 및 유틸
+│   ├── offscreen/                   # Offscreen Document
+│   ├── popup/                       # Extension Popup UI
+│   │   ├── popup.html
+│   │   ├── scripts/                 # Popup 스크립트
+│   │   └── styles/                  # Popup 스타일
+│   ├── public/                      # 정적 리소스
+│   ├── dist/                        # 빌드 결과물
 │   ├── manifest.json                # Extension Configuration
-│   ├── background.js                # Service Worker
-│   ├── popup.html/js/css            # Extension Popup UI
-│   ├── offscreen.js/html            # Offscreen Document
-│   └── firebase-config.js           # Firebase 설정 (⚠️ .gitignore)
+│   ├── content-bridge.js            # Content Script
+│   ├── newtab.html/js               # 새 탭 페이지
+│   ├── options.html/js              # 설정 페이지
+│   └── .env                         # Firebase 환경변수 (⚠️ .gitignore)
 │
 ├── 📊 bookmarkle-web-dashboard/     # React + Vite 웹 대시보드
 │   ├── src/
@@ -33,11 +41,14 @@
 │   │   ├── firebase.ts              # Firebase 설정
 │   │   └── App.tsx                  # 메인 App
 │   ├── dist/                        # Build Output
+│   ├── public/                      # 정적 리소스
 │   ├── vite.config.ts               # Vite 설정
 │   ├── tsconfig.json                # TypeScript 설정
-│   └── .env.local                   # Firebase 환경변수 (⚠️ .gitignore)
+│   ├── tailwind.config.js           # Tailwind CSS 설정
+│   ├── firebase.json                # Firebase Hosting 설정
+│   └── .env                         # Firebase 환경변수 (⚠️ .gitignore)
 │
-├── 🛠 Scripts/                      # 배포 및 개발 스크립트
+├── 🛠 빌드 & 배포 스크립트
 │   ├── build.sh                     # 통합 빌드 스크립트
 │   ├── dev.sh                       # 개발 서버 스크립트
 │   ├── deploy.sh                    # 통합 배포 스크립트
@@ -46,15 +57,26 @@
 ├── 📦 build/                        # 빌드 결과물 (⚠️ .gitignore)
 │   └── bookmarkle-browser-extension-*.zip # 패키징된 Extension
 │
-├── 📝 Configuration/
-│   ├── .env.example                 # 환경변수 예시
+├── 📝 프로젝트 설정
 │   ├── .gitignore                   # Git 무시 목록
 │   ├── package.json                 # 프로젝트 메타데이터
-│   └── firebase.json                # Firebase Hosting 설정
+│   ├── firebase.json                # Firebase Hosting 설정
+│   ├── firestore.rules              # Firestore 보안 규칙
+│   ├── firestore.indexes.json       # Firestore 인덱스 설정
+│   ├── serviceAccountKey.json       # Firebase Admin SDK Key (⚠️ .gitignore)
+│   ├── set-admin.js                 # Admin 권한 설정 스크립트
+│   └── LICENSE                      # MIT 라이선스
 │
-└── 📚 Documentation/
-    └── README.md                    # 메인 문서
+└── 📚 README.md                     # 메인 문서
 ```
+
+## 🆕 최근 업데이트
+
+- **새 컬렉션 추가 옵션 상단 고정** - 드롭다운에서 더 쉽게 접근
+- **Firebase 인증 통합** - Extension과 Dashboard 간 완벽한 동기화
+- **Background 모듈화** - 유지보수성 향상을 위한 코드 분리
+- **Offscreen Document 최적화** - 통신 속도 개선 및 타임아웃 단축
+- **컬렉션 실시간 동기화** - Extension ↔ Web 양방향 동기화
 
 ## ✨ 주요 기능
 
@@ -121,27 +143,29 @@
 
 #### 2. 환경변수 설정
 
-##### 북마클 웹 대시보드 환경 변수 (`bookmarkle-web-dashboard/.env.local`)
+##### 북마클 웹 대시보드 환경 변수 (`bookmarkle-web-dashboard/.env`)
 
 ```bash
 VITE_FIREBASE_API_KEY=your_api_key_here
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-##### Chrome Extension 설정 (`bookmarkle-browser-extension/firebase-config.js`)
+##### Chrome Extension 설정 (`bookmarkle-browser-extension/.env`)
 
-```javascript
-export const firebaseConfig = {
-  apiKey: "your_api_key_here",
-  authDomain: "your_project.firebaseapp.com",
-  projectId: "your_project_id",
-  appId: "your_app_id",
-  messagingSenderId: "your_sender_id",
-};
+```bash
+FIREBASE_API_KEY=your_api_key_here
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
 ```
+
+**참고**: Extension은 빌드 시 `inject-config.sh` 스크립트가 `.env` 파일의 값을 자동으로 `firebase/config.js`에 주입합니다.
 
 #### 3. Firebase Hosting 사이트 생성
 
@@ -238,29 +262,31 @@ npm run deploy:extension
 
 각 프로젝트의 Firebase 설정 파일을 수동으로 생성할 수 있습니다:
 
-**웹 대시보드** (`bookmarkle-web-dashboard/.env.local`):
+**웹 대시보드** (`bookmarkle-web-dashboard/.env`):
 
-```
+```bash
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_APP_ID=your_app_id
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-**Chrome Extension** (`bookmarkle-browser-extension/firebase-config.js`):
+**Chrome Extension** (`bookmarkle-browser-extension/.env`):
 
-```javascript
-export const firebaseConfig = {
-  apiKey: "your_api_key",
-  authDomain: "your_project.firebaseapp.com",
-  projectId: "your_project_id",
-  appId: "your_app_id",
-  messagingSenderId: "your_sender_id",
-};
+```bash
+FIREBASE_API_KEY=your_api_key
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
 ```
 
 **Service Account Key**: `serviceAccountKey.json` (프로젝트 루트에 저장 - ⚠️ .gitignore)
+
+**참고**: `.env.example` 파일을 복사하여 `.env`로 저장한 후 실제 값을 입력하세요.
 
 ## 📚 기술 스택
 
@@ -530,25 +556,48 @@ graph TD
 
 **Extension 측**:
 ```
-background.js      ← 메시지 라우팅, 세션 관리, offscreen 상태 캐싱
-offscreen.js       ← Firebase 브릿지, iframe 관리, 로그아웃 시 iframe 재로드
-popup.js           ← UI, 사용자 인터랙션
+background/
+  ├── index.js         ← 메인 엔트리, 모듈 통합
+  ├── messaging.js     ← 메시지 라우팅, offscreen 상태 캐싱
+  ├── auth.js          ← 인증 관련 로직
+  ├── offscreen.js     ← Offscreen document 관리
+  ├── state.js         ← 상태 관리
+  └── quick-save.js    ← 빠른 저장 기능
+
+offscreen/
+  ├── main.js          ← Firebase 브릿지, iframe 관리
+  ├── auth.js          ← 인증 처리
+  ├── firestore.js     ← Firestore 작업
+  └── config.js        ← 설정 관리
+
+popup/scripts/
+  ├── entry.js         ← 팝업 초기화
+  ├── main.js          ← 메인 로직
+  ├── collections.js   ← 컬렉션 관리
+  ├── events.js        ← 이벤트 핸들러
+  └── ui.js            ← UI 렌더링
 ```
 
 **Dashboard 측**:
 ```
-useExtensionAuth.ts      ← 로그인 데이터 전송, 타입 안전성 개선
-useExtensionMessage.ts   ← 요청 처리, 불필요한 로그 제거
-extensionMessaging.ts    ← 메시지 타입 정의
-firestoreService.ts      ← Firestore 작업
-firebase.ts              ← Firebase 초기화, 인증 처리, 팝업 차단 핸들링
+src/hooks/
+  ├── useExtensionAuth.ts      ← 로그인 데이터 전송
+  └── useExtensionMessage.ts   ← 요청 처리
+
+src/utils/
+  ├── extensionMessaging.ts    ← 메시지 타입 정의
+  └── firestoreService.ts      ← Firestore 작업
+
+src/
+  └── firebase.ts              ← Firebase 초기화, 인증 처리
 ```
 
 **주요 최적화 사항**:
-- `background.js`: `isOffscreenReady` 플래그로 불필요한 PING 제거
-- `offscreen.js`: `ensureIframeReady` 타임아웃 10초→5초 단축, 로그아웃 시 iframe 캐시 버스팅
+- `background/messaging.js`: `isOffscreenReady` 플래그로 불필요한 PING 제거
+- `offscreen/main.js`: `ensureIframeReady` 타임아웃 10초→5초 단축, 로그아웃 시 iframe 캐시 버스팅
 - `useExtensionMessage.ts`: 성공 로그 제거로 콘솔 노이즈 감소
 - `firebase.ts`: 중복 코드 제거, 타입 안전성 개선, 에러 처리 통합
+- `popup/scripts/collections.js`: 새 컬렉션 추가 옵션 상단 고정
 
 ## 🔍 문제 해결
 
@@ -612,7 +661,7 @@ service cloud.firestore {
 
 ```bash
 # 1. 저장소 클론
-git clone https://github.com/yourusername/bookmarkle.git
+git clone https://github.com/raincoat98/bookmarkle.git
 cd bookmarkle
 
 # 2. 환경변수 설정
@@ -631,6 +680,8 @@ npm run dev:extension   # Extension 개발용 빌드
 ```bash
 # 1. 빌드
 npm run build:extension
+# 또는
+./build.sh my-extension
 
 # 2. Chrome 확장 프로그램 페이지 열기
 chrome://extensions
@@ -639,7 +690,18 @@ chrome://extensions
 
 # 4. "압축해제된 확장 프로그램 로드" 클릭
 # bookmarkle-browser-extension 폴더 선택
+
+# 5. 개발 중 변경사항 적용
+# - 코드 수정 후 다시 빌드
+# - chrome://extensions 페이지에서 "새로고침" 버튼 클릭
 ```
+
+**주요 개발 파일**:
+- `manifest.json` - Extension 설정 및 권한
+- `background/` - Service Worker 로직
+- `popup/` - 팝업 UI 및 스크립트
+- `offscreen/` - Firebase 연동 레이어
+- `content-bridge.js` - 웹페이지와의 통신
 
 ### 주요 기여 지침
 
@@ -652,7 +714,7 @@ chrome://extensions
 
 문제가 발생하면:
 
-1. [GitHub Issues](https://github.com/yourusername/bookmarkle/issues) 확인
+1. [GitHub Issues](https://github.com/raincoat98/bookmarkle/issues) 확인
 2. 새 이슈 생성 (상세한 설명 포함)
 3. 개발팀에 문의
 
