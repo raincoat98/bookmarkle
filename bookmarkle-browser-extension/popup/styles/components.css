@@ -288,10 +288,15 @@
   }
 }
 
+.memo-section {
+  margin-bottom: 14px;
+}
+
 .description-input {
   width: 100%;
   padding: 12px 14px;
-  margin-bottom: 14px;
+  margin-top: 8px;
+  margin-bottom: 0;
   border: 1.5px solid #e0e7ff;
   border-radius: 10px;
   background-color: #f5f3ff;
