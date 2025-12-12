@@ -79,7 +79,7 @@ export function updateCollectionSelect(selectedId = "") {
     if (dom.collectionNameInput) dom.collectionNameInput.value = "";
     if (dom.collectionIconInput) dom.collectionIconInput.value = "📁";
   });
-  dom.dropdownOptions.appendChild(addOption);
+  dom.dropdownOptions.prepend(addOption);
 }
 
 function createIconNode(iconValue) {

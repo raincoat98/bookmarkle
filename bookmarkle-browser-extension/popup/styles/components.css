@@ -194,8 +194,13 @@
 }
 
 .dropdown-option.add {
-  font-style: italic;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: 1px solid var(--border-primary);
+  background: var(--bg-primary);
   color: var(--accent-secondary);
+  font-weight: 600;
 }
 
 .collection-select {
