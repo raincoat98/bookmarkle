@@ -11,8 +11,10 @@ export async function ensureOffscreenDocument() {
     const hasDocument = await chrome.offscreen.hasDocument();
     if (hasDocument) return;
 
+
+    const offscreenUrl = chrome.runtime.getURL(OFFSCREEN_URL);
     await chrome.offscreen.createDocument({
-      url: OFFSCREEN_URL,
+      url: offscreenUrl,
       reasons: [chrome.offscreen.Reason.DOM_SCRAPING],
       justification: "Firestore bookmark backend operations",
     });

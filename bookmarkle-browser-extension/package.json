@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "inject-config": "./inject-config.sh ../build/bookmarkle-browser-extension",
+    "bundle:background": "esbuild background/index.js --bundle --outfile=dist/background.js --format=esm --target=chrome109 --platform=browser",
     "build": "./inject-config.sh ../build/bookmarkle-browser-extension"
   },
   "keywords": [],

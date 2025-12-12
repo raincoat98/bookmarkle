@@ -163,16 +163,42 @@ build_my_extension() {
             fi
         fi
     done
-    
+
+    # 백그라운드 스크립트 번들링
+    log_info "백그라운드 스크립트 번들링 중..."
+    if npm run bundle:background; then
+        log_success "백그라운드 스크립트 번들링 완료"
+    else
+        log_error "백그라운드 스크립트 번들링 실패"
+        cd "$ROOT_DIR"
+        return 1
+    fi
+
     # 빌드 디렉토리 생성
     BUILD_DIR="../build/bookmarkle-browser-extension"
     rm -rf "$BUILD_DIR"
     mkdir -p "$BUILD_DIR"
     
-    # 파일들 복사 (불필요한 파일 제외)
+    # 파일들 복사 (불필요한 파일 제외, background 소스 파일은 제외하고 번들만 사용)
     log_info "Extension 파일들을 빌드 디렉토리로 복사 중..."
-    rsync -av --exclude='*.DS_Store' --exclude='*.git*' --exclude='node_modules' --exclude='*.log' --exclude='.env' --exclude='.env.*' --exclude='*.env' . "$BUILD_DIR/"
-    
+    rsync -av \
+        --exclude='*.DS_Store' \
+        --exclude='*.git*' \
+        --exclude='node_modules' \
+        --exclude='*.log' \
+        --exclude='.env' \
+        --exclude='.env.*' \
+        --exclude='*.env' \
+        --exclude='dist' \
+        --exclude='background' \
+        . "$BUILD_DIR/"
+
+    # 번들된 백그라운드 스크립트 복사
+    log_info "번들된 백그라운드 스크립트를 복사 중..."
+    mkdir -p "$BUILD_DIR/background"
+    cp dist/background.js "$BUILD_DIR/background/index.js"
+    log_success "번들된 파일 복사 완료: background/index.js"
+
     # 환경 변수 치환 스크립트 실행
     if [ -f "../bookmarkle-browser-extension/inject-config.sh" ]; then
         log_info "환경 변수 치환(inject-config.sh) 실행 중..."
