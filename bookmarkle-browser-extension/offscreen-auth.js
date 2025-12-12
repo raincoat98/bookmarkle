@@ -1,0 +1,340 @@
+(() => {
+  const { firebaseConfig } = window.OffscreenEnv || {};
+
+  if (!firebaseConfig) {
+    console.error("❌ [offscreen] Missing firebaseConfig for auth module");
+    return;
+  }
+
+  let currentUser = null;
+  let currentIdToken = null;
+  let currentRefreshToken = null;
+  let tokenExpiresAt = 0;
+  let authRestorePromise = restoreAuthFromStorage();
+  let refreshingTokenPromise = null;
+  let iframeReady = false;
+  const iframeReadyWaiters = [];
+  const IFRAME_READY_TIMEOUT = 5000;
+
+  document.addEventListener("DOMContentLoaded", configureIframeSrc);
+  window.addEventListener("message", handleIframeMessage);
+
+  function parseJwtExp(token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      return payload.exp * 1000;
+    } catch {
+      return 0;
+    }
+  }
+
+  function persistAuthSnapshot() {
+    if (!chrome.storage?.local) return;
+    if (!currentUser && !currentIdToken && !currentRefreshToken) {
+      chrome.storage.local.remove(["currentUser", "currentIdToken", "currentRefreshToken", "lastLoginTime"]);
+      return;
+    }
+
+    chrome.storage.local.set({
+      currentUser,
+      currentIdToken,
+      currentRefreshToken,
+      lastLoginTime: Date.now(),
+    });
+  }
+
+  function restoreAuthFromStorage() {
+    if (!chrome.storage?.local) {
+      return Promise.resolve(false);
+    }
+
+    return new Promise((resolve) => {
+      chrome.storage.local.get(
+        ["currentUser", "currentIdToken", "currentRefreshToken", "lastLoginTime"],
+        async (result) => {
+          if (!result.currentUser) {
+            resolve(false);
+            return;
+          }
+
+          const hoursSinceLogin = (Date.now() - result.lastLoginTime) / (1000 * 60 * 60);
+          if (hoursSinceLogin >= 24) {
+            chrome.storage.local.remove(["currentUser", "currentIdToken", "currentRefreshToken", "lastLoginTime"]);
+            resolve(false);
+            return;
+          }
+
+          currentUser = result.currentUser;
+          currentIdToken = result.currentIdToken || null;
+          currentRefreshToken = result.currentRefreshToken || null;
+          if (currentIdToken) {
+            tokenExpiresAt = parseJwtExp(currentIdToken);
+          }
+
+          if (!currentIdToken && currentRefreshToken) {
+            try {
+              await refreshIdTokenUsingRefreshToken();
+            } catch (error) {
+              console.warn("⚠️ [offscreen] Failed to refresh token during restore:", error.message);
+            }
+          }
+
+          if (currentUser) {
+            console.log("🔄 [offscreen] Restored auth from storage:", currentUser.email || currentUser.uid);
+          }
+          resolve(!!currentIdToken);
+        }
+      );
+    });
+  }
+
+  async function ensureAuthReady() {
+    if (authRestorePromise) {
+      await authRestorePromise;
+      authRestorePromise = null;
+    }
+  }
+
+  function configureIframeSrc() {
+    const iframe = document.getElementById("auth-iframe");
+    if (!iframe) return;
+
+    try {
+      const baseSrc = iframe.getAttribute("src") || "";
+      const url = new URL(baseSrc, location.origin);
+      url.searchParams.set("extension", "true");
+      url.searchParams.set("iframe", "true");
+      const extId = chrome.runtime?.id || "";
+      if (extId) {
+        url.searchParams.set("extensionId", extId);
+      }
+      iframe.setAttribute("src", url.toString());
+    } catch (error) {
+      console.warn("⚠️ [offscreen] Failed to configure iframe src:", error);
+    }
+  }
+
+  function markIframeReady() {
+    if (iframeReady) return;
+    iframeReady = true;
+    while (iframeReadyWaiters.length) {
+      const waiter = iframeReadyWaiters.shift();
+      if (!waiter) continue;
+      clearTimeout(waiter.timeoutId);
+      waiter.resolve();
+    }
+  }
+
+  function waitForIframeReady() {
+    if (iframeReady) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        const index = iframeReadyWaiters.findIndex((entry) => entry.timeoutId === timeoutId);
+        if (index >= 0) {
+          iframeReadyWaiters.splice(index, 1);
+        }
+        reject(new Error("IFRAME_READY_TIMEOUT"));
+      }, IFRAME_READY_TIMEOUT);
+
+      iframeReadyWaiters.push({ resolve, reject, timeoutId });
+    });
+  }
+
+  function handleIframeMessage(event) {
+    const msg = event.data;
+    if (!msg) return;
+
+    if (msg.type === "IFRAME_READY") {
+      markIframeReady();
+      return;
+    }
+
+    if (msg.type === "AUTH_STATE_CHANGED") {
+      if (msg.user && msg.idToken) {
+        currentUser = msg.user;
+        currentIdToken = msg.idToken;
+        tokenExpiresAt = parseJwtExp(currentIdToken);
+        if (msg.refreshToken) currentRefreshToken = msg.refreshToken;
+        persistAuthSnapshot();
+        console.log("✅ [offscreen] AUTH_STATE_CHANGED received from iframe:", currentUser.email || currentUser.uid);
+      } else {
+        clearAuthState();
+        console.log("✅ [offscreen] AUTH_STATE_CHANGED logout received from iframe");
+      }
+    }
+  }
+
+  function clearAuthState() {
+    currentUser = null;
+    currentIdToken = null;
+    currentRefreshToken = null;
+    tokenExpiresAt = 0;
+    persistAuthSnapshot();
+  }
+
+  async function getFreshIdTokenFromIframe() {
+    await waitForIframeReady();
+    return new Promise((resolve, reject) => {
+      const iframe = document.getElementById("auth-iframe");
+      if (!iframe || !iframe.contentWindow) {
+        return reject(new Error("IFRAME_NOT_READY"));
+      }
+
+      const channel = new MessageChannel();
+      const timeout = setTimeout(() => {
+        reject(new Error("IFRAME_TOKEN_TIMEOUT"));
+      }, 5000);
+
+      channel.port1.onmessage = (event) => {
+        clearTimeout(timeout);
+        const { type, idToken, refreshToken, error } = event.data || {};
+        if (type === "FRESH_ID_TOKEN" && idToken) {
+          resolve({ idToken, refreshToken: refreshToken || null });
+        } else {
+          reject(new Error(error || "IFRAME_NO_TOKEN"));
+        }
+      };
+
+      iframe.contentWindow.postMessage(
+        { type: "GET_FRESH_ID_TOKEN" },
+        "*",
+        [channel.port2]
+      );
+    });
+  }
+
+  async function refreshIdTokenUsingRefreshToken() {
+    if (!currentRefreshToken) throw new Error("NO_REFRESH_TOKEN");
+    if (refreshingTokenPromise) return refreshingTokenPromise;
+
+    const url = `https://securetoken.googleapis.com/v1/token?key=${firebaseConfig.apiKey}`;
+    const body = new URLSearchParams({
+      grant_type: "refresh_token",
+      refresh_token: currentRefreshToken,
+    });
+
+    refreshingTokenPromise = (async () => {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: body.toString(),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.id_token) {
+        throw new Error(data.error?.message || "REFRESH_FAILED");
+      }
+      currentIdToken = data.id_token;
+      tokenExpiresAt = parseJwtExp(currentIdToken);
+      if (data.refresh_token) {
+        currentRefreshToken = data.refresh_token;
+      }
+      persistAuthSnapshot();
+      console.log("✅ [offscreen] Token refreshed via refresh_token");
+      return currentIdToken;
+    })().finally(() => {
+      refreshingTokenPromise = null;
+    });
+
+    return refreshingTokenPromise;
+  }
+
+  async function ensureFreshIdToken() {
+    await ensureAuthReady();
+
+    if (!currentUser) return;
+    const now = Date.now();
+    const isExpired = !currentIdToken || (tokenExpiresAt && tokenExpiresAt <= now);
+    const isExpiringSoon = tokenExpiresAt && tokenExpiresAt - now < 5 * 60 * 1000;
+
+    if (!isExpired && !isExpiringSoon) return;
+
+    if (currentRefreshToken) {
+      try {
+        await refreshIdTokenUsingRefreshToken();
+        return;
+      } catch (error) {
+        console.warn("⚠️ [offscreen] Refresh via refresh_token failed:", error.message);
+      }
+    }
+
+    const { idToken, refreshToken } = await getFreshIdTokenFromIframe();
+    currentIdToken = idToken;
+    tokenExpiresAt = parseJwtExp(currentIdToken);
+    if (refreshToken) currentRefreshToken = refreshToken;
+    persistAuthSnapshot();
+    console.log("✅ [offscreen] Token refreshed via iframe");
+  }
+
+  function postAuthStateToIframe() {
+    const iframe = document.getElementById("auth-iframe");
+    if (!iframe || !iframe.contentWindow) return;
+    iframe.contentWindow.postMessage(
+      {
+        type: "AUTH_STATE_CHANGED",
+        user: currentUser,
+        idToken: currentIdToken,
+        refreshToken: currentRefreshToken,
+      },
+      "*"
+    );
+  }
+
+  async function handleBackgroundAuthUpdate(msg) {
+    if (!msg.user) {
+      clearAuthState();
+      postAuthStateToIframe();
+      return;
+    }
+
+    currentUser = msg.user;
+    if (msg.idToken) {
+      currentIdToken = msg.idToken;
+      tokenExpiresAt = parseJwtExp(currentIdToken);
+    } else {
+      currentIdToken = null;
+      tokenExpiresAt = 0;
+    }
+    if (msg.refreshToken) {
+      currentRefreshToken = msg.refreshToken;
+    }
+    if (!currentIdToken) {
+      try {
+        await ensureFreshIdToken();
+      } catch (error) {
+        console.warn("⚠️ [offscreen] Failed to refresh token from background payload:", error.message);
+      }
+    }
+    persistAuthSnapshot();
+    console.log("🔐 Received auth payload:", currentUser.email || currentUser.uid);
+    postAuthStateToIframe();
+  }
+
+  async function applyInitAuth(initPayload) {
+    if (!initPayload?.user) return;
+
+    if (!currentUser) {
+      currentUser = initPayload.user;
+      console.log("✅ [offscreen] Initial user info received from background:", currentUser.email || currentUser.uid);
+    }
+    if (initPayload.refreshToken) {
+      currentRefreshToken = initPayload.refreshToken;
+    }
+    if (!currentIdToken && currentRefreshToken) {
+      try {
+        await ensureFreshIdToken();
+      } catch (error) {
+        console.warn("⚠️ [offscreen] Failed to refresh token from INIT_AUTH:", error.message);
+      }
+    }
+    persistAuthSnapshot();
+  }
+
+  window.OffscreenAuth = {
+    ensureAuthReady,
+    ensureFreshIdToken,
+    handleBackgroundAuthUpdate,
+    applyInitAuth,
+    getCurrentUser: () => currentUser,
+    getCurrentIdToken: () => currentIdToken,
+  };
+})();
