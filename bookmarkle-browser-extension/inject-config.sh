@@ -56,6 +56,7 @@ fi
 
 PUBLIC_SIGN_URL_VALUE="${PUBLIC_SIGN_URL}"
 PUBLIC_START_PAGE_URL_VALUE="${PUBLIC_START_PAGE_URL}"
+IFRAME_PUBLIC_SIGN_URL_VALUE="${IFRAME_PUBLIC_SIGN_URL}"
 
 # Firebase 환경변수 값
 FIREBASE_API_KEY_VALUE="${VITE_FIREBASE_API_KEY}"
@@ -74,8 +75,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
         if [ -f "$file" ]; then
             sed -i '' "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
+            sed -i '' "s|_IFRAME_PUBLIC_SIGN_URL_|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|__ENV_PUBLIC_SIGN_URL__|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|__ENV_PUBLIC_START_PAGE_URL__|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
+            sed -i '' "s|__ENV_IFRAME_PUBLIC_SIGN_URL__|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
 
             # Firebase 환경변수 치환
             sed -i '' "s|_FIREBASE_API_KEY_|${FIREBASE_API_KEY_VALUE}|g" "$file"
@@ -92,8 +95,10 @@ else
         if [ -f "$file" ]; then
             sed -i "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
+            sed -i "s|_IFRAME_PUBLIC_SIGN_URL_|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|__ENV_PUBLIC_SIGN_URL__|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|__ENV_PUBLIC_START_PAGE_URL__|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
+            sed -i "s|__ENV_IFRAME_PUBLIC_SIGN_URL__|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
 
             # Firebase 환경변수 치환
             sed -i "s|_FIREBASE_API_KEY_|${FIREBASE_API_KEY_VALUE}|g" "$file"
@@ -109,6 +114,7 @@ fi
 log_success "모든 JavaScript 파일에 환경 변수 주입 완료"
 log_info "PUBLIC_SIGN_URL: $PUBLIC_SIGN_URL_VALUE"
 log_info "PUBLIC_START_PAGE_URL: $PUBLIC_START_PAGE_URL_VALUE"
+log_info "IFRAME_PUBLIC_SIGN_URL: $IFRAME_PUBLIC_SIGN_URL_VALUE"
 log_info "FIREBASE_API_KEY: $FIREBASE_API_KEY_VALUE"
 log_info "FIREBASE_AUTH_DOMAIN: $FIREBASE_AUTH_DOMAIN_VALUE"
 log_info "FIREBASE_PROJECT_ID: $FIREBASE_PROJECT_ID_VALUE"

@@ -27,7 +27,7 @@ export function initializeTokenMessageHandler() {
   console.log("🔐 [tokenMessageHandler] Initialized - listening for GET_FRESH_ID_TOKEN");
 
   // iframe 모드인지 확인 (URL에 extension=true 파라미터가 있으면 iframe)
-  const isIframeMode = new URLSearchParams(window.location.search).get("extension") === "true";
+  const isIframeMode = new URLSearchParams(window.location.search).get("iframe") === "true";
 
   if (isIframeMode) {
     // iframe이 준비되었음을 parent(offscreen)에게 알림
