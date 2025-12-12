@@ -18,20 +18,28 @@ window.addEventListener("message", (event) => {
 
   console.log("[content] received from web:", data);
 
-  // 익스텐션(background/offscreen)으로 전달
-  chrome.runtime.sendMessage(
-    {
-      type: "WEB_AUTH_STATE_CHANGED",
-      payload: data,
-    },
-    (response) => {
-      if (chrome.runtime.lastError) {
-        console.warn("[content] sendMessage error:", chrome.runtime.lastError.message);
-        return;
+  if (!chrome.runtime?.id) {
+    console.warn("[content] Extension context invalidated - skipping sendMessage");
+    return;
+  }
+
+  try {
+    chrome.runtime.sendMessage(
+      {
+        type: "WEB_AUTH_STATE_CHANGED",
+        payload: data,
+      },
+      (response) => {
+        if (chrome.runtime.lastError) {
+          console.warn("[content] sendMessage error:", chrome.runtime.lastError.message);
+          return;
+        }
+        console.log("[content] extension response:", response);
       }
-      console.log("[content] extension response:", response);
-    }
-  );
+    );
+  } catch (error) {
+    console.warn("[content] Failed to send message:", error);
+  }
 });
 
 // (선택) background → 웹(React)으로 보내고 싶을 때를 위한 리스너
