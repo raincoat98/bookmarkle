@@ -6,6 +6,11 @@ import {
 } from "./auth.js";
 import { isOffscreenSynced, markOffscreenSynced, sendToOffscreen } from "./offscreen.js";
 
+const WEB_URL_PATTERNS = [
+  "https://bookmarkhub-5ea6c.web.app/*",
+  "http://localhost:3000/*",
+];
+
 export function initMessageHandlers() {
   chrome.runtime.onMessageExternal.addListener(handleExternalMessage);
   chrome.runtime.onMessage.addListener(handleInternalMessage);
@@ -36,10 +41,18 @@ function handleInternalMessage(msg, sender, sendResponse) {
     return true;
   }
 
+  if (msg.type === "WEB_COLLECTIONS_UPDATED") {
+    broadcastCollectionsUpdated();
+    sendResponse({ ok: true });
+    return false;
+  }
+
   if (msg.type === "ADD_COLLECTION") {
     proxyToOffscreen(
       { type: "OFFSCREEN_ADD_COLLECTION", payload: msg.payload },
-      sendResponse
+      sendResponse,
+      undefined,
+      () => broadcastCollectionsUpdated()
     );
     return true;
   }
@@ -151,13 +164,43 @@ function broadcastAuthState(user, refreshToken) {
   );
 }
 
-function proxyToOffscreen(message, sendResponse, transformResponse) {
+function proxyToOffscreen(message, sendResponse, transformResponse, afterSuccess) {
   sendToOffscreen(message)
     .then((response) => {
+      if (afterSuccess) {
+        try {
+          afterSuccess(response);
+        } catch (error) {
+          console.error("broadcast error:", error);
+        }
+      }
       sendResponse(transformResponse ? transformResponse(response) : response);
     })
     .catch((error) => {
       console.error(`${message.type} error:`, error.message);
       sendResponse({ ok: false, error: error.message });
     });
+}
+
+function broadcastCollectionsUpdated() {
+  chrome.runtime.sendMessage(
+    { type: "COLLECTIONS_UPDATED" },
+    () => {
+      if (chrome.runtime.lastError) {
+        // popup이 없을 수 있으므로 무시
+      }
+    }
+  );
+
+  chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
+    tabs.forEach((tab) => {
+      if (typeof tab.id === "number") {
+        chrome.tabs.sendMessage(tab.id, {
+          type: "EXTENSION_EVENT_TO_WEB",
+          eventType: "COLLECTIONS_UPDATED",
+          payload: {},
+        });
+      }
+    });
+  });
 }

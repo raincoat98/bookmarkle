@@ -237,5 +237,8 @@ export function bindPopupEvents({ publicSignUrl }) {
     if (msg.type === "AUTH_STATE_CHANGED") {
       updateUI(msg.user);
     }
+    if (msg.type === "COLLECTIONS_UPDATED") {
+      loadCollections();
+    }
   });
 }

@@ -6,6 +6,16 @@ const ALLOWED_ORIGINS = new Set([
   "https://bookmarkhub-5ea6c.web.app",
 ]);
 
+const FORWARDABLE_TYPES = {
+  AUTH_STATE_CHANGED: "WEB_AUTH_STATE_CHANGED",
+  COLLECTIONS_UPDATED: "WEB_COLLECTIONS_UPDATED",
+};
+
+const forwardThrottleTracker = new Map();
+const forwardPayloadTracker = new Map();
+const FORWARD_COOLDOWN_MS = 500;
+const FORWARD_DUPLICATE_SUPPRESS_MS = 1000;
+
 window.addEventListener("message", (event) => {
   // 보안: origin 체크 (필수!!)
   if (!ALLOWED_ORIGINS.has(event.origin)) {
@@ -13,7 +23,26 @@ window.addEventListener("message", (event) => {
   }
 
   const data = event.data;
-  if (!data || data.source !== "bookmarkhub" || !data.type) return;
+  if (!data || data.source !== "bookmarkhub" || !data.type || data.fromExtension) return;
+
+  const runtimeMessageType = FORWARDABLE_TYPES[data.type];
+  if (!runtimeMessageType) {
+    return;
+  }
+
+  const now = Date.now();
+  const payloadKey = JSON.stringify(data.payload ?? {});
+  const payloadTrackerKey = `${data.type}|${payloadKey}`;
+  const lastPayloadForward = forwardPayloadTracker.get(payloadTrackerKey) ?? 0;
+  if (now - lastPayloadForward < FORWARD_DUPLICATE_SUPPRESS_MS) {
+    return;
+  }
+  const lastForward = forwardThrottleTracker.get(data.type) ?? 0;
+  if (now - lastForward < FORWARD_COOLDOWN_MS) {
+    return;
+  }
+  forwardThrottleTracker.set(data.type, now);
+  forwardPayloadTracker.set(payloadTrackerKey, now);
 
   console.log("[content] received from web:", data);
 
@@ -25,7 +54,7 @@ window.addEventListener("message", (event) => {
   try {
     chrome.runtime.sendMessage(
       {
-        type: "WEB_AUTH_STATE_CHANGED",
+        type: runtimeMessageType,
         payload: data,
       },
       (response) => {
@@ -49,6 +78,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         source: "bookmarkhub",
         type: msg.eventType,
         payload: msg.payload,
+        fromExtension: true,
       },
       window.origin
     );

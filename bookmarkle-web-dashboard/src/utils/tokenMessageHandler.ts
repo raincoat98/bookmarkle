@@ -1,4 +1,5 @@
 import { auth } from "../firebase";
+import { useCollectionStore } from "../stores/collectionStore";
 
 declare global {
   interface Window {
@@ -33,6 +34,18 @@ export function initializeTokenMessageHandler() {
     if (data.type === "AUTH_STATE_CHANGED") {
       if (!data.idToken && data.user) {
         window.toast?.warn?.("세션 동기화 실패: 다시 로그인 해주세요.");
+      }
+      return;
+    }
+
+    if (data.type === "COLLECTIONS_UPDATED") {
+      if (!data.fromExtension) {
+        return;
+      }
+      const user = auth.currentUser;
+      if (user) {
+        const { fetchCollections } = useCollectionStore.getState();
+        await fetchCollections(user.uid);
       }
       return;
     }
