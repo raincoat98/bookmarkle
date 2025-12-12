@@ -73,6 +73,7 @@ async function addCollection({ name, icon }) {
 }
 let tokenExpiresAt = 0;
 let authInitialized = false;
+let iframeReady = false; // iframe 준비 상태 추적
 
 // JWT exp 파싱 함수
 function parseJwtExp(idToken) {
@@ -100,7 +101,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
 window.addEventListener("message", (event) => {
   const msg = event.data;
-  console.log(msg);
+  console.log("[offscreen] window.message received:", msg);
+
+  // iframe 준비 완료 메시지
+  if (msg && msg.type === "IFRAME_READY") {
+    iframeReady = true;
+    console.log("✅ [offscreen] iframe is ready");
+    return;
+  }
+
   if (!msg || msg.type !== "AUTH_STATE_CHANGED") return;
   if (msg.user && msg.idToken) {
     // 로그인
@@ -204,11 +213,33 @@ async function ensureFreshIdToken() {
 
       if (
         error.message === "NO_USER" ||
-        error.message === "NO_ID_TOKEN" ||           
+        error.message === "NO_ID_TOKEN" ||
         error.message === "auth iframe not ready" ||
         error.message === "iframe token request timeout"
       ) {
-        console.warn("⚠️ [ensureFreshIdToken] iframe not ready - will use current token");
+        console.warn("⚠️ [ensureFreshIdToken] iframe not ready - trying to restore from storage");
+
+        // Fallback: chrome.storage에서 토큰 복원 시도
+        if (!currentIdToken && chrome.storage && chrome.storage.local) {
+          try {
+            const stored = await chrome.storage.local.get(["currentIdToken", "lastLoginTime"]);
+            if (stored.currentIdToken && stored.lastLoginTime) {
+              const storedTokenExp = parseJwtExp(stored.currentIdToken);
+              if (storedTokenExp && storedTokenExp > Date.now()) {
+                currentIdToken = stored.currentIdToken;
+                tokenExpiresAt = storedTokenExp;
+                console.log("✅ [ensureFreshIdToken] Token restored from chrome.storage");
+                return;
+              } else {
+                console.warn("⚠️ [ensureFreshIdToken] Stored token is expired");
+              }
+            }
+          } catch (storageError) {
+            console.error("❌ [ensureFreshIdToken] Failed to restore from storage:", storageError);
+          }
+        }
+
+        console.warn("⚠️ [ensureFreshIdToken] Will proceed with current token (may be null)");
         return;
       }
 
@@ -254,6 +285,20 @@ async function restoreTokenFromStorage() {
           tokenExpiresAt = parseJwtExp(result.currentIdToken);
           authInitialized = true;
           console.log("🔄 [offscreen] Restored token from storage:", currentUser.email || currentUser.uid);
+
+          // iframe에 복원된 인증 정보 전달 (iframe 로드 대기 후)
+          setTimeout(() => {
+            const authIframe = document.getElementById("auth-iframe");
+            if (authIframe && authIframe.contentWindow) {
+              authIframe.contentWindow.postMessage({
+                type: "AUTH_STATE_CHANGED",
+                user: currentUser,
+                idToken: currentIdToken
+              }, "*");
+              console.log("📤 [offscreen] Sent restored auth to iframe");
+            }
+          }, 1000); // iframe 로드 대기
+
           resolve(true);
         } else {
           console.log("⏰ [offscreen] Token expired, clearing storage");
@@ -304,6 +349,17 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
         chrome.storage.local.remove(["currentUser", "currentIdToken", "lastLoginTime"]);
       }
       console.log("✅ User logged out");
+
+      // iframe에 로그아웃 전달
+      const authIframe = document.getElementById("auth-iframe");
+      if (authIframe && authIframe.contentWindow) {
+        authIframe.contentWindow.postMessage({
+          type: "AUTH_STATE_CHANGED",
+          user: null,
+          idToken: null
+        }, "*");
+        console.log("📤 [offscreen] Sent logout to iframe");
+      }
     } else if (msg.idToken) {
       // 로그인 - idToken과 user 정보 저장
       currentUser = msg.user;
@@ -321,6 +377,17 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
         });
       }
       console.log("🔐 Received idToken from background:", msg.user.email);
+
+      // iframe에 인증 정보 전달 (iframe이 Firebase Auth 초기화 가능하도록)
+      const authIframe = document.getElementById("auth-iframe");
+      if (authIframe && authIframe.contentWindow) {
+        authIframe.contentWindow.postMessage({
+          type: "AUTH_STATE_CHANGED",
+          user: msg.user,
+          idToken: msg.idToken
+        }, "*");
+        console.log("📤 [offscreen] Sent auth to iframe for Firebase initialization");
+      }
     } else {
       // 사용자 정보만 동기화 (OFFSCREEN_READY 시)
       currentUser = msg.user;

@@ -26,32 +26,48 @@ import { signInWithCustomToken } from "firebase/auth";
 export function initializeTokenMessageHandler() {
   console.log("🔐 [tokenMessageHandler] Initialized - listening for GET_FRESH_ID_TOKEN");
 
+  // iframe 모드인지 확인 (URL에 extension=true 파라미터가 있으면 iframe)
+  const isIframeMode = new URLSearchParams(window.location.search).get("extension") === "true";
+
+  if (isIframeMode) {
+    // iframe이 준비되었음을 parent(offscreen)에게 알림
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: "IFRAME_READY" }, "*");
+      console.log("📤 [tokenMessageHandler] Sent IFRAME_READY to parent");
+    }
+  }
+
   // AUTH_STATE_CHANGED 메시지 수신 시 세션 동기화 (idToken 유무 및 에러 안내 강화)
   const handleAuthStateChanged = async (event: MessageEvent) => {
-    console.log("[tokenMessageHandler] AUTH_STATE_CHANGED event received:", event);
-    
+    console.log("[tokenMessageHandler] Message received:", event.data);
+
     const data = event.data;
     if (data?.type === "AUTH_STATE_CHANGED") {
       if (!data.idToken) {
-        // idToken이 없으면 안내
-        console.warn("⚠️ [tokenMessageHandler] AUTH_STATE_CHANGED: idToken 없음, 세션 동기화 불가");
-
-        if (window.toast) {
-          window.toast.warn?.("세션 동기화 실패: 인증 토큰이 없습니다. 새로고침 해주세요.");
+        // idToken이 없으면 로그아웃 처리
+        if (data.user === null) {
+          console.log("✅ [tokenMessageHandler] Logout received from extension");
+          // 필요시 로그아웃 처리
+          return;
         }
+
+        console.warn("⚠️ [tokenMessageHandler] AUTH_STATE_CHANGED: idToken 없음, 세션 동기화 불가");
         return;
       }
+
       // 이미 로그인된 상태가 아니면 강제 로그인
       if (!auth.currentUser) {
         try {
           await signInWithCustomToken(auth, data.idToken);
-          console.log("✅ [tokenMessageHandler] Firebase Auth 세션 동기화 완료");
+          console.log("✅ [tokenMessageHandler] Firebase Auth 세션 동기화 완료 (from extension)");
         } catch (err) {
           console.error("❌ [tokenMessageHandler] 세션 동기화 실패:", err);
-          if (window.toast) {
+          if (!isIframeMode && window.toast) {
             window.toast.error?.("세션 동기화 실패: 다시 로그인 해주세요.");
           }
         }
+      } else {
+        console.log("✅ [tokenMessageHandler] User already logged in, skipping signInWithCustomToken");
       }
     }
   };

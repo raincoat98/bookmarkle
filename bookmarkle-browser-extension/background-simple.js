@@ -130,8 +130,11 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
       chrome.runtime.sendMessage({
         type: "AUTH_STATE_CHANGED",
         user: msg.user,
-      }).catch(() => {
+      }, () => {
         // popup이 닫혀있으면 에러 무시
+        if (chrome.runtime.lastError) {
+          // 무시 (popup이 열려있지 않을 수 있음)
+        }
       });
     } else if (!msg.user) {
       // 로그아웃
@@ -154,7 +157,11 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
       chrome.runtime.sendMessage({
         type: "AUTH_STATE_CHANGED",
         user: null,
-      }).catch(() => {});
+      }, () => {
+        if (chrome.runtime.lastError) {
+          // 무시 (popup이 열려있지 않을 수 있음)
+        }
+      });
     }
 
     sendResponse({ ok: true });
@@ -170,21 +177,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "WEB_AUTH_STATE_CHANGED") {
       if (msg.payload.user && msg.payload.idToken) {
         saveAuthToStorage(msg.payload.user);
-        ensureOffscreenDocument().then(() => {
-          chrome.runtime.sendMessage({
-            type: "OFFSCREEN_AUTH_STATE_CHANGED",
-            user: msg.payload.user,
-            idToken: msg.payload.idToken,
+        ensureOffscreenDocument()
+          .then(() => {
+            chrome.runtime.sendMessage({
+              type: "OFFSCREEN_AUTH_STATE_CHANGED",
+              user: msg.payload.user,
+              idToken: msg.payload.idToken,
+            }, () => {
+              if (chrome.runtime.lastError) {
+                console.warn("⚠️ Failed to send auth to offscreen:", chrome.runtime.lastError.message);
+              }
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to create offscreen for auth sync:", error);
           });
-        });
       } else {
         clearAuth();
-        ensureOffscreenDocument().then(() => {
-          chrome.runtime.sendMessage({
-            type: "OFFSCREEN_AUTH_STATE_CHANGED",
-            user: null,
+        ensureOffscreenDocument()
+          .then(() => {
+            chrome.runtime.sendMessage({
+              type: "OFFSCREEN_AUTH_STATE_CHANGED",
+              user: null,
+            }, () => {
+              if (chrome.runtime.lastError) {
+                console.warn("⚠️ Failed to send logout to offscreen:", chrome.runtime.lastError.message);
+              }
+            });
+          })
+          .catch((error) => {
+            console.error("Failed to create offscreen for logout:", error);
           });
-        });
       }
       sendResponse({ ok: true });
       return true;
@@ -254,14 +277,25 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         chrome.runtime.sendMessage({
           type: "OFFSCREEN_AUTH_STATE_CHANGED",
           user: null,
-        }).catch(() => {});
+        }, () => {
+          if (chrome.runtime.lastError) {
+            console.warn("⚠️ Failed to send logout to offscreen:", chrome.runtime.lastError.message);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error("Failed to create offscreen for logout:", error);
       });
 
     // popup에 브로드캐스트
     chrome.runtime.sendMessage({
       type: "AUTH_STATE_CHANGED",
       user: null,
-    }).catch(() => {});
+    }, () => {
+      if (chrome.runtime.lastError) {
+        // 무시 (popup이 열려있지 않을 수 있음)
+      }
+    });
 
     sendResponse({ ok: true });
     return false;
