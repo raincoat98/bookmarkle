@@ -41,10 +41,21 @@ export function updateCollectionSelect(selectedId = "") {
     const option = document.createElement("div");
     option.className = "dropdown-option" + (selectedId === collection.id ? " selected" : "");
     option.dataset.value = collection.id;
-    option.innerHTML = `<span>${collection.icon || "📁"}</span> <span>${collection.name}</span>`;
+
+    const iconNode = createIconNode(collection.icon);
+    iconNode.classList.add("mr-2");
+    const nameNode = document.createElement("span");
+    nameNode.textContent = collection.name;
+    option.appendChild(iconNode);
+    option.appendChild(nameNode);
+
     option.addEventListener("click", () => {
       if (dom.dropdownSelectedText) {
-        dom.dropdownSelectedText.textContent = `${collection.icon || "📁"} ${collection.name}`;
+        dom.dropdownSelectedText.innerHTML = "";
+        const selectedIcon = createIconNode(collection.icon);
+        selectedIcon.classList.add("mr-1");
+        dom.dropdownSelectedText.appendChild(selectedIcon);
+        dom.dropdownSelectedText.appendChild(document.createTextNode(collection.name));
       }
       dom.dropdownOptions.classList.add("hidden");
       dom.dropdownSelected?.classList.remove("active");
@@ -69,4 +80,28 @@ export function updateCollectionSelect(selectedId = "") {
     if (dom.collectionIconInput) dom.collectionIconInput.value = "📁";
   });
   dom.dropdownOptions.appendChild(addOption);
+}
+
+function createIconNode(iconValue) {
+  const container = document.createElement("span");
+  container.className = "collection-icon";
+  const iconText = iconValue?.trim();
+  if (!iconText) {
+    container.textContent = "📁";
+    return container;
+  }
+
+  const lucideLib = window.lucide;
+  if (lucideLib?.icons?.[iconText]) {
+    const svg = lucideLib.createElement(lucideLib.icons[iconText], {
+      width: 16,
+      height: 16,
+    });
+    svg.classList.add("lucide");
+    container.appendChild(svg);
+    return container;
+  }
+
+  container.textContent = iconText;
+  return container;
 }
