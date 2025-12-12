@@ -1,9 +1,15 @@
 // content-bridge.js
 // 웹(React)에서 오는 메시지 듣기
+const ALLOWED_ORIGINS = new Set([
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "https://bookmarkhub-5ea6c.web.app",
+]);
+
 window.addEventListener("message", (event) => {
+  console.log("[content] message event:", event);
   // 보안: origin 체크 (필수!!)
-  if (event.origin !== "http://localhost:3000" && 
-      event.origin !== "https://bookmarkhub-5ea6c.web.app") {
+  if (!ALLOWED_ORIGINS.has(event.origin)) {
     return;
   }
 
@@ -44,7 +50,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   }
   // background에서 오는 WEB_AUTH_STATE_CHANGED 메시지 처리
   if (msg.type === "WEB_AUTH_STATE_CHANGED") {
-    logger.log("[content] WEB_AUTH_STATE_CHANGED received from extension:", msg.payload);
+    console.log("[content] WEB_AUTH_STATE_CHANGED received from extension:", msg.payload);
     // 필요시 웹에 브로드캐스트 가능 (예시)
     window.postMessage(
       {
@@ -52,6 +58,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         type: "AUTH_STATE_CHANGED",
         user: msg.payload.user,
         idToken: msg.payload.idToken,
+        refreshToken: msg.payload.refreshToken || null,
       },
       window.origin
     );

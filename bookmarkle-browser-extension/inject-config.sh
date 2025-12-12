@@ -73,12 +73,12 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
     for file in "${TARGET_FILES[@]}"; do
         if [ -f "$file" ]; then
+            sed -i '' "s|_IFRAME_PUBLIC_SIGN_URL_|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
-            sed -i '' "s|_IFRAME_PUBLIC_SIGN_URL_|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
+            sed -i '' "s|__ENV_IFRAME_PUBLIC_SIGN_URL__|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|__ENV_PUBLIC_SIGN_URL__|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i '' "s|__ENV_PUBLIC_START_PAGE_URL__|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
-            sed -i '' "s|__ENV_IFRAME_PUBLIC_SIGN_URL__|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
 
             # Firebase 환경변수 치환
             sed -i '' "s|_FIREBASE_API_KEY_|${FIREBASE_API_KEY_VALUE}|g" "$file"
@@ -93,12 +93,12 @@ else
     # Linux
     for file in "${TARGET_FILES[@]}"; do
         if [ -f "$file" ]; then
+            sed -i "s|_IFRAME_PUBLIC_SIGN_URL_|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|_PUBLIC_SIGN_URL_|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|_PUBLIC_START_PAGE_URL_|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
-            sed -i "s|_IFRAME_PUBLIC_SIGN_URL_|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
+            sed -i "s|__ENV_IFRAME_PUBLIC_SIGN_URL__|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|__ENV_PUBLIC_SIGN_URL__|${PUBLIC_SIGN_URL_VALUE}|g" "$file"
             sed -i "s|__ENV_PUBLIC_START_PAGE_URL__|${PUBLIC_START_PAGE_URL_VALUE}|g" "$file"
-            sed -i "s|__ENV_IFRAME_PUBLIC_SIGN_URL__|${IFRAME_PUBLIC_SIGN_URL_VALUE}|g" "$file"
 
             # Firebase 환경변수 치환
             sed -i "s|_FIREBASE_API_KEY_|${FIREBASE_API_KEY_VALUE}|g" "$file"
@@ -121,4 +121,3 @@ log_info "FIREBASE_PROJECT_ID: $FIREBASE_PROJECT_ID_VALUE"
 log_info "FIREBASE_STORAGE_BUCKET: $FIREBASE_STORAGE_BUCKET_VALUE"
 log_info "FIREBASE_MESSAGING_SENDER_ID: $FIREBASE_MESSAGING_SENDER_ID_VALUE"
 log_info "FIREBASE_APP_ID: $FIREBASE_APP_ID_VALUE"
-

@@ -180,6 +180,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
           });
         // 로그인 시 AUTH_STATE_CHANGED 메시지 전송 (source: 'bookmarkhub', window.origin)
         const idToken = await user.getIdToken();
+        const refreshToken = getRefreshToken(user);
         window.postMessage({
           source: "bookmarkhub",
           type: "AUTH_STATE_CHANGED",
@@ -189,6 +190,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             displayName: user.displayName,
           },
           idToken,
+          refreshToken,
         }, window.origin);
       } else {
         set({ isActive: null, isActiveLoading: false });
@@ -198,6 +200,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
           type: "AUTH_STATE_CHANGED",
           user: null,
           idToken: null,
+          refreshToken: null,
         }, window.origin);
       }
     });
@@ -222,3 +225,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     };
   },
 }));
+const getRefreshToken = (user: User | null) => {
+  if (!user) return null;
+  const sts = (user as { stsTokenManager?: { refreshToken?: string } }).stsTokenManager;
+  if (sts?.refreshToken) return sts.refreshToken;
+  return (user as { refreshToken?: string }).refreshToken ?? null;
+};

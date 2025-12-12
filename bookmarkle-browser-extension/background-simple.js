@@ -2,10 +2,11 @@
 // Background가 주요 인증 상태를 관리하고, Popup은 Background에서 직접 조회
 
 const OFFSCREEN_URL = "offscreen-simple.html";
-const AUTH_CACHE_KEYS = ["currentUser", "lastLoginTime"];
+const AUTH_CACHE_KEYS = ["currentUser", "currentRefreshToken", "lastLoginTime"];
 
 // 메모리: 빠른 접근용
 let currentUser = null;
+let currentRefreshToken = null;
 let offscreenSynced = false; // Offscreen 초기 동기화 완료 플래그
 
 // 확장 시작 시 크롬스토리지에서 인증 정보 복원
@@ -20,6 +21,7 @@ async function restoreAuthFromStorage() {
         // 24시간 이내면 복원
         if (hoursSinceLogin < 24) {
           currentUser = result.currentUser;
+          currentRefreshToken = result.currentRefreshToken || null;
           console.log("🔄 Restored user from chrome.storage.local:", currentUser.email || currentUser.uid);
           resolve(true);
         } else {
@@ -35,15 +37,22 @@ async function restoreAuthFromStorage() {
 }
 
 // 인증 정보 저장 (메모리 + Storage)
-function saveAuthToStorage(user) {
+function saveAuthToStorage(user, refreshToken) {
   currentUser = user;
+  if (refreshToken) {
+    currentRefreshToken = refreshToken;
+  }
   offscreenSynced = false; // 새 인증 상태이므로 동기화 필요
 
   if (chrome.storage?.local && user) {
-    chrome.storage.local.set({
+    const payload = {
       currentUser: user,
       lastLoginTime: Date.now(),
-    }, () => {
+    };
+    if (currentRefreshToken) {
+      payload.currentRefreshToken = currentRefreshToken;
+    }
+    chrome.storage.local.set(payload, () => {
       console.log("✅ Auth saved to storage:", user.email || user.uid);
     });
   }
@@ -52,6 +61,7 @@ function saveAuthToStorage(user) {
 // 인증 정보 삭제
 function clearAuth() {
   currentUser = null;
+  currentRefreshToken = null;
   offscreenSynced = false; // 로그아웃 상태 동기화 필요
 
   if (chrome.storage?.local) {
@@ -107,7 +117,7 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
   if (msg.type === "AUTH_STATE_CHANGED") {
     if (msg.user && msg.idToken) {
       // Background에 user 정보만 저장 (idToken은 offscreen이 관리)
-      saveAuthToStorage(msg.user);
+      saveAuthToStorage(msg.user, msg.refreshToken);
 
       // Offscreen에 user + idToken 전달 (초기 로그인 토큰)
       ensureOffscreenDocument()
@@ -116,6 +126,7 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
             type: "OFFSCREEN_AUTH_STATE_CHANGED",
             user: msg.user,
             idToken: msg.idToken,
+            refreshToken: msg.refreshToken || currentRefreshToken,
           }, () => {
             if (chrome.runtime.lastError) {
               console.warn("⚠️ Failed to send auth to offscreen:", chrome.runtime.lastError.message);
@@ -130,6 +141,7 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
       chrome.runtime.sendMessage({
         type: "AUTH_STATE_CHANGED",
         user: msg.user,
+        refreshToken: msg.refreshToken || currentRefreshToken,
       }, () => {
         // popup이 닫혀있으면 에러 무시
         if (chrome.runtime.lastError) {
@@ -141,10 +153,11 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
       clearAuth();
       ensureOffscreenDocument()
         .then(() => {
-          chrome.runtime.sendMessage({
-            type: "OFFSCREEN_AUTH_STATE_CHANGED",
-            user: null,
-          }, () => {
+      chrome.runtime.sendMessage({
+        type: "OFFSCREEN_AUTH_STATE_CHANGED",
+        user: null,
+        refreshToken: null,
+      }, () => {
             if (chrome.runtime.lastError) {
               console.warn("⚠️ Failed to send logout to offscreen:", chrome.runtime.lastError.message);
             }
@@ -157,6 +170,7 @@ chrome.runtime.onMessageExternal.addListener((msg, sender, sendResponse) => {
       chrome.runtime.sendMessage({
         type: "AUTH_STATE_CHANGED",
         user: null,
+        refreshToken: null,
       }, () => {
         if (chrome.runtime.lastError) {
           // 무시 (popup이 열려있지 않을 수 있음)
@@ -176,13 +190,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     // content-bridge.js에서 오는 인증 메시지 처리
     if (msg.type === "WEB_AUTH_STATE_CHANGED") {
       if (msg.payload.user && msg.payload.idToken) {
-        saveAuthToStorage(msg.payload.user);
+        saveAuthToStorage(msg.payload.user, msg.payload.refreshToken);
         ensureOffscreenDocument()
           .then(() => {
             chrome.runtime.sendMessage({
               type: "OFFSCREEN_AUTH_STATE_CHANGED",
               user: msg.payload.user,
               idToken: msg.payload.idToken,
+              refreshToken: msg.payload.refreshToken || currentRefreshToken,
             }, () => {
               if (chrome.runtime.lastError) {
                 console.warn("⚠️ Failed to send auth to offscreen:", chrome.runtime.lastError.message);
@@ -192,6 +207,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           .catch((error) => {
             console.error("Failed to create offscreen for auth sync:", error);
           });
+        chrome.runtime.sendMessage({
+          type: "AUTH_STATE_CHANGED",
+          user: msg.payload.user,
+          refreshToken: msg.payload.refreshToken || currentRefreshToken,
+        }, () => {
+          if (chrome.runtime.lastError) {
+            // ignore
+          }
+        });
       } else {
         clearAuth();
         ensureOffscreenDocument()
@@ -199,6 +223,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
             chrome.runtime.sendMessage({
               type: "OFFSCREEN_AUTH_STATE_CHANGED",
               user: null,
+              refreshToken: null,
             }, () => {
               if (chrome.runtime.lastError) {
                 console.warn("⚠️ Failed to send logout to offscreen:", chrome.runtime.lastError.message);
@@ -208,6 +233,15 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           .catch((error) => {
             console.error("Failed to create offscreen for logout:", error);
           });
+        chrome.runtime.sendMessage({
+          type: "AUTH_STATE_CHANGED",
+          user: null,
+          refreshToken: null,
+        }, () => {
+          if (chrome.runtime.lastError) {
+            // ignore
+          }
+        });
       }
       sendResponse({ ok: true });
       return true;
@@ -245,11 +279,12 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       sendResponse({
         type: "INIT_AUTH",
         user: currentUser,
+        refreshToken: currentRefreshToken,
       });
       return true; // 비동기 응답 대기
     } else {
       // 동기화할 user 정보 없음
-      sendResponse({ type: "INIT_AUTH", user: null });
+      sendResponse({ type: "INIT_AUTH", user: null, refreshToken: null });
       return true;
     }
   }
@@ -277,6 +312,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         chrome.runtime.sendMessage({
           type: "OFFSCREEN_AUTH_STATE_CHANGED",
           user: null,
+          refreshToken: null,
         }, () => {
           if (chrome.runtime.lastError) {
             console.warn("⚠️ Failed to send logout to offscreen:", chrome.runtime.lastError.message);
@@ -291,6 +327,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     chrome.runtime.sendMessage({
       type: "AUTH_STATE_CHANGED",
       user: null,
+      refreshToken: null,
     }, () => {
       if (chrome.runtime.lastError) {
         // 무시 (popup이 열려있지 않을 수 있음)

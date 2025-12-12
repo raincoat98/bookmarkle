@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import type { User } from "firebase/auth";
 import { useAuthStore } from "../../stores";
 import { useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
@@ -22,6 +23,13 @@ declare global {
     };
   }
 }
+
+const getRefreshToken = (user: User | null) => {
+  if (!user) return null;
+  const sts = (user as { stsTokenManager?: { refreshToken?: string } }).stsTokenManager;
+  if (sts?.refreshToken) return sts.refreshToken;
+  return (user as { refreshToken?: string }).refreshToken ?? null;
+};
 
 export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
@@ -52,6 +60,7 @@ export const LoginScreen = () => {
       (async () => {
         try {
           const idToken = await user.getIdToken();
+          const refreshToken = getRefreshToken(user);
           const userData = {
             uid: user.uid,
             email: user.email || "",
@@ -65,6 +74,7 @@ export const LoginScreen = () => {
             type: "AUTH_STATE_CHANGED",
             user: userData,
             idToken,
+            refreshToken,
           }, window.origin);
 
           setExtensionLoginSuccess(true);
