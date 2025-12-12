@@ -22,15 +22,18 @@
     placeholder="설명 입력 (선택사항)..."
   ></textarea>
 
-  <div class="tag-input-container">
+  <div class="tag-section">
+    <label class="label">태그 (선택사항)</label>
+    <div class="tag-input-container">
+      <input
+        type="text"
+        class="tag-input"
+        id="tag-input"
+        placeholder="엔터로 태그 추가 (쉼표로 구분)"
+        autocomplete="off"
+      />
+    </div>
     <div class="tags-display" id="tags-display"></div>
-    <input
-      type="text"
-      class="tag-input font-medium border-none outline-none bg-transparent focus:ring-0"
-      id="tag-input"
-      placeholder="엔터로 태그 추가 (쉼표로 구분)"
-      autocomplete="off"
-    />
   </div>
 
   <button

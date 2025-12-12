@@ -317,17 +317,18 @@
   font-weight: 400;
 }
 
-.tag-input-container {
+.tag-section {
   margin-bottom: 14px;
+}
+
+.tag-input-container {
+  margin-bottom: 10px;
   padding: 12px 14px;
   border: 1.5px solid #e0e7ff;
   border-radius: 10px;
   background-color: #f5f3ff;
   min-height: 46px;
   transition: all 0.2s;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
   box-shadow: 0 2px 8px rgba(139, 92, 246, 0.08);
 }
 
@@ -340,8 +341,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-bottom: 0;
-  min-height: 24px;
+  margin-top: 4px;
+  min-height: 0;
 }
 
 .tag-item {
@@ -374,7 +375,7 @@
 
 .tag-input {
   width: 100%;
-  padding: 4px 0 0 0;
+  padding: 0;
   border: none;
   background-color: transparent;
   color: #312e81;
