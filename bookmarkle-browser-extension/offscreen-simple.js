@@ -61,10 +61,6 @@ async function addCollection({ name, icon }) {
     const result = await response.json();
     console.log("✅ Collection added:", { name, id: result.name });
 
-    // 캐시 무효화 (새 컬렉션이 추가되었으므로)
-    cachedCollections = null;
-    collectionsLastFetched = 0;
-
     return result;
   } catch (e) {
     console.error("❌ Firestore add collection error:", e);
@@ -341,9 +337,6 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
       // 로그아웃
       currentUser = null;
       currentIdToken = null;
-      // 캐시 무효화
-      cachedCollections = null;
-      collectionsLastFetched = 0;
       // Storage 클리어
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.remove(["currentUser", "currentIdToken", "lastLoginTime"]);
@@ -365,9 +358,6 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
       currentUser = msg.user;
       currentIdToken = msg.idToken;
       tokenExpiresAt = parseJwtExp(msg.idToken);
-      // 캐시 무효화 (새 사용자이므로)
-      cachedCollections = null;
-      collectionsLastFetched = 0;
       // Storage 저장
       if (chrome.storage && chrome.storage.local) {
         chrome.storage.local.set({
@@ -624,22 +614,10 @@ async function listBookmarks() {
   }
 }
 
-// 컬렉션 캐시
-let cachedCollections = null;
-let collectionsLastFetched = 0;
-const COLLECTIONS_CACHE_TTL = 30000; // 30초 캐시 유효 기간
-
-// 컬렉션 목록 조회 (REST API 사용 + 캐싱)
+// 컬렉션 목록 조회 (REST API 사용)
 async function getCollections() {
   if (!currentUser) {
     return [];
-  }
-
-  // 캐시 확인 - 30초 이내에 가져온 데이터가 있으면 재사용
-  const now = Date.now();
-  if (cachedCollections && (now - collectionsLastFetched < COLLECTIONS_CACHE_TTL)) {
-    console.log("✅ Using cached collections:", cachedCollections.length);
-    return cachedCollections;
   }
 
   // 토큰 만료 체크 및 갱신
@@ -721,10 +699,6 @@ async function getCollections() {
         };
       });
     console.log("✅ Collections loaded:", collections.length);
-
-    // 캐시 저장
-    cachedCollections = collections;
-    collectionsLastFetched = Date.now();
 
     return collections;
   } catch (e) {
