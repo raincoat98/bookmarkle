@@ -18,18 +18,18 @@
 }
 
 [data-theme="dark"] {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
+  --bg-primary: #1a1b3d;
+  --bg-secondary: #252649;
+  --bg-tertiary: #2d3052;
   --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e40af 100%);
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-tertiary: #94a3b8;
-  --border-primary: #334155;
-  --border-secondary: #475569;
-  --shadow-primary: rgba(0, 0, 0, 0.3);
-  --shadow-secondary: rgba(0, 0, 0, 0.2);
-  --accent-primary: #818cf8;
+  --border-primary: #4c4f7a;
+  --border-secondary: #6366f1;
+  --shadow-primary: rgba(99, 102, 241, 0.15);
+  --shadow-secondary: rgba(99, 102, 241, 0.08);
+  --accent-primary: #8b5cf6;
   --accent-secondary: #a78bfa;
   --success: #34d399;
   --error: #f87171;
@@ -63,13 +63,20 @@
 [data-theme="dark"] .dropdown-selected {
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  border-color: var(--border-primary);
+  border-color: var(--border-secondary);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.12);
+}
+
+[data-theme="dark"] .dropdown-selected:hover,
+[data-theme="dark"] .dropdown-selected:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
 }
 
 [data-theme="dark"] .dropdown-options {
   background: var(--bg-secondary);
-  border-color: var(--border-primary);
-  box-shadow: 0 8px 32px var(--shadow-secondary);
+  border-color: var(--border-secondary);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.25);
   scrollbar-color: var(--accent-primary) var(--bg-tertiary);
 }
 
@@ -111,7 +118,7 @@
 
 [data-theme="dark"] .collection-select:focus {
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
 }
 
 [data-theme="dark"] .collection-select::placeholder {
@@ -129,14 +136,14 @@
 
 [data-theme="dark"] .current-page .url,
 [data-theme="dark"] .current-page .current-url-link {
-  background: #312e81 !important;
+  background: rgba(139, 92, 246, 0.15) !important;
   color: #c7d2fe !important;
-  border-color: #6366f1 !important;
+  border-color: #8b5cf6 !important;
 }
 
 [data-theme="dark"] .current-page .current-url-link:hover {
-  background: #1e1b4b !important;
-  color: #a5b4fc !important;
+  background: rgba(167, 139, 250, 0.2) !important;
+  color: #e0e7ff !important;
   border-color: #a78bfa !important;
 }
 
@@ -148,7 +155,7 @@
 
 [data-theme="dark"] .description-input:focus {
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
 }
 
 [data-theme="dark"] .description-input::placeholder {
@@ -162,13 +169,14 @@
 
 [data-theme="dark"] .tag-input-container:focus-within {
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 2px rgba(129, 140, 248, 0.12) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
 }
 
 [data-theme="dark"] .tag-item {
-  background: linear-gradient(90deg, #6366f1 0%, #a78bfa 100%) !important;
+  background: linear-gradient(90deg, #8b5cf6 0%, #a78bfa 100%) !important;
   color: #f1f5f9 !important;
-  border: 1px solid #818cf8 !important;
+  border: 1px solid #a78bfa !important;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25) !important;
 }
 
 [data-theme="dark"] .tag-input {
@@ -216,7 +224,7 @@
   background-color: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
 }
 
 [data-theme="dark"] input::placeholder,
@@ -234,7 +242,7 @@
   background-color: var(--bg-tertiary) !important;
   color: var(--text-primary) !important;
   border-color: var(--accent-primary) !important;
-  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
 }
 
 [data-theme="dark"] textarea::placeholder {
