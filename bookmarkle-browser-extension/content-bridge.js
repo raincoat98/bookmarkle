@@ -7,7 +7,6 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 window.addEventListener("message", (event) => {
-  console.log("[content] message event:", event);
   // 보안: origin 체크 (필수!!)
   if (!ALLOWED_ORIGINS.has(event.origin)) {
     return;

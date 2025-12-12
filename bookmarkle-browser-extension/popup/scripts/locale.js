@@ -1,9 +1,9 @@
-import { dom } from "./popup-dom.js";
-import { state } from "./popup-state.js";
+import { dom } from "./dom.js";
+import { state } from "./state.js";
 
 export async function loadLanguageTexts() {
   try {
-    const res = await fetch("i18n.json");
+    const res = await fetch("../i18n.json");
     state.languageTexts = await res.json();
   } catch (error) {
     console.error("i18n.json load error:", error);

@@ -1,4 +1,4 @@
-import { dom } from "./popup-dom.js";
+import { dom } from "./dom.js";
 
 export function setTheme(mode) {
   document.documentElement.setAttribute("data-theme", mode);

@@ -146,7 +146,7 @@ build_my_extension() {
     fi
     
     # 필수 파일들 확인
-    REQUIRED_FILES=("background.js" "popup.html" "popup.js")
+    REQUIRED_FILES=("background/index.js" "popup/index.html" "popup/scripts/main.js")
     for file in "${REQUIRED_FILES[@]}"; do
         if [ ! -f "$file" ]; then
             log_warning "권장 파일이 없습니다: $file"

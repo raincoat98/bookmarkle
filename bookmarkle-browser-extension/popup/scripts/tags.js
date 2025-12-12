@@ -1,5 +1,5 @@
-import { dom } from "./popup-dom.js";
-import { state } from "./popup-state.js";
+import { dom } from "./dom.js";
+import { state } from "./state.js";
 
 export function addTag(tag) {
   const trimmed = tag.trim();

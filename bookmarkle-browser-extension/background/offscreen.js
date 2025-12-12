@@ -1,5 +1,5 @@
-import { OFFSCREEN_URL } from "./background-constants.js";
-import { backgroundState } from "./background-state.js";
+import { OFFSCREEN_URL } from "./constants.js";
+import { backgroundState } from "./state.js";
 
 export async function ensureOffscreenDocument() {
   if (!chrome.offscreen) {

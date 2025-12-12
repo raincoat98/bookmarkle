@@ -1,6 +1,6 @@
-import { dom } from "./popup-dom.js";
-import { state } from "./popup-state.js";
-import { getCurrentLanguage } from "./popup-locale.js";
+import { dom } from "./dom.js";
+import { state } from "./state.js";
+import { getCurrentLanguage } from "./locale.js";
 
 let loginRequiredHandler = () => {};
 

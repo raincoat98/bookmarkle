@@ -12,7 +12,7 @@
     "128": "public/bookmark.png"
   },
   "action": {
-    "default_popup": "popup-simple.html",
+    "default_popup": "popup/index.html",
     "default_icon": {
       "16": "public/bookmark.png",
       "32": "public/bookmark.png",
@@ -21,7 +21,7 @@
     }
   },
   "background": {
-    "service_worker": "background-simple.js",
+    "service_worker": "background/index.js",
     "type": "module"
   },
   "permissions": [

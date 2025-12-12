@@ -1,5 +1,5 @@
-import { AUTH_CACHE_KEYS } from "./background-constants.js";
-import { backgroundState } from "./background-state.js";
+import { AUTH_CACHE_KEYS } from "./constants.js";
+import { backgroundState } from "./state.js";
 
 export async function restoreAuthFromStorage() {
   if (!chrome.storage?.local) return false;

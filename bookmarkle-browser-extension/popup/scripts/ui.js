@@ -1,6 +1,6 @@
-import { dom } from "./popup-dom.js";
-import { loadCollections, setLoginRequiredHandler } from "./popup-collections.js";
-import { state } from "./popup-state.js";
+import { dom } from "./dom.js";
+import { loadCollections, setLoginRequiredHandler } from "./collections.js";
+import { state } from "./state.js";
 
 export function updateUI(user, shouldLoadCollections = true) {
   state.currentUser = user;

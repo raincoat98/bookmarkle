@@ -1,5 +1,5 @@
-import { getCurrentUser } from "./background-auth.js";
-import { sendToOffscreen } from "./background-offscreen.js";
+import { getCurrentUser } from "./auth.js";
+import { sendToOffscreen } from "./offscreen.js";
 
 export function initQuickSave() {
   chrome.action.onClicked.addListener(handleActionClick);

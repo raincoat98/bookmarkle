@@ -1,5 +1,5 @@
-import { QUICK_MODE_KEY } from "./background-constants.js";
-import { setQuickMode } from "./background-quick-mode.js";
+import { QUICK_MODE_KEY } from "./constants.js";
+import { setQuickMode } from "./quick-mode.js";
 
 export function initContextMenus() {
   chrome.runtime.onInstalled.addListener(() => {

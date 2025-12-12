@@ -1,10 +1,10 @@
-import { dom } from "./popup-dom.js";
-import { getCurrentLanguage, applyLanguageUI, showToast } from "./popup-locale.js";
-import { toggleTheme } from "./popup-theme.js";
-import { loadCollections } from "./popup-collections.js";
-import { state } from "./popup-state.js";
-import { clearTags, addTag, addMultipleTags, removeTag } from "./popup-tags.js";
-import { updateUI } from "./popup-ui.js";
+import { dom } from "./dom.js";
+import { getCurrentLanguage, applyLanguageUI, showToast } from "./locale.js";
+import { toggleTheme } from "./theme.js";
+import { loadCollections } from "./collections.js";
+import { state } from "./state.js";
+import { clearTags, addTag, addMultipleTags, removeTag } from "./tags.js";
+import { updateUI } from "./ui.js";
 
 export function bindPopupEvents({ publicSignUrl }) {
   if (dom.loginBtn) {

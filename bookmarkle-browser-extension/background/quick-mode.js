@@ -1,4 +1,4 @@
-import { QUICK_MODE_KEY } from "./background-constants.js";
+import { QUICK_MODE_KEY } from "./constants.js";
 
 export function initQuickModeControls() {
   chrome.storage.local.get([QUICK_MODE_KEY], (result) => {
@@ -15,7 +15,7 @@ export function initQuickModeControls() {
 }
 
 export function applyQuickMode(isQuickMode) {
-  chrome.action.setPopup({ popup: isQuickMode ? "" : "popup-simple.html" });
+  chrome.action.setPopup({ popup: isQuickMode ? "" : "popup/index.html" });
 }
 
 export function setQuickMode(value) {

@@ -1,8 +1,8 @@
-import { dom } from "./popup-dom.js";
-import { bindPopupEvents } from "./popup-events.js";
-import { applyLanguageUI, getCurrentLanguage, loadLanguageTexts } from "./popup-locale.js";
-import { initTheme } from "./popup-theme.js";
-import { updateUI } from "./popup-ui.js";
+import { dom } from "./dom.js";
+import { bindPopupEvents } from "./events.js";
+import { applyLanguageUI, getCurrentLanguage, loadLanguageTexts } from "./locale.js";
+import { initTheme } from "./theme.js";
+import { updateUI } from "./ui.js";
 
 const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 

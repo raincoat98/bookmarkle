@@ -3,8 +3,8 @@ import {
   getCurrentRefreshToken,
   getCurrentUser,
   saveAuthToStorage,
-} from "./background-auth.js";
-import { isOffscreenSynced, markOffscreenSynced, sendToOffscreen } from "./background-offscreen.js";
+} from "./auth.js";
+import { isOffscreenSynced, markOffscreenSynced, sendToOffscreen } from "./offscreen.js";
 
 export function initMessageHandlers() {
   chrome.runtime.onMessageExternal.addListener(handleExternalMessage);
@@ -59,7 +59,7 @@ function handleInternalMessage(msg, sender, sendResponse) {
     return true;
   }
 
-  if (sender.url && sender.url.includes("offscreen-simple.html")) {
+  if (sender.url && sender.url.includes("offscreen/index.html")) {
     return false;
   }
 
