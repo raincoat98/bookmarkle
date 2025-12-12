@@ -117,7 +117,7 @@
 
 .collection-select-wrapper {
   position: relative;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 }
 
 .custom-dropdown {
@@ -289,7 +289,7 @@
 }
 
 .memo-section {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .description-input {
@@ -323,7 +323,7 @@
 }
 
 .tag-section {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .tag-input-container {
