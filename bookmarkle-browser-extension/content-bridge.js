@@ -16,6 +16,15 @@ const forwardPayloadTracker = new Map();
 const FORWARD_COOLDOWN_MS = 500;
 const FORWARD_DUPLICATE_SUPPRESS_MS = 1000;
 
+// 확장 프로그램 컨텍스트 유효성 검사
+function isExtensionContextValid() {
+  try {
+    return !!chrome.runtime?.id;
+  } catch (error) {
+    return false;
+  }
+}
+
 window.addEventListener("message", (event) => {
   // 보안: origin 체크 (필수!!)
   if (!ALLOWED_ORIGINS.has(event.origin)) {
@@ -46,7 +55,7 @@ window.addEventListener("message", (event) => {
 
   console.log("[content] received from web:", data);
 
-  if (!chrome.runtime?.id) {
+  if (!isExtensionContextValid()) {
     console.warn("[content] Extension context invalidated - skipping sendMessage");
     return;
   }
@@ -71,35 +80,37 @@ window.addEventListener("message", (event) => {
 });
 
 // (선택) background → 웹(React)으로 보내고 싶을 때를 위한 리스너
-chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-  if (msg.type === "EXTENSION_EVENT_TO_WEB") {
-    window.postMessage(
-      {
-        source: "bookmarkhub",
-        type: msg.eventType,
-        payload: msg.payload,
-        fromExtension: true,
-      },
-      window.origin
-    );
-    sendResponse({ ok: true });
-    return true;
-  }
-  // background에서 오는 WEB_AUTH_STATE_CHANGED 메시지 처리
-  if (msg.type === "WEB_AUTH_STATE_CHANGED") {
-    console.log("[content] WEB_AUTH_STATE_CHANGED received from extension:", msg.payload);
-    // 필요시 웹에 브로드캐스트 가능 (예시)
-    window.postMessage(
-      {
-        source: "bookmarkhub",
-        type: "AUTH_STATE_CHANGED",
-        user: msg.payload.user,
-        idToken: msg.payload.idToken,
-        refreshToken: msg.payload.refreshToken || null,
-      },
-      window.origin
-    );
-    sendResponse({ ok: true });
-    return true;
-  }
-});
+if (isExtensionContextValid()) {
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (msg.type === "EXTENSION_EVENT_TO_WEB") {
+      window.postMessage(
+        {
+          source: "bookmarkhub",
+          type: msg.eventType,
+          payload: msg.payload,
+          fromExtension: true,
+        },
+        window.origin
+      );
+      sendResponse({ ok: true });
+      return true;
+    }
+    // background에서 오는 WEB_AUTH_STATE_CHANGED 메시지 처리
+    if (msg.type === "WEB_AUTH_STATE_CHANGED") {
+      console.log("[content] WEB_AUTH_STATE_CHANGED received from extension:", msg.payload);
+      // 필요시 웹에 브로드캐스트 가능 (예시)
+      window.postMessage(
+        {
+          source: "bookmarkhub",
+          type: "AUTH_STATE_CHANGED",
+          user: msg.payload.user,
+          idToken: msg.payload.idToken,
+          refreshToken: msg.payload.refreshToken || null,
+        },
+        window.origin
+      );
+      sendResponse({ ok: true });
+      return true;
+    }
+  });
+}
