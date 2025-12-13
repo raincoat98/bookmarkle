@@ -10,22 +10,6 @@ import {
   logout as fbLogout,
 } from "../firebase";
 
-declare global {
-  interface WindowWithChrome extends Window {
-    chrome?: {
-      runtime: {
-        sendMessage: (
-          extensionId: string,
-          message: unknown,
-          callback?: (response?: unknown) => void
-        ) => void;
-        lastError?: { message: string };
-      };
-    };
-  }
-}
-
-
 import { onIdTokenChanged } from "firebase/auth";
 
 interface AuthState {
@@ -124,13 +108,19 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     logout: async () => {
       try {
         await fbLogout();
-        // Offscreen에도 전송 (source: 'bookmarkhub', window.origin)
-        window.postMessage({
-          source: "bookmarkhub",
-          type: "AUTH_STATE_CHANGED",
-          user: null,
-          idToken: null,
-        }, window.origin);
+        // Offscreen/content script에 전송 (bookmarkhub envelope 통일)
+        window.postMessage(
+          {
+            source: "bookmarkhub",
+            type: "AUTH_STATE_CHANGED",
+            payload: {
+              user: null,
+              idToken: null,
+              refreshToken: null,
+            },
+          },
+          window.location.origin
+        );
       } catch (error) {
         console.error("로그아웃 실패:", error);
         throw error;
@@ -178,30 +168,40 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             console.error("사용자 상태 확인 실패:", error);
             set({ isActive: true, isActiveLoading: false });
           });
-        // 로그인 시 AUTH_STATE_CHANGED 메시지 전송 (source: 'bookmarkhub', window.origin)
+        // 로그인 시 AUTH_STATE_CHANGED 메시지 전송 (bookmarkhub envelope 통일)
         const idToken = await user.getIdToken();
         const refreshToken = getRefreshToken(user);
-        window.postMessage({
-          source: "bookmarkhub",
-          type: "AUTH_STATE_CHANGED",
-          user: {
-            uid: user.uid,
-            email: user.email,
-            displayName: user.displayName,
+        window.postMessage(
+          {
+            source: "bookmarkhub",
+            type: "AUTH_STATE_CHANGED",
+            payload: {
+              user: {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+              },
+              idToken,
+              refreshToken,
+            },
           },
-          idToken,
-          refreshToken,
-        }, window.origin);
+          window.location.origin
+        );
       } else {
         set({ isActive: null, isActiveLoading: false });
-        // 로그아웃 시 AUTH_STATE_CHANGED 메시지 전송 (source: 'bookmarkhub', window.origin)
-        window.postMessage({
-          source: "bookmarkhub",
-          type: "AUTH_STATE_CHANGED",
-          user: null,
-          idToken: null,
-          refreshToken: null,
-        }, window.origin);
+        // 로그아웃 시 AUTH_STATE_CHANGED 메시지 전송 (bookmarkhub envelope 통일)
+        window.postMessage(
+          {
+            source: "bookmarkhub",
+            type: "AUTH_STATE_CHANGED",
+            payload: {
+              user: null,
+              idToken: null,
+              refreshToken: null,
+            },
+          },
+          window.location.origin
+        );
       }
     });
 

@@ -72,9 +72,6 @@ function AppRoutes() {
   const location = useLocation();
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
 
-  // Check if accessed from extension
-  const isExtensionContext = new URLSearchParams(location.search).get("extension") === "true";
-
   useEffect(() => {
     if (!user?.uid) return;
     getUserDefaultPage(user.uid)
@@ -83,8 +80,7 @@ function AppRoutes() {
   }, [user?.uid]);
 
   // 로그인한 사용자가 홈으로 접근할 때 기본 페이지로 리다이렉트
-  // 단, extension context일 때는 리다이렉트하지 않음 (LoginScreen에서 처리)
-  if (user && location.pathname === "/" && !isExtensionContext) {
+  if (user && location.pathname === "/") {
     return (
       <Navigate
         to={defaultPage === "bookmarks" ? "/bookmarks" : "/dashboard"}
@@ -95,11 +91,6 @@ function AppRoutes() {
 
   // 로그인 안 한 사용자가 홈으로 접근할 때 로그인 화면으로
   if (!user && location.pathname === "/") {
-    return <LoginScreen />;
-  }
-
-  // Extension context에서 로그인한 경우 LoginScreen 유지
-  if (user && location.pathname === "/" && isExtensionContext) {
     return <LoginScreen />;
   }
 

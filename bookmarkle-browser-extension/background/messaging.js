@@ -33,9 +33,10 @@ function handleExternalMessage(msg, sender, sendResponse) {
 
 function handleInternalMessage(msg, sender, sendResponse) {
   if (msg.type === "WEB_AUTH_STATE_CHANGED") {
-    processAuthPayload(msg.payload.user, {
-      idToken: msg.payload.idToken,
-      refreshToken: msg.payload.refreshToken,
+    const forwardedPayload = msg?.payload?.payload ?? msg?.payload ?? {};
+    processAuthPayload(forwardedPayload.user, {
+      idToken: forwardedPayload.idToken,
+      refreshToken: forwardedPayload.refreshToken,
     });
     sendResponse({ ok: true });
     return true;

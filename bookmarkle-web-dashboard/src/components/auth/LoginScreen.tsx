@@ -9,20 +9,6 @@ import {
   detectBrowser,
   getBrowserCompatibilityMessage,
 } from "../../utils/browserDetection";
-declare global {
-  interface WindowWithChrome extends Window {
-    chrome?: {
-      runtime: {
-        sendMessage: (
-          extensionId: string,
-          message: unknown,
-          callback?: (response?: unknown) => void
-        ) => void;
-        lastError?: { message: string };
-      };
-    };
-  }
-}
 
 const getRefreshToken = (user: User | null) => {
   if (!user) return null;
@@ -68,14 +54,19 @@ export const LoginScreen = () => {
             photoURL: user.photoURL || "",
           };
 
-          // Offscreen에 전송 (source: 'bookmarkhub', window.origin)
-          window.postMessage({
-            source: "bookmarkhub",
-            type: "AUTH_STATE_CHANGED",
-            user: userData,
-            idToken,
-            refreshToken,
-          }, window.origin);
+          // Offscreen/content script에 전송 (bookmarkhub envelope 통일)
+          window.postMessage(
+            {
+              source: "bookmarkhub",
+              type: "AUTH_STATE_CHANGED",
+              payload: {
+                user: userData,
+                idToken,
+                refreshToken,
+              },
+            },
+            window.location.origin
+          );
 
           setExtensionLoginSuccess(true);
         } catch (error) {

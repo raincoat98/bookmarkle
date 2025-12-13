@@ -36,7 +36,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
       setIsLoggingOut(true);
       
       await onLogout();
-      // Firebase auth state listener will handle the redirect
+      navigate("/", { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
       setIsLoggingOut(false);
