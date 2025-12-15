@@ -43,6 +43,8 @@
         firestore
           .getCollections()
           .then((collections) => sendResponse({ ok: true, collections })),
+      OFFSCREEN_GET_AUTH_STATE: () =>
+        auth.getAuthSnapshot().then((snapshot) => sendResponse({ ok: true, payload: snapshot })),
     };
 
     const handler = handlers[msg.type];

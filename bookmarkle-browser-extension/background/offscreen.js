@@ -1,6 +1,11 @@
 import { OFFSCREEN_URL } from "./constants.js";
 import { backgroundState } from "./state.js";
 
+const OFFSCREEN_RETRY_ERRORS = [
+  "The message port closed before a response was received.",
+  "Could not establish connection",
+];
+
 export async function ensureOffscreenDocument() {
   if (!chrome.offscreen) {
     console.warn("chrome.offscreen is not available in this context. Skipping offscreen document creation.");
@@ -27,17 +32,28 @@ export async function ensureOffscreenDocument() {
   }
 }
 
-export async function sendToOffscreen(message) {
+export async function sendToOffscreen(message, attempt = 0) {
   await ensureOffscreenDocument();
   return new Promise((resolve, reject) => {
     chrome.runtime.sendMessage(message, (response) => {
       if (chrome.runtime.lastError) {
-        reject(new Error(chrome.runtime.lastError.message));
+        const errorMessage = chrome.runtime.lastError.message || "";
+        if (attempt < 3 && shouldRetryOffscreenMessage(errorMessage)) {
+          setTimeout(() => {
+            sendToOffscreen(message, attempt + 1).then(resolve).catch(reject);
+          }, 200);
+          return;
+        }
+        reject(new Error(errorMessage));
       } else {
         resolve(response);
       }
     });
   });
+}
+
+function shouldRetryOffscreenMessage(message) {
+  return OFFSCREEN_RETRY_ERRORS.some((snippet) => message.includes(snippet));
 }
 
 export function isOffscreenSynced() {
@@ -46,4 +62,9 @@ export function isOffscreenSynced() {
 
 export function markOffscreenSynced(value) {
   backgroundState.offscreenSynced = value;
+}
+
+export async function ensureFirebaseAuthUser() {
+  await ensureOffscreenDocument();
+  return sendToOffscreen({ type: "OFFSCREEN_GET_AUTH_STATE" }).then((response) => response?.payload ?? null);
 }

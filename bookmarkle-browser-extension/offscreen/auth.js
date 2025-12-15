@@ -329,6 +329,22 @@
     persistAuthSnapshot();
   }
 
+  async function getAuthSnapshot() {
+    await ensureAuthReady();
+    if (currentUser) {
+      try {
+        await ensureFreshIdToken();
+      } catch (error) {
+        console.warn("⚠️ [offscreen] Failed to ensure fresh token while snapshotting:", error);
+      }
+    }
+    return {
+      user: currentUser,
+      idToken: currentIdToken,
+      refreshToken: currentRefreshToken,
+    };
+  }
+
   window.OffscreenAuth = {
     ensureAuthReady,
     ensureFreshIdToken,
@@ -336,5 +352,6 @@
     applyInitAuth,
     getCurrentUser: () => currentUser,
     getCurrentIdToken: () => currentIdToken,
+    getAuthSnapshot,
   };
 })();

@@ -1,6 +1,6 @@
 // content-bridge.js
 // 웹(React)에서 오는 메시지 듣기
-const ALLOWED_ORIGINS = new Set([
+const STATIC_ALLOWED_ORIGINS = new Set([
   "http://localhost:3000",
   "http://localhost:5173",
   "https://bookmarkhub-5ea6c.web.app",
@@ -11,11 +11,12 @@ const FORWARDABLE_TYPES = {
   COLLECTIONS_UPDATED: "WEB_COLLECTIONS_UPDATED",
 };
 
-const forwardThrottleTracker = new Map();
 const forwardPayloadTracker = new Map();
-const FORWARD_COOLDOWN_MS = 500;
+const pendingAuthRequests = new Set();
+let lastAuthPayload = null;
 const FORWARD_DUPLICATE_SUPPRESS_MS = 1000;
 const CONTEXT_INVALIDATION_TTL_MS = 10 * 60 * 1000; // 10분
+const AUTH_REQUEST_TIMEOUT_MS = 2000;
 
 // If extension context is temporarily invalid (reload/uninstall/navigation), queue important messages
 const pendingByType = new Map();
@@ -78,21 +79,60 @@ function markContextValid() {
   contextState.lastValidTimestamp = Date.now();
 }
 
-function shouldAcknowledgeExtensionContext() {
+function recordAuthPayload(payload) {
+  lastAuthPayload = payload ?? null;
+  resolvePendingAuthRequests(payload);
+}
+
+function resolvePendingAuthRequests(payload) {
+  if (!pendingAuthRequests.size) return;
+  const requests = Array.from(pendingAuthRequests);
+  pendingAuthRequests.clear();
+  requests.forEach((pending) => {
+    if (pending.settled) return;
+    pending.settled = true;
+    clearTimeout(pending.timeoutId);
+    pending.sendResponse({ ok: true, payload: payload ?? lastAuthPayload ?? null });
+  });
+}
+
+function requestAuthStateFromPage() {
   try {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("extension") === "true") return true;
-    if (params.get("iframe") === "true") return true;
-    if (params.get("source") === "extension") return true;
+    window.postMessage(
+      {
+        source: "bookmarkhub",
+        type: "EXTENSION_REQUEST_AUTH_STATE",
+      },
+      window.location.origin
+    );
   } catch (error) {
-    console.warn("[content] Failed to parse URL parameters:", error);
+    console.warn("[content] Failed to request auth state from page:", error);
+  }
+}
+
+function isAllowedOrigin(origin) {
+  if (STATIC_ALLOWED_ORIGINS.has(origin)) return true;
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return false;
+    }
+    const hostname = url.hostname;
+    if (hostname === "bookmarkle.app" || hostname.endsWith(".bookmarkle.app")) {
+      return true;
+    }
+    if (hostname === "bookmarkle.com" || hostname.endsWith(".bookmarkle.com")) {
+      return true;
+    }
+  } catch {
+    return false;
   }
   return false;
 }
 
 window.addEventListener("message", (event) => {
   // 보안: origin 체크 (필수!!)
-  if (!ALLOWED_ORIGINS.has(event.origin)) {
+  if (!isAllowedOrigin(event.origin)) {
     return;
   }
 
@@ -118,22 +158,22 @@ window.addEventListener("message", (event) => {
     return;
   }
 
-  // Gate non-critical messages behind extension-context acknowledgement
   const isAuthStateChanged = data.type === "AUTH_STATE_CHANGED";
-  if (!isAuthStateChanged && !shouldAcknowledgeExtensionContext() && !isKnownValidContext()) return;
+
+  if (isAuthStateChanged) {
+    recordAuthPayload(data.payload ?? null);
+  }
 
   const now = Date.now();
   const payloadKey = JSON.stringify(data.payload ?? {});
   const payloadTrackerKey = `${data.type}|${payloadKey}`;
 
-  const lastPayloadForward = forwardPayloadTracker.get(payloadTrackerKey) ?? 0;
-  if (now - lastPayloadForward < FORWARD_DUPLICATE_SUPPRESS_MS) return;
-
-  const lastForward = forwardThrottleTracker.get(data.type) ?? 0;
-  if (now - lastForward < FORWARD_COOLDOWN_MS) return;
-
-  forwardThrottleTracker.set(data.type, now);
-  forwardPayloadTracker.set(payloadTrackerKey, now);
+  const shouldDedup = !isAuthStateChanged;
+  if (shouldDedup) {
+    const lastPayloadForward = forwardPayloadTracker.get(payloadTrackerKey) ?? 0;
+    if (now - lastPayloadForward < FORWARD_DUPLICATE_SUPPRESS_MS) return;
+    forwardPayloadTracker.set(payloadTrackerKey, now);
+  }
 
   // If the extension context is invalidated, do NOT throw noisy errors.
   // Queue AUTH_STATE_CHANGED and try again when we receive a ping.
@@ -170,6 +210,7 @@ if (isExtensionContextValid()) {
     // background에서 오는 WEB_AUTH_STATE_CHANGED 메시지 처리
     if (msg.type === "WEB_AUTH_STATE_CHANGED") {
       console.log("[content] WEB_AUTH_STATE_CHANGED received from extension:", msg.payload);
+      lastAuthPayload = msg.payload ?? null;
       // 필요시 웹에 브로드캐스트 가능 (예시)
       window.postMessage(
         {
@@ -185,6 +226,32 @@ if (isExtensionContextValid()) {
         window.location.origin
       );
       sendResponse({ ok: true });
+      return true;
+    }
+
+    if (msg.type === "REQUEST_WEB_AUTH_STATE") {
+      console.log("[content] REQUEST_WEB_AUTH_STATE received from background. hasCache?", !!lastAuthPayload);
+      if (lastAuthPayload) {
+        sendResponse({ ok: true, payload: lastAuthPayload });
+        return true;
+      }
+
+      const pending = {
+        settled: false,
+        sendResponse,
+        timeoutId: null,
+      };
+
+      pending.timeoutId = setTimeout(() => {
+        if (pending.settled) return;
+        pending.settled = true;
+        pendingAuthRequests.delete(pending);
+        sendResponse({ ok: false, payload: null });
+      }, AUTH_REQUEST_TIMEOUT_MS);
+
+      pendingAuthRequests.add(pending);
+      console.log("[content] Requesting auth state from page");
+      requestAuthStateFromPage();
       return true;
     }
   });

@@ -1,5 +1,6 @@
 import { auth } from "../firebase";
 import { useCollectionStore } from "../stores/collectionStore";
+import { onAuthStateChanged, type User } from "firebase/auth";
 
 declare global {
   interface Window {
@@ -10,11 +11,97 @@ declare global {
   }
 }
 
-function getRefreshTokenFromUser(user: typeof auth.currentUser | null): string | null {
+function getRefreshTokenFromUser(user: User | null): string | null {
   if (!user) return null;
   const sts = (user as { stsTokenManager?: { refreshToken?: string } }).stsTokenManager;
   if (sts?.refreshToken) return sts.refreshToken;
   return (user as { refreshToken?: string }).refreshToken ?? null;
+}
+
+function serializeUser(user: User | null) {
+  if (!user) return null;
+  return {
+    uid: user.uid,
+    email: user.email ?? "",
+    displayName: user.displayName ?? "",
+    photoURL: user.photoURL ?? "",
+  };
+}
+
+function waitForFirebaseUser(timeout = 3000): Promise<User | null> {
+  if (auth.currentUser) {
+    return Promise.resolve(auth.currentUser);
+  }
+
+  return new Promise((resolve) => {
+    let settled = false;
+    let unsubscribe: () => void = () => {};
+    const finish = (user: User | null) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timerId);
+      unsubscribe();
+      resolve(user);
+    };
+
+    const timerId = window.setTimeout(() => {
+      finish(auth.currentUser);
+    }, timeout);
+
+    unsubscribe = onAuthStateChanged(auth, (user) => {
+      finish(user);
+    });
+  });
+}
+
+async function emitCurrentAuthState() {
+  try {
+    const user = await waitForFirebaseUser();
+    if (!user) {
+      window.postMessage(
+        {
+          source: "bookmarkhub",
+          type: "AUTH_STATE_CHANGED",
+          payload: {
+            user: null,
+            idToken: null,
+            refreshToken: null,
+          },
+        },
+        window.location.origin
+      );
+      return;
+    }
+
+    const idToken = await user.getIdToken();
+    const refreshToken = getRefreshTokenFromUser(user);
+    window.postMessage(
+      {
+        source: "bookmarkhub",
+        type: "AUTH_STATE_CHANGED",
+        payload: {
+          user: serializeUser(user),
+          idToken,
+          refreshToken,
+        },
+      },
+      window.location.origin
+    );
+  } catch (error) {
+    console.error("❌ [tokenMessageHandler] Failed to emit auth state:", error);
+    window.postMessage(
+      {
+        source: "bookmarkhub",
+        type: "AUTH_STATE_CHANGED",
+        payload: {
+          user: null,
+          idToken: null,
+          refreshToken: null,
+        },
+      },
+      window.location.origin
+    );
+  }
 }
 
 export function initializeTokenMessageHandler() {
@@ -83,6 +170,14 @@ export function initializeTokenMessageHandler() {
           error: (error as Error).message ?? String(error),
         });
       }
+    }
+
+    if (data.type === "EXTENSION_REQUEST_AUTH_STATE") {
+      console.log("📨 [tokenMessageHandler] EXTENSION_REQUEST_AUTH_STATE received");
+      emitCurrentAuthState().catch((error) => {
+        console.error("❌ [tokenMessageHandler] Failed to emit auth state on request:", error);
+      });
+      return;
     }
   };
 
