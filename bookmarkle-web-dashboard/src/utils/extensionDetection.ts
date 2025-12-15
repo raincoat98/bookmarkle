@@ -80,16 +80,3 @@ export function detectExtensionPresence(): Promise<boolean> {
   return detectionPromise;
 }
 
-/**
- * 캐시된 감지 결과를 즉시 반환한다. 아직 감지하지 않았다면 false.
- */
-export function getCachedExtensionPresence() {
-  return cachedResult === true;
-}
-
-/**
- * 감지를 수행한 적이 있는지 여부를 반환한다.
- */
-export function hasCachedExtensionDetection() {
-  return cachedResult !== null;
-}

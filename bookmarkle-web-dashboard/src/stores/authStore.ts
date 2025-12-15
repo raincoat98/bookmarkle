@@ -11,6 +11,7 @@ import {
 } from "../firebase";
 
 import { onIdTokenChanged } from "firebase/auth";
+import { notifyExtensionAuthState } from "../utils/extensionAuthMessaging";
 
 interface AuthState {
   user: User | null;
@@ -77,7 +78,11 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   login: async () => {
     try {
       console.log("🔄 Google 로그인 시작...");
-      await loginWithGoogle();
+      const result = await loginWithGoogle();
+      const user = result?.user ?? auth.currentUser;
+      if (user) {
+        await notifyExtensionAuthState(user);
+      }
     } catch (error) {
       console.error("로그인 실패:", error);
       throw error;
@@ -87,7 +92,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // 이메일 로그인
   loginWithEmail: async (email: string, password: string) => {
     try {
-      await fbLoginWithEmail(email, password);
+      const credential = await fbLoginWithEmail(email, password);
+      await notifyExtensionAuthState(credential.user);
     } catch (error) {
       console.error("이메일 로그인 실패:", error);
       throw error;
@@ -97,7 +103,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // 회원가입
   signup: async (email: string, password: string, displayName: string) => {
     try {
-      await signupWithEmail(email, password, displayName);
+      const credential = await signupWithEmail(email, password, displayName);
+      await notifyExtensionAuthState(credential.user);
     } catch (error) {
       console.error("회원가입 실패:", error);
       throw error;
@@ -105,27 +112,15 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   },
 
   // 로그아웃
-    logout: async () => {
-      try {
-        await fbLogout();
-        // Offscreen/content script에 전송 (bookmarkhub envelope 통일)
-        window.postMessage(
-          {
-            source: "bookmarkhub",
-            type: "AUTH_STATE_CHANGED",
-            payload: {
-              user: null,
-              idToken: null,
-              refreshToken: null,
-            },
-          },
-          window.location.origin
-        );
-      } catch (error) {
-        console.error("로그아웃 실패:", error);
-        throw error;
-      }
-    },
+  logout: async () => {
+    try {
+      await fbLogout();
+      await notifyExtensionAuthState(null);
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+      throw error;
+    }
+  },
 
   // 인증 상태 초기화 및 감시
   initializeAuth: () => {
@@ -168,40 +163,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             console.error("사용자 상태 확인 실패:", error);
             set({ isActive: true, isActiveLoading: false });
           });
-        // 로그인 시 AUTH_STATE_CHANGED 메시지 전송 (bookmarkhub envelope 통일)
-        const idToken = await user.getIdToken();
-        const refreshToken = getRefreshToken(user);
-        window.postMessage(
-          {
-            source: "bookmarkhub",
-            type: "AUTH_STATE_CHANGED",
-            payload: {
-              user: {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-              },
-              idToken,
-              refreshToken,
-            },
-          },
-          window.location.origin
-        );
       } else {
         set({ isActive: null, isActiveLoading: false });
-        // 로그아웃 시 AUTH_STATE_CHANGED 메시지 전송 (bookmarkhub envelope 통일)
-        window.postMessage(
-          {
-            source: "bookmarkhub",
-            type: "AUTH_STATE_CHANGED",
-            payload: {
-              user: null,
-              idToken: null,
-              refreshToken: null,
-            },
-          },
-          window.location.origin
-        );
       }
     });
 
@@ -225,9 +188,3 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     };
   },
 }));
-const getRefreshToken = (user: User | null) => {
-  if (!user) return null;
-  const sts = (user as { stsTokenManager?: { refreshToken?: string } }).stsTokenManager;
-  if (sts?.refreshToken) return sts.refreshToken;
-  return (user as { refreshToken?: string }).refreshToken ?? null;
-};

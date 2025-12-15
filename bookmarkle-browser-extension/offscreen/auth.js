@@ -150,11 +150,16 @@
     }
 
     if (msg.type === "AUTH_STATE_CHANGED") {
-      if (msg.user && msg.idToken) {
-        currentUser = msg.user;
-        currentIdToken = msg.idToken;
+      const payload = msg.payload ?? msg;
+      const nextUser = payload?.user ?? null;
+      const nextIdToken = payload?.idToken ?? null;
+      const nextRefreshToken = payload?.refreshToken ?? null;
+
+      if (nextUser && nextIdToken) {
+        currentUser = nextUser;
+        currentIdToken = nextIdToken;
         tokenExpiresAt = parseJwtExp(currentIdToken);
-        if (msg.refreshToken) currentRefreshToken = msg.refreshToken;
+        if (nextRefreshToken) currentRefreshToken = nextRefreshToken;
         persistAuthSnapshot();
         console.log("✅ [offscreen] AUTH_STATE_CHANGED received from iframe:", currentUser.email || currentUser.uid);
       } else {
@@ -187,9 +192,9 @@
 
       channel.port1.onmessage = (event) => {
         clearTimeout(timeout);
-        const { type, idToken, refreshToken, error } = event.data || {};
+        const { type, idToken, refreshToken, error, user } = event.data || {};
         if (type === "FRESH_ID_TOKEN" && idToken) {
-          resolve({ idToken, refreshToken: refreshToken || null });
+          resolve({ idToken, refreshToken: refreshToken || null, user: user || null });
         } else {
           reject(new Error(error || "IFRAME_NO_TOKEN"));
         }
@@ -241,14 +246,16 @@
   async function ensureFreshIdToken() {
     await ensureAuthReady();
 
-    if (!currentUser) return;
     const now = Date.now();
+    const needsBootstrap = !currentUser;
     const isExpired = !currentIdToken || (tokenExpiresAt && tokenExpiresAt <= now);
     const isExpiringSoon = tokenExpiresAt && tokenExpiresAt - now < 5 * 60 * 1000;
 
-    if (!isExpired && !isExpiringSoon) return;
+    if (!needsBootstrap && !isExpired && !isExpiringSoon) {
+      return;
+    }
 
-    if (currentRefreshToken) {
+    if (!needsBootstrap && currentRefreshToken) {
       try {
         await refreshIdTokenUsingRefreshToken();
         return;
@@ -257,12 +264,25 @@
       }
     }
 
-    const { idToken, refreshToken } = await getFreshIdTokenFromIframe();
-    currentIdToken = idToken;
-    tokenExpiresAt = parseJwtExp(currentIdToken);
-    if (refreshToken) currentRefreshToken = refreshToken;
-    persistAuthSnapshot();
-    console.log("✅ [offscreen] Token refreshed via iframe");
+    try {
+      const { idToken, refreshToken, user } = await getFreshIdTokenFromIframe();
+      currentIdToken = idToken;
+      tokenExpiresAt = parseJwtExp(currentIdToken);
+      if (refreshToken) currentRefreshToken = refreshToken;
+      if (user) {
+        currentUser = user;
+      }
+      persistAuthSnapshot();
+      console.log("✅ [offscreen] Token refreshed via iframe");
+    } catch (error) {
+      if (error.message === "NO_USER" || error.message === "IFRAME_NO_TOKEN") {
+        if (needsBootstrap) {
+          clearAuthState();
+        }
+        return;
+      }
+      throw error;
+    }
   }
 
   function postAuthStateToIframe() {
@@ -331,12 +351,10 @@
 
   async function getAuthSnapshot() {
     await ensureAuthReady();
-    if (currentUser) {
-      try {
-        await ensureFreshIdToken();
-      } catch (error) {
-        console.warn("⚠️ [offscreen] Failed to ensure fresh token while snapshotting:", error);
-      }
+    try {
+      await ensureFreshIdToken();
+    } catch (error) {
+      console.warn("⚠️ [offscreen] Failed to ensure fresh token while snapshotting:", error);
     }
     return {
       user: currentUser,

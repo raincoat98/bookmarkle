@@ -90,31 +90,11 @@ function handleInternalMessage(msg, sender, sendResponse) {
           return;
         }
 
-        requestAuthStateFromWeb()
-          .then((payload) => {
-            if (payload?.user && payload?.idToken) {
-              processAuthPayload(payload.user, {
-                idToken: payload.idToken,
-                refreshToken: payload.refreshToken,
-              });
-              sendResponse({ user: getCurrentUser() });
-            } else {
-              checkAuthStateViaFirebase()
-                .then((user) => sendResponse({ user }))
-                .catch((error) => {
-                  console.warn("⚠️ Failed to fetch auth state:", error);
-                  sendResponse({ user: null });
-                });
-            }
-          })
+        checkAuthStateViaFirebase()
+          .then((user) => sendResponse({ user }))
           .catch((error) => {
-            console.warn("⚠️ Failed to fetch auth state from web:", error);
-            checkAuthStateViaFirebase()
-              .then((user) => sendResponse({ user }))
-              .catch((firebaseError) => {
-                console.warn("⚠️ Firebase auth check failed:", firebaseError);
-                sendResponse({ user: null });
-              });
+            console.warn("⚠️ Firebase auth check failed:", error);
+            sendResponse({ user: null });
           });
       });
     return true;
@@ -255,109 +235,6 @@ function sendMessageToWebTabs(message) {
         }
       });
     });
-  });
-}
-
-function requestAuthStateFromWeb() {
-  const REQUEST_TIMEOUT_MS = 2000;
-  return new Promise((resolve) => {
-    chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
-      const targetTabs = tabs.filter((tab) => typeof tab.id === "number");
-      console.log("[background] REQUEST_WEB_AUTH_STATE tabs found:", targetTabs.length);
-      if (!targetTabs.length) {
-        resolve(null);
-        return;
-      }
-
-      let settled = false;
-      let pending = targetTabs.length;
-      let fallbackPayload = null;
-
-      const timeoutId = setTimeout(() => {
-        if (settled) return;
-        settled = true;
-        resolve(fallbackPayload);
-      }, REQUEST_TIMEOUT_MS);
-
-      const handleResponse = (payload) => {
-        if (settled) return;
-        if (payload?.user && payload?.idToken) {
-          settled = true;
-          clearTimeout(timeoutId);
-          resolve(payload);
-          return;
-        }
-        if (!fallbackPayload) {
-          fallbackPayload = payload ?? null;
-        }
-      };
-
-      targetTabs.forEach((tab) => {
-        console.log("[background] Sending REQUEST_WEB_AUTH_STATE to tab", tab.id);
-        sendAuthRequestToTab(tab.id)
-          .then((payload) => {
-            pending -= 1;
-            if (payload) {
-              console.log(
-                "[background] Received auth payload from tab",
-                tab.id,
-                !!payload?.user
-              );
-            }
-            handleResponse(payload);
-            if (!pending && !settled) {
-              settled = true;
-              clearTimeout(timeoutId);
-              resolve(fallbackPayload);
-            }
-          })
-          .catch((error) => {
-            pending -= 1;
-            console.warn("[background] REQUEST_WEB_AUTH_STATE failed for tab", tab.id, error?.message || error);
-            if (!pending && !settled) {
-              settled = true;
-              clearTimeout(timeoutId);
-              resolve(fallbackPayload);
-            }
-          });
-      });
-    });
-  });
-}
-
-function sendAuthRequestToTab(tabId, attempt = 0) {
-  return new Promise((resolve, reject) => {
-    chrome.tabs.sendMessage(tabId, { type: "REQUEST_WEB_AUTH_STATE" }, (response) => {
-      if (chrome.runtime.lastError) {
-        const message = chrome.runtime.lastError.message || "";
-        console.warn("[background] REQUEST_WEB_AUTH_STATE error:", message);
-        if (attempt === 0 && shouldInjectContentBridge(message) && chrome.scripting) {
-          injectContentBridge(tabId)
-            .then(() => sendAuthRequestToTab(tabId, attempt + 1).then(resolve).catch(reject))
-            .catch((error) => {
-              reject(error);
-            });
-          return;
-        }
-        resolve(null);
-        return;
-      }
-      resolve(response?.payload ?? null);
-    });
-  });
-}
-
-function shouldInjectContentBridge(errorMessage) {
-  if (!errorMessage) return false;
-  return errorMessage.includes("Receiving end does not exist") || errorMessage.includes("Could not establish connection");
-}
-
-function injectContentBridge(tabId) {
-  console.log("[background] Injecting content-bridge.js into tab", tabId);
-  return chrome.scripting.executeScript({
-    target: { tabId },
-    files: ["content-bridge.js"],
-    world: "ISOLATED",
   });
 }
 

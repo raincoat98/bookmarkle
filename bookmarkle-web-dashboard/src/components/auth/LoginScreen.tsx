@@ -1,7 +1,5 @@
-import { useState, useEffect, useMemo } from "react";
-import type { User } from "firebase/auth";
+import { useState } from "react";
 import { useAuthStore } from "../../stores";
-import { useLocation } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
 import { BrowserCompatibilityWarning } from "../common/BrowserCompatibilityWarning";
@@ -10,79 +8,10 @@ import {
   getBrowserCompatibilityMessage,
 } from "../../utils/browserDetection";
 
-const getRefreshToken = (user: User | null) => {
-  if (!user) return null;
-  const sts = (user as { stsTokenManager?: { refreshToken?: string } }).stsTokenManager;
-  if (sts?.refreshToken) return sts.refreshToken;
-  return (user as { refreshToken?: string }).refreshToken ?? null;
-};
-
 export const LoginScreen = () => {
-  const { login, loginWithEmail, signup, user } = useAuthStore();
+  const { login, loginWithEmail, signup } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
-  const location = useLocation();
-
-  // Debug: log user state changes
-  useEffect(() => {
-    console.log("👤 User state changed:", user);
-  }, [user]);
-
-  // Check if accessed from extension
-  const extensionContext = useMemo(() => {
-    const urlParams = new URLSearchParams(location.search);
-    return {
-      isExtension: urlParams.get("extension") === "true",
-      extensionId: urlParams.get("extensionId"),
-    };
-  }, [location.search]);
-
-  // Show success message if logged in via extension
-  const [extensionLoginSuccess, setExtensionLoginSuccess] = useState(false);
-
-  // 로그인/유저 변경 시마다 확장에 인증 정보 전송 (중복 방지 없이 항상 전송)
-  useEffect(() => {
-    if (extensionContext.isExtension && user && !extensionLoginSuccess) {
-      (async () => {
-        try {
-          const idToken = await user.getIdToken();
-          const refreshToken = getRefreshToken(user);
-          const userData = {
-            uid: user.uid,
-            email: user.email || "",
-            displayName: user.displayName || "",
-            photoURL: user.photoURL || "",
-          };
-
-          // Offscreen/content script에 전송 (bookmarkhub envelope 통일)
-          window.postMessage(
-            {
-              source: "bookmarkhub",
-              type: "AUTH_STATE_CHANGED",
-              payload: {
-                user: userData,
-                idToken,
-                refreshToken,
-              },
-            },
-            window.location.origin
-          );
-
-          setExtensionLoginSuccess(true);
-        } catch (error) {
-          console.error("Failed to send auth to extension:", error);
-          toast.error("익스텐션에 로그인 정보 전송 실패");
-        }
-      })();
-    }
-  }, [user, extensionContext.isExtension, extensionContext.extensionId, extensionLoginSuccess]);
-
-  // 인증 성공 시 토스트 한 번만 표시
-  useEffect(() => {
-    if (extensionLoginSuccess) {
-      toast.success("✅ 익스텐션에 로그인 정보 전송 완료!");
-    }
-  }, [extensionLoginSuccess]);
 
   // 폼 데이터
   const [formData, setFormData] = useState({
@@ -247,49 +176,6 @@ export const LoginScreen = () => {
     resetForm();
   };
 
-  // Extension login success view
-  if (extensionContext.isExtension && extensionLoginSuccess && user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-accent-100 dark:from-gray-900 dark:via-brand-900 dark:to-gray-800 flex items-center justify-center px-4">
-        <div className="max-w-md w-full space-y-8">
-          <div className="card p-8 text-center">
-            <div className="mb-6">
-              <div className="w-20 h-20 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-4xl">✅</span>
-              </div>
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-                로그인 성공!
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {user.email}
-              </p>
-              <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg mb-6">
-                <p className="text-sm text-green-700 dark:text-green-300 font-medium">
-                  익스텐션에 로그인 정보가 전송되었습니다
-                </p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => window.location.href = "/dashboard"}
-                className="w-full btn btn-primary"
-              >
-                대시보드로 이동
-              </button>
-              <button
-                onClick={() => window.close()}
-                className="w-full btn btn-secondary"
-              >
-                창 닫기
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-brand-50 via-brand-100 to-accent-100 dark:from-gray-900 dark:via-brand-900 dark:to-gray-800 flex items-center justify-center px-4">
       <div className="max-w-md w-full space-y-8">
@@ -298,18 +184,6 @@ export const LoginScreen = () => {
 
         <div className="card p-8">
           <div className="text-center mb-6">
-            {/* Extension badge */}
-            {extensionContext.isExtension && (
-              <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                <div className="flex items-center justify-center mb-2">
-                  <span className="text-2xl">🔌</span>
-                </div>
-                <p className="text-sm text-blue-700 dark:text-blue-300 font-medium">
-                  익스텐션에서 연결됨
-                </p>
-              </div>
-            )}
-
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
               {isSignup ? "가입하기" : "로그인"}
             </h2>

@@ -195,6 +195,7 @@ if (isExtensionContextValid()) {
   markContextValid();
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === "EXTENSION_EVENT_TO_WEB") {
+      console.log("[content] EXTENSION_EVENT_TO_WEB received from extension:", msg.eventType, msg.payload);
       window.postMessage(
         {
           source: "bookmarkhub",

@@ -21,10 +21,6 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import {
-  detectExtensionPresence,
-  getCachedExtensionPresence,
-} from "./utils/extensionDetection";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -171,23 +167,8 @@ export function resetPassword(email: string) {
  * 로그아웃 (Extension 컨텍스트 감지 및 세션 클리어)
  */
 export async function logout() {
-  let isExtension =
-    window.location.search.includes("source=extension") ||
-    window.location.pathname.includes("/extension-login");
-
-  if (!isExtension) {
-    isExtension = getCachedExtensionPresence();
-  }
-
-  if (!isExtension) {
-    isExtension = await detectExtensionPresence();
-  }
-
-  // Extension이 아닌 경우만 Firebase 저장소 클리어
-  if (!isExtension) {
-    console.log("🧹 Clearing Firebase storage (non-extension context)");
-    await clearFirebaseStorage();
-  }
+  console.log("🧹 Clearing Firebase storage");
+  await clearFirebaseStorage();
 
 
   // Firebase Auth 로그아웃

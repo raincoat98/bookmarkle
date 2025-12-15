@@ -28,28 +28,49 @@ function serializeUser(user: User | null) {
   };
 }
 
-function waitForFirebaseUser(timeout = 3000): Promise<User | null> {
+type InternalAuth = typeof auth & {
+  _initializationPromise?: Promise<void>;
+};
+
+let authInitializationComplete = false;
+let authInitializationPromise: Promise<void> | null = null;
+
+async function waitForAuthInitialization() {
+  if (authInitializationComplete) {
+    return;
+  }
+
+  if (!authInitializationPromise) {
+    const internalAuth = auth as InternalAuth;
+    if (internalAuth._initializationPromise) {
+      authInitializationPromise = internalAuth._initializationPromise.catch((error) => {
+        console.warn("⚠️ [tokenMessageHandler] Auth initialization error:", error);
+      });
+    } else {
+      authInitializationPromise = new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, () => {
+          unsubscribe();
+          resolve();
+        });
+      });
+    }
+  }
+
+  await authInitializationPromise;
+  authInitializationComplete = true;
+}
+
+async function waitForFirebaseUser(): Promise<User | null> {
+  await waitForAuthInitialization();
+
   if (auth.currentUser) {
-    return Promise.resolve(auth.currentUser);
+    return auth.currentUser;
   }
 
   return new Promise((resolve) => {
-    let settled = false;
-    let unsubscribe: () => void = () => {};
-    const finish = (user: User | null) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timerId);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       unsubscribe();
       resolve(user);
-    };
-
-    const timerId = window.setTimeout(() => {
-      finish(auth.currentUser);
-    }, timeout);
-
-    unsubscribe = onAuthStateChanged(auth, (user) => {
-      finish(user);
     });
   });
 }
@@ -58,6 +79,7 @@ async function emitCurrentAuthState() {
   try {
     const user = await waitForFirebaseUser();
     if (!user) {
+      console.log("📤 [tokenMessageHandler] Emitting auth state: no user");
       window.postMessage(
         {
           source: "bookmarkhub",
@@ -75,6 +97,7 @@ async function emitCurrentAuthState() {
 
     const idToken = await user.getIdToken();
     const refreshToken = getRefreshTokenFromUser(user);
+    console.log("📤 [tokenMessageHandler] Emitting auth state for user:", user.uid);
     window.postMessage(
       {
         source: "bookmarkhub",
@@ -145,11 +168,13 @@ export function initializeTokenMessageHandler() {
       }
 
       try {
-        const user = auth.currentUser;
+        console.log("📨 [tokenMessageHandler] GET_FRESH_ID_TOKEN received");
+        const user = await waitForFirebaseUser();
         if (!user) {
           port.postMessage({
             type: "FRESH_ID_TOKEN",
             idToken: null,
+            user: null,
             error: "NO_USER",
           });
           return;
@@ -157,16 +182,19 @@ export function initializeTokenMessageHandler() {
 
         const idToken = await user.getIdToken(true);
         const refreshToken = getRefreshTokenFromUser(user);
+        const serializedUser = serializeUser(user);
         port.postMessage({
           type: "FRESH_ID_TOKEN",
           idToken,
           refreshToken,
+          user: serializedUser,
         });
       } catch (error) {
         console.error("❌ [tokenMessageHandler] Error getting fresh token:", error);
         port.postMessage({
           type: "FRESH_ID_TOKEN",
           idToken: null,
+          user: null,
           error: (error as Error).message ?? String(error),
         });
       }
