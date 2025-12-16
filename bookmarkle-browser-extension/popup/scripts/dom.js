@@ -7,6 +7,7 @@ export const dom = {
   loginGuide: byId("loginGuide"),
   userEmailSpan: byId("user-email"),
   loginSection: byId("login-section"),
+  loadingSection: byId("loading-section"),
   bookmarkSection: byId("bookmark-section"),
   currentUrlDiv: byId("current-url"),
   collectionDropdown: byId("collection-dropdown"),

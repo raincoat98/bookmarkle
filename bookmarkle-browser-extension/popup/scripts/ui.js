@@ -14,6 +14,9 @@ export function updateUI(user, shouldLoadCollections = true) {
       dom.loginSection.classList.add("hidden");
       dom.loginSection.style.display = "none";
     }
+    if (dom.loadingSection) {
+      dom.loadingSection.classList.add("hidden");
+    }
     if (dom.bookmarkSection) {
       dom.bookmarkSection.classList.remove("hidden");
       dom.bookmarkSection.style.display = "block";
@@ -30,6 +33,9 @@ export function updateUI(user, shouldLoadCollections = true) {
     if (dom.loginSection) {
       dom.loginSection.classList.remove("hidden");
       dom.loginSection.style.display = "block";
+    }
+    if (dom.loadingSection) {
+      dom.loadingSection.classList.add("hidden");
     }
     if (dom.bookmarkSection) {
       dom.bookmarkSection.classList.add("hidden");

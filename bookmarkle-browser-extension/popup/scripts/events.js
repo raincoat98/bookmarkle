@@ -16,7 +16,10 @@ export function bindPopupEvents({ publicSignUrl }) {
 
   if (dom.saveBtn) {
     dom.saveBtn.addEventListener("click", async () => {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       if (!tab?.url) {
         showToast("현재 탭 URL을 찾을 수 없습니다.", "error");
         return;
@@ -116,7 +119,10 @@ export function bindPopupEvents({ publicSignUrl }) {
       let icon = dom.collectionIconInput?.value.trim() || "📁";
 
       if (icon) {
-        const emojiArr = Array.from(icon.matchAll(/\p{Extended_Pictographic}/gu), (m) => m[0]);
+        const emojiArr = Array.from(
+          icon.matchAll(/\p{Extended_Pictographic}/gu),
+          (m) => m[0]
+        );
         if (emojiArr.length > 0) {
           icon = emojiArr[emojiArr.length - 1];
         } else {
@@ -158,7 +164,10 @@ export function bindPopupEvents({ publicSignUrl }) {
     dom.collectionIconInput.addEventListener("input", (e) => {
       const input = e.target;
       if (input && typeof input.value === "string") {
-        const emojiArr = Array.from(input.value.matchAll(/\p{Extended_Pictographic}/gu), (m) => m[0]);
+        const emojiArr = Array.from(
+          input.value.matchAll(/\p{Extended_Pictographic}/gu),
+          (m) => m[0]
+        );
         if (emojiArr.length > 0) {
           input.value = emojiArr[emojiArr.length - 1];
         } else if (input.value.length > 1) {
