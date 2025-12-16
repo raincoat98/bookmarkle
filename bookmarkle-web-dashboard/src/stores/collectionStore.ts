@@ -126,7 +126,17 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
 
         set({ collections: collectionList });
       } catch (error) {
-        console.error("Error fetching collections:", error);
+        const err = error as { code?: string; message?: string };
+        // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          // 권한 오류는 조용히 무시
+          set({ collections: [] });
+        } else {
+          console.error("Error fetching collections:", error);
+        }
       } finally {
         set({ loading: false });
       }

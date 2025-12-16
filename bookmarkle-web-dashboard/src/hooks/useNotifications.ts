@@ -64,6 +64,24 @@ export const useNotifications = (userId: string) => {
         setLoading(false);
       },
       (error) => {
+        const err = error as { code?: string; message?: string };
+        // 권한 오류 시 리스너 자동 정리
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          // 권한 오류는 조용히 처리 (로그아웃 중일 수 있음)
+          try {
+            unsubscribe();
+          } catch {
+            // 리스너 정리 중 발생하는 에러는 무시
+          }
+          setNotifications([]);
+          setUnreadCount(0);
+          setLoading(false);
+          return;
+        }
+
         console.error("알림 로딩 오류:", error);
         setLoading(false);
       }
@@ -97,7 +115,7 @@ export const useNotifications = (userId: string) => {
       if (!notificationsEnabled) {
         return null;
       }
-    } catch (error) {
+    } catch {
       // 설정 확인 실패 시 기본값(활성화)으로 처리하여 알림 생성 계속 진행
     }
 

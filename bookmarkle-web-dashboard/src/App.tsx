@@ -36,6 +36,7 @@ import {
   initializeTheme,
 } from "./stores";
 import { initializeTokenMessageHandler } from "./utils/tokenMessageHandler";
+import { auth } from "./firebase";
 
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 const ONE_WEEK_MS = ONE_DAY_MS * 7;
@@ -190,7 +191,18 @@ function App() {
   }, [initializeAuth]); // ESLint 경고 해결
 
   useEffect(() => {
-    if (!user?.uid) return;
+    // user가 null이면 리스너 정리는 authStore의 onAuthStateChanged에서 처리됨
+    if (!user?.uid) {
+      return;
+    }
+
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    // Firebase Auth가 null이지만 authStore의 user가 유지되는 경우 리스너를 재설정하지 않음
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== user.uid) {
+      return;
+    }
+
     // Start subscription in parallel with other initialization
     const unsubscribeSubscription = subscribeToSubscription(user.uid);
     return () => unsubscribeSubscription();

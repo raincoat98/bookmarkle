@@ -4,7 +4,6 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   GoogleAuthProvider,
-  onAuthStateChanged,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
@@ -93,16 +92,16 @@ export async function loginWithGoogle() {
   try {
     console.log("🔄 Attempting signInWithPopup...");
     const result = await signInWithPopup(auth, googleProvider);
-    
+
     console.log("✅ Login successful:", result.user.email);
     await saveUserToFirestore(result.user, false);
-    
+
     return result;
   } catch (error: unknown) {
     const err = error as { code?: string; message?: string; name?: string };
 
     // 팝업 차단 관련 에러 체크
-    const isPopupBlockedError = 
+    const isPopupBlockedError =
       err?.code === "auth/popup-blocked" ||
       err?.code === "auth/popup-closed-by-user" ||
       err?.message?.includes("Cross-Origin-Opener-Policy") ||
@@ -128,9 +127,9 @@ export async function loginWithGoogle() {
 export async function loginWithEmail(email: string, password: string) {
   await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
-  
+
   await saveUserToFirestore(result.user, false);
-  
+
   return result;
 }
 
@@ -143,7 +142,11 @@ export async function signupWithEmail(
   displayName?: string
 ) {
   await setPersistence(auth, browserLocalPersistence);
-  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password
+  );
 
   // 표시 이름 설정
   if (displayName) {
@@ -170,7 +173,6 @@ export async function logout() {
   console.log("🧹 Clearing Firebase storage");
   await clearFirebaseStorage();
 
-
   // Firebase Auth 로그아웃
   await signOut(auth);
   console.log("✅ Logout completed");
@@ -183,37 +185,32 @@ export async function clearFirebaseStorage() {
   try {
     console.log("🧹 Starting Firebase storage cleanup...");
 
-    const isFirebaseKey = (key: string) => 
+    const isFirebaseKey = (key: string) =>
       key.startsWith("firebase:") ||
       key.startsWith("firebaseui:") ||
       key.includes("firebase-session") ||
       key.includes("__firebase");
 
     // localStorage 클리어
-    const localKeys = Array.from({ length: localStorage.length }, (_, i) => localStorage.key(i))
-      .filter((key): key is string => !!key && isFirebaseKey(key));
-    
-    localKeys.forEach(key => localStorage.removeItem(key));
+    const localKeys = Array.from({ length: localStorage.length }, (_, i) =>
+      localStorage.key(i)
+    ).filter((key): key is string => !!key && isFirebaseKey(key));
+
+    localKeys.forEach((key) => localStorage.removeItem(key));
     console.log(`✅ localStorage cleared: ${localKeys.length} keys`);
 
     // sessionStorage 클리어
-    const sessionKeys = Array.from({ length: sessionStorage.length }, (_, i) => sessionStorage.key(i))
-      .filter((key): key is string => !!key && isFirebaseKey(key));
-    
-    sessionKeys.forEach(key => sessionStorage.removeItem(key));
+    const sessionKeys = Array.from({ length: sessionStorage.length }, (_, i) =>
+      sessionStorage.key(i)
+    ).filter((key): key is string => !!key && isFirebaseKey(key));
+
+    sessionKeys.forEach((key) => sessionStorage.removeItem(key));
     console.log(`✅ sessionStorage cleared: ${sessionKeys.length} keys`);
 
     console.log("✅ Firebase storage cleanup completed");
   } catch (error) {
     console.error("❌ Error clearing Firebase storage:", error);
   }
-}
-
-/**
- * Firebase Auth 상태 변경 감시
- */
-export function watchAuth(cb: (user: User | null) => void) {
-  return onAuthStateChanged(auth, cb);
 }
 
 export async function getUserDefaultPage(uid: string): Promise<string> {
@@ -355,6 +352,12 @@ export async function isAdminUser(user: User | null): Promise<boolean> {
     const userDoc = await getDoc(doc(db, "users", user.uid));
     return userDoc.exists() && userDoc.data()?.isAdmin === true;
   } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      // 권한 오류는 조용히 무시
+      return false;
+    }
     console.error("관리자 권한 확인 오류:", error);
     return false;
   }
@@ -368,6 +371,12 @@ export async function checkAdminStatus(uid: string): Promise<boolean> {
     const adminDoc = await getDoc(doc(db, "admins", uid));
     return adminDoc.exists();
   } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      // 권한 오류는 조용히 무시
+      return false;
+    }
     console.error("관리자 권한 확인 오류:", error);
     return false;
   }

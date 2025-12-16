@@ -1,5 +1,6 @@
 import { auth } from "../firebase";
 import { useCollectionStore } from "../stores/collectionStore";
+import { useAuthStore } from "../stores/authStore";
 import { onAuthStateChanged, type User } from "firebase/auth";
 
 declare global {
@@ -13,7 +14,8 @@ declare global {
 
 function getRefreshTokenFromUser(user: User | null): string | null {
   if (!user) return null;
-  const sts = (user as { stsTokenManager?: { refreshToken?: string } }).stsTokenManager;
+  const sts = (user as { stsTokenManager?: { refreshToken?: string } })
+    .stsTokenManager;
   if (sts?.refreshToken) return sts.refreshToken;
   return (user as { refreshToken?: string }).refreshToken ?? null;
 }
@@ -35,6 +37,10 @@ type InternalAuth = typeof auth & {
 let authInitializationComplete = false;
 let authInitializationPromise: Promise<void> | null = null;
 
+// tokenMessageHandler 초기화 상태 추적
+let tokenMessageHandlerInitialized = false;
+let tokenMessageHandlerCleanup: (() => void) | null = null;
+
 async function waitForAuthInitialization() {
   if (authInitializationComplete) {
     return;
@@ -43,9 +49,14 @@ async function waitForAuthInitialization() {
   if (!authInitializationPromise) {
     const internalAuth = auth as InternalAuth;
     if (internalAuth._initializationPromise) {
-      authInitializationPromise = internalAuth._initializationPromise.catch((error) => {
-        console.warn("⚠️ [tokenMessageHandler] Auth initialization error:", error);
-      });
+      authInitializationPromise = internalAuth._initializationPromise.catch(
+        (error) => {
+          console.warn(
+            "⚠️ [tokenMessageHandler] Auth initialization error:",
+            error
+          );
+        }
+      );
     } else {
       authInitializationPromise = new Promise((resolve) => {
         const unsubscribe = onAuthStateChanged(auth, () => {
@@ -97,7 +108,10 @@ async function emitCurrentAuthState() {
 
     const idToken = await user.getIdToken();
     const refreshToken = getRefreshTokenFromUser(user);
-    console.log("📤 [tokenMessageHandler] Emitting auth state for user:", user.uid);
+    console.log(
+      "📤 [tokenMessageHandler] Emitting auth state for user:",
+      user.uid
+    );
     window.postMessage(
       {
         source: "bookmarkhub",
@@ -128,9 +142,25 @@ async function emitCurrentAuthState() {
 }
 
 export function initializeTokenMessageHandler() {
-  console.log("🔐 [tokenMessageHandler] Initialized - listening for AUTH_STATE_CHANGED");
+  // 이미 초기화되었으면 기존 cleanup 함수 반환
+  if (tokenMessageHandlerInitialized && tokenMessageHandlerCleanup) {
+    console.log(
+      "⚠️ [tokenMessageHandler] Already initialized, skipping duplicate initialization"
+    );
+    return tokenMessageHandlerCleanup;
+  }
 
-  const isIframeMode = new URLSearchParams(window.location.search).get("iframe") === "true";
+  // 이전 리스너가 있으면 정리
+  if (tokenMessageHandlerCleanup) {
+    tokenMessageHandlerCleanup();
+  }
+
+  console.log(
+    "🔐 [tokenMessageHandler] Initialized - listening for AUTH_STATE_CHANGED"
+  );
+
+  const isIframeMode =
+    new URLSearchParams(window.location.search).get("iframe") === "true";
 
   if (isIframeMode && window.parent !== window) {
     window.parent.postMessage({ type: "IFRAME_READY" }, "*");
@@ -142,8 +172,83 @@ export function initializeTokenMessageHandler() {
     if (!data) return;
 
     if (data.type === "AUTH_STATE_CHANGED") {
-      if (!data.idToken && data.user) {
-        window.toast?.warn?.("세션 동기화 실패: 다시 로그인 해주세요.");
+      // extension에서 받은 인증 정보인 경우 authStore에 직접 동기화
+      if (data.fromExtension && data.payload) {
+        const { user: extensionUser, idToken } = data.payload;
+        const authStore = useAuthStore.getState();
+
+        // extension에서 사용자 정보가 있고, 현재 Firebase Auth 상태와 다른 경우
+        if (extensionUser) {
+          const currentUser = auth.currentUser;
+
+          // 현재 사용자가 없거나 다른 사용자인 경우
+          if (!currentUser || currentUser.uid !== extensionUser.uid) {
+            console.log(
+              "🔄 [tokenMessageHandler] Syncing auth state from extension:",
+              extensionUser.uid
+            );
+
+            // extension에서 받은 정보를 사용해서 authStore 상태 업데이트
+            // Firebase Auth User 객체는 직접 만들 수 없으므로,
+            // extension 정보를 사용해서 임시로 상태를 유지
+            // 실제 Firebase Auth 상태는 나중에 동기화됨
+            if (idToken) {
+              authStore.setIdToken(idToken);
+            }
+
+            // loading을 false로 설정하여 로그인 페이지로 이동하지 않도록 함
+            authStore.setLoading(false);
+
+            // Firebase Auth 상태 확인 및 동기화 시도
+            if (!currentUser) {
+              // Firebase Auth 초기화 대기 후 상태 확인
+              waitForAuthInitialization()
+                .then(() => {
+                  const userAfterInit = auth.currentUser;
+                  if (
+                    !userAfterInit ||
+                    userAfterInit.uid !== extensionUser.uid
+                  ) {
+                    console.log(
+                      "⚠️ [tokenMessageHandler] Firebase Auth state mismatch with extension, keeping extension state"
+                    );
+                    // Firebase Auth 상태가 extension과 다르면, extension 정보를 우선시
+                    // authStore의 user는 Firebase Auth의 onAuthStateChanged가 업데이트할 때까지 유지
+                  } else {
+                    // 같은 사용자인 경우 정상 동기화됨
+                    console.log(
+                      "✅ [tokenMessageHandler] Firebase Auth state synced with extension"
+                    );
+                  }
+                })
+                .catch((error) => {
+                  console.warn(
+                    "⚠️ [tokenMessageHandler] Failed to check Firebase Auth state:",
+                    error
+                  );
+                });
+            }
+          } else {
+            // 같은 사용자인 경우 idToken만 업데이트
+            if (idToken) {
+              authStore.setIdToken(idToken);
+            }
+          }
+        } else {
+          // extension에서 로그아웃 상태(null)를 보낸 경우
+          // 익스텐션 새로고침 시 일시적으로 null이 올 수 있으므로
+          // extension에서 null을 받아도 웹 대시보드에서는 아무것도 하지 않음
+          // 실제 로그아웃은 웹 대시보드에서 직접 처리하거나 Firebase Auth에서 처리됨
+          console.log(
+            "⚠️ [tokenMessageHandler] Extension sent null, ignoring completely (actual logout handled by Firebase Auth)"
+          );
+          // idToken과 user는 Firebase Auth에서 관리하므로 유지
+        }
+      } else {
+        // 웹에서 직접 보낸 인증 상태 변경 (기존 로직)
+        if (!data.idToken && data.user) {
+          window.toast?.warn?.("세션 동기화 실패: 다시 로그인 해주세요.");
+        }
       }
       return;
     }
@@ -163,7 +268,9 @@ export function initializeTokenMessageHandler() {
     if (data.type === "GET_FRESH_ID_TOKEN") {
       const port = event.ports[0];
       if (!port) {
-        console.error("❌ [tokenMessageHandler] No MessageChannel port provided");
+        console.error(
+          "❌ [tokenMessageHandler] No MessageChannel port provided"
+        );
         return;
       }
 
@@ -190,7 +297,10 @@ export function initializeTokenMessageHandler() {
           user: serializedUser,
         });
       } catch (error) {
-        console.error("❌ [tokenMessageHandler] Error getting fresh token:", error);
+        console.error(
+          "❌ [tokenMessageHandler] Error getting fresh token:",
+          error
+        );
         port.postMessage({
           type: "FRESH_ID_TOKEN",
           idToken: null,
@@ -201,9 +311,14 @@ export function initializeTokenMessageHandler() {
     }
 
     if (data.type === "EXTENSION_REQUEST_AUTH_STATE") {
-      console.log("📨 [tokenMessageHandler] EXTENSION_REQUEST_AUTH_STATE received");
+      console.log(
+        "📨 [tokenMessageHandler] EXTENSION_REQUEST_AUTH_STATE received"
+      );
       emitCurrentAuthState().catch((error) => {
-        console.error("❌ [tokenMessageHandler] Failed to emit auth state on request:", error);
+        console.error(
+          "❌ [tokenMessageHandler] Failed to emit auth state on request:",
+          error
+        );
       });
       return;
     }
@@ -211,7 +326,13 @@ export function initializeTokenMessageHandler() {
 
   window.addEventListener("message", handleMessage);
 
-  return () => {
+  tokenMessageHandlerInitialized = true;
+  tokenMessageHandlerCleanup = () => {
     window.removeEventListener("message", handleMessage);
+    tokenMessageHandlerInitialized = false;
+    tokenMessageHandlerCleanup = null;
+    console.log("🧹 [tokenMessageHandler] Cleaned up");
   };
+
+  return tokenMessageHandlerCleanup;
 }

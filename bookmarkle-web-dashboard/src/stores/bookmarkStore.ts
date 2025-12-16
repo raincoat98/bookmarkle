@@ -81,6 +81,7 @@ interface BookmarkActions {
   getFilteredBookmarks: () => Bookmark[];
   subscribeToBookmarks: (userId: string) => () => void;
   subscribeToTrash: (userId: string) => () => void;
+  cleanupAllListeners: () => void;
   migrateFavicons: (userId: string) => Promise<void>;
   migrateIsFavorite: (userId: string) => Promise<void>;
   addBookmark: (
@@ -109,6 +110,10 @@ interface BookmarkActions {
     userId: string
   ) => Promise<string>;
 }
+
+// 활성 리스너 추적
+let activeBookmarkListeners: (() => void)[] = [];
+let activeTrashListeners: (() => void)[] = [];
 
 export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
   (set, get) => ({
@@ -194,12 +199,36 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
           set({ rawBookmarks: bookmarkList, loading: false });
         },
         (error) => {
-          console.error("북마크 로딩 오류:", error);
+          const err = error as { code?: string; message?: string };
+          // 권한 오류 시 리스너 자동 정리
+          if (
+            err?.code === "permission-denied" ||
+            err?.code === "unauthenticated"
+          ) {
+            // 권한 오류는 조용히 처리 (로그아웃 중일 수 있음)
+            try {
+              unsubscribe();
+            } catch {
+              // 리스너 정리 중 발생하는 에러는 무시
+            }
+            // cleanupAllListeners에서 정리됨
+          } else {
+            console.error("북마크 로딩 오류:", error);
+          }
           set({ loading: false });
         }
       );
 
-      return unsubscribe;
+      // 래핑된 unsubscribe 함수: 배열에서도 제거
+      const wrappedUnsubscribe = () => {
+        unsubscribe();
+        activeBookmarkListeners = activeBookmarkListeners.filter(
+          (listener) => listener !== wrappedUnsubscribe
+        );
+      };
+
+      activeBookmarkListeners.push(wrappedUnsubscribe);
+      return wrappedUnsubscribe;
     },
 
     subscribeToTrash: (userId: string) => {
@@ -228,12 +257,57 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
           set({ trashBookmarks: trashList, trashLoading: false });
         },
         (error) => {
-          console.error("휴지통 로딩 오류:", error);
+          const err = error as { code?: string; message?: string };
+          // 권한 오류 시 리스너 자동 정리
+          if (
+            err?.code === "permission-denied" ||
+            err?.code === "unauthenticated"
+          ) {
+            // 권한 오류는 조용히 처리 (로그아웃 중일 수 있음)
+            try {
+              unsubscribe();
+            } catch {
+              // 리스너 정리 중 발생하는 에러는 무시
+            }
+            // cleanupAllListeners에서 정리됨
+          } else {
+            console.error("휴지통 로딩 오류:", error);
+          }
           set({ trashLoading: false });
         }
       );
 
-      return unsubscribe;
+      // 래핑된 unsubscribe 함수: 배열에서도 제거
+      const wrappedUnsubscribe = () => {
+        unsubscribe();
+        activeTrashListeners = activeTrashListeners.filter(
+          (listener) => listener !== wrappedUnsubscribe
+        );
+      };
+
+      activeTrashListeners.push(wrappedUnsubscribe);
+      return wrappedUnsubscribe;
+    },
+
+    cleanupAllListeners: () => {
+      console.log("🧹 북마크 리스너 정리 중...");
+      activeBookmarkListeners.forEach((unsubscribe) => {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.warn("북마크 리스너 정리 중 오류:", error);
+        }
+      });
+      activeTrashListeners.forEach((unsubscribe) => {
+        try {
+          unsubscribe();
+        } catch (error) {
+          console.warn("휴지통 리스너 정리 중 오류:", error);
+        }
+      });
+      activeBookmarkListeners = [];
+      activeTrashListeners = [];
+      console.log("✅ 북마크 리스너 정리 완료");
     },
 
     migrateFavicons: async (userId: string) => {

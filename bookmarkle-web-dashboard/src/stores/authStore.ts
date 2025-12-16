@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { watchAuth, auth } from "../firebase";
+import { auth } from "../firebase";
 import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import {
@@ -10,7 +10,7 @@ import {
   logout as fbLogout,
 } from "../firebase";
 
-import { onIdTokenChanged } from "firebase/auth";
+import { onIdTokenChanged, onAuthStateChanged } from "firebase/auth";
 import { notifyExtensionAuthState } from "../utils/extensionAuthMessaging";
 
 interface AuthState {
@@ -114,8 +114,30 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // 로그아웃
   logout: async () => {
     try {
+      // 모든 Firestore 리스너 정리 (순환 참조 방지를 위해 동적 import)
+      try {
+        const bookmarkStore = await import("./bookmarkStore");
+        bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
+      } catch (error) {
+        console.warn("북마크 리스너 정리 중 오류:", error);
+      }
+
+      try {
+        const subscriptionStore = await import("./subscriptionStore");
+        subscriptionStore.useSubscriptionStore.getState().cleanupAllListeners();
+      } catch (error) {
+        console.warn("구독 리스너 정리 중 오류:", error);
+      }
+
       await fbLogout();
       await notifyExtensionAuthState(null);
+
+      // 상태 초기화
+      set({
+        user: null,
+        idToken: null,
+        isActive: null,
+      });
     } catch (error) {
       console.error("로그아웃 실패:", error);
       throw error;
@@ -134,21 +156,16 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       }
     }, 1000);
 
-    // 인증 상태 감시 (user)
-    const unsubscribeAuth = watchAuth(async (user) => {
+    // 인증 상태 감시 (user) - onAuthStateChanged 직접 사용
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       authCallbackFired = true;
       clearTimeout(timeoutId);
 
       if (user) {
         console.log("✅ Auth callback fired: user logged in -", user.email);
-      } else {
-        console.log("✅ Auth callback fired: user logged out");
-      }
+        set({ user, loading: false });
 
-      set({ user, loading: false });
-
-      // 사용자 변경 시 상태 확인 (백그라운드에서 실행)
-      if (user) {
+        // 사용자 변경 시 상태 확인 (백그라운드에서 실행)
         getDoc(doc(db, "users", user.uid))
           .then((userDoc) => {
             if (userDoc.exists()) {
@@ -164,22 +181,84 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             set({ isActive: true, isActiveLoading: false });
           });
       } else {
-        set({ isActive: null, isActiveLoading: false });
+        console.log("✅ Auth callback fired: user logged out");
+        // Firebase Auth가 null을 반환했지만, idToken이나 user가 있으면
+        // 익스텐션 새로고침 시 일시적으로 null이 될 수 있으므로 상태 유지
+        const currentState = useAuthStore.getState();
+        if (currentState.idToken || currentState.user) {
+          console.log(
+            "⚠️ Firebase Auth returned null but idToken/user exists, keeping current state"
+          );
+
+          // 익스텐션 새로고침 시 Firebase Auth가 일시적으로 null이 될 수 있으므로
+          // 리스너를 정리하여 권한 오류를 방지
+          // onAuthStateChanged가 다시 호출되면 자동으로 재설정됨
+          console.log("🧹 임시 리스너 정리 (Firebase Auth 재동기화 대기 중)");
+          try {
+            const bookmarkStore = await import("./bookmarkStore");
+            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
+          } catch (error) {
+            console.warn("북마크 리스너 정리 중 오류:", error);
+          }
+
+          try {
+            const subscriptionStore = await import("./subscriptionStore");
+            subscriptionStore.useSubscriptionStore
+              .getState()
+              .cleanupAllListeners();
+          } catch (error) {
+            console.warn("구독 리스너 정리 중 오류:", error);
+          }
+
+          set({ loading: false });
+          set({ isActive: null, isActiveLoading: false });
+        } else {
+          // idToken/user도 없으면 실제 로그아웃 상태
+          console.log(
+            "🔄 Firebase Auth returned null and no previous state, logging out"
+          );
+
+          // 모든 Firestore 리스너 정리
+          try {
+            const bookmarkStore = await import("./bookmarkStore");
+            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
+          } catch (error) {
+            console.warn("북마크 리스너 정리 중 오류:", error);
+          }
+
+          try {
+            const subscriptionStore = await import("./subscriptionStore");
+            subscriptionStore.useSubscriptionStore
+              .getState()
+              .cleanupAllListeners();
+          } catch (error) {
+            console.warn("구독 리스너 정리 중 오류:", error);
+          }
+
+          set({
+            user: null,
+            idToken: null,
+            loading: false,
+            isActive: null,
+            isActiveLoading: false,
+          });
+        }
       }
     });
 
     // idToken 변경 감시
-    const unsubscribeToken = onIdTokenChanged(
-      auth,
-      async (user) => {
-        if (user) {
-          const idToken = await user.getIdToken();
-          set({ idToken });
-        } else {
+    const unsubscribeToken = onIdTokenChanged(auth, async (user) => {
+      if (user) {
+        const idToken = await user.getIdToken();
+        set({ idToken });
+      } else {
+        // Firebase Auth가 null을 반환했지만 idToken이 있으면 유지
+        const currentState = useAuthStore.getState();
+        if (!currentState.idToken) {
           set({ idToken: null });
         }
       }
-    );
+    });
 
     // 언마운트 시 모두 해제
     return () => {

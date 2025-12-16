@@ -3,9 +3,13 @@ import {
   getCurrentRefreshToken,
   getCurrentUser,
   saveAuthToStorage,
-  waitForAuthRestore,
 } from "./auth.js";
-import { ensureFirebaseAuthUser, isOffscreenSynced, markOffscreenSynced, sendToOffscreen } from "./offscreen.js";
+import {
+  ensureFirebaseAuthUser,
+  isOffscreenSynced,
+  markOffscreenSynced,
+  sendToOffscreen,
+} from "./offscreen.js";
 
 const WEB_URL_PATTERNS = [
   "https://bookmarkhub-5ea6c.web.app/*",
@@ -35,10 +39,32 @@ function handleExternalMessage(msg, sender, sendResponse) {
 function handleInternalMessage(msg, sender, sendResponse) {
   if (msg.type === "WEB_AUTH_STATE_CHANGED") {
     const forwardedPayload = msg?.payload?.payload ?? msg?.payload ?? {};
-    processAuthPayload(forwardedPayload.user, {
-      idToken: forwardedPayload.idToken,
-      refreshToken: forwardedPayload.refreshToken,
+    const user = forwardedPayload.user;
+    const idToken = forwardedPayload.idToken;
+    const refreshToken = forwardedPayload.refreshToken;
+
+    console.log("📨 [background] WEB_AUTH_STATE_CHANGED received from web:", {
+      hasUser: !!user,
+      userId: user?.uid,
+      hasIdToken: !!idToken,
     });
+
+    // 웹에서 로그아웃한 경우 (user가 null이고 idToken도 null)
+    if (!user && !idToken) {
+      console.log("🔄 [background] Web logged out, processing logout");
+      processAuthPayload(null, {
+        idToken: null,
+        refreshToken: null,
+      });
+    } else if (user && idToken) {
+      // 웹에서 로그인한 경우
+      console.log("✅ [background] Web logged in, processing login");
+      processAuthPayload(user, {
+        idToken,
+        refreshToken,
+      });
+    }
+
     sendResponse({ ok: true });
     return true;
   }
@@ -60,9 +86,31 @@ function handleInternalMessage(msg, sender, sendResponse) {
   }
 
   if (msg.type === "OFFSCREEN_READY") {
+    // offscreen이 준비되었을 때 offscreen에서 최신 인증 상태 가져오기 (백그라운드)
+    getAuthStateFromOffscreen(3, 100)
+      .then((authState) => {
+        if (authState?.user) {
+          // offscreen에서 가져온 사용자 정보로 background 상태 업데이트
+          processAuthPayload(authState.user, {
+            idToken: authState.idToken,
+            refreshToken: authState.refreshToken,
+          });
+          markOffscreenSynced(true);
+        } else {
+          markOffscreenSynced(true);
+        }
+      })
+      .catch((error) => {
+        console.warn(
+          "⚠️ Failed to get auth state from offscreen on ready:",
+          error
+        );
+        markOffscreenSynced(true);
+      });
+
+    // 즉시 응답 (offscreen 초기화는 백그라운드에서 진행)
     const user = getCurrentUser();
     if (!isOffscreenSynced() && user) {
-      markOffscreenSynced(true);
       sendResponse({
         type: "INIT_AUTH",
         user,
@@ -74,6 +122,16 @@ function handleInternalMessage(msg, sender, sendResponse) {
     return true;
   }
 
+  // offscreen에서 실시간 인증 상태 변경 알림 처리
+  if (msg.type === "OFFSCREEN_AUTH_STATE_CHANGED_TO_BACKGROUND") {
+    processAuthPayload(msg.user, {
+      idToken: msg.idToken,
+      refreshToken: msg.refreshToken,
+    });
+    sendResponse({ ok: true });
+    return true;
+  }
+
   if (sender.url && sender.url.includes("offscreen/index.html")) {
     return false;
   }
@@ -81,21 +139,25 @@ function handleInternalMessage(msg, sender, sendResponse) {
   console.log("📨 Background received from popup:", msg.type);
 
   if (msg.type === "GET_AUTH_STATE") {
-    waitForAuthRestore()
-      .catch(() => {})
-      .then(() => {
-        const currentUser = getCurrentUser();
-        if (currentUser) {
-          sendResponse({ user: currentUser });
-          return;
-        }
-
-        checkAuthStateViaFirebase()
-          .then((user) => sendResponse({ user }))
-          .catch((error) => {
-            console.warn("⚠️ Firebase auth check failed:", error);
-            sendResponse({ user: null });
+    // offscreen에서 실시간으로 최신 인증 상태 가져오기
+    getAuthStateFromOffscreen()
+      .then((authState) => {
+        if (authState?.user) {
+          // offscreen에서 가져온 사용자 정보로 background 상태 업데이트
+          processAuthPayload(authState.user, {
+            idToken: authState.idToken,
+            refreshToken: authState.refreshToken,
           });
+          sendResponse({ user: authState.user });
+        } else {
+          // offscreen에 사용자 정보가 없으면 null 반환
+          sendResponse({ user: null });
+        }
+      })
+      .catch((error) => {
+        console.warn("⚠️ Failed to get auth state from offscreen:", error);
+        // 실패 시 null 반환
+        sendResponse({ user: null });
       });
     return true;
   }
@@ -188,7 +250,12 @@ function broadcastAuthState(user, { refreshToken, idToken }) {
   sendMessageToWebTabs({ type: "WEB_AUTH_STATE_CHANGED", payload });
 }
 
-function proxyToOffscreen(message, sendResponse, transformResponse, afterSuccess) {
+function proxyToOffscreen(
+  message,
+  sendResponse,
+  transformResponse,
+  afterSuccess
+) {
   sendToOffscreen(message)
     .then((response) => {
       if (afterSuccess) {
@@ -207,14 +274,11 @@ function proxyToOffscreen(message, sendResponse, transformResponse, afterSuccess
 }
 
 function broadcastCollectionsUpdated() {
-  chrome.runtime.sendMessage(
-    { type: "COLLECTIONS_UPDATED" },
-    () => {
-      if (chrome.runtime.lastError) {
-        // popup이 없을 수 있으므로 무시
-      }
+  chrome.runtime.sendMessage({ type: "COLLECTIONS_UPDATED" }, () => {
+    if (chrome.runtime.lastError) {
+      // popup이 없을 수 있으므로 무시
     }
-  );
+  });
 
   sendMessageToWebTabs({
     type: "EXTENSION_EVENT_TO_WEB",
@@ -236,6 +300,42 @@ function sendMessageToWebTabs(message) {
       });
     });
   });
+}
+
+async function getAuthStateFromOffscreen(maxRetries = 5, retryDelay = 200) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await sendToOffscreen({
+        type: "OFFSCREEN_GET_AUTH_STATE",
+      });
+      if (response?.ok && response?.payload) {
+        return response.payload;
+      }
+      // 응답은 있지만 payload가 없는 경우 (로그아웃 상태)
+      if (response?.ok) {
+        return null;
+      }
+    } catch (error) {
+      const errorMessage = error.message || "";
+      // offscreen이 아직 준비되지 않은 경우 재시도
+      if (
+        attempt < maxRetries - 1 &&
+        (errorMessage.includes("Could not establish connection") ||
+          errorMessage.includes("The message port closed"))
+      ) {
+        console.log(
+          `⏳ Offscreen not ready yet, retrying... (${
+            attempt + 1
+          }/${maxRetries})`
+        );
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        continue;
+      }
+      console.warn("⚠️ getAuthStateFromOffscreen failed:", error);
+      return null;
+    }
+  }
+  return null;
 }
 
 async function checkAuthStateViaFirebase() {

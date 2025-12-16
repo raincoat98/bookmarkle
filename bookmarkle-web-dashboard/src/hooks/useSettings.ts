@@ -12,6 +12,7 @@ import {
   setUserDefaultPage,
   getUserNotificationSettings,
   setUserNotificationSettings,
+  auth,
 } from "../firebase";
 import {
   loadBackupSettings,
@@ -118,7 +119,9 @@ export const useSettings = ({
 
   // Firestore에서 알림 설정 로드
   useEffect(() => {
-    if (user?.uid) {
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (user?.uid && currentUser?.uid === user.uid) {
       getUserNotificationSettings(user.uid)
         .then((settings) => {
           const firestoreValue =
@@ -153,7 +156,16 @@ export const useSettings = ({
           }
         })
         .catch((error) => {
-          console.error("알림 설정 로드 실패:", error);
+          const err = error as { code?: string; message?: string };
+          // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+          if (
+            err?.code === "permission-denied" ||
+            err?.code === "unauthenticated"
+          ) {
+            // 권한 오류는 조용히 무시
+          } else {
+            console.error("알림 설정 로드 실패:", error);
+          }
         });
     }
   }, [user?.uid]);

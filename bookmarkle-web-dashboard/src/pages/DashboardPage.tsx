@@ -14,6 +14,7 @@ import { UpgradeBanner } from "../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
+import { auth } from "../firebase";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore(
@@ -74,6 +75,12 @@ export const DashboardPage: React.FC = () => {
   // 컬렉션 및 북마크 데이터 병렬 로드
   useEffect(() => {
     if (!user?.uid) return;
+
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== user.uid) {
+      return;
+    }
 
     // Start both operations in parallel
     fetchCollections(user.uid);

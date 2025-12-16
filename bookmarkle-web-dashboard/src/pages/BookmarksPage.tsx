@@ -30,6 +30,7 @@ import {
 } from "../utils/subscriptionLimits";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
+import { auth } from "../firebase";
 
 export const BookmarksPage: React.FC = () => {
   const { user, isActive, isActiveLoading } = useAuthStore(
@@ -144,10 +145,16 @@ export const BookmarksPage: React.FC = () => {
 
   // 북마크 구독 설정
   React.useEffect(() => {
-    if (user?.uid) {
-      const unsubscribe = subscribeToBookmarks(user.uid);
-      return unsubscribe;
+    if (!user?.uid) return;
+
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== user.uid) {
+      return;
     }
+
+    const unsubscribe = subscribeToBookmarks(user.uid);
+    return unsubscribe;
   }, [user?.uid, subscribeToBookmarks]);
 
   // 나머지 상태 관리

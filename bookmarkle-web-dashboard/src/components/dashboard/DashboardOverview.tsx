@@ -144,29 +144,46 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         }
       },
       (error) => {
-        console.error("알림 설정 실시간 동기화 실패:", error);
-        getUserNotificationSettings(user.uid)
-          .then((settings) => {
-            const recordValue =
-              settings.notifications !== undefined
-                ? settings.notifications
-                : settings.bookmarkNotifications;
+        const err = error as { code?: string; message?: string };
+        // 권한 오류 시 리스너 자동 정리
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          // 권한 오류는 조용히 처리 (로그아웃 중일 수 있음)
+          try {
+            unsubscribe();
+          } catch {
+            // 리스너 정리 중 발생하는 에러는 무시
+          }
+          return;
+        }
 
-            if (recordValue !== undefined) {
-              setNotificationsEnabled(recordValue);
-              localStorage.setItem(
-                "notifications",
-                JSON.stringify(recordValue)
-              );
-              localStorage.setItem(
-                "bookmarkNotifications",
-                JSON.stringify(recordValue)
-              );
-            }
-          })
-          .catch((err) => {
-            console.error("알림 설정 로드 실패:", err);
-          });
+        console.error("알림 설정 실시간 동기화 실패:", error);
+        if (user?.uid) {
+          getUserNotificationSettings(user.uid)
+            .then((settings) => {
+              const recordValue =
+                settings.notifications !== undefined
+                  ? settings.notifications
+                  : settings.bookmarkNotifications;
+
+              if (recordValue !== undefined) {
+                setNotificationsEnabled(recordValue);
+                localStorage.setItem(
+                  "notifications",
+                  JSON.stringify(recordValue)
+                );
+                localStorage.setItem(
+                  "bookmarkNotifications",
+                  JSON.stringify(recordValue)
+                );
+              }
+            })
+            .catch((err) => {
+              console.error("알림 설정 로드 실패:", err);
+            });
+        }
       }
     );
 

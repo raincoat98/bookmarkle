@@ -20,8 +20,12 @@ interface SubscriptionActions {
   setLoading: (loading: boolean) => void;
   fetchSubscription: (userId: string) => Promise<void>;
   subscribeToSubscription: (userId: string) => () => void;
+  cleanupAllListeners: () => void;
   checkSubscriptionStatus: () => boolean; // 구독이 활성 상태인지 확인
 }
+
+// 활성 리스너 추적
+let activeSubscriptionListeners: (() => void)[] = [];
 
 /**
  * 구독 상태 관리 Store
@@ -122,12 +126,49 @@ export const useSubscriptionStore = create<
         }
       },
       (error) => {
-        console.error("구독 정보 실시간 구독 실패:", error);
+        const err = error as { code?: string; message?: string };
+        // 권한 오류 시 리스너 자동 정리
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          // 권한 오류는 조용히 처리 (로그아웃 중일 수 있음)
+          try {
+            unsubscribe();
+          } catch {
+            // 리스너 정리 중 발생하는 에러는 무시
+          }
+          // cleanupAllListeners에서 정리됨
+        } else {
+          console.error("구독 정보 실시간 구독 실패:", error);
+        }
         set({ loading: false });
       }
     );
 
-    return unsubscribe;
+    // 래핑된 unsubscribe 함수: 배열에서도 제거
+    const wrappedUnsubscribe = () => {
+      unsubscribe();
+      activeSubscriptionListeners = activeSubscriptionListeners.filter(
+        (listener) => listener !== wrappedUnsubscribe
+      );
+    };
+
+    activeSubscriptionListeners.push(wrappedUnsubscribe);
+    return wrappedUnsubscribe;
+  },
+
+  cleanupAllListeners: () => {
+    console.log("🧹 구독 리스너 정리 중...");
+    activeSubscriptionListeners.forEach((unsubscribe) => {
+      try {
+        unsubscribe();
+      } catch (error) {
+        console.warn("구독 리스너 정리 중 오류:", error);
+      }
+    });
+    activeSubscriptionListeners = [];
+    console.log("✅ 구독 리스너 정리 완료");
   },
 
   // 구독 상태 확인 (활성 상태인지)
