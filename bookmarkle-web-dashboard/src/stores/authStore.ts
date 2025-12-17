@@ -147,6 +147,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // 인증 상태 초기화 및 감시
   initializeAuth: () => {
     let authCallbackFired = false;
+    let isInitializing = true; // 초기화 중 플래그
+    let lastUserUid: string | null = null; // 마지막 사용자 UID 추적
+    let lastLoginTime = 0; // 마지막 로그인 시간
 
     // 1초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
     const timeoutId = setTimeout(() => {
@@ -154,6 +157,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
         console.log("⚠️ Auth callback timeout (1s) - setting loading to false");
         set({ loading: false });
       }
+      isInitializing = false; // 타임아웃 후 초기화 완료
     }, 1000);
 
     // 인증 상태 감시 (user) - onAuthStateChanged 직접 사용
@@ -161,8 +165,47 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       authCallbackFired = true;
       clearTimeout(timeoutId);
 
+      const currentState = useAuthStore.getState();
+      const currentUserUid = user?.uid || null;
+      const now = Date.now();
+
+      // 로그인 직후 로그아웃 콜백 방지: 최근 2초 이내에 로그인했고 현재 상태에 사용자가 있으면 무시
+      if (!user && currentState.user && now - lastLoginTime < 2000) {
+        console.log(
+          "⚠️ Ignoring logout callback - user logged in recently (within 2s), keeping current state"
+        );
+        // 실제 Firebase Auth 상태 확인
+        const actualUser = auth.currentUser;
+        if (actualUser && actualUser.uid === currentState.user?.uid) {
+          console.log("✅ Firebase Auth state verified, keeping current user");
+          return; // 실제로는 로그인 상태이므로 무시
+        }
+      }
+
+      // 초기화 중이고 사용자가 변경되지 않은 경우 스킵 (중복 호출 방지)
+      if (isInitializing && lastUserUid === currentUserUid) {
+        console.log(
+          "⏭️ Skipping duplicate auth callback during initialization"
+        );
+        isInitializing = false;
+        return;
+      }
+
       if (user) {
+        // 같은 사용자인 경우 중복 업데이트 방지
+        if (
+          currentState.user?.uid === user.uid &&
+          !isInitializing &&
+          now - lastLoginTime < 1000
+        ) {
+          console.log("⏭️ Skipping duplicate login callback for same user");
+          return;
+        }
+
         console.log("✅ Auth callback fired: user logged in -", user.email);
+        lastUserUid = user.uid;
+        lastLoginTime = now;
+        isInitializing = false;
         set({ user, loading: false });
 
         // 사용자 변경 시 상태 확인 (백그라운드에서 실행)
@@ -181,42 +224,23 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             set({ isActive: true, isActiveLoading: false });
           });
       } else {
-        console.log("✅ Auth callback fired: user logged out");
-        // Firebase Auth가 null을 반환했지만, idToken이나 user가 있으면
-        // 익스텐션 새로고침 시 일시적으로 null이 될 수 있으므로 상태 유지
-        const currentState = useAuthStore.getState();
-        if (currentState.idToken || currentState.user) {
+        // 로그아웃 콜백: 실제 로그아웃인지 확인
+        const actualUser = auth.currentUser;
+        if (actualUser) {
           console.log(
-            "⚠️ Firebase Auth returned null but idToken/user exists, keeping current state"
+            "⚠️ Auth callback returned null but auth.currentUser exists, ignoring"
           );
+          return; // 실제로는 로그인 상태이므로 무시
+        }
 
-          // 익스텐션 새로고침 시 Firebase Auth가 일시적으로 null이 될 수 있으므로
-          // 리스너를 정리하여 권한 오류를 방지
-          // onAuthStateChanged가 다시 호출되면 자동으로 재설정됨
-          console.log("🧹 임시 리스너 정리 (Firebase Auth 재동기화 대기 중)");
-          try {
-            const bookmarkStore = await import("./bookmarkStore");
-            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-          } catch (error) {
-            console.warn("북마크 리스너 정리 중 오류:", error);
-          }
-
-          try {
-            const subscriptionStore = await import("./subscriptionStore");
-            subscriptionStore.useSubscriptionStore
-              .getState()
-              .cleanupAllListeners();
-          } catch (error) {
-            console.warn("구독 리스너 정리 중 오류:", error);
-          }
-
-          set({ loading: false });
-          set({ isActive: null, isActiveLoading: false });
-        } else {
-          // idToken/user도 없으면 실제 로그아웃 상태
+        // 현재 상태에 사용자가 없으면 실제 로그아웃
+        if (!currentState.user && !currentState.idToken) {
           console.log(
-            "🔄 Firebase Auth returned null and no previous state, logging out"
+            "✅ Auth callback fired: user logged out (no previous state)"
           );
+          lastUserUid = null;
+          lastLoginTime = 0;
+          isInitializing = false;
 
           // 모든 Firestore 리스너 정리
           try {
@@ -242,6 +266,33 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             isActive: null,
             isActiveLoading: false,
           });
+        } else {
+          // 현재 상태에 사용자가 있지만 Firebase Auth가 null인 경우
+          // 익스텐션 새로고침 시 일시적으로 null이 될 수 있으므로 상태 유지
+          console.log(
+            "⚠️ Firebase Auth returned null but user exists in state, keeping state"
+          );
+
+          // 리스너를 정리하여 권한 오류를 방지
+          console.log("🧹 임시 리스너 정리 (Firebase Auth 재동기화 대기 중)");
+          try {
+            const bookmarkStore = await import("./bookmarkStore");
+            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
+          } catch (error) {
+            console.warn("북마크 리스너 정리 중 오류:", error);
+          }
+
+          try {
+            const subscriptionStore = await import("./subscriptionStore");
+            subscriptionStore.useSubscriptionStore
+              .getState()
+              .cleanupAllListeners();
+          } catch (error) {
+            console.warn("구독 리스너 정리 중 오류:", error);
+          }
+
+          set({ loading: false });
+          set({ isActive: null, isActiveLoading: false });
         }
       }
     });
@@ -249,12 +300,31 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     // idToken 변경 감시
     const unsubscribeToken = onIdTokenChanged(auth, async (user) => {
       if (user) {
-        const idToken = await user.getIdToken();
-        set({ idToken });
+        try {
+          const idToken = await user.getIdToken();
+          const currentState = useAuthStore.getState();
+          // 같은 사용자이고 idToken이 이미 설정되어 있으면 중복 업데이트 방지
+          if (
+            currentState.user?.uid === user.uid &&
+            currentState.idToken === idToken
+          ) {
+            return;
+          }
+          set({ idToken });
+        } catch (error) {
+          console.error("idToken 가져오기 실패:", error);
+        }
       } else {
-        // Firebase Auth가 null을 반환했지만 idToken이 있으면 유지
+        // Firebase Auth가 null을 반환했지만 실제로는 로그인 상태일 수 있음
+        const actualUser = auth.currentUser;
+        if (actualUser) {
+          // 실제로는 로그인 상태이므로 idToken 유지
+          return;
+        }
+
+        // 실제 로그아웃 상태인 경우에만 idToken 제거
         const currentState = useAuthStore.getState();
-        if (!currentState.idToken) {
+        if (!currentState.user && !currentState.idToken) {
           set({ idToken: null });
         }
       }

@@ -19,6 +19,76 @@ const WEB_URL_PATTERNS = [
 export function initMessageHandlers() {
   chrome.runtime.onMessageExternal.addListener(handleExternalMessage);
   chrome.runtime.onMessage.addListener(handleInternalMessage);
+  
+  // 익스텐션 시작 시 웹의 현재 로그인 상태 확인
+  requestWebAuthStateOnStartup();
+}
+
+/**
+ * 익스텐션 시작 시 웹 탭에서 현재 로그인 상태를 요청
+ */
+function requestWebAuthStateOnStartup() {
+  // 약간의 지연을 두어 웹 페이지가 완전히 로드될 시간을 줌
+  setTimeout(() => {
+    chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
+      if (tabs.length === 0) {
+        console.log("📭 [background] No web tabs found, skipping auth state request");
+        return;
+      }
+
+      console.log(`📭 [background] Requesting auth state from ${tabs.length} web tab(s)`);
+      
+      // 모든 웹 탭에 인증 상태 요청
+      tabs.forEach((tab) => {
+        if (typeof tab.id !== "number") {
+          return;
+        }
+        
+        chrome.tabs.sendMessage(
+          tab.id,
+          { type: "REQUEST_WEB_AUTH_STATE" },
+          (response) => {
+            if (chrome.runtime.lastError) {
+              // 탭이 응답하지 않을 수 있으므로 무시
+              console.log(
+                `⚠️ [background] Tab ${tab.id} did not respond:`,
+                chrome.runtime.lastError.message
+              );
+              return;
+            }
+
+            if (response?.ok && response?.payload) {
+              const { user, idToken, refreshToken } = response.payload;
+              console.log(
+                "✅ [background] Received auth state from web on startup:",
+                user ? `user ${user.uid}` : "no user"
+              );
+
+              // 웹에서 받은 인증 상태로 익스텐션 동기화
+              if (user && idToken) {
+                console.log("🔄 [background] Syncing extension auth state with web");
+                processAuthPayload(user, {
+                  idToken,
+                  refreshToken,
+                });
+              } else if (!user && !idToken) {
+                // 웹에서 로그아웃 상태인 경우
+                console.log("🔄 [background] Web is logged out, syncing extension");
+                processAuthPayload(null, {
+                  idToken: null,
+                  refreshToken: null,
+                });
+              }
+            } else {
+              console.log(
+                "📭 [background] Web tab responded but no auth state available"
+              );
+            }
+          }
+        );
+      });
+    });
+  }, 1000); // 1초 지연
 }
 
 function handleExternalMessage(msg, sender, sendResponse) {

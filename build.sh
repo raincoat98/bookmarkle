@@ -151,8 +151,8 @@ build_my_extension() {
         if [ ! -f "$file" ]; then
             log_warning "권장 파일이 없습니다: $file"
         else
-            # JavaScript 파일 문법 검증
-            if [[ "$file" == *.js ]] && command -v node &> /dev/null; then
+            # JavaScript 파일 문법 검증 (ES 모듈 파일은 제외 - esbuild로 번들링됨)
+            if [[ "$file" == *.js ]] && [[ "$file" != background/*.js ]] && command -v node &> /dev/null; then
                 if node -c "$file"; then
                     log_success "$file 문법 검증 완료"
                 else
@@ -160,6 +160,8 @@ build_my_extension() {
                     cd "$ROOT_DIR"
                     return 1
                 fi
+            elif [[ "$file" == background/*.js ]]; then
+                log_info "$file는 ES 모듈이므로 esbuild로 번들링 시 검증됩니다"
             fi
         fi
     done

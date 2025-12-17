@@ -168,11 +168,16 @@ export const Settings: React.FC<SettingsProps> = ({
   // 사용자 기본 페이지 로드
   useEffect(() => {
     if (user?.uid) {
-      getUserDefaultPage(user.uid).then((page: string | null) => {
-        if (page) {
-          setDefaultPage(page);
-        }
-      });
+      getUserDefaultPage(user.uid)
+        .then((page: string | null) => {
+          if (page) {
+            setDefaultPage(page);
+          }
+        })
+        .catch((error) => {
+          // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+          console.warn("⚠️ Failed to get user default page:", error);
+        });
     }
   }, [user?.uid, setDefaultPage]);
 

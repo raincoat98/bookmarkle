@@ -214,13 +214,26 @@ export async function clearFirebaseStorage() {
 }
 
 export async function getUserDefaultPage(uid: string): Promise<string> {
-  const db = getFirestore();
-  const settingsRef = doc(db, "users", uid, "settings", "main");
-  const snap = await getDoc(settingsRef);
-  if (snap.exists() && snap.data().defaultPage) {
-    return snap.data().defaultPage;
+  try {
+    const db = getFirestore();
+    const settingsRef = doc(db, "users", uid, "settings", "main");
+    const snap = await getDoc(settingsRef);
+    if (snap.exists() && snap.data().defaultPage) {
+      return snap.data().defaultPage;
+    }
+    return "dashboard";
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      console.warn(
+        "⚠️ getUserDefaultPage: Permission denied, returning default"
+      );
+      return "dashboard";
+    }
+    console.error("❌ getUserDefaultPage error:", error);
+    return "dashboard";
   }
-  return "dashboard";
 }
 
 export async function setUserDefaultPage(
