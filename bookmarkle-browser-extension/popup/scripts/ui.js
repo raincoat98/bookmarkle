@@ -39,7 +39,16 @@ export function updateUI(user, shouldLoadCollections = true) {
 
   if (user) {
     if (dom.userEmailSpan) {
-      dom.userEmailSpan.textContent = user.email || user.uid || "";
+      // 이름 표시: displayName이 있으면 사용, 없으면 이메일의 @ 앞부분 사용
+      let displayName = "";
+      if (user.displayName) {
+        displayName = user.displayName;
+      } else if (user.email) {
+        displayName = user.email.split("@")[0];
+      } else {
+        displayName = user.uid || "";
+      }
+      dom.userEmailSpan.textContent = displayName;
       dom.userEmailSpan.style.display = "inline";
     }
     if (dom.loginSection) {
