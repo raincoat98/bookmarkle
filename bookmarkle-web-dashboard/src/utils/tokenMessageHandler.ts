@@ -90,9 +90,7 @@ async function emitCurrentAuthState() {
   try {
     const user = await waitForFirebaseUser();
     if (!user) {
-      if (process.env.NODE_ENV === "development") {
-        console.log("📤 [tokenMessageHandler] Emitting auth state: no user");
-      }
+      console.log("📤 [tokenMessageHandler] Emitting auth state: no user");
       window.postMessage(
         {
           source: "bookmarkhub",
@@ -110,12 +108,10 @@ async function emitCurrentAuthState() {
 
     const idToken = await user.getIdToken();
     const refreshToken = getRefreshTokenFromUser(user);
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        "📤 [tokenMessageHandler] Emitting auth state for user:",
-        user.uid
-      );
-    }
+    console.log(
+      "📤 [tokenMessageHandler] Emitting auth state for user:",
+      user.uid
+    );
     window.postMessage(
       {
         source: "bookmarkhub",
@@ -148,11 +144,9 @@ async function emitCurrentAuthState() {
 export function initializeTokenMessageHandler() {
   // 이미 초기화되었으면 기존 cleanup 함수 반환
   if (tokenMessageHandlerInitialized && tokenMessageHandlerCleanup) {
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        "⚠️ [tokenMessageHandler] Already initialized, skipping duplicate initialization"
-      );
-    }
+    console.log(
+      "⚠️ [tokenMessageHandler] Already initialized, skipping duplicate initialization"
+    );
     return tokenMessageHandlerCleanup;
   }
 
@@ -161,20 +155,16 @@ export function initializeTokenMessageHandler() {
     tokenMessageHandlerCleanup();
   }
 
-  if (process.env.NODE_ENV === "development") {
-    console.log(
-      "🔐 [tokenMessageHandler] Initialized - listening for AUTH_STATE_CHANGED"
-    );
-  }
+  console.log(
+    "🔐 [tokenMessageHandler] Initialized - listening for AUTH_STATE_CHANGED"
+  );
 
   const isIframeMode =
     new URLSearchParams(window.location.search).get("iframe") === "true";
 
   if (isIframeMode && window.parent !== window) {
     window.parent.postMessage({ type: "IFRAME_READY" }, "*");
-    if (process.env.NODE_ENV === "development") {
-      console.log("📤 [tokenMessageHandler] Sent IFRAME_READY to parent");
-    }
+    console.log("📤 [tokenMessageHandler] Sent IFRAME_READY to parent");
   }
 
   const handleMessage = async (event: MessageEvent) => {
@@ -182,61 +172,35 @@ export function initializeTokenMessageHandler() {
     if (!data) return;
 
     if (data.type === "AUTH_STATE_CHANGED") {
-      // extension에서 받은 인증 정보인 경우
+      // extension에서 받은 인증 정보인 경우 authStore에 직접 동기화
       if (data.fromExtension && data.payload) {
         const { user: extensionUser, idToken } = data.payload;
         const authStore = useAuthStore.getState();
-        const currentUser = auth.currentUser;
-
-        // 웹의 로그인 상태가 우선: 웹에 이미 다른 사용자가 로그인되어 있으면 익스텐션 상태 무시
-        if (
-          currentUser &&
-          extensionUser &&
-          currentUser.uid !== extensionUser.uid
-        ) {
-          if (process.env.NODE_ENV === "development") {
-            console.log(
-              "⚠️ [tokenMessageHandler] Extension sent different user, ignoring (web auth state takes priority):",
-              {
-                webUser: currentUser.uid,
-                extensionUser: extensionUser.uid,
-              }
-            );
-          }
-          // 웹의 현재 로그인 상태를 익스텐션에 알림
-          emitCurrentAuthState().catch((error) => {
-            console.error(
-              "❌ [tokenMessageHandler] Failed to emit web auth state to extension:",
-              error
-            );
-          });
-          return;
-        }
 
         // extension에서 사용자 정보가 있고, 현재 Firebase Auth 상태와 다른 경우
         if (extensionUser) {
+          const currentUser = auth.currentUser;
+
           // 현재 사용자가 없거나 다른 사용자인 경우
           if (!currentUser || currentUser.uid !== extensionUser.uid) {
-            // 웹에 사용자가 없고 익스텐션에 사용자가 있는 경우에만 동기화
+            console.log(
+              "🔄 [tokenMessageHandler] Syncing auth state from extension:",
+              extensionUser.uid
+            );
+
+            // extension에서 받은 정보를 사용해서 authStore 상태 업데이트
+            // Firebase Auth User 객체는 직접 만들 수 없으므로,
+            // extension 정보를 사용해서 임시로 상태를 유지
+            // 실제 Firebase Auth 상태는 나중에 동기화됨
+            if (idToken) {
+              authStore.setIdToken(idToken);
+            }
+
+            // loading을 false로 설정하여 로그인 페이지로 이동하지 않도록 함
+            authStore.setLoading(false);
+
+            // Firebase Auth 상태 확인 및 동기화 시도
             if (!currentUser) {
-              if (process.env.NODE_ENV === "development") {
-                console.log(
-                  "🔄 [tokenMessageHandler] No web user, syncing auth state from extension:",
-                  extensionUser.uid
-                );
-              }
-
-              // extension에서 받은 정보를 사용해서 authStore 상태 업데이트
-              // Firebase Auth User 객체는 직접 만들 수 없으므로,
-              // extension 정보를 사용해서 임시로 상태를 유지
-              // 실제 Firebase Auth 상태는 나중에 동기화됨
-              if (idToken) {
-                authStore.setIdToken(idToken);
-              }
-
-              // loading을 false로 설정하여 로그인 페이지로 이동하지 않도록 함
-              authStore.setLoading(false);
-
               // Firebase Auth 초기화 대기 후 상태 확인
               waitForAuthInitialization()
                 .then(() => {
@@ -245,20 +209,16 @@ export function initializeTokenMessageHandler() {
                     !userAfterInit ||
                     userAfterInit.uid !== extensionUser.uid
                   ) {
-                    if (process.env.NODE_ENV === "development") {
-                      console.log(
-                        "⚠️ [tokenMessageHandler] Firebase Auth state mismatch with extension, keeping extension state"
-                      );
-                    }
+                    console.log(
+                      "⚠️ [tokenMessageHandler] Firebase Auth state mismatch with extension, keeping extension state"
+                    );
                     // Firebase Auth 상태가 extension과 다르면, extension 정보를 우선시
                     // authStore의 user는 Firebase Auth의 onAuthStateChanged가 업데이트할 때까지 유지
                   } else {
                     // 같은 사용자인 경우 정상 동기화됨
-                    if (process.env.NODE_ENV === "development") {
-                      console.log(
-                        "✅ [tokenMessageHandler] Firebase Auth state synced with extension"
-                      );
-                    }
+                    console.log(
+                      "✅ [tokenMessageHandler] Firebase Auth state synced with extension"
+                    );
                   }
                 })
                 .catch((error) => {
@@ -267,13 +227,6 @@ export function initializeTokenMessageHandler() {
                     error
                   );
                 });
-            } else {
-              // 웹에 다른 사용자가 있는 경우 무시 (이미 위에서 처리됨)
-              if (process.env.NODE_ENV === "development") {
-                console.log(
-                  "⚠️ [tokenMessageHandler] Web has different user, ignoring extension state"
-                );
-              }
             }
           } else {
             // 같은 사용자인 경우 idToken만 업데이트
@@ -283,29 +236,12 @@ export function initializeTokenMessageHandler() {
           }
         } else {
           // extension에서 로그아웃 상태(null)를 보낸 경우
-          // 웹에 사용자가 있으면 익스텐션의 로그아웃 상태를 무시
-          if (currentUser) {
-            if (process.env.NODE_ENV === "development") {
-              console.log(
-                "⚠️ [tokenMessageHandler] Extension sent logout but web is logged in, ignoring (web auth state takes priority)"
-              );
-            }
-            // 웹의 현재 로그인 상태를 익스텐션에 알림
-            emitCurrentAuthState().catch((error) => {
-              console.error(
-                "❌ [tokenMessageHandler] Failed to emit web auth state to extension:",
-                error
-              );
-            });
-            return;
-          }
-
-          // 웹에도 사용자가 없는 경우에만 익스텐션의 로그아웃 상태를 처리
-          if (process.env.NODE_ENV === "development") {
-            console.log(
-              "⚠️ [tokenMessageHandler] Extension sent null, ignoring completely (actual logout handled by Firebase Auth)"
-            );
-          }
+          // 익스텐션 새로고침 시 일시적으로 null이 올 수 있으므로
+          // extension에서 null을 받아도 웹 대시보드에서는 아무것도 하지 않음
+          // 실제 로그아웃은 웹 대시보드에서 직접 처리하거나 Firebase Auth에서 처리됨
+          console.log(
+            "⚠️ [tokenMessageHandler] Extension sent null, ignoring completely (actual logout handled by Firebase Auth)"
+          );
           // idToken과 user는 Firebase Auth에서 관리하므로 유지
         }
       } else {
@@ -339,9 +275,7 @@ export function initializeTokenMessageHandler() {
       }
 
       try {
-        if (process.env.NODE_ENV === "development") {
-          console.log("📨 [tokenMessageHandler] GET_FRESH_ID_TOKEN received");
-        }
+        console.log("📨 [tokenMessageHandler] GET_FRESH_ID_TOKEN received");
         const user = await waitForFirebaseUser();
         if (!user) {
           port.postMessage({
@@ -377,11 +311,9 @@ export function initializeTokenMessageHandler() {
     }
 
     if (data.type === "EXTENSION_REQUEST_AUTH_STATE") {
-      if (process.env.NODE_ENV === "development") {
-        console.log(
-          "📨 [tokenMessageHandler] EXTENSION_REQUEST_AUTH_STATE received"
-        );
-      }
+      console.log(
+        "📨 [tokenMessageHandler] EXTENSION_REQUEST_AUTH_STATE received"
+      );
       emitCurrentAuthState().catch((error) => {
         console.error(
           "❌ [tokenMessageHandler] Failed to emit auth state on request:",
@@ -399,9 +331,7 @@ export function initializeTokenMessageHandler() {
     window.removeEventListener("message", handleMessage);
     tokenMessageHandlerInitialized = false;
     tokenMessageHandlerCleanup = null;
-    if (process.env.NODE_ENV === "development") {
-      console.log("🧹 [tokenMessageHandler] Cleaned up");
-    }
+    console.log("🧹 [tokenMessageHandler] Cleaned up");
   };
 
   return tokenMessageHandlerCleanup;
