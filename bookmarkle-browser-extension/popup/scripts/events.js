@@ -4,13 +4,38 @@ import { toggleTheme } from "./theme.js";
 import { loadCollections } from "./collections.js";
 import { state } from "./state.js";
 import { clearTags, addTag, addMultipleTags, removeTag } from "./tags.js";
-import { updateUI } from "./ui.js";
+import { updateUI, showLoading } from "./ui.js";
 
 export function bindPopupEvents({ publicSignUrl }) {
   if (dom.loginBtn) {
     dom.loginBtn.addEventListener("click", () => {
+      // 로그인 버튼 클릭 시 로딩 표시
+      showLoading();
       const dashboardUrl = `${publicSignUrl}&extensionId=${chrome.runtime.id}`;
       chrome.tabs.create({ url: dashboardUrl });
+      
+      // 팝업이 열려있는 동안 주기적으로 인증 상태 확인
+      const checkAuthInterval = setInterval(async () => {
+        try {
+          const response = await chrome.runtime.sendMessage({
+            type: "GET_AUTH_STATE",
+          });
+          if (response?.user) {
+            clearInterval(checkAuthInterval);
+            updateUI(response.user);
+          }
+        } catch (error) {
+          console.error("Auth check error:", error);
+        }
+      }, 1000);
+      
+      // 30초 후 타임아웃
+      setTimeout(() => {
+        clearInterval(checkAuthInterval);
+        if (!state.currentUser) {
+          updateUI(null);
+        }
+      }, 30000);
     });
   }
 

@@ -6,7 +6,7 @@ import {
   loadLanguageTexts,
 } from "./locale.js";
 import { initTheme } from "./theme.js";
-import { updateUI } from "./ui.js";
+import { updateUI, showLoading } from "./ui.js";
 
 const PUBLIC_SIGN_URL = "_PUBLIC_SIGN_URL_";
 
@@ -33,6 +33,8 @@ async function initCurrentTab() {
 }
 
 async function initAuthState() {
+  // 인증 상태 확인 시작 시 로딩 표시
+  showLoading();
   try {
     const response = await chrome.runtime.sendMessage({
       type: "GET_AUTH_STATE",
@@ -61,6 +63,7 @@ function hideAllSections() {
   }
   if (dom.loadingSection) {
     dom.loadingSection.classList.add("hidden");
+    dom.loadingSection.style.display = "none";
   }
   if (dom.bookmarkSection) {
     dom.bookmarkSection.classList.add("hidden");
