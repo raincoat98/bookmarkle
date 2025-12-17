@@ -3,7 +3,9 @@
   const auth = window.OffscreenAuth;
 
   if (!env || !auth) {
-    console.error("❌ [offscreen] Missing environment/auth modules for Firestore operations");
+    console.error(
+      "❌ [offscreen] Missing environment/auth modules for Firestore operations"
+    );
     return;
   }
 
@@ -24,7 +26,10 @@
   }
 
   function saveToFirestore(path, payload) {
-    return fetch(`https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/${path}`, payload);
+    return fetch(
+      `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/${path}`,
+      payload
+    );
   }
 
   async function addCollection({ name, icon }) {
@@ -49,7 +54,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({ fields }),
     };
@@ -69,7 +74,77 @@
     return result;
   }
 
-  async function saveBookmark({ url, title, collectionId, description, tags, favicon }) {
+  async function getUserNotificationSettings() {
+    await auth.ensureAuthReady();
+    await auth.ensureFreshIdToken();
+
+    const { user, idToken } = requireAuthState();
+    const userId = user.uid;
+
+    const getPayload = {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+    };
+
+    let response = await fetch(
+      `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/users/${userId}/settings/main`,
+      getPayload
+    );
+
+    if (response.status === 401) {
+      await auth.ensureFreshIdToken();
+      getPayload.headers.Authorization = `Bearer ${auth.getCurrentIdToken()}`;
+      response = await fetch(
+        `https://firestore.googleapis.com/v1/projects/${firebaseConfig.projectId}/databases/(default)/documents/users/${userId}/settings/main`,
+        getPayload
+      );
+    }
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        // 설정이 없으면 기본값 반환
+        return {
+          notifications: true,
+          bookmarkNotifications: true,
+          systemNotifications: true,
+        };
+      }
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || "알림 설정 조회 실패");
+    }
+
+    const doc = await response.json();
+    const fields = doc.fields || {};
+
+    return {
+      notifications:
+        fields.notifications?.booleanValue !== undefined
+          ? fields.notifications.booleanValue
+          : true,
+      bookmarkNotifications:
+        fields.bookmarkNotifications?.booleanValue !== undefined
+          ? fields.bookmarkNotifications.booleanValue
+          : true,
+      systemNotifications:
+        fields.systemNotifications?.booleanValue !== undefined
+          ? fields.systemNotifications.booleanValue
+          : fields.notifications?.booleanValue !== undefined
+          ? fields.notifications.booleanValue
+          : true,
+    };
+  }
+
+  async function saveBookmark({
+    url,
+    title,
+    collectionId,
+    description,
+    tags,
+    favicon,
+  }) {
     await auth.ensureAuthReady();
     await auth.ensureFreshIdToken();
 
@@ -102,7 +177,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({ fields }),
     };
@@ -119,7 +194,81 @@
     }
     const result = await response.json();
     console.log("✅ Bookmark saved:", { url, title, id: result.name });
-    return result;
+
+    // 북마크 ID 추출 (result.name은 "projects/xxx/databases/(default)/documents/bookmarks/abc123" 형식)
+    const bookmarkId = result.name.split("/").pop();
+
+    // 북마크 저장 후 알림 설정 확인
+    let notificationSettings = null;
+    try {
+      notificationSettings = await getUserNotificationSettings();
+    } catch (error) {
+      console.warn("⚠️ Failed to get notification settings:", error);
+    }
+
+    // 북마크 알림이 활성화되어 있으면 알림 센터에 알림 저장
+    if (notificationSettings?.bookmarkNotifications) {
+      try {
+        await createBookmarkNotification(
+          userId,
+          bookmarkId,
+          title,
+          url,
+          idToken
+        );
+      } catch (error) {
+        console.warn("⚠️ Failed to create bookmark notification:", error);
+        // 알림 생성 실패해도 북마크 저장은 성공한 것으로 처리
+      }
+    }
+
+    return {
+      ...result,
+      notificationSettings,
+    };
+  }
+
+  async function createBookmarkNotification(
+    userId,
+    bookmarkId,
+    title,
+    url,
+    idToken
+  ) {
+    const now = new Date().toISOString();
+    const notificationFields = {
+      userId: { stringValue: userId },
+      type: { stringValue: "bookmark_added" },
+      title: { stringValue: "북마크 추가됨" },
+      message: { stringValue: `"${title}" 북마크가 추가되었습니다` },
+      isRead: { booleanValue: false },
+      createdAt: { timestampValue: now },
+      bookmarkId: { stringValue: bookmarkId },
+      metadata: { nullValue: null },
+    };
+
+    const payload = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ fields: notificationFields }),
+    };
+
+    let response = await saveToFirestore("documents/notifications", payload);
+    if (response.status === 401) {
+      await auth.ensureFreshIdToken();
+      payload.headers.Authorization = `Bearer ${auth.getCurrentIdToken()}`;
+      response = await saveToFirestore("documents/notifications", payload);
+    }
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error?.message || "알림 생성 실패");
+    }
+    const notificationResult = await response.json();
+    console.log("✅ Bookmark notification created:", notificationResult.name);
+    return notificationResult;
   }
 
   async function listBookmarks() {
@@ -145,7 +294,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({
         structuredQuery: {
@@ -217,7 +366,7 @@
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${idToken}`,
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({
         structuredQuery: {
@@ -276,5 +425,6 @@
     saveBookmark,
     listBookmarks,
     getCollections,
+    getUserNotificationSettings,
   };
 })();

@@ -1,5 +1,6 @@
 import { getCurrentUser } from "./auth.js";
 import { sendToOffscreen } from "./offscreen.js";
+import { showSystemNotification } from "./messaging.js";
 
 export function initQuickSave() {
   chrome.action.onClicked.addListener(handleActionClick);
@@ -36,6 +37,16 @@ async function handleActionClick(tab) {
     if (response?.ok) {
       console.log("✅ Quick save success");
       showBadge("✓", "#10B981");
+
+      // 북마크 저장 성공 후 시스템 알림 확인 및 표시
+      if (response?.result?.notificationSettings) {
+        const { notificationSettings } = response.result;
+
+        // 시스템 알림이 활성화되어 있으면 OS 알림 센터로 알림 표시
+        if (notificationSettings.systemNotifications) {
+          showSystemNotification(tab.title || "북마크 저장됨", tab.url || "");
+        }
+      }
     } else {
       console.error("Quick save failed:", response?.error);
       showBadge("✗", "#EF4444");

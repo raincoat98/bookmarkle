@@ -19,7 +19,7 @@ const WEB_URL_PATTERNS = [
 export function initMessageHandlers() {
   chrome.runtime.onMessageExternal.addListener(handleExternalMessage);
   chrome.runtime.onMessage.addListener(handleInternalMessage);
-  
+
   // 익스텐션 시작 시 웹의 현재 로그인 상태 확인
   requestWebAuthStateOnStartup();
 }
@@ -32,18 +32,22 @@ function requestWebAuthStateOnStartup() {
   setTimeout(() => {
     chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
       if (tabs.length === 0) {
-        console.log("📭 [background] No web tabs found, skipping auth state request");
+        console.log(
+          "📭 [background] No web tabs found, skipping auth state request"
+        );
         return;
       }
 
-      console.log(`📭 [background] Requesting auth state from ${tabs.length} web tab(s)`);
-      
+      console.log(
+        `📭 [background] Requesting auth state from ${tabs.length} web tab(s)`
+      );
+
       // 모든 웹 탭에 인증 상태 요청
       tabs.forEach((tab) => {
         if (typeof tab.id !== "number") {
           return;
         }
-        
+
         chrome.tabs.sendMessage(
           tab.id,
           { type: "REQUEST_WEB_AUTH_STATE" },
@@ -66,14 +70,18 @@ function requestWebAuthStateOnStartup() {
 
               // 웹에서 받은 인증 상태로 익스텐션 동기화
               if (user && idToken) {
-                console.log("🔄 [background] Syncing extension auth state with web");
+                console.log(
+                  "🔄 [background] Syncing extension auth state with web"
+                );
                 processAuthPayload(user, {
                   idToken,
                   refreshToken,
                 });
               } else if (!user && !idToken) {
                 // 웹에서 로그아웃 상태인 경우
-                console.log("🔄 [background] Web is logged out, syncing extension");
+                console.log(
+                  "🔄 [background] Web is logged out, syncing extension"
+                );
                 processAuthPayload(null, {
                   idToken: null,
                   refreshToken: null,
@@ -241,7 +249,20 @@ function handleInternalMessage(msg, sender, sendResponse) {
   if (msg.type === "SAVE_BOOKMARK") {
     proxyToOffscreen(
       { type: "OFFSCREEN_SAVE_BOOKMARK", payload: msg.payload },
-      sendResponse
+      sendResponse,
+      undefined,
+      (response) => {
+        // 북마크 저장 성공 후 시스템 알림 확인 및 표시
+        if (response?.ok && response?.result?.notificationSettings) {
+          const { notificationSettings } = response.result;
+          const { title, url } = msg.payload || {};
+
+          // 시스템 알림이 활성화되어 있으면 OS 알림 센터로 알림 표시
+          if (notificationSettings.systemNotifications) {
+            showSystemNotification(title || "북마크 저장됨", url || "");
+          }
+        }
+      }
     );
     return true;
   }
@@ -355,6 +376,41 @@ function broadcastCollectionsUpdated() {
     eventType: "COLLECTIONS_UPDATED",
     payload: {},
   });
+}
+
+export function showSystemNotification(title, url) {
+  const notificationId = `bookmark-saved-${Date.now()}`;
+  const message = url ? `${title}\n${url}` : title;
+
+  chrome.notifications.create(
+    notificationId,
+    {
+      type: "basic",
+      iconUrl: chrome.runtime.getURL("public/bookmark.png"),
+      title: "북마크 저장됨",
+      message: message,
+      priority: 1,
+    },
+    (notificationId) => {
+      if (chrome.runtime.lastError) {
+        console.warn(
+          "⚠️ Failed to show notification:",
+          chrome.runtime.lastError.message
+        );
+      } else {
+        console.log("✅ System notification shown:", notificationId);
+      }
+    }
+  );
+
+  // 5초 후 알림 자동 닫기
+  setTimeout(() => {
+    chrome.notifications.clear(notificationId, () => {
+      if (chrome.runtime.lastError) {
+        // 이미 닫혔거나 없는 경우 무시
+      }
+    });
+  }, 5000);
 }
 
 function sendMessageToWebTabs(message) {

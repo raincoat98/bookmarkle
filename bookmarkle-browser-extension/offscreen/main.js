@@ -36,15 +36,19 @@
           .saveBookmark(msg.payload || {})
           .then((result) => sendResponse({ ok: true, result })),
       OFFSCREEN_LIST_BOOKMARKS: () =>
-        firestore
-          .listBookmarks()
-          .then(() => sendResponse({ ok: true })),
+        firestore.listBookmarks().then(() => sendResponse({ ok: true })),
       OFFSCREEN_GET_COLLECTIONS: () =>
         firestore
           .getCollections()
           .then((collections) => sendResponse({ ok: true, collections })),
       OFFSCREEN_GET_AUTH_STATE: () =>
-        auth.getAuthSnapshot().then((snapshot) => sendResponse({ ok: true, payload: snapshot })),
+        auth
+          .getAuthSnapshot()
+          .then((snapshot) => sendResponse({ ok: true, payload: snapshot })),
+      OFFSCREEN_GET_NOTIFICATION_SETTINGS: () =>
+        firestore
+          .getUserNotificationSettings()
+          .then((settings) => sendResponse({ ok: true, settings })),
     };
 
     const handler = handlers[msg.type];
@@ -62,16 +66,22 @@
   (async () => {
     await auth.ensureAuthReady();
     try {
-      chrome.runtime.sendMessage({ type: "OFFSCREEN_READY" }, async (response) => {
-        if (chrome.runtime.lastError) {
-          console.warn("⚠️ [offscreen] OFFSCREEN_READY failed:", chrome.runtime.lastError.message);
-          return;
-        }
+      chrome.runtime.sendMessage(
+        { type: "OFFSCREEN_READY" },
+        async (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn(
+              "⚠️ [offscreen] OFFSCREEN_READY failed:",
+              chrome.runtime.lastError.message
+            );
+            return;
+          }
 
-        if (response?.type === "INIT_AUTH") {
-          await auth.applyInitAuth(response);
+          if (response?.type === "INIT_AUTH") {
+            await auth.applyInitAuth(response);
+          }
         }
-      });
+      );
     } catch (error) {
       console.warn("⚠️ [offscreen] Failed to send OFFSCREEN_READY:", error);
     }
