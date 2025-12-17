@@ -114,21 +114,22 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // 로그아웃
   logout: async () => {
     try {
-      // 모든 Firestore 리스너 정리 (순환 참조 방지를 위해 동적 import)
-      try {
-        const bookmarkStore = await import("./bookmarkStore");
-        bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-      } catch (error) {
-        console.warn("북마크 리스너 정리 중 오류:", error);
-      }
+      // signOut() 전에 리스너를 먼저 정리해야 Firestore 내부 에러를 방지할 수 있습니다
+      // 리스너 정리를 병렬로 처리
+      await Promise.all([
+        import("./bookmarkStore")
+          .then((module) =>
+            module.useBookmarkStore.getState().cleanupAllListeners()
+          )
+          .catch(() => {}),
+        import("./subscriptionStore")
+          .then((module) =>
+            module.useSubscriptionStore.getState().cleanupAllListeners()
+          )
+          .catch(() => {}),
+      ]);
 
-      try {
-        const subscriptionStore = await import("./subscriptionStore");
-        subscriptionStore.useSubscriptionStore.getState().cleanupAllListeners();
-      } catch (error) {
-        console.warn("구독 리스너 정리 중 오류:", error);
-      }
-
+      // 리스너 정리 후 signOut() 호출
       await fbLogout();
       await notifyExtensionAuthState(null);
 
@@ -150,11 +151,16 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
     let isInitializing = true; // 초기화 중 플래그
     let lastUserUid: string | null = null; // 마지막 사용자 UID 추적
     let lastLoginTime = 0; // 마지막 로그인 시간
+    let isCleaningUp = false; // 리스너 정리 중 플래그 (중복 방지)
 
     // 1초 타임아웃: Firebase auth callback이 호출되지 않으면 로딩 완료
     const timeoutId = setTimeout(() => {
       if (!authCallbackFired) {
-        console.log("⚠️ Auth callback timeout (1s) - setting loading to false");
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "⚠️ Auth callback timeout (1s) - setting loading to false"
+          );
+        }
         set({ loading: false });
       }
       isInitializing = false; // 타임아웃 후 초기화 완료
@@ -171,22 +177,30 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
 
       // 로그인 직후 로그아웃 콜백 방지: 최근 2초 이내에 로그인했고 현재 상태에 사용자가 있으면 무시
       if (!user && currentState.user && now - lastLoginTime < 2000) {
-        console.log(
-          "⚠️ Ignoring logout callback - user logged in recently (within 2s), keeping current state"
-        );
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "⚠️ Ignoring logout callback - user logged in recently (within 2s), keeping current state"
+          );
+        }
         // 실제 Firebase Auth 상태 확인
         const actualUser = auth.currentUser;
         if (actualUser && actualUser.uid === currentState.user?.uid) {
-          console.log("✅ Firebase Auth state verified, keeping current user");
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "✅ Firebase Auth state verified, keeping current user"
+            );
+          }
           return; // 실제로는 로그인 상태이므로 무시
         }
       }
 
       // 초기화 중이고 사용자가 변경되지 않은 경우 스킵 (중복 호출 방지)
       if (isInitializing && lastUserUid === currentUserUid) {
-        console.log(
-          "⏭️ Skipping duplicate auth callback during initialization"
-        );
+        if (process.env.NODE_ENV === "development") {
+          console.log(
+            "⏭️ Skipping duplicate auth callback during initialization"
+          );
+        }
         isInitializing = false;
         return;
       }
@@ -198,11 +212,15 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
           !isInitializing &&
           now - lastLoginTime < 1000
         ) {
-          console.log("⏭️ Skipping duplicate login callback for same user");
+          if (process.env.NODE_ENV === "development") {
+            console.log("⏭️ Skipping duplicate login callback for same user");
+          }
           return;
         }
 
-        console.log("✅ Auth callback fired: user logged in -", user.email);
+        if (process.env.NODE_ENV === "development") {
+          console.log("✅ Auth callback fired: user logged in -", user.email);
+        }
         lastUserUid = user.uid;
         lastLoginTime = now;
         isInitializing = false;
@@ -227,37 +245,25 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
         // 로그아웃 콜백: 실제 로그아웃인지 확인
         const actualUser = auth.currentUser;
         if (actualUser) {
-          console.log(
-            "⚠️ Auth callback returned null but auth.currentUser exists, ignoring"
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "⚠️ Auth callback returned null but auth.currentUser exists, ignoring"
+            );
+          }
           return; // 실제로는 로그인 상태이므로 무시
         }
 
-        // 현재 상태에 사용자가 없으면 실제 로그아웃
+        // 실제 로그아웃: signOut()이 호출되어 user가 null이 된 경우
+        // 리스너는 이미 logout()에서 정리되었으므로 여기서는 상태만 업데이트
         if (!currentState.user && !currentState.idToken) {
-          console.log(
-            "✅ Auth callback fired: user logged out (no previous state)"
-          );
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "✅ Auth callback fired: user logged out (no previous state)"
+            );
+          }
           lastUserUid = null;
           lastLoginTime = 0;
           isInitializing = false;
-
-          // 모든 Firestore 리스너 정리
-          try {
-            const bookmarkStore = await import("./bookmarkStore");
-            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-          } catch (error) {
-            console.warn("북마크 리스너 정리 중 오류:", error);
-          }
-
-          try {
-            const subscriptionStore = await import("./subscriptionStore");
-            subscriptionStore.useSubscriptionStore
-              .getState()
-              .cleanupAllListeners();
-          } catch (error) {
-            console.warn("구독 리스너 정리 중 오류:", error);
-          }
 
           set({
             user: null,
@@ -269,26 +275,36 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
         } else {
           // 현재 상태에 사용자가 있지만 Firebase Auth가 null인 경우
           // 익스텐션 새로고침 시 일시적으로 null이 될 수 있으므로 상태 유지
-          console.log(
-            "⚠️ Firebase Auth returned null but user exists in state, keeping state"
-          );
-
-          // 리스너를 정리하여 권한 오류를 방지
-          console.log("🧹 임시 리스너 정리 (Firebase Auth 재동기화 대기 중)");
-          try {
-            const bookmarkStore = await import("./bookmarkStore");
-            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-          } catch (error) {
-            console.warn("북마크 리스너 정리 중 오류:", error);
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              "⚠️ Firebase Auth returned null but user exists in state, keeping state"
+            );
           }
 
-          try {
-            const subscriptionStore = await import("./subscriptionStore");
-            subscriptionStore.useSubscriptionStore
-              .getState()
-              .cleanupAllListeners();
-          } catch (error) {
-            console.warn("구독 리스너 정리 중 오류:", error);
+          // 리스너를 정리하여 권한 오류를 방지 (중복 방지)
+          if (!isCleaningUp) {
+            isCleaningUp = true;
+            if (process.env.NODE_ENV === "development") {
+              console.log(
+                "🧹 임시 리스너 정리 (Firebase Auth 재동기화 대기 중)"
+              );
+            }
+
+            // 병렬로 리스너 정리
+            Promise.all([
+              import("./bookmarkStore")
+                .then((module) =>
+                  module.useBookmarkStore.getState().cleanupAllListeners()
+                )
+                .catch(() => {}),
+              import("./subscriptionStore")
+                .then((module) =>
+                  module.useSubscriptionStore.getState().cleanupAllListeners()
+                )
+                .catch(() => {}),
+            ]).finally(() => {
+              isCleaningUp = false;
+            });
           }
 
           set({ loading: false });

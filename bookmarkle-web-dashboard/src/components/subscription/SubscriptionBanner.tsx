@@ -37,7 +37,17 @@ export const SubscriptionBanner = ({
         }
       }
     } catch (error) {
-      console.error("얼리유저 확인 실패:", error);
+      const err = error as { code?: string; message?: string };
+      // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+      if (
+        err?.code === "permission-denied" ||
+        err?.code === "unauthenticated"
+      ) {
+        return;
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.error("얼리유저 확인 실패:", error);
+      }
     }
   };
 

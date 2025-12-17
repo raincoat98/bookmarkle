@@ -159,16 +159,22 @@ export const useSubscriptionStore = create<
   },
 
   cleanupAllListeners: () => {
-    console.log("🧹 구독 리스너 정리 중...");
+    if (process.env.NODE_ENV === "development") {
+      console.log("🧹 구독 리스너 정리 중...");
+    }
     activeSubscriptionListeners.forEach((unsubscribe) => {
       try {
         unsubscribe();
       } catch (error) {
-        console.warn("구독 리스너 정리 중 오류:", error);
+        if (process.env.NODE_ENV === "development") {
+          console.warn("구독 리스너 정리 중 오류:", error);
+        }
       }
     });
     activeSubscriptionListeners = [];
-    console.log("✅ 구독 리스너 정리 완료");
+    if (process.env.NODE_ENV === "development") {
+      console.log("✅ 구독 리스너 정리 완료");
+    }
   },
 
   // 구독 상태 확인 (활성 상태인지)

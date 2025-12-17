@@ -159,7 +159,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           return;
         }
 
-        console.error("알림 설정 실시간 동기화 실패:", error);
+        if (process.env.NODE_ENV === "development") {
+          console.error("알림 설정 실시간 동기화 실패:", error);
+        }
         if (user?.uid) {
           getUserNotificationSettings(user.uid)
             .then((settings) => {
@@ -181,7 +183,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               }
             })
             .catch((err) => {
-              console.error("알림 설정 로드 실패:", err);
+              if (process.env.NODE_ENV === "development") {
+                console.error("알림 설정 로드 실패:", err);
+              }
             });
         }
       }

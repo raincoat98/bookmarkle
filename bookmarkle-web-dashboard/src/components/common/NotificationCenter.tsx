@@ -89,26 +89,46 @@ export const NotificationCenter = () => {
         }
       },
       (error) => {
+        const err = error as { code?: string; message?: string };
+        // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          return;
+        }
         console.error("알림 설정 실시간 동기화 실패:", error);
         // 에러 발생 시 초기 로드 시도
-        getUserNotificationSettings(user.uid)
-          .then((settings: { notifications?: boolean; bookmarkNotifications?: boolean }) => {
-            const fallback =
-              settings.notifications !== undefined
-                ? settings.notifications
-                : settings.bookmarkNotifications;
-            if (fallback !== undefined) {
-              setNotificationsEnabled(fallback);
-              localStorage.setItem("notifications", JSON.stringify(fallback));
-              localStorage.setItem(
-                "bookmarkNotifications",
-                JSON.stringify(fallback)
-              );
-            }
-          })
-          .catch((err: Error) => {
-            console.error("알림 설정 로드 실패:", err);
-          });
+        if (user?.uid) {
+          getUserNotificationSettings(user.uid)
+            .then(
+              (settings: {
+                notifications?: boolean;
+                bookmarkNotifications?: boolean;
+              }) => {
+                const fallback =
+                  settings.notifications !== undefined
+                    ? settings.notifications
+                    : settings.bookmarkNotifications;
+                if (fallback !== undefined) {
+                  setNotificationsEnabled(fallback);
+                  localStorage.setItem(
+                    "notifications",
+                    JSON.stringify(fallback)
+                  );
+                  localStorage.setItem(
+                    "bookmarkNotifications",
+                    JSON.stringify(fallback)
+                  );
+                }
+              }
+            )
+            .catch((err: Error) => {
+              if (process.env.NODE_ENV === "development") {
+                console.error("알림 설정 로드 실패:", err);
+              }
+            });
+        }
       }
     );
 
@@ -193,120 +213,120 @@ export const NotificationCenter = () => {
       {/* 알림 드롭다운 */}
       {isOpen && (
         <div className="fixed right-2 left-2 top-16 sm:right-4 sm:left-auto sm:w-80 lg:absolute lg:right-0 lg:top-10 lg:mt-2 lg:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[600px] flex flex-col">
-            {/* 헤더 */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 gap-2 sm:gap-3">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">
-                {t("notifications.title")}
-              </h3>
-              <div className="flex items-center space-x-2 flex-shrink-0">
-                {notifications.length > 0 && (
-                  <button
-                    onClick={deleteAllNotifications}
-                    className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 whitespace-nowrap"
-                  >
-                    {t("notifications.deleteAll")}
-                  </button>
-                )}
-                {unreadCount > 0 && (
-                  <button
-                    onClick={markAllAsRead}
-                    className="text-xs sm:text-sm text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 px-2 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 whitespace-nowrap"
-                  >
-                    {t("notifications.markAllAsRead")}
-                  </button>
-                )}
+          {/* 헤더 */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 gap-2 sm:gap-3">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">
+              {t("notifications.title")}
+            </h3>
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              {notifications.length > 0 && (
                 <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                  onClick={deleteAllNotifications}
+                  className="text-xs sm:text-sm text-red-500 hover:text-red-600 dark:hover:text-red-400 px-2 py-1 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 whitespace-nowrap"
                 >
-                  <X className="w-4 h-4" />
+                  {t("notifications.deleteAll")}
                 </button>
-              </div>
+              )}
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  className="text-xs sm:text-sm text-brand-500 hover:text-brand-600 dark:hover:text-brand-400 px-2 py-1 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 whitespace-nowrap"
+                >
+                  {t("notifications.markAllAsRead")}
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
+          </div>
 
-            {/* 알림 목록 */}
-            <div className="overflow-y-auto flex-1">
-              {notifications.length === 0 ? (
-                <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                  <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>{t("notifications.noNotifications")}</p>
-                </div>
-              ) : (
-                notifications.map((notification: Notification) => (
-                  <div
-                    key={notification.id}
-                    className={`border-b border-gray-100 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
-                      !notification.isRead
-                        ? "bg-blue-50/50 dark:bg-blue-900/10"
-                        : ""
-                    }`}
-                  >
-                    <div className="flex items-start space-x-3">
-                      {/* 아이콘 */}
-                      <div
-                        className={`p-2 rounded-lg ${
-                          notification.type === "bookmark_added"
-                            ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                            : notification.type === "bookmark_updated"
-                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                            : notification.type === "bookmark_deleted"
-                            ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                            : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
-                        }`}
-                      >
-                        {getNotificationIcon(notification.type)}
-                      </div>
+          {/* 알림 목록 */}
+          <div className="overflow-y-auto flex-1">
+            {notifications.length === 0 ? (
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+                <Bell className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>{t("notifications.noNotifications")}</p>
+              </div>
+            ) : (
+              notifications.map((notification: Notification) => (
+                <div
+                  key={notification.id}
+                  className={`border-b border-gray-100 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                    !notification.isRead
+                      ? "bg-blue-50/50 dark:bg-blue-900/10"
+                      : ""
+                  }`}
+                >
+                  <div className="flex items-start space-x-3">
+                    {/* 아이콘 */}
+                    <div
+                      className={`p-2 rounded-lg ${
+                        notification.type === "bookmark_added"
+                          ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+                          : notification.type === "bookmark_updated"
+                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                          : notification.type === "bookmark_deleted"
+                          ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                      }`}
+                    >
+                      {getNotificationIcon(notification.type)}
+                    </div>
 
-                      {/* 내용 */}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {notification.title}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {notification.message}
-                        </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
-                          {formatDate(notification.createdAt)}
-                        </p>
-                      </div>
+                    {/* 내용 */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {notification.title}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {notification.message}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                        {formatDate(notification.createdAt)}
+                      </p>
+                    </div>
 
-                      {/* 액션 버튼 */}
-                      <div className="flex flex-col space-y-1">
-                        {!notification.isRead && (
-                          <button
-                            onClick={() => markAsRead(notification.id)}
-                            className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                            title={t("notifications.markAsRead")}
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                        )}
+                    {/* 액션 버튼 */}
+                    <div className="flex flex-col space-y-1">
+                      {!notification.isRead && (
                         <button
-                          onClick={() => deleteNotification(notification.id)}
-                          className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
-                          title={t("notifications.deleteNotification")}
+                          onClick={() => markAsRead(notification.id)}
+                          className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                          title={t("notifications.markAsRead")}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Check className="w-4 h-4" />
                         </button>
-                      </div>
+                      )}
+                      <button
+                        onClick={() => deleteNotification(notification.id)}
+                        className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                        title={t("notifications.deleteNotification")}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-
-            {/* 푸터 */}
-            {notifications.filter((n: Notification) => n.isRead).length > 0 && (
-              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-                <button
-                  onClick={deleteReadNotifications}
-                  className="w-full text-sm text-gray-500 hover:text-red-500 dark:hover:text-red-400 text-center"
-                >
-                  {t("notifications.deleteAllRead")}
-                </button>
-              </div>
+                </div>
+              ))
             )}
           </div>
+
+          {/* 푸터 */}
+          {notifications.filter((n: Notification) => n.isRead).length > 0 && (
+            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+              <button
+                onClick={deleteReadNotifications}
+                className="w-full text-sm text-gray-500 hover:text-red-500 dark:hover:text-red-400 text-center"
+              >
+                {t("notifications.deleteAllRead")}
+              </button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

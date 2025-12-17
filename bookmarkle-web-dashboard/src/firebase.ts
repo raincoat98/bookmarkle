@@ -170,12 +170,16 @@ export function resetPassword(email: string) {
  * 로그아웃 (Extension 컨텍스트 감지 및 세션 클리어)
  */
 export async function logout() {
-  console.log("🧹 Clearing Firebase storage");
+  if (process.env.NODE_ENV === "development") {
+    console.log("🧹 Clearing Firebase storage");
+  }
   await clearFirebaseStorage();
 
   // Firebase Auth 로그아웃
   await signOut(auth);
-  console.log("✅ Logout completed");
+  if (process.env.NODE_ENV === "development") {
+    console.log("✅ Logout completed");
+  }
 }
 
 /**
@@ -183,7 +187,9 @@ export async function logout() {
  */
 export async function clearFirebaseStorage() {
   try {
-    console.log("🧹 Starting Firebase storage cleanup...");
+    if (process.env.NODE_ENV === "development") {
+      console.log("🧹 Starting Firebase storage cleanup...");
+    }
 
     const isFirebaseKey = (key: string) =>
       key.startsWith("firebase:") ||
@@ -197,7 +203,9 @@ export async function clearFirebaseStorage() {
     ).filter((key): key is string => !!key && isFirebaseKey(key));
 
     localKeys.forEach((key) => localStorage.removeItem(key));
-    console.log(`✅ localStorage cleared: ${localKeys.length} keys`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(`✅ localStorage cleared: ${localKeys.length} keys`);
+    }
 
     // sessionStorage 클리어
     const sessionKeys = Array.from({ length: sessionStorage.length }, (_, i) =>
@@ -205,9 +213,13 @@ export async function clearFirebaseStorage() {
     ).filter((key): key is string => !!key && isFirebaseKey(key));
 
     sessionKeys.forEach((key) => sessionStorage.removeItem(key));
-    console.log(`✅ sessionStorage cleared: ${sessionKeys.length} keys`);
+    if (process.env.NODE_ENV === "development") {
+      console.log(`✅ sessionStorage cleared: ${sessionKeys.length} keys`);
+    }
 
-    console.log("✅ Firebase storage cleanup completed");
+    if (process.env.NODE_ENV === "development") {
+      console.log("✅ Firebase storage cleanup completed");
+    }
   } catch (error) {
     console.error("❌ Error clearing Firebase storage:", error);
   }

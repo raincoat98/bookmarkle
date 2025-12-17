@@ -82,12 +82,16 @@ export const useNotifications = (userId: string) => {
           return;
         }
 
-        console.error("알림 로딩 오류:", error);
+        if (process.env.NODE_ENV === "development") {
+          console.error("알림 로딩 오류:", error);
+        }
         setLoading(false);
       }
     );
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+    };
   }, [userId]);
 
   // 알림 생성 (다국어 지원)

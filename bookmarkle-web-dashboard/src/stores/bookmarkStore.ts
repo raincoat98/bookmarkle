@@ -290,24 +290,32 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
     },
 
     cleanupAllListeners: () => {
-      console.log("🧹 북마크 리스너 정리 중...");
+      if (process.env.NODE_ENV === "development") {
+        console.log("🧹 북마크 리스너 정리 중...");
+      }
       activeBookmarkListeners.forEach((unsubscribe) => {
         try {
           unsubscribe();
         } catch (error) {
-          console.warn("북마크 리스너 정리 중 오류:", error);
+          if (process.env.NODE_ENV === "development") {
+            console.warn("북마크 리스너 정리 중 오류:", error);
+          }
         }
       });
       activeTrashListeners.forEach((unsubscribe) => {
         try {
           unsubscribe();
         } catch (error) {
-          console.warn("휴지통 리스너 정리 중 오류:", error);
+          if (process.env.NODE_ENV === "development") {
+            console.warn("휴지통 리스너 정리 중 오류:", error);
+          }
         }
       });
       activeBookmarkListeners = [];
       activeTrashListeners = [];
-      console.log("✅ 북마크 리스너 정리 완료");
+      if (process.env.NODE_ENV === "development") {
+        console.log("✅ 북마크 리스너 정리 완료");
+      }
     },
 
     migrateFavicons: async (userId: string) => {
