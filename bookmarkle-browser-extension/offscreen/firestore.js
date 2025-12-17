@@ -38,10 +38,25 @@
 
     const { user, idToken } = requireAuthState();
     const userId = user.uid;
+
+    // 보안: 입력 검증
+    if (
+      !name ||
+      typeof name !== "string" ||
+      name.trim().length === 0 ||
+      name.length > 100
+    ) {
+      throw new Error("컬렉션 이름이 유효하지 않습니다.");
+    }
+
+    if (icon && (typeof icon !== "string" || icon.length > 50)) {
+      throw new Error("컬렉션 아이콘이 유효하지 않습니다.");
+    }
+
     const now = new Date().toISOString();
     const fields = {
-      name: { stringValue: name },
-      icon: { stringValue: icon || "Folder" },
+      name: { stringValue: name.trim() },
+      icon: { stringValue: (icon || "Folder").trim() },
       description: { stringValue: "" },
       isPinned: { booleanValue: false },
       parentId: { nullValue: null },
@@ -150,11 +165,59 @@
 
     const { user, idToken } = requireAuthState();
     const userId = user.uid;
+
+    // 보안: URL 검증
+    if (!url || typeof url !== "string") {
+      throw new Error("URL이 필요합니다.");
+    }
+
+    try {
+      const urlObj = new URL(url);
+      if (!["http:", "https:"].includes(urlObj.protocol)) {
+        throw new Error("유효하지 않은 URL 프로토콜입니다.");
+      }
+    } catch (error) {
+      throw new Error("유효하지 않은 URL 형식입니다.");
+    }
+
+    // 보안: 제목 길이 제한
+    if (title && typeof title === "string" && title.length > 500) {
+      title = title.substring(0, 500);
+    }
+
+    // 보안: 설명 길이 제한
+    if (
+      description &&
+      typeof description === "string" &&
+      description.length > 2000
+    ) {
+      description = description.substring(0, 2000);
+    }
+
+    // 보안: 태그 검증
+    if (tags) {
+      if (!Array.isArray(tags)) {
+        throw new Error("태그는 배열이어야 합니다.");
+      }
+      if (tags.length > 20) {
+        throw new Error("태그는 최대 20개까지 가능합니다.");
+      }
+      // 각 태그 검증
+      for (const tag of tags) {
+        if (
+          typeof tag !== "string" ||
+          tag.trim().length === 0 ||
+          tag.length > 50
+        ) {
+          throw new Error("유효하지 않은 태그입니다.");
+        }
+      }
+    }
     const fields = {
       userId: { stringValue: userId },
-      url: { stringValue: url },
-      title: { stringValue: title },
-      description: { stringValue: description || "" },
+      url: { stringValue: url.trim() },
+      title: { stringValue: (title || "").trim() },
+      description: { stringValue: (description || "").trim() },
       isFavorite: { booleanValue: false },
       createdAt: { timestampValue: new Date().toISOString() },
     };
@@ -163,9 +226,10 @@
       fields.collection = { stringValue: collectionId };
     }
     if (tags && Array.isArray(tags) && tags.length > 0) {
+      // 보안: 태그 sanitization
       fields.tags = {
         arrayValue: {
-          values: tags.map((tag) => ({ stringValue: tag })),
+          values: tags.map((tag) => ({ stringValue: String(tag).trim() })),
         },
       };
     }

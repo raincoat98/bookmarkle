@@ -1,18 +1,69 @@
 <div class="flex items-center justify-between mb-3">
   <div class="flex items-center">
-    <div class="w-8 h-8 flex items-center justify-center bg-indigo-100 rounded-full mr-2">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5v14l7-7 7 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2z" />
+    <div
+      class="w-8 h-8 flex items-center justify-center bg-indigo-100 rounded-full mr-2"
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="h-5 w-5 text-indigo-500"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M5 5v14l7-7 7 7V5a2 2 0 00-2-2H7a2 2 0 00-2 2z"
+        />
       </svg>
     </div>
     <h3 class="text-base font-bold text-gray-800">북마클</h3>
   </div>
   <div class="flex items-center gap-2">
     <span id="user-email" class="text-xs text-gray-500 font-medium"></span>
-    <button id="languageSettings" class="p-2 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center justify-center" title="언어 설정" style="font-size: 18px; min-width: 32px; min-height: 32px">🇰🇷</button>
+    <button
+      id="languageSettings"
+      class="p-2 hover:bg-gray-100 rounded-md transition-colors duration-200 flex items-center justify-center"
+      title="언어 설정"
+      style="font-size: 18px; min-width: 32px; min-height: 32px"
+    >
+      🇰🇷
+    </button>
     <button id="themeToggle" class="theme-toggle-header" title="다크모드 전환">
-      <svg id="themeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+      <svg
+        id="themeIcon"
+        class="w-4 h-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        data-theme="dark"
+      >
+        <!-- 달 아이콘 (어두운 테마) -->
+        <path
+          class="theme-icon-dark"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+        />
+        <!-- 태양 아이콘 (밝은 테마) -->
+        <g class="theme-icon-light hidden">
+          <circle
+            cx="12"
+            cy="12"
+            r="5"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"
+          />
+        </g>
       </svg>
     </button>
   </div>

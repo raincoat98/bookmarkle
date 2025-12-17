@@ -10,6 +10,14 @@ import {
   markOffscreenSynced,
   sendToOffscreen,
 } from "./offscreen.js";
+import {
+  isValidSender,
+  isValidMessagePayload,
+  isValidBookmarkData,
+  isValidCollectionData,
+  messageRateLimiter,
+  bookmarkRateLimiter,
+} from "../utils/security.js";
 
 const WEB_URL_PATTERNS = [
   "https://bookmarkhub-5ea6c.web.app/*",
@@ -24,7 +32,36 @@ export function initMessageHandlers() {
 function handleExternalMessage(msg, sender, sendResponse) {
   console.log("📨 External message received:", msg.type, "from:", sender.url);
 
+  // 보안: sender 검증
+  if (!isValidSender(sender, WEB_URL_PATTERNS)) {
+    console.warn("⚠️ Invalid sender:", sender.url);
+    sendResponse({ ok: false, error: "Invalid sender" });
+    return false;
+  }
+
+  // 보안: Rate limiting
+  const senderKey = sender.url || sender.id || "unknown";
+  if (!messageRateLimiter.isAllowed(senderKey)) {
+    console.warn("⚠️ Rate limit exceeded for:", senderKey);
+    sendResponse({ ok: false, error: "Rate limit exceeded" });
+    return false;
+  }
+
+  // 보안: 메시지 페이로드 검증
+  if (!isValidMessagePayload(msg, "AUTH_STATE_CHANGED")) {
+    console.warn("⚠️ Invalid message payload:", msg);
+    sendResponse({ ok: false, error: "Invalid message payload" });
+    return false;
+  }
+
   if (msg.type === "AUTH_STATE_CHANGED") {
+    // 보안: user 객체 검증
+    if (msg.user && (typeof msg.user !== "object" || !msg.user.uid)) {
+      console.warn("⚠️ Invalid user object:", msg.user);
+      sendResponse({ ok: false, error: "Invalid user object" });
+      return false;
+    }
+
     processAuthPayload(msg.user, {
       idToken: msg.idToken,
       refreshToken: msg.refreshToken,
@@ -76,6 +113,13 @@ function handleInternalMessage(msg, sender, sendResponse) {
   }
 
   if (msg.type === "ADD_COLLECTION") {
+    // 보안: 컬렉션 데이터 검증
+    if (!msg.payload || !isValidCollectionData(msg.payload)) {
+      console.warn("⚠️ Invalid collection data:", msg.payload);
+      sendResponse({ ok: false, error: "Invalid collection data" });
+      return false;
+    }
+
     proxyToOffscreen(
       { type: "OFFSCREEN_ADD_COLLECTION", payload: msg.payload },
       sendResponse,
@@ -169,6 +213,25 @@ function handleInternalMessage(msg, sender, sendResponse) {
   }
 
   if (msg.type === "SAVE_BOOKMARK") {
+    // 보안: 북마크 데이터 검증
+    if (!msg.payload || !isValidBookmarkData(msg.payload)) {
+      console.warn("⚠️ Invalid bookmark data:", msg.payload);
+      sendResponse({ ok: false, error: "Invalid bookmark data" });
+      return false;
+    }
+
+    // 보안: Rate limiting
+    const user = getCurrentUser();
+    const rateLimitKey = user?.uid || sender?.id || "anonymous";
+    if (!bookmarkRateLimiter.isAllowed(rateLimitKey)) {
+      console.warn("⚠️ Bookmark rate limit exceeded for:", rateLimitKey);
+      sendResponse({
+        ok: false,
+        error: "Too many bookmark requests. Please wait.",
+      });
+      return false;
+    }
+
     proxyToOffscreen(
       { type: "OFFSCREEN_SAVE_BOOKMARK", payload: msg.payload },
       sendResponse,

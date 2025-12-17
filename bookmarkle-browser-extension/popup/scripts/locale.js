@@ -43,7 +43,9 @@ export function applyLanguageUI(lang) {
     bugReportButton.querySelector("span").textContent = texts.bugReport;
   }
 
-  const dividerSpans = document.querySelectorAll(".flex.justify-center.gap-4.text-xs > span");
+  const dividerSpans = document.querySelectorAll(
+    ".flex.justify-center.gap-4.text-xs > span"
+  );
   dividerSpans.forEach((span) => {
     if (
       span.textContent.trim() === "|" ||
@@ -60,45 +62,60 @@ export function applyLanguageUI(lang) {
     btnLogin.querySelector("span").textContent = texts.login;
   }
 
-  if (dom.saveBtn) {
-    dom.saveBtn.textContent = texts.bookmarkSaveBtn || "북마크 저장";
+  if (dom.saveBtnText) {
+    dom.saveBtnText.textContent = texts.bookmarkSaveBtn || "북마크 저장";
   }
 
   if (dom.dropdownOptions) {
-    const addOptionDiv = dom.dropdownOptions.querySelector(".dropdown-option.add");
+    const addOptionDiv = dom.dropdownOptions.querySelector(
+      ".dropdown-option.add"
+    );
     if (addOptionDiv) {
-      addOptionDiv.textContent = texts.addCollectionOption || "+ 새 컬렉션 추가";
+      addOptionDiv.textContent =
+        texts.addCollectionOption || "+ 새 컬렉션 추가";
     }
-    const firstOptionDiv = dom.dropdownOptions.querySelector(".dropdown-option");
+    const firstOptionDiv =
+      dom.dropdownOptions.querySelector(".dropdown-option");
     if (firstOptionDiv && firstOptionDiv.dataset.value === "") {
       firstOptionDiv.textContent = texts.collectionSelect || "컬렉션 선택...";
     }
   }
 
   if (dom.dropdownSelectedText) {
-    dom.dropdownSelectedText.textContent = texts.collectionSelect || "컬렉션 선택...";
+    dom.dropdownSelectedText.textContent =
+      texts.collectionSelect || "컬렉션 선택...";
   }
 
   if (dom.descriptionInput) {
-    dom.descriptionInput.placeholder = texts.descriptionPlaceholder || "설명 입력 (선택사항)...";
+    dom.descriptionInput.placeholder =
+      texts.descriptionPlaceholder || "설명 입력 (선택사항)...";
   }
 
   if (dom.tagInput) {
-    dom.tagInput.placeholder = texts.tagPlaceholder || "엔터로 태그 추가 (쉼표로 구분)";
+    dom.tagInput.placeholder =
+      texts.tagPlaceholder || "엔터로 태그 추가 (쉼표로 구분)";
+  }
+
+  if (dom.loadingText) {
+    dom.loadingText.textContent = texts.processing || "처리 중...";
   }
 
   if (dom.addCollectionModal) {
     const title = dom.addCollectionModal.querySelector("h3");
     if (title) title.textContent = texts.addCollectionTitle || "새 컬렉션 추가";
     const labels = dom.addCollectionModal.querySelectorAll("label");
-    if (labels.length > 0) labels[0].textContent = texts.collectionNameLabel || "컬렉션 이름";
-    if (labels.length > 1) labels[1].textContent = texts.collectionIconLabel || "아이콘 (선택사항)";
+    if (labels.length > 0)
+      labels[0].textContent = texts.collectionNameLabel || "컬렉션 이름";
+    if (labels.length > 1)
+      labels[1].textContent = texts.collectionIconLabel || "아이콘 (선택사항)";
     if (dom.collectionNameInput) {
-      dom.collectionNameInput.placeholder = texts.collectionNamePlaceholder || "컬렉션 이름을 입력하세요";
+      dom.collectionNameInput.placeholder =
+        texts.collectionNamePlaceholder || "컬렉션 이름을 입력하세요";
     }
     if (dom.collectionIconInput) {
       dom.collectionIconInput.placeholder =
-        texts.collectionIconPlaceholder || "아이콘을 입력하세요 (예: 📁, 💻, ⭐)";
+        texts.collectionIconPlaceholder ||
+        "아이콘을 입력하세요 (예: 📁, 💻, ⭐)";
     }
     if (dom.cancelCollectionBtn) {
       dom.cancelCollectionBtn.textContent = texts.cancelBtn || "취소";
@@ -111,8 +128,10 @@ export function applyLanguageUI(lang) {
   if (dom.languageModal) {
     const title = dom.languageModal.querySelector("h3");
     if (title) title.textContent = texts.languageTitle || "언어 설정";
-    if (dom.languageCancelBtn) dom.languageCancelBtn.textContent = texts.cancelBtn || "취소";
-    if (dom.languageSaveBtn) dom.languageSaveBtn.textContent = texts.saveBtn || "저장";
+    if (dom.languageCancelBtn)
+      dom.languageCancelBtn.textContent = texts.cancelBtn || "취소";
+    if (dom.languageSaveBtn)
+      dom.languageSaveBtn.textContent = texts.saveBtn || "저장";
     const labels = dom.languageModal.querySelectorAll("label span.text-sm");
     if (labels.length > 0) labels[0].textContent = texts.langKo || "🇰🇷 한국어";
     if (labels.length > 1) labels[1].textContent = texts.langEn || "🇺🇸 English";

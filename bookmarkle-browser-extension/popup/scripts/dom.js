@@ -3,6 +3,11 @@ const byId = (id) => document.getElementById(id);
 export const dom = {
   loginBtn: byId("login-btn"),
   saveBtn: byId("save-btn"),
+  saveBtnText: document.querySelector("#save-btn .save-btn-text"),
+  saveBtnSpinner: document.querySelector("#save-btn .save-btn-spinner"),
+  saveBtnLoadingText: document.querySelector(
+    "#save-btn .save-btn-loading-text"
+  ),
   logoutBtn: byId("logout-btn"),
   loginGuide: byId("loginGuide"),
   userEmailSpan: byId("user-email"),
@@ -24,6 +29,9 @@ export const dom = {
   tagsDisplay: byId("tags-display"),
   themeToggle: byId("themeToggle"),
   themeIcon: byId("themeIcon"),
+  themeIconDark: document.querySelector("#themeIcon .theme-icon-dark"),
+  themeIconLight: document.querySelector("#themeIcon .theme-icon-light"),
+  loadingText: byId("loading-text"),
   languageSettingsBtn: byId("languageSettings"),
   languageCancelBtn: byId("languageCancelBtn"),
   languageSaveBtn: byId("languageSaveBtn"),

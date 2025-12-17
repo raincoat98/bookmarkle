@@ -58,7 +58,7 @@
     ]
   },
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' https://bookmarkhub-5ea6c.web.app http://localhost:3000; connect-src 'self' https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;"
+    "extension_pages": "script-src 'self'; object-src 'self'; frame-src 'self' https://bookmarkhub-5ea6c.web.app http://localhost:3000; connect-src 'self' https://apis.google.com https://www.googleapis.com https://securetoken.googleapis.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://firestore.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; base-uri 'self'; form-action 'self';"
   },
   "options_ui": {
     "page": "options.html",

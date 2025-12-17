@@ -1,6 +1,7 @@
 import { dom } from "./dom.js";
 import { state } from "./state.js";
 import { getCurrentLanguage } from "./locale.js";
+import { escapeHtml } from "../../utils/security.js";
 
 let loginRequiredHandler = () => {};
 
@@ -17,7 +18,9 @@ export async function loadCollections() {
   state.isLoadingCollections = true;
 
   try {
-    const response = await chrome.runtime.sendMessage({ type: "GET_COLLECTIONS" });
+    const response = await chrome.runtime.sendMessage({
+      type: "GET_COLLECTIONS",
+    });
 
     if (response?.ok && response.collections) {
       state.collections = response.collections;
@@ -39,7 +42,8 @@ export function updateCollectionSelect(selectedId = "") {
 
   state.collections.forEach((collection) => {
     const option = document.createElement("div");
-    option.className = "dropdown-option" + (selectedId === collection.id ? " selected" : "");
+    option.className =
+      "dropdown-option" + (selectedId === collection.id ? " selected" : "");
     option.dataset.value = collection.id;
 
     const iconNode = createIconNode(collection.icon);
@@ -51,11 +55,15 @@ export function updateCollectionSelect(selectedId = "") {
 
     option.addEventListener("click", () => {
       if (dom.dropdownSelectedText) {
+        // 보안: XSS 방지 - innerHTML 대신 안전한 방법 사용
         dom.dropdownSelectedText.innerHTML = "";
         const selectedIcon = createIconNode(collection.icon);
         selectedIcon.classList.add("mr-1");
         dom.dropdownSelectedText.appendChild(selectedIcon);
-        dom.dropdownSelectedText.appendChild(document.createTextNode(collection.name));
+        // 보안: 텍스트 노드로 안전하게 추가
+        dom.dropdownSelectedText.appendChild(
+          document.createTextNode(collection.name)
+        );
       }
       dom.dropdownOptions.classList.add("hidden");
       dom.dropdownSelected?.classList.remove("active");

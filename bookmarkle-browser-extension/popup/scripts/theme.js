@@ -2,15 +2,22 @@ import { dom } from "./dom.js";
 
 export function setTheme(mode) {
   document.documentElement.setAttribute("data-theme", mode);
+
+  if (!dom.themeIcon) return;
+
+  // 보안: HTML에 미리 정의된 요소의 클래스만 변경 (innerHTML 사용 안 함)
   if (mode === "dark") {
-    if (dom.themeIcon) {
-      dom.themeIcon.innerHTML =
-        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />';
-    }
-  } else if (dom.themeIcon) {
-    dom.themeIcon.innerHTML =
-      '<circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2" fill="none" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />';
+    // 달 아이콘 표시 (어두운 테마)
+    if (dom.themeIconDark) dom.themeIconDark.classList.remove("hidden");
+    if (dom.themeIconLight) dom.themeIconLight.classList.add("hidden");
+    dom.themeIcon.setAttribute("data-theme", "dark");
+  } else {
+    // 태양 아이콘 표시 (밝은 테마)
+    if (dom.themeIconDark) dom.themeIconDark.classList.add("hidden");
+    if (dom.themeIconLight) dom.themeIconLight.classList.remove("hidden");
+    dom.themeIcon.setAttribute("data-theme", "light");
   }
+
   localStorage.setItem("theme", mode);
 }
 

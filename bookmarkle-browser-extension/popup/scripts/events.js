@@ -5,6 +5,7 @@ import { loadCollections } from "./collections.js";
 import { state } from "./state.js";
 import { clearTags, addTag, addMultipleTags, removeTag } from "./tags.js";
 import { updateUI, showLoading } from "./ui.js";
+import { sanitizeInput, isValidCollectionName } from "../../utils/security.js";
 
 export function bindPopupEvents({ publicSignUrl }) {
   if (dom.loginBtn) {
@@ -13,7 +14,7 @@ export function bindPopupEvents({ publicSignUrl }) {
       showLoading();
       const dashboardUrl = `${publicSignUrl}&extensionId=${chrome.runtime.id}`;
       chrome.tabs.create({ url: dashboardUrl });
-      
+
       // 팝업이 열려있는 동안 주기적으로 인증 상태 확인
       const checkAuthInterval = setInterval(async () => {
         try {
@@ -28,7 +29,7 @@ export function bindPopupEvents({ publicSignUrl }) {
           console.error("Auth check error:", error);
         }
       }, 1000);
-      
+
       // 30초 후 타임아웃
       setTimeout(() => {
         clearInterval(checkAuthInterval);
@@ -51,13 +52,18 @@ export function bindPopupEvents({ publicSignUrl }) {
       }
 
       dom.saveBtn.disabled = true;
-      const originalText = dom.saveBtn.innerHTML;
-      dom.saveBtn.innerHTML = `<span class="animate-spin mr-2" style="display:inline-block;vertical-align:middle;">
-        <svg class="w-4 h-4 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg>
-      </span>저장중...`;
+      const originalText = dom.saveBtnText?.textContent || "";
+
+      // 보안: HTML에 미리 정의된 요소의 클래스만 변경
+      if (dom.saveBtnText) dom.saveBtnText.classList.add("hidden");
+      if (dom.saveBtnSpinner) dom.saveBtnSpinner.classList.remove("hidden");
+      if (dom.saveBtnLoadingText)
+        dom.saveBtnLoadingText.classList.remove("hidden");
 
       const selectedCollectionId = dom.dropdownSelected?.dataset.value || null;
-      const description = dom.descriptionInput?.value.trim() || "";
+      // 보안: 설명 입력 sanitization
+      const rawDescription = dom.descriptionInput?.value || "";
+      const description = sanitizeInput(rawDescription, 2000).trim();
 
       try {
         const response = await chrome.runtime.sendMessage({
@@ -76,7 +82,11 @@ export function bindPopupEvents({ publicSignUrl }) {
           console.error(chrome.runtime.lastError);
           showToast("북마크 저장 요청 실패", "error");
           dom.saveBtn.disabled = false;
-          dom.saveBtn.innerHTML = originalText;
+          // 버튼 상태 복원
+          if (dom.saveBtnText) dom.saveBtnText.classList.remove("hidden");
+          if (dom.saveBtnSpinner) dom.saveBtnSpinner.classList.add("hidden");
+          if (dom.saveBtnLoadingText)
+            dom.saveBtnLoadingText.classList.add("hidden");
           return;
         }
 
@@ -87,7 +97,11 @@ export function bindPopupEvents({ publicSignUrl }) {
             updateUI(null);
           }
           dom.saveBtn.disabled = false;
-          dom.saveBtn.innerHTML = originalText;
+          // 버튼 상태 복원
+          if (dom.saveBtnText) dom.saveBtnText.classList.remove("hidden");
+          if (dom.saveBtnSpinner) dom.saveBtnSpinner.classList.add("hidden");
+          if (dom.saveBtnLoadingText)
+            dom.saveBtnLoadingText.classList.add("hidden");
           return;
         }
 
@@ -107,13 +121,21 @@ export function bindPopupEvents({ publicSignUrl }) {
         setTimeout(() => {
           updateUI(state.currentUser, false);
           dom.saveBtn.disabled = false;
-          dom.saveBtn.innerHTML = originalText;
+          // 버튼 상태 복원
+          if (dom.saveBtnText) dom.saveBtnText.classList.remove("hidden");
+          if (dom.saveBtnSpinner) dom.saveBtnSpinner.classList.add("hidden");
+          if (dom.saveBtnLoadingText)
+            dom.saveBtnLoadingText.classList.add("hidden");
         }, 1000);
       } catch (error) {
         console.error("Save error:", error);
         showToast("북마크 저장 오류", "error");
         dom.saveBtn.disabled = false;
-        dom.saveBtn.innerHTML = originalText;
+        // 버튼 상태 복원
+        if (dom.saveBtnText) dom.saveBtnText.classList.remove("hidden");
+        if (dom.saveBtnSpinner) dom.saveBtnSpinner.classList.add("hidden");
+        if (dom.saveBtnLoadingText)
+          dom.saveBtnLoadingText.classList.add("hidden");
       }
     });
   }
@@ -140,8 +162,18 @@ export function bindPopupEvents({ publicSignUrl }) {
 
   if (dom.confirmCollectionBtn) {
     dom.confirmCollectionBtn.addEventListener("click", async () => {
-      const name = dom.collectionNameInput?.value.trim();
-      let icon = dom.collectionIconInput?.value.trim() || "📁";
+      // 보안: 입력 sanitization
+      const rawName = dom.collectionNameInput?.value || "";
+      const name = sanitizeInput(rawName, 100).trim();
+      let icon =
+        sanitizeInput(dom.collectionIconInput?.value || "📁", 50).trim() ||
+        "📁";
+
+      // 보안: 컬렉션 이름 검증
+      if (!isValidCollectionName(name)) {
+        showToast("컬렉션 이름이 유효하지 않습니다.", "error");
+        return;
+      }
 
       if (icon) {
         const emojiArr = Array.from(
