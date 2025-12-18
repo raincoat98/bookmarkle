@@ -1,4 +1,4 @@
-import { getCurrentUser } from "./auth.js";
+import { backgroundState } from "./state.js";
 import { sendToOffscreen } from "./offscreen.js";
 import { showSystemNotification } from "./messaging.js";
 
@@ -15,7 +15,7 @@ async function handleActionClick(tab) {
     return;
   }
 
-  if (!getCurrentUser()) {
+  if (!backgroundState.currentUser) {
     console.log("Not logged in");
     showBadge("?", "#F59E0B");
     return;

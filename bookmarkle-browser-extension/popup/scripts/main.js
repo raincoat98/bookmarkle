@@ -39,13 +39,11 @@ async function initAuthState() {
     const response = await chrome.runtime.sendMessage({
       type: "GET_AUTH_STATE",
     });
-    if (response?.user) {
-      updateUI(response.user);
-    } else {
-      updateUI(null);
-    }
+    const user = response?.user ?? null;
+    console.log("🔐 [popup] Initial auth state:", user ? user.uid : "null");
+    updateUI(user);
   } catch (error) {
-    console.error("Auth state check error:", error);
+    console.error("❌ [popup] Auth state check error:", error);
     updateUI(null);
   }
 }

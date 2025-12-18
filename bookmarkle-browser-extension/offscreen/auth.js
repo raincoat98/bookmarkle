@@ -429,6 +429,57 @@
 
   async function getAuthSnapshot() {
     await ensureAuthReady();
+
+    console.log(
+      "📸 [offscreen] getAuthSnapshot called (currentUser:",
+      currentUser ? currentUser.uid : "null",
+      ")"
+    );
+
+    // currentUser가 없어도 웹 iframe에서 토큰 요청 시도 (웹에서 로그인되어 있을 수 있음)
+    if (!currentUser) {
+      console.log(
+        "🔍 [offscreen] No currentUser, attempting to get token from iframe"
+      );
+      try {
+        // 웹 iframe에서 토큰 가져오기 시도
+        const tokenData = await getFreshIdTokenFromIframe();
+        if (tokenData?.idToken && tokenData?.user) {
+          // 토큰이 있으면 상태 업데이트
+          currentUser = tokenData.user;
+          currentIdToken = tokenData.idToken;
+          currentRefreshToken = tokenData.refreshToken || null;
+          tokenExpiresAt = parseJwtExp(currentIdToken);
+          persistAuthSnapshot();
+          console.log(
+            "✅ [offscreen] Token retrieved from iframe:",
+            currentUser.email || currentUser.uid
+          );
+          return {
+            user: currentUser,
+            idToken: currentIdToken,
+            refreshToken: currentRefreshToken,
+          };
+        } else {
+          console.log(
+            "⚠️ [offscreen] getFreshIdTokenFromIframe returned but no token/user"
+          );
+        }
+      } catch (error) {
+        // 웹에서도 토큰이 없으면 로그아웃 상태
+        console.log(
+          "ℹ️ [offscreen] No token available from iframe:",
+          error.message
+        );
+      }
+      console.log("❌ [offscreen] Returning null snapshot (no user found)");
+      return {
+        user: null,
+        idToken: null,
+        refreshToken: null,
+      };
+    }
+
     try {
       await ensureFreshIdToken();
     } catch (error) {
@@ -436,6 +487,15 @@
         "⚠️ [offscreen] Failed to ensure fresh token while snapshotting:",
         error
       );
+      // 토큰 새로고침 실패 시 로그아웃 상태로 간주
+      if (error.message === "NO_USER" || error.message === "IFRAME_NO_TOKEN") {
+        clearAuthState();
+        return {
+          user: null,
+          idToken: null,
+          refreshToken: null,
+        };
+      }
     }
     return {
       user: currentUser,

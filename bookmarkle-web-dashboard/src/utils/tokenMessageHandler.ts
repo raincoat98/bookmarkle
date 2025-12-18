@@ -165,6 +165,39 @@ export function initializeTokenMessageHandler() {
   if (isIframeMode && window.parent !== window) {
     window.parent.postMessage({ type: "IFRAME_READY" }, "*");
     console.log("📤 [tokenMessageHandler] Sent IFRAME_READY to parent");
+
+    // IFRAME_READY 전송 시 현재 인증 상태도 함께 전송 (초기 부트스트랩)
+    // 웹에서 이미 로그인되어 있으면 offscreen이 즉시 토큰을 받을 수 있도록
+    waitForFirebaseUser()
+      .then((user) => {
+        if (user) {
+          return user.getIdToken().then((idToken) => {
+            window.parent.postMessage(
+              {
+                type: "AUTH_STATE_CHANGED",
+                user: {
+                  uid: user.uid,
+                  email: user.email,
+                  displayName: user.displayName,
+                  photoURL: user.photoURL,
+                },
+                idToken,
+              },
+              "*"
+            );
+            console.log(
+              "📤 [tokenMessageHandler] Sent initial auth state to parent:",
+              user.email || user.uid
+            );
+          });
+        }
+      })
+      .catch((error) => {
+        console.warn(
+          "⚠️ [tokenMessageHandler] Failed to send initial auth state:",
+          error
+        );
+      });
   }
 
   const handleMessage = async (event: MessageEvent) => {
@@ -190,11 +223,15 @@ export function initializeTokenMessageHandler() {
 
             // extension에서 받은 정보를 사용해서 authStore 상태 업데이트
             // Firebase Auth User 객체는 직접 만들 수 없으므로,
-            // extension 정보를 사용해서 임시로 상태를 유지
-            // 실제 Firebase Auth 상태는 나중에 동기화됨
+            // extension에서 받은 직렬화된 사용자 정보를 authStore에 저장
+            // (User 타입이 아니지만, 최소한의 정보를 유지)
             if (idToken) {
               authStore.setIdToken(idToken);
             }
+            
+            // extension에서 받은 사용자 정보를 authStore에 저장
+            // serializeUser로 직렬화된 객체이므로, User 타입으로 캐스팅
+            authStore.setUser(extensionUser as User);
 
             // loading을 false로 설정하여 로그인 페이지로 이동하지 않도록 함
             authStore.setLoading(false);
@@ -236,13 +273,23 @@ export function initializeTokenMessageHandler() {
           }
         } else {
           // extension에서 로그아웃 상태(null)를 보낸 경우
-          // 익스텐션 새로고침 시 일시적으로 null이 올 수 있으므로
-          // extension에서 null을 받아도 웹 대시보드에서는 아무것도 하지 않음
-          // 실제 로그아웃은 웹 대시보드에서 직접 처리하거나 Firebase Auth에서 처리됨
+          // 이미 로그아웃 상태면 중복 처리 방지 (웹에서 직접 로그아웃한 경우)
+          const authStore = useAuthStore.getState();
+          if (authStore.user === null && authStore.idToken === null) {
+            console.log(
+              "ℹ️ [tokenMessageHandler] Extension sent null (logout), but already logged out, skipping duplicate cleanup"
+            );
+            return;
+          }
+
           console.log(
-            "⚠️ [tokenMessageHandler] Extension sent null, ignoring completely (actual logout handled by Firebase Auth)"
+            "🔄 [tokenMessageHandler] Extension sent null (logout), clearing auth state"
           );
-          // idToken과 user는 Firebase Auth에서 관리하므로 유지
+          useAuthStore.setState({
+            user: null,
+            idToken: null,
+            loading: false,
+          });
         }
       } else {
         // 웹에서 직접 보낸 인증 상태 변경 (기존 로직)

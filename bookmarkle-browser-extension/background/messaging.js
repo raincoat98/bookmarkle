@@ -1,9 +1,4 @@
-import {
-  clearAuth,
-  getCurrentRefreshToken,
-  getCurrentUser,
-  saveAuthToStorage,
-} from "./auth.js";
+import { backgroundState } from "./state.js";
 import {
   ensureFirebaseAuthUser,
   isOffscreenSynced,
@@ -131,16 +126,43 @@ function handleInternalMessage(msg, sender, sendResponse) {
 
   if (msg.type === "OFFSCREEN_READY") {
     // offscreen이 준비되었을 때 offscreen에서 최신 인증 상태 가져오기 (백그라운드)
+    // 단, 현재 background 상태가 null(로그아웃 상태)이면 offscreen 값을 무시
+    const currentUser = backgroundState.currentUser;
+
     getAuthStateFromOffscreen(3, 100)
       .then((authState) => {
-        if (authState?.user) {
-          // offscreen에서 가져온 사용자 정보로 background 상태 업데이트
+        // 로그아웃 상태면 offscreen 값으로 덮어쓰지 않음
+        if (!currentUser && !authState?.user) {
+          // 둘 다 null이면 정상 (로그아웃 상태 유지)
+          markOffscreenSynced(true);
+          return;
+        }
+
+        if (currentUser && authState?.user) {
+          // 둘 다 로그인 상태면 offscreen 값을 사용 (더 최신일 수 있음)
           processAuthPayload(authState.user, {
             idToken: authState.idToken,
             refreshToken: authState.refreshToken,
           });
           markOffscreenSynced(true);
+        } else if (!currentUser && authState?.user) {
+          // background는 로그아웃 상태인데 offscreen은 로그인 상태
+          // 이 경우 offscreen 값으로 덮어쓰지 않음 (명시적 로그아웃 상태 유지)
+          console.log(
+            "🔄 [background] Keeping logout state, ignoring offscreen auth state"
+          );
+          markOffscreenSynced(true);
         } else {
+          // currentUser는 있지만 authState는 null인 경우는 로그아웃 처리
+          if (currentUser) {
+            console.log(
+              "🔄 [background] Offscreen reports logout, clearing background state"
+            );
+            processAuthPayload(null, {
+              idToken: null,
+              refreshToken: null,
+            });
+          }
           markOffscreenSynced(true);
         }
       })
@@ -153,12 +175,12 @@ function handleInternalMessage(msg, sender, sendResponse) {
       });
 
     // 즉시 응답 (offscreen 초기화는 백그라운드에서 진행)
-    const user = getCurrentUser();
+    const user = backgroundState.currentUser;
     if (!isOffscreenSynced() && user) {
       sendResponse({
         type: "INIT_AUTH",
         user,
-        refreshToken: getCurrentRefreshToken(),
+        refreshToken: backgroundState.currentRefreshToken,
       });
     } else {
       sendResponse({ type: "INIT_AUTH", user: null, refreshToken: null });
@@ -183,25 +205,83 @@ function handleInternalMessage(msg, sender, sendResponse) {
   console.log("📨 Background received from popup:", msg.type);
 
   if (msg.type === "GET_AUTH_STATE") {
-    // offscreen에서 실시간으로 최신 인증 상태 가져오기
+    // 현재 background 상태 확인
+    const currentUser = backgroundState.currentUser;
+
+    // 명시적 로그아웃 후 5초 이내면 offscreen 확인하지 않고 null 반환 (로그아웃 보호)
+    const logoutTime = backgroundState.logoutTimestamp;
+    const isRecentLogout = logoutTime && Date.now() - logoutTime < 5000;
+    if (!currentUser && isRecentLogout) {
+      console.log(
+        "🔄 [background] Recent logout detected, returning null without checking offscreen"
+      );
+      sendResponse({ user: null });
+      return true;
+    }
+
+    // offscreen에서 실시간으로 최신 인증 상태 가져오기 (웹 iframe에서 토큰 가져옴)
+    console.log(
+      "🔍 [background] Getting auth state from offscreen (currentUser:",
+      currentUser ? currentUser.uid : "null",
+      ")"
+    );
     getAuthStateFromOffscreen()
       .then((authState) => {
+        console.log(
+          "📥 [background] Got auth state from offscreen:",
+          authState?.user ? authState.user.uid : "null"
+        );
+
+        // 명시적 로그아웃 후 5초 이내면 offscreen 값 무시
+        if (!currentUser && isRecentLogout) {
+          console.log(
+            "🔄 [background] Recent logout, ignoring offscreen auth state"
+          );
+          sendResponse({ user: null });
+          return;
+        }
+
         if (authState?.user) {
           // offscreen에서 가져온 사용자 정보로 background 상태 업데이트
+          // 로그아웃 타임스탬프 클리어 (정상 로그인)
+          backgroundState.logoutTimestamp = null;
+          console.log(
+            "✅ [background] Updating background state from offscreen:",
+            authState.user.email || authState.user.uid
+          );
           processAuthPayload(authState.user, {
             idToken: authState.idToken,
             refreshToken: authState.refreshToken,
           });
           sendResponse({ user: authState.user });
         } else {
-          // offscreen에 사용자 정보가 없으면 null 반환
+          // offscreen에 사용자 정보가 없으면 로그아웃 상태
+          // background 상태가 있으면 명시적으로 클리어
+          if (currentUser) {
+            console.log(
+              "🔄 [background] Offscreen reports logout, clearing background state"
+            );
+            processAuthPayload(null, {
+              idToken: null,
+              refreshToken: null,
+            });
+          }
+          console.log(
+            "❌ [background] No auth state from offscreen, returning null"
+          );
           sendResponse({ user: null });
         }
       })
       .catch((error) => {
         console.warn("⚠️ Failed to get auth state from offscreen:", error);
-        // 실패 시 null 반환
-        sendResponse({ user: null });
+        // 실패 시 background 상태 확인
+        if (currentUser) {
+          // background에 사용자 정보가 있으면 그대로 반환
+          sendResponse({ user: currentUser });
+        } else {
+          // background에도 없으면 null 반환 (웹에서도 로그인 안 된 상태)
+          sendResponse({ user: null });
+        }
       });
     return true;
   }
@@ -221,7 +301,7 @@ function handleInternalMessage(msg, sender, sendResponse) {
     }
 
     // 보안: Rate limiting
-    const user = getCurrentUser();
+    const user = backgroundState.currentUser;
     const rateLimitKey = user?.uid || sender?.id || "anonymous";
     if (!bookmarkRateLimiter.isAllowed(rateLimitKey)) {
       console.warn("⚠️ Bookmark rate limit exceeded for:", rateLimitKey);
@@ -272,45 +352,75 @@ function handleInternalMessage(msg, sender, sendResponse) {
 function processAuthPayload(user, { idToken, refreshToken }) {
   if (user && idToken) {
     handleLogin(user, { idToken, refreshToken });
-  } else if (!user) {
+  } else {
+    // user가 null이거나 idToken이 없으면 로그아웃 처리
     handleLogout();
   }
 }
 
 function handleLogin(user, { idToken, refreshToken }) {
-  saveAuthToStorage(user, refreshToken);
+  backgroundState.currentUser = user;
+  backgroundState.currentRefreshToken = refreshToken ?? null;
+  backgroundState.offscreenSynced = false;
+  backgroundState.logoutTimestamp = null; // 로그인 시 로그아웃 타임스탬프 클리어
+  console.log(
+    "✅ [auth] Auth state updated:",
+    user ? user.email || user.uid : "null"
+  );
   syncAuthToOffscreen(user, { idToken, refreshToken });
   broadcastAuthState(user, { idToken, refreshToken });
 }
 
 function handleLogout() {
-  clearAuth();
+  backgroundState.currentUser = null;
+  backgroundState.currentRefreshToken = null;
+  backgroundState.offscreenSynced = false;
+  backgroundState.logoutTimestamp = Date.now(); // 로그아웃 시간 기록
+  console.log("✅ [auth] Auth state cleared");
   syncAuthToOffscreen(null, { refreshToken: null });
   broadcastAuthState(null, { idToken: null, refreshToken: null });
 }
 
 function syncAuthToOffscreen(user, { idToken, refreshToken }) {
+  // 로그아웃 시 명시적으로 null 전송
   const message = {
     type: "OFFSCREEN_AUTH_STATE_CHANGED",
-    user,
-    refreshToken: refreshToken ?? getCurrentRefreshToken(),
+    user: user ?? null,
+    refreshToken: user
+      ? refreshToken ?? backgroundState.currentRefreshToken ?? null
+      : null,
   };
-  if (idToken) {
+  if (user && idToken) {
     message.idToken = idToken;
   }
 
+  console.log(
+    "📤 [background] Syncing auth to offscreen:",
+    user ? user.uid : "null"
+  );
   sendToOffscreen(message).catch((error) => {
     console.warn("⚠️ Failed to send auth to offscreen:", error.message);
   });
 }
 
 function broadcastAuthState(user, { refreshToken, idToken }) {
-  const payload = {
-    user,
-    refreshToken: refreshToken ?? getCurrentRefreshToken(),
-    idToken: idToken ?? null,
-  };
+  // 로그아웃 시 명시적으로 null payload 전송
+  const payload = user
+    ? {
+        user,
+        refreshToken: refreshToken ?? backgroundState.currentRefreshToken,
+        idToken: idToken ?? null,
+      }
+    : {
+        user: null,
+        refreshToken: null,
+        idToken: null,
+      };
 
+  console.log(
+    "📢 [background] Broadcasting AUTH_STATE_CHANGED:",
+    payload.user ? payload.user.uid : "null"
+  );
   chrome.runtime.sendMessage(
     {
       type: "AUTH_STATE_CHANGED",
@@ -319,6 +429,12 @@ function broadcastAuthState(user, { refreshToken, idToken }) {
     () => {
       if (chrome.runtime.lastError) {
         // popup이 열려있지 않을 수 있으므로 무시
+        console.log(
+          "⚠️ [background] Popup not open or message failed:",
+          chrome.runtime.lastError.message
+        );
+      } else {
+        console.log("✅ [background] AUTH_STATE_CHANGED message sent to popup");
       }
     }
   );
@@ -457,7 +573,7 @@ async function checkAuthStateViaFirebase() {
       idToken: user.idToken,
       refreshToken: user.refreshToken,
     });
-    return getCurrentUser();
+    return backgroundState.currentUser;
   } catch (error) {
     console.warn("⚠️ checkAuthStateViaFirebase failed:", error);
     return null;

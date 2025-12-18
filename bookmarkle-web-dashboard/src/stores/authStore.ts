@@ -114,6 +114,20 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
   // 로그아웃
   logout: async () => {
     try {
+      // 로그아웃 플래그 설정 (onAuthStateChanged에서 중복 정리 방지)
+      const currentState = useAuthStore.getState();
+      if (currentState.user === null) {
+        console.log("ℹ️ Already logged out, skipping duplicate logout");
+        return;
+      }
+
+      // 상태를 먼저 null로 설정하여 onAuthStateChanged 콜백에서 중복 정리 방지
+      set({
+        user: null,
+        idToken: null,
+        isActive: null,
+      });
+
       // 모든 Firestore 리스너 정리 (순환 참조 방지를 위해 동적 import)
       try {
         const bookmarkStore = await import("./bookmarkStore");
@@ -131,13 +145,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
 
       await fbLogout();
       await notifyExtensionAuthState(null);
-
-      // 상태 초기화
-      set({
-        user: null,
-        idToken: null,
-        isActive: null,
-      });
     } catch (error) {
       console.error("로그아웃 실패:", error);
       throw error;
@@ -214,6 +221,21 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
           set({ isActive: null, isActiveLoading: false });
         } else {
           // idToken/user도 없으면 실제 로그아웃 상태
+          // 하지만 logout()에서 이미 상태를 null로 설정하고 정리했다면 중복 정리 방지
+          if (currentState.user === null && currentState.idToken === null) {
+            console.log(
+              "ℹ️ Already logged out via logout(), skipping duplicate cleanup in onAuthStateChanged"
+            );
+            set({
+              user: null,
+              idToken: null,
+              loading: false,
+              isActive: null,
+              isActiveLoading: false,
+            });
+            return;
+          }
+
           console.log(
             "🔄 Firebase Auth returned null and no previous state, logging out"
           );
