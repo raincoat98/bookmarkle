@@ -19,10 +19,53 @@ const WEB_URL_PATTERNS = [
   "http://localhost:3000/*",
 ];
 
+// ============================================================================
+// Exported Functions
+// ============================================================================
+
 export function initMessageHandlers() {
   chrome.runtime.onMessageExternal.addListener(handleExternalMessage);
   chrome.runtime.onMessage.addListener(handleInternalMessage);
 }
+
+export function showSystemNotification(title, url) {
+  const notificationId = `bookmark-saved-${Date.now()}`;
+  const message = url ? `${title}\n${url}` : title;
+
+  chrome.notifications.create(
+    notificationId,
+    {
+      type: "basic",
+      iconUrl: chrome.runtime.getURL("public/bookmark.png"),
+      title: "북마크 저장됨",
+      message: message,
+      priority: 1,
+    },
+    (notificationId) => {
+      if (chrome.runtime.lastError) {
+        console.warn(
+          "⚠️ Failed to show notification:",
+          chrome.runtime.lastError.message
+        );
+      } else {
+        console.log("✅ System notification shown:", notificationId);
+      }
+    }
+  );
+
+  // 5초 후 알림 자동 닫기
+  setTimeout(() => {
+    chrome.notifications.clear(notificationId, () => {
+      if (chrome.runtime.lastError) {
+        // 이미 닫혔거나 없는 경우 무시
+      }
+    });
+  }, 5000);
+}
+
+// ============================================================================
+// Message Handlers
+// ============================================================================
 
 function handleExternalMessage(msg, sender, sendResponse) {
   console.log("📨 External message received:", msg.type, "from:", sender.url);
@@ -349,6 +392,10 @@ function handleInternalMessage(msg, sender, sendResponse) {
   return false;
 }
 
+// ============================================================================
+// Auth Processing
+// ============================================================================
+
 function processAuthPayload(user, { idToken, refreshToken }) {
   if (user && idToken) {
     handleLogin(user, { idToken, refreshToken });
@@ -442,6 +489,10 @@ function broadcastAuthState(user, { refreshToken, idToken }) {
   sendMessageToWebTabs({ type: "WEB_AUTH_STATE_CHANGED", payload });
 }
 
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
 function proxyToOffscreen(
   message,
   sendResponse,
@@ -463,70 +514,6 @@ function proxyToOffscreen(
       console.error(`${message.type} error:`, error.message);
       sendResponse({ ok: false, error: error.message });
     });
-}
-
-function broadcastCollectionsUpdated() {
-  chrome.runtime.sendMessage({ type: "COLLECTIONS_UPDATED" }, () => {
-    if (chrome.runtime.lastError) {
-      // popup이 없을 수 있으므로 무시
-    }
-  });
-
-  sendMessageToWebTabs({
-    type: "EXTENSION_EVENT_TO_WEB",
-    eventType: "COLLECTIONS_UPDATED",
-    payload: {},
-  });
-}
-
-export function showSystemNotification(title, url) {
-  const notificationId = `bookmark-saved-${Date.now()}`;
-  const message = url ? `${title}\n${url}` : title;
-
-  chrome.notifications.create(
-    notificationId,
-    {
-      type: "basic",
-      iconUrl: chrome.runtime.getURL("public/bookmark.png"),
-      title: "북마크 저장됨",
-      message: message,
-      priority: 1,
-    },
-    (notificationId) => {
-      if (chrome.runtime.lastError) {
-        console.warn(
-          "⚠️ Failed to show notification:",
-          chrome.runtime.lastError.message
-        );
-      } else {
-        console.log("✅ System notification shown:", notificationId);
-      }
-    }
-  );
-
-  // 5초 후 알림 자동 닫기
-  setTimeout(() => {
-    chrome.notifications.clear(notificationId, () => {
-      if (chrome.runtime.lastError) {
-        // 이미 닫혔거나 없는 경우 무시
-      }
-    });
-  }, 5000);
-}
-
-function sendMessageToWebTabs(message) {
-  chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
-    tabs.forEach((tab) => {
-      if (typeof tab.id !== "number") {
-        return;
-      }
-      chrome.tabs.sendMessage(tab.id, message, () => {
-        if (chrome.runtime.lastError) {
-          // 탭이 응답하지 않을 수 있으므로 무시
-        }
-      });
-    });
-  });
 }
 
 async function getAuthStateFromOffscreen(maxRetries = 5, retryDelay = 200) {
@@ -565,17 +552,35 @@ async function getAuthStateFromOffscreen(maxRetries = 5, retryDelay = 200) {
   return null;
 }
 
-async function checkAuthStateViaFirebase() {
-  try {
-    const user = await ensureFirebaseAuthUser();
-    if (!user) return null;
-    processAuthPayload(user.user, {
-      idToken: user.idToken,
-      refreshToken: user.refreshToken,
+// ============================================================================
+// Broadcast Functions
+// ============================================================================
+
+function broadcastCollectionsUpdated() {
+  chrome.runtime.sendMessage({ type: "COLLECTIONS_UPDATED" }, () => {
+    if (chrome.runtime.lastError) {
+      // popup이 없을 수 있으므로 무시
+    }
+  });
+
+  sendMessageToWebTabs({
+    type: "EXTENSION_EVENT_TO_WEB",
+    eventType: "COLLECTIONS_UPDATED",
+    payload: {},
+  });
+}
+
+function sendMessageToWebTabs(message) {
+  chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
+    tabs.forEach((tab) => {
+      if (typeof tab.id !== "number") {
+        return;
+      }
+      chrome.tabs.sendMessage(tab.id, message, () => {
+        if (chrome.runtime.lastError) {
+          // 탭이 응답하지 않을 수 있으므로 무시
+        }
+      });
     });
-    return backgroundState.currentUser;
-  } catch (error) {
-    console.warn("⚠️ checkAuthStateViaFirebase failed:", error);
-    return null;
-  }
+  });
 }
