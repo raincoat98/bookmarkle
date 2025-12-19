@@ -227,7 +227,6 @@ export async function clearFirebaseStorage() {
 
 export async function getUserDefaultPage(uid: string): Promise<string> {
   try {
-    const db = getFirestore();
     const settingsRef = doc(db, "users", uid, "settings", "main");
     const snap = await getDoc(settingsRef);
     if (snap.exists() && snap.data().defaultPage) {
@@ -252,7 +251,6 @@ export async function setUserDefaultPage(
   uid: string,
   value: string
 ): Promise<void> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   await setDoc(settingsRef, { defaultPage: value }, { merge: true });
 }
@@ -263,7 +261,6 @@ export async function getUserNotificationSettings(uid: string): Promise<{
   bookmarkNotifications?: boolean;
   systemNotifications?: boolean;
 }> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   const snap = await getDoc(settingsRef);
   if (snap.exists()) {
@@ -299,7 +296,6 @@ export async function setUserNotificationSettings(
     systemNotifications?: boolean;
   }
 ): Promise<void> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   await setDoc(settingsRef, settings, { merge: true });
 }
@@ -310,7 +306,6 @@ export async function getUserWeatherLocation(uid: string): Promise<{
   lon: number;
   city: string;
 } | null> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   const snap = await getDoc(settingsRef);
   if (snap.exists()) {
@@ -339,7 +334,6 @@ export async function setUserWeatherLocation(
     city: string;
   }
 ): Promise<void> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   await setDoc(
     settingsRef,
