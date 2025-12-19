@@ -3,6 +3,7 @@ import { useAuthStore } from "../../../stores/authStore";
 import {
   getUserWeatherLocation,
   setUserWeatherLocation,
+  auth,
 } from "../../../firebase";
 import type {
   WeatherData,
@@ -69,8 +70,8 @@ export const useWeather = () => {
     lat: number;
     lon: number;
   }> => {
-    // 먼저 저장된 위치 정보 확인
-    if (user) {
+    // 먼저 저장된 위치 정보 확인 (Firebase Auth가 동기화된 경우에만)
+    if (user && auth.currentUser?.uid === user.uid) {
       try {
         const savedLocation = await getUserWeatherLocation(user.uid);
         if (savedLocation) {
@@ -296,9 +297,9 @@ export const useWeather = () => {
   const fetchWeather = useCallback(async () => {
     const location = await getLocation();
 
-    // 저장된 위치 정보가 있으면 도시 이름도 함께 가져오기
+    // 저장된 위치 정보가 있으면 도시 이름도 함께 가져오기 (Firebase Auth가 동기화된 경우에만)
     let savedCityName: string | undefined;
-    if (user) {
+    if (user && auth.currentUser?.uid === user.uid) {
       try {
         const savedLocation = await getUserWeatherLocation(user.uid);
         if (savedLocation) {
@@ -315,7 +316,7 @@ export const useWeather = () => {
   // 위치 선택 핸들러
   const handleSelectLocation = useCallback(
     async (location: { lat: number; lon: number; city: string }) => {
-      if (user) {
+      if (user && auth.currentUser?.uid === user.uid) {
         try {
           // 먼저 Firestore에 저장
           await setUserWeatherLocation(user.uid, location);

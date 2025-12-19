@@ -226,6 +226,11 @@ export async function clearFirebaseStorage() {
 }
 
 export async function getUserDefaultPage(uid: string): Promise<string> {
+  // Firebase Auth가 동기화되지 않았으면 기본값 반환
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    return "dashboard";
+  }
+
   try {
     const settingsRef = doc(db, "users", uid, "settings", "main");
     const snap = await getDoc(settingsRef);
@@ -261,6 +266,15 @@ export async function getUserNotificationSettings(uid: string): Promise<{
   bookmarkNotifications?: boolean;
   systemNotifications?: boolean;
 }> {
+  // Firebase Auth가 동기화되지 않았으면 기본값 반환
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    return {
+      notifications: true,
+      bookmarkNotifications: true,
+      systemNotifications: true,
+    };
+  }
+
   try {
     const settingsRef = doc(db, "users", uid, "settings", "main");
     const snap = await getDoc(settingsRef);
@@ -328,6 +342,11 @@ export async function getUserWeatherLocation(uid: string): Promise<{
   lon: number;
   city: string;
 } | null> {
+  // Firebase Auth가 동기화되지 않았으면 null 반환
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    return null;
+  }
+
   try {
     const settingsRef = doc(db, "users", uid, "settings", "main");
     const snap = await getDoc(settingsRef);
