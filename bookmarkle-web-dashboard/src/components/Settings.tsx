@@ -28,7 +28,7 @@ import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
 import { TrashSettings } from "./settings/TrashSettings";
-import { getUserDefaultPage } from "../firebase";
+import { getUserDefaultPage, auth } from "../firebase";
 import { isBetaPeriod } from "../utils/betaFlags";
 import { performBackup, shouldBackup } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
@@ -167,7 +167,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
   // 사용자 기본 페이지 로드
   useEffect(() => {
-    if (user?.uid) {
+    if (user?.uid && auth.currentUser?.uid === user.uid) {
       getUserDefaultPage(user.uid)
         .then((page: string | null) => {
           if (page) {

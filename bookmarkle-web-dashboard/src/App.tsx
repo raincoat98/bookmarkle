@@ -74,7 +74,7 @@ function AppRoutes() {
   const [defaultPage, setDefaultPage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid || auth.currentUser?.uid !== user.uid) return;
     getUserDefaultPage(user.uid)
       .then((page) => setDefaultPage(page || "dashboard"))
       .catch(() => setDefaultPage("dashboard"));

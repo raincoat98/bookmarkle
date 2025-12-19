@@ -194,13 +194,12 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
         const currentState = useAuthStore.getState();
         if (currentState.idToken || currentState.user) {
           console.log(
-            "⚠️ Firebase Auth returned null but idToken/user exists, keeping current state"
+            "⚠️ Firebase Auth returned null but idToken/user exists, keeping current state (Firebase Auth 재동기화 대기 중)"
           );
 
-          // 익스텐션 새로고침 시 Firebase Auth가 일시적으로 null이 될 수 있으므로
+          // Firebase Auth가 재동기화될 때까지 Firestore 접근을 막기 위해
           // 리스너를 정리하여 권한 오류를 방지
           // onAuthStateChanged가 다시 호출되면 자동으로 재설정됨
-          console.log("🧹 임시 리스너 정리 (Firebase Auth 재동기화 대기 중)");
           try {
             const bookmarkStore = await import("./bookmarkStore");
             bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
