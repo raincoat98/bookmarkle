@@ -6,7 +6,7 @@
     "save": "저장",
     "cancel": "취소",
     "delete": "삭제",
-    "edit": "편집",
+    "edit": "수정",
     "add": "추가",
     "search": "검색",
     "close": "닫기",
@@ -31,7 +31,8 @@
     "adding": "추가 중...",
     "updating": "수정 중...",
     "processing": "처리 중...",
-    "countUnit": "개"
+    "countUnit": "개",
+    "moreActions": "더보기"
   },
   "auth": {
     "login": "로그인",
@@ -75,10 +76,10 @@
     "sortByName": "이름순",
     "sortByUrl": "URL순",
     "sortByUserOrder": "사용자 순서",
-    "editWidget": "위젯 편집",
-    "editComplete": "편집 완료",
+    "editWidget": "위젯 수정",
+    "editComplete": "수정 완료",
     "reset": "초기화",
-    "editMode": "위젯 편집 모드",
+    "editMode": "위젯 수정 모드",
     "editModeTip1": "눈 모양 아이콘을 클릭하여 위젯을 숨기거나 표시할 수 있습니다.",
     "editModeTip2": "데스크톱에서는 위젯을 드래그하여 순서를 변경할 수 있습니다.",
     "editModeTip3": "모바일에서는 위/아래 화살표 버튼으로 위젯 순서를 변경할 수 있습니다.",
@@ -92,7 +93,7 @@
   "bookmarks": {
     "title": "북마크",
     "addBookmark": "북마크 추가",
-    "editBookmark": "북마크 편집",
+    "editBookmark": "북마크 수정",
     "deleteBookmark": "북마크 삭제",
     "bookmarkTitle": "북마크 제목",
     "bookmarkUrl": "URL",
@@ -111,6 +112,11 @@
     "bookmarkUrlRequired": "URL을 입력해주세요.",
     "invalidUrl": "올바른 URL을 입력해주세요.",
     "confirmDelete": "이 북마크를 삭제하시겠습니까?",
+    "deleteBookmarkConfirm": "다음 북마크를 삭제하시겠습니까?",
+    "deleteWithEnter": "엔터키로 삭제 가능",
+    "cancelWithEsc": "ESC키로 취소 가능",
+    "deleting": "삭제 중...",
+    "faviconRefreshError": "파비콘 새로고침에 실패했습니다.",
     "noBookmarksFound": "북마크를 찾을 수 없습니다.",
     "searchPlaceholder": "북마크 검색...",
     "filterByCollection": "컬렉션별 필터",
@@ -162,14 +168,13 @@
     "bookmarkMovedDown": "\"{{title}}\" 아래로 이동 완료! 🔽",
     "noSearchResults": "검색 결과가 없습니다. 다른 검색어를 시도해보세요.",
     "faviconRefreshed": "파비콘이 새로고침되었습니다.",
-    "faviconRefreshError": "파비콘 새로고침 중 오류가 발생했습니다.",
     "favoriteToggleError": "즐겨찾기 상태 변경 중 오류가 발생했습니다.",
     "reorderError": "북마크 순서 변경 중 오류가 발생했습니다."
   },
   "collections": {
     "title": "컬렉션",
     "addCollection": "컬렉션 추가",
-    "editCollection": "컬렉션 편집",
+    "editCollection": "컬렉션 수정",
     "deleteCollection": "컬렉션 삭제",
     "collectionName": "컬렉션 이름",
     "collectionNamePlaceholder": "컬렉션 이름을 입력하세요",
@@ -260,10 +265,16 @@
     "bookmarkList": "북마크 목록",
     "bookmarkListDescription": "전체 북마크 관리",
     "dataManagement": "데이터 관리",
-    "exportDataDescription": "북마크 데이터를 파일로 내보냅니다",
+    "exportDataDescription": "북마크 데이터를 JSON 파일로 내보냅니다",
     "export": "내보내기",
-    "importDataDescription": "파일에서 북마크 데이터를 가져옵니다",
+    "exportChromeBookmarks": "HTML 내보내기",
+    "exportChromeBookmarksDescription": "Chrome 호환 HTML 형식",
+    "exportChrome": "HTML 내보내기",
+    "importDataDescription": "JSON 파일에서 북마크 데이터를 가져옵니다",
     "import": "가져오기",
+    "importChromeBookmarks": "HTML 가져오기",
+    "importChromeBookmarksDescription": "Chrome 북마크 HTML 파일",
+    "importChrome": "HTML 가져오기",
     "accountInfo": "계정 정보",
     "user": "사용자",
     "accountManagement": "계정 관리",
@@ -297,7 +308,6 @@
     "trashDescription": "삭제된 북마크를 관리합니다. 30일 후 자동으로 완전 삭제됩니다.",
     "trashEmpty": "휴지통이 비어있습니다",
     "trashEmptyDescription": "삭제된 북마크가 없습니다",
-    "restore": "복원",
     "restoreBookmark": "북마크 복원",
     "restoreBookmarkConfirm": "이 북마크를 복원하시겠습니까?",
     "restoreSuccess": "북마크가 복원되었습니다",
@@ -371,6 +381,8 @@
     "humidity": "습도",
     "windSpeed": "풍속",
     "weeklyWeather": "이번주 날씨",
+    "hourlyWeather": "오늘 시간별 날씨",
+    "noHourlyData": "시간별 날씨 데이터가 없습니다",
     "today": "오늘",
     "tomorrow": "내일",
     "currentLocation": "현재 위치",
@@ -715,10 +727,5 @@
     "footer": {
       "copyright": "© 2024 북마클. All rights reserved."
     }
-  },
-  "admin": {
-    "title": "관리자 대시보드",
-    "description": "전체 사용자를 관리하고 통계를 확인할 수 있습니다.",
-    "users": "사용자 관리"
   }
 }

@@ -52,3 +52,7 @@ yarn-error.log*
 *.tmp
 *.temp
 REVENUE_MODEL.md
+
+# Chrome Extension PEM files
+dev-extension.pem
+prod-extension.pem

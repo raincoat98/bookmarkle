@@ -49,7 +49,11 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
     if (!isOpen) return;
 
     const handlePasteBookmarkUrl = (e: Event) => {
-      const customEvent = e as CustomEvent<{ url: string; title: string; favicon: string }>;
+      const customEvent = e as CustomEvent<{
+        url: string;
+        title: string;
+        favicon: string;
+      }>;
       if (customEvent.detail) {
         setUrl(customEvent.detail.url);
         setTitle(customEvent.detail.title);
@@ -57,10 +61,16 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
       }
     };
 
-    window.addEventListener("pasteBookmarkUrl", handlePasteBookmarkUrl as EventListener);
+    window.addEventListener(
+      "pasteBookmarkUrl",
+      handlePasteBookmarkUrl as EventListener
+    );
 
     return () => {
-      window.removeEventListener("pasteBookmarkUrl", handlePasteBookmarkUrl as EventListener);
+      window.removeEventListener(
+        "pasteBookmarkUrl",
+        handlePasteBookmarkUrl as EventListener
+      );
     };
   }, [isOpen]);
 
@@ -88,8 +98,7 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
             timeoutPromise,
           ]);
           setFavicon(actualFavicon);
-        } catch (error) {
-          console.error("파비콘 가져오기 실패:", error);
+        } catch {
           // 실패해도 기본 파비콘은 유지
           const defaultFavicon = getFaviconUrl(url);
           setFavicon(defaultFavicon);
@@ -134,16 +143,6 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
 
     setIsLoading(true);
     try {
-      console.log("북마크 추가 시도:", {
-        title: title.trim(),
-        url: validUrl,
-        description: description.trim() || "",
-        collection: selectedCollection,
-        tags: [],
-        isFavorite: false,
-        favicon: favicon || "",
-      });
-
       await onAdd({
         title: title.trim(),
         url: validUrl,
@@ -154,13 +153,8 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
         favicon: favicon || "",
       });
       onClose();
-    } catch (error) {
-      console.error("북마크 추가 실패:", error);
-      console.error("오류 상세:", {
-        message: error instanceof Error ? error.message : "알 수 없는 오류",
-        stack: error instanceof Error ? error.stack : "스택 없음",
-        type: typeof error,
-      });
+    } catch {
+      // 에러는 상위 컴포넌트에서 처리
     } finally {
       setIsLoading(false);
     }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useShallow } from "zustand/react/shallow";
 import { useDrawerStore } from "../../stores";
 import {
   Home,
@@ -45,7 +46,14 @@ export const Drawer: React.FC<DrawerProps> = ({
     setIsDrawerOpen,
     isDrawerCollapsed,
     setIsDrawerCollapsed,
-  } = useDrawerStore();
+  } = useDrawerStore(
+    useShallow((state) => ({
+      isDrawerOpen: state.isDrawerOpen,
+      setIsDrawerOpen: state.setIsDrawerOpen,
+      isDrawerCollapsed: state.isDrawerCollapsed,
+      setIsDrawerCollapsed: state.setIsDrawerCollapsed,
+    }))
+  );
   const location = useLocation();
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window !== "undefined") {
@@ -176,17 +184,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             stiffness: 300,
             damping: 30,
           }}
-          className={`fixed inset-y-0 left-0 z-[9999] ${
-            isDesktop ? "relative" : ""
-          }`}
-          style={
-            isDesktop
-              ? {
-                  position: "static",
-                  display: "block",
-                }
-              : {}
-          }
+          className="fixed inset-y-0 left-0 z-[9999]"
         >
           <div className="flex h-full flex-col bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-r border-white/30 dark:border-gray-700/30 shadow-glass">
             {/* 헤더 */}
@@ -195,7 +193,8 @@ export const Drawer: React.FC<DrawerProps> = ({
                 isDrawerCollapsed ? "px-2 lg:px-3" : "px-4 lg:px-6"
               }`}
             >
-              <div
+              <Link
+                to="/about"
                 className={`flex items-center ${
                   isDrawerCollapsed
                     ? "justify-center"
@@ -220,7 +219,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                     북마클
                   </h1>
                 )}
-              </div>
+              </Link>
               <div
                 className={`flex items-center ${
                   isDrawerCollapsed ? "justify-center" : "space-x-2"
@@ -375,7 +374,19 @@ export const Drawer: React.FC<DrawerProps> = ({
         </div>
 
         {/* 콘텐츠 영역 */}
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main
+          className="flex-1 overflow-auto"
+          style={{
+            paddingLeft: isDesktop
+              ? isDrawerCollapsed
+                ? "64px"
+                : "288px"
+              : "0",
+            transition: "padding-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+        >
+          {children}
+        </main>
       </div>
     </div>
   );

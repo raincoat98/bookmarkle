@@ -1,1 +1,0 @@
-Chrome Extension에서 아이콘 파일이 필요합니다. 16x16, 32x32, 128x128 PNG 파일을 생성하거나 manifest.json에서 icons 섹션을 제거하세요.

@@ -29,10 +29,22 @@ import {
   checkCollectionLimit,
 } from "../utils/subscriptionLimits";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
+import { useShallow } from "zustand/react/shallow";
 
 export const BookmarksPage: React.FC = () => {
-  const { user, isActive, isActiveLoading } = useAuthStore();
-  const { plan, limits } = useSubscriptionStore();
+  const { user, isActive, isActiveLoading } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      isActive: state.isActive,
+      isActiveLoading: state.isActiveLoading,
+    }))
+  );
+  const { plan, limits } = useSubscriptionStore(
+    useShallow((state) => ({
+      plan: state.plan,
+      limits: state.limits,
+    }))
+  );
   const { t } = useTranslation();
 
   // 상태 관리
@@ -56,7 +68,16 @@ export const BookmarksPage: React.FC = () => {
     deleteCollection,
     setPinned,
     fetchCollections,
-  } = useCollectionStore();
+  } = useCollectionStore(
+    useShallow((state) => ({
+      collections: state.collections,
+      addCollection: state.addCollection,
+      updateCollection: state.updateCollection,
+      deleteCollection: state.deleteCollection,
+      setPinned: state.setPinned,
+      fetchCollections: state.fetchCollections,
+    }))
+  );
 
   const {
     getFilteredBookmarks,
@@ -70,7 +91,21 @@ export const BookmarksPage: React.FC = () => {
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
     loading: bookmarksLoading,
-  } = useBookmarkStore();
+  } = useBookmarkStore(
+    useShallow((state) => ({
+      getFilteredBookmarks: state.getFilteredBookmarks,
+      addBookmark: state.addBookmark,
+      updateBookmark: state.updateBookmark,
+      deleteBookmark: state.deleteBookmark,
+      reorderBookmarks: state.reorderBookmarks,
+      toggleFavorite: state.toggleFavorite,
+      updateBookmarkFavicon: state.updateBookmarkFavicon,
+      subscribeToBookmarks: state.subscribeToBookmarks,
+      setSelectedCollection: state.setSelectedCollection,
+      setCollections: state.setCollections,
+      loading: state.loading,
+    }))
+  );
 
   // 핀된 컬렉션을 기본 탭으로 설정
   React.useEffect(() => {
@@ -118,7 +153,15 @@ export const BookmarksPage: React.FC = () => {
   // 나머지 상태 관리
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
+    const saved = localStorage.getItem("bookmarkViewMode");
+    return saved === "grid" || saved === "list" ? saved : "grid";
+  });
+
+  // 뷰 모드 localStorage 저장
+  React.useEffect(() => {
+    localStorage.setItem("bookmarkViewMode", viewMode);
+  }, [viewMode]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -572,9 +615,9 @@ export const BookmarksPage: React.FC = () => {
         setIsAddSubCollectionModalOpen(true);
       }}
     >
-      <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="flex-shrink-0 sticky top-0 z-10 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+        <div className="flex-shrink-0 sticky top-0 z-50 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
             {/* 검색창 - 모든 화면 크기에서 보임 */}
             <div className="relative w-full sm:flex-1 min-w-0">
@@ -661,8 +704,8 @@ export const BookmarksPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 메인 콘텐츠 */}
-        <div className="flex-1 p-4 lg:p-6 overflow-y-auto w-full min-w-0 overflow-x-hidden">
+        {/* 메인 콘텐츠 - 스크롤은 Drawer의 main에서 처리 */}
+        <div className="flex-1 p-4 lg:p-6 w-full min-w-0">
           {(() => {
             // 필터링된 북마크 데이터에서 실제 북마크 배열 추출
             let bookmarksToDisplay: Bookmark[] = [];

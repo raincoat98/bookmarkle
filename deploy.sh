@@ -99,7 +99,7 @@ deploy_signin_popup() {
         log_success "SignIn Popup 배포 완료!"
         
         # 배포 URL 출력
-        HOSTING_URL="https://bookmarkhub-5ea6c-sign.web.app"
+        HOSTING_URL="https://bookmarkhub-5ea6c-sign-a4489.web.app"
         echo -e "${GREEN}🌐 배포된 사이트: ${BLUE}$HOSTING_URL${NC}"
     else
         log_error "SignIn Popup 배포 실패!"

@@ -1,4 +1,6 @@
-const DEFAULT_START_PAGE_URL = "https://bookmarkhub-5ea6c.web.app";
+// config.js에서 설정 읽기 (빌드 시점에 환경 변수로 주입됨)
+// 빌드 시 _PUBLIC_START_PAGE_URL_ 플레이스홀더가 실제 값으로 치환됨
+const DEFAULT_START_PAGE_URL = "_PUBLIC_START_PAGE_URL_";
 const ALLOWED_PROTOCOLS = new Set(["http:", "https:"]);
 
 function isAllowedUrl(value) {

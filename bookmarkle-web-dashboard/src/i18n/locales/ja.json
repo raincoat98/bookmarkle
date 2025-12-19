@@ -31,7 +31,8 @@
     "adding": "追加中...",
     "updating": "更新中...",
     "processing": "処理中...",
-    "countUnit": "個"
+    "countUnit": "個",
+    "moreActions": "その他"
   },
   "auth": {
     "login": "ログイン",
@@ -111,6 +112,11 @@
     "bookmarkUrlRequired": "URLを入力してください。",
     "invalidUrl": "有効なURLを入力してください。",
     "confirmDelete": "このブックマークを削除しますか？",
+    "deleteBookmarkConfirm": "次のブックマークを削除してもよろしいですか？",
+    "deleteWithEnter": "Enterキーで削除",
+    "cancelWithEsc": "ESCキーでキャンセル",
+    "deleting": "削除中...",
+    "faviconRefreshError": "ファビコンの更新に失敗しました。",
     "noBookmarksFound": "ブックマークが見つかりません。",
     "searchPlaceholder": "ブックマークを検索...",
     "filterByCollection": "コレクションでフィルター",
@@ -162,7 +168,6 @@
     "bookmarkMovedDown": "\"{{title}}\" が下に移動しました！🔽",
     "noSearchResults": "検索結果がありません。別の検索語を試してください。",
     "faviconRefreshed": "ファビコンが更新されました。",
-    "faviconRefreshError": "ファビコンの更新中にエラーが発生しました。",
     "favoriteToggleError": "お気に入り状態の変更中にエラーが発生しました。",
     "reorderError": "ブックマークの順序変更中にエラーが発生しました。"
   },
@@ -260,10 +265,16 @@
     "bookmarkList": "ブックマークリスト",
     "bookmarkListDescription": "すべてのブックマークを管理",
     "dataManagement": "データ管理",
-    "exportDataDescription": "ブックマークデータをファイルにエクスポート",
+    "exportDataDescription": "ブックマークデータをJSONファイルにエクスポート",
     "export": "エクスポート",
-    "importDataDescription": "ファイルからブックマークデータをインポート",
+    "exportChromeBookmarks": "HTMLエクスポート",
+    "exportChromeBookmarksDescription": "Chrome互換HTML形式",
+    "exportChrome": "HTMLエクスポート",
+    "importDataDescription": "JSONファイルからブックマークデータをインポート",
     "import": "インポート",
+    "importChromeBookmarks": "HTMLインポート",
+    "importChromeBookmarksDescription": "ChromeブックマークHTMLファイル",
+    "importChrome": "HTMLインポート",
     "accountInfo": "アカウント情報",
     "user": "ユーザー",
     "accountManagement": "アカウント管理",
@@ -370,6 +381,8 @@
     "humidity": "湿度",
     "windSpeed": "風速",
     "weeklyWeather": "今週の天気",
+    "hourlyWeather": "今日の時間別天気",
+    "noHourlyData": "時間別天気データがありません",
     "today": "今日",
     "tomorrow": "明日",
     "currentLocation": "現在地",
@@ -573,10 +586,5 @@
         "goToPricing": "料金へ"
       }
     }
-  },
-  "admin": {
-    "title": "管理者ダッシュボード",
-    "description": "すべてのユーザーを管理し、統計を確認できます。",
-    "users": "ユーザー管理"
   }
 }
