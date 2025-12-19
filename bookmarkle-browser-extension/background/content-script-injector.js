@@ -31,8 +31,15 @@ async function isContentBridgeLoaded(tabId) {
       }
       return isLoaded;
     } catch (error) {
-      // 주입할 수 없는 페이지인 경우 메모리에서도 제거
-      injectedTabs.delete(tabId);
+      const errorMessage = error.message || "";
+      // 탭이 이미 닫힌 경우 또는 주입할 수 없는 페이지인 경우 메모리에서도 제거
+      if (
+        errorMessage.includes("No tab with id") ||
+        errorMessage.includes("Could not establish connection") ||
+        errorMessage.includes("Cannot access")
+      ) {
+        injectedTabs.delete(tabId);
+      }
       return false;
     }
   }
@@ -55,21 +62,34 @@ async function injectContentBridge(tabId) {
       target: { tabId },
       files: ["content-bridge.js"],
     });
-    
+
     // 주입 성공 시 메모리에 추가
     injectedTabs.add(tabId);
     console.log(`✅ [injector] Content bridge injected into tab ${tabId}`);
   } catch (error) {
+    const errorMessage = error.message || "";
     // 이미 주입되었거나 주입할 수 없는 경우 (chrome://, extension:// 등)
     if (
-      error.message?.includes("Cannot access") ||
-      error.message?.includes("Cannot access a chrome") ||
-      error.message?.includes("Cannot access a file")
+      errorMessage.includes("Cannot access") ||
+      errorMessage.includes("Cannot access a chrome") ||
+      errorMessage.includes("Cannot access a file")
     ) {
       // 정상적인 경우 (chrome:// 페이지 등)
       return;
     }
-    console.warn(`⚠️ [injector] Failed to inject into tab ${tabId}:`, error.message);
+    // 탭이 이미 닫힌 경우
+    if (
+      errorMessage.includes("No tab with id") ||
+      errorMessage.includes("Could not establish connection")
+    ) {
+      // 탭이 닫혔으므로 메모리에서 제거
+      injectedTabs.delete(tabId);
+      return;
+    }
+    console.warn(
+      `⚠️ [injector] Failed to inject into tab ${tabId}:`,
+      errorMessage
+    );
   }
 }
 
@@ -80,7 +100,7 @@ export async function injectIntoAllTabs() {
   try {
     const tabs = await chrome.tabs.query({ url: WEB_URL_PATTERNS });
     console.log(`📋 [injector] Found ${tabs.length} web tabs to inject`);
-    
+
     await Promise.all(
       tabs.map((tab) => {
         if (typeof tab.id === "number") {
@@ -105,7 +125,9 @@ export function initContentScriptInjector() {
 
   // 익스텐션 설치/새로고침 시 모든 탭에 주입
   chrome.runtime.onInstalled.addListener(() => {
-    console.log("🔄 [injector] Extension installed/updated, injecting content bridge");
+    console.log(
+      "🔄 [injector] Extension installed/updated, injecting content bridge"
+    );
     injectIntoAllTabs();
   });
 
@@ -113,17 +135,20 @@ export function initContentScriptInjector() {
   chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     // 탭이 완전히 로드되었을 때만 주입
     if (changeInfo.status !== "complete") return;
-    
+
     // URL이 변경된 경우 메모리에서 제거 (새 페이지 로드 시 재주입)
     if (changeInfo.url) {
       injectedTabs.delete(tabId);
     }
-    
+
     // 웹 URL 패턴과 일치하는 경우만 주입
-    if (tab.url && WEB_URL_PATTERNS.some((pattern) => {
-      const regex = new RegExp(pattern.replace(/\*/g, ".*"));
-      return regex.test(tab.url);
-    })) {
+    if (
+      tab.url &&
+      WEB_URL_PATTERNS.some((pattern) => {
+        const regex = new RegExp(pattern.replace(/\*/g, ".*"));
+        return regex.test(tab.url);
+      })
+    ) {
       // 약간의 지연을 두어 페이지가 완전히 로드되도록 함
       setTimeout(() => {
         injectContentBridge(tabId);
@@ -139,4 +164,3 @@ export function initContentScriptInjector() {
   // 초기 실행 시에도 주입 (이미 열려있는 탭 처리)
   injectIntoAllTabs();
 }
-

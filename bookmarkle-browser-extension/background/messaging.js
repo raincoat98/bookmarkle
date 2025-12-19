@@ -205,10 +205,7 @@ function handleInternalMessage(msg, sender, sendResponse) {
               markOffscreenSynced(true);
             })
             .catch((error) => {
-              console.warn(
-                "⚠️ Failed to get auth state from web tabs:",
-                error
-              );
+              console.warn("⚠️ Failed to get auth state from web tabs:", error);
               markOffscreenSynced(true);
             });
           return;
@@ -503,7 +500,9 @@ function broadcastAuthState(user, { refreshToken, idToken }) {
     : "null";
   const lastPayloadKey = lastBroadcastedPayload
     ? lastBroadcastedPayload.user
-      ? `${lastBroadcastedPayload.user.uid}:${lastBroadcastedPayload.idToken?.slice(0, 20)}`
+      ? `${
+          lastBroadcastedPayload.user.uid
+        }:${lastBroadcastedPayload.idToken?.slice(0, 20)}`
       : "null"
     : null;
 
@@ -634,13 +633,37 @@ function broadcastCollectionsUpdated() {
 
 function sendMessageToWebTabs(message) {
   chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
+    if (chrome.runtime.lastError) {
+      console.warn(
+        "⚠️ [background] Failed to query tabs:",
+        chrome.runtime.lastError.message
+      );
+      return;
+    }
+
     tabs.forEach((tab) => {
       if (typeof tab.id !== "number") {
         return;
       }
       chrome.tabs.sendMessage(tab.id, message, () => {
         if (chrome.runtime.lastError) {
-          // 탭이 응답하지 않을 수 있으므로 무시
+          const errorMessage = chrome.runtime.lastError.message || "";
+          // 탭이 닫혔거나 응답하지 않는 경우 조용히 무시
+          if (
+            errorMessage.includes("No tab with id") ||
+            errorMessage.includes("Could not establish connection") ||
+            errorMessage.includes("The message port closed")
+          ) {
+            // 탭이 닫혔거나 응답하지 않음 - 정상적인 경우
+            return;
+          }
+          // 기타 오류는 로그만 남김 (디버깅용)
+          if (process.env.NODE_ENV === "development") {
+            console.warn(
+              "⚠️ [background] Failed to send message to tab:",
+              errorMessage
+            );
+          }
         }
       });
     });
@@ -650,6 +673,15 @@ function sendMessageToWebTabs(message) {
 async function getAuthStateFromWebTabs() {
   return new Promise((resolve) => {
     chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        console.warn(
+          "⚠️ [background] Failed to query tabs for auth state:",
+          chrome.runtime.lastError.message
+        );
+        resolve(null);
+        return;
+      }
+
       if (!tabs || tabs.length === 0) {
         resolve(null);
         return;
@@ -667,15 +699,30 @@ async function getAuthStateFromWebTabs() {
         { type: "REQUEST_WEB_AUTH_STATE" },
         (response) => {
           if (chrome.runtime.lastError) {
+            const errorMessage = chrome.runtime.lastError.message || "";
+            // 탭이 닫혔거나 응답하지 않는 경우 조용히 처리
+            if (
+              errorMessage.includes("No tab with id") ||
+              errorMessage.includes("Could not establish connection") ||
+              errorMessage.includes("The message port closed")
+            ) {
+              // 탭이 닫혔거나 응답하지 않음 - 정상적인 경우
+              resolve(null);
+              return;
+            }
             console.warn(
-              "⚠️ Failed to request auth state from web tab:",
-              chrome.runtime.lastError.message
+              "⚠️ [background] Failed to request auth state from web tab:",
+              errorMessage
             );
             resolve(null);
             return;
           }
 
-          if (response?.ok && response?.payload?.user && response?.payload?.idToken) {
+          if (
+            response?.ok &&
+            response?.payload?.user &&
+            response?.payload?.idToken
+          ) {
             resolve({
               user: response.payload.user,
               idToken: response.payload.idToken,
