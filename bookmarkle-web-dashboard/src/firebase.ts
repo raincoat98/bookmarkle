@@ -261,30 +261,52 @@ export async function getUserNotificationSettings(uid: string): Promise<{
   bookmarkNotifications?: boolean;
   systemNotifications?: boolean;
 }> {
-  const settingsRef = doc(db, "users", uid, "settings", "main");
-  const snap = await getDoc(settingsRef);
-  if (snap.exists()) {
-    const data = snap.data();
+  try {
+    const settingsRef = doc(db, "users", uid, "settings", "main");
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        notifications:
+          data.notifications !== undefined ? data.notifications : true,
+        bookmarkNotifications:
+          data.bookmarkNotifications !== undefined
+            ? data.bookmarkNotifications
+            : true,
+        systemNotifications:
+          data.systemNotifications !== undefined
+            ? data.systemNotifications
+            : data.notifications !== undefined
+            ? data.notifications
+            : true,
+      };
+    }
     return {
-      notifications:
-        data.notifications !== undefined ? data.notifications : true,
-      bookmarkNotifications:
-        data.bookmarkNotifications !== undefined
-          ? data.bookmarkNotifications
-          : true,
-      systemNotifications:
-        data.systemNotifications !== undefined
-          ? data.systemNotifications
-          : data.notifications !== undefined
-          ? data.notifications
-          : true,
+      notifications: true,
+      bookmarkNotifications: true,
+      systemNotifications: true,
+    };
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시하고 기본값 반환 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      console.warn(
+        "⚠️ getUserNotificationSettings: Permission denied, returning defaults"
+      );
+      return {
+        notifications: true,
+        bookmarkNotifications: true,
+        systemNotifications: true,
+      };
+    }
+    console.error("❌ getUserNotificationSettings error:", error);
+    // 에러 발생 시 기본값 반환
+    return {
+      notifications: true,
+      bookmarkNotifications: true,
+      systemNotifications: true,
     };
   }
-  return {
-    notifications: true,
-    bookmarkNotifications: true,
-    systemNotifications: true,
-  };
 }
 
 // 알림 설정 저장
