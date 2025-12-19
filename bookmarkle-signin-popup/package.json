@@ -1,6 +1,6 @@
 {
   "name": "bookmarkle-signin-popup",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "북마클 로그인 팝업 서비스",
   "main": "index.html",
   "type": "module",

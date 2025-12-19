@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "북마클",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "웹 페이지를 쉽게 저장하고 관리하는 북마크 확장 프로그램",
   "homepage_url": "https://chromewebstore.google.com/detail/%EB%B6%81%EB%A7%88%ED%81%B4/lkkbdejelaagaipenlheijafnjggkdcm?hl=ko",
   "default_locale": "ko",
