@@ -306,23 +306,36 @@ export async function getUserWeatherLocation(uid: string): Promise<{
   lon: number;
   city: string;
 } | null> {
-  const settingsRef = doc(db, "users", uid, "settings", "main");
-  const snap = await getDoc(settingsRef);
-  if (snap.exists()) {
-    const data = snap.data();
-    if (
-      data.weatherLocation &&
-      data.weatherLocation.lat &&
-      data.weatherLocation.lon
-    ) {
-      return {
-        lat: data.weatherLocation.lat,
-        lon: data.weatherLocation.lon,
-        city: data.weatherLocation.city || "",
-      };
+  try {
+    const settingsRef = doc(db, "users", uid, "settings", "main");
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (
+        data.weatherLocation &&
+        data.weatherLocation.lat &&
+        data.weatherLocation.lon
+      ) {
+        return {
+          lat: data.weatherLocation.lat,
+          lon: data.weatherLocation.lon,
+          city: data.weatherLocation.city || "",
+        };
+      }
     }
+    return null;
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      console.warn(
+        "⚠️ getUserWeatherLocation: Permission denied, returning null"
+      );
+      return null;
+    }
+    console.error("❌ getUserWeatherLocation error:", error);
+    return null;
   }
-  return null;
 }
 
 // 날씨 위치 정보 저장
