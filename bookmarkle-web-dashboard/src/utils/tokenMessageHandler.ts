@@ -200,6 +200,12 @@ export function initializeTokenMessageHandler() {
       });
   }
 
+  // 중복 처리 방지를 위한 마지막 처리된 상태 추적
+  let lastProcessedExtensionState: {
+    userId?: string;
+    idToken?: string;
+  } | null = null;
+
   const handleMessage = async (event: MessageEvent) => {
     const data = event.data;
     if (!data) return;
@@ -209,6 +215,24 @@ export function initializeTokenMessageHandler() {
       if (data.fromExtension && data.payload) {
         const { user: extensionUser, idToken } = data.payload;
         const authStore = useAuthStore.getState();
+
+        // 중복 처리 방지: 같은 상태면 무시
+        const currentStateKey = extensionUser
+          ? `${extensionUser.uid}:${idToken?.slice(0, 20)}`
+          : "null";
+        const lastStateKey = lastProcessedExtensionState
+          ? lastProcessedExtensionState.userId
+            ? `${lastProcessedExtensionState.userId}:${lastProcessedExtensionState.idToken?.slice(0, 20)}`
+            : "null"
+          : null;
+
+        if (currentStateKey === lastStateKey) {
+          console.log(
+            "⏭️ [tokenMessageHandler] Skipping duplicate extension auth state:",
+            currentStateKey
+          );
+          return;
+        }
 
         // extension에서 사용자 정보가 있고, 현재 Firebase Auth 상태와 다른 경우
         if (extensionUser) {
@@ -235,6 +259,12 @@ export function initializeTokenMessageHandler() {
 
             // loading을 false로 설정하여 로그인 페이지로 이동하지 않도록 함
             authStore.setLoading(false);
+
+            // 처리된 상태 기록
+            lastProcessedExtensionState = {
+              userId: extensionUser.uid,
+              idToken: idToken || undefined,
+            };
 
             // Firebase Auth 상태 확인 및 동기화 시도
             if (!currentUser) {
@@ -266,15 +296,18 @@ export function initializeTokenMessageHandler() {
                 });
             }
           } else {
-            // 같은 사용자인 경우 idToken만 업데이트
-            if (idToken) {
+            // 같은 사용자인 경우 idToken만 업데이트 (변경된 경우에만)
+            if (idToken && idToken !== authStore.idToken) {
               authStore.setIdToken(idToken);
+              lastProcessedExtensionState = {
+                userId: extensionUser.uid,
+                idToken: idToken,
+              };
             }
           }
         } else {
           // extension에서 로그아웃 상태(null)를 보낸 경우
           // 이미 로그아웃 상태면 중복 처리 방지 (웹에서 직접 로그아웃한 경우)
-          const authStore = useAuthStore.getState();
           if (authStore.user === null && authStore.idToken === null) {
             console.log(
               "ℹ️ [tokenMessageHandler] Extension sent null (logout), but already logged out, skipping duplicate cleanup"
@@ -290,6 +323,7 @@ export function initializeTokenMessageHandler() {
             idToken: null,
             loading: false,
           });
+          lastProcessedExtensionState = null;
         }
       } else {
         // 웹에서 직접 보낸 인증 상태 변경 (기존 로직)

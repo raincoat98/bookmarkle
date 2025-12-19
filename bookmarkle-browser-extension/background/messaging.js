@@ -19,6 +19,10 @@ const WEB_URL_PATTERNS = [
   "http://localhost:3000/*",
 ];
 
+// Web으로 브로드캐스트할 때 중복 전송 방지를 위한 debounce
+let webBroadcastTimeout = null;
+let lastBroadcastedPayload = null;
+
 // ============================================================================
 // Exported Functions
 // ============================================================================
@@ -493,10 +497,30 @@ function broadcastAuthState(user, { refreshToken, idToken }) {
         idToken: null,
       };
 
+  // 중복 전송 방지: 같은 payload면 무시
+  const payloadKey = payload.user
+    ? `${payload.user.uid}:${payload.idToken?.slice(0, 20)}`
+    : "null";
+  const lastPayloadKey = lastBroadcastedPayload
+    ? lastBroadcastedPayload.user
+      ? `${lastBroadcastedPayload.user.uid}:${lastBroadcastedPayload.idToken?.slice(0, 20)}`
+      : "null"
+    : null;
+
+  if (payloadKey === lastPayloadKey) {
+    console.log(
+      "⏭️ [background] Skipping duplicate auth state broadcast:",
+      payloadKey
+    );
+    return;
+  }
+
   console.log(
     "📢 [background] Broadcasting AUTH_STATE_CHANGED:",
     payload.user ? payload.user.uid : "null"
   );
+
+  // Popup에 즉시 전송
   chrome.runtime.sendMessage(
     {
       type: "AUTH_STATE_CHANGED",
@@ -515,7 +539,16 @@ function broadcastAuthState(user, { refreshToken, idToken }) {
     }
   );
 
-  sendMessageToWebTabs({ type: "WEB_AUTH_STATE_CHANGED", payload });
+  // Web으로 브로드캐스트 (debounce 적용)
+  if (webBroadcastTimeout) {
+    clearTimeout(webBroadcastTimeout);
+  }
+
+  lastBroadcastedPayload = payload;
+  webBroadcastTimeout = setTimeout(() => {
+    sendMessageToWebTabs({ type: "WEB_AUTH_STATE_CHANGED", payload });
+    webBroadcastTimeout = null;
+  }, 100); // 100ms debounce
 }
 
 // ============================================================================
