@@ -195,25 +195,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
         if (currentState.idToken || currentState.user) {
           // Extension에서 받은 인증 상태가 있으면 유지
           // Firebase Auth는 나중에 동기화될 수 있음 (예: 페이지 새로고침, 다른 탭에서 로그인 등)
-          // 이 경우 리스너를 정리하여 권한 오류를 방지하고,
-          // Firebase Auth가 동기화되면 onAuthStateChanged가 다시 호출되어 자동으로 재설정됨
-
-          // 리스너 정리는 조용히 처리 (로그 제거)
-          try {
-            const bookmarkStore = await import("./bookmarkStore");
-            bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-          } catch {
-            // 조용히 처리
-          }
-
-          try {
-            const subscriptionStore = await import("./subscriptionStore");
-            subscriptionStore.useSubscriptionStore
-              .getState()
-              .cleanupAllListeners();
-          } catch {
-            // 조용히 처리
-          }
+          // 리스너는 정리하지 않음 - Firebase Auth가 동기화되면 자동으로 재연결됨
+          // onSnapshot의 error handler에서 권한 오류를 이미 처리하고 있음
 
           set({ loading: false });
           set({ isActive: null, isActiveLoading: false });
