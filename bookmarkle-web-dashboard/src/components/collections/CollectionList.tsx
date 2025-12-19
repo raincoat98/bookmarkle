@@ -3,7 +3,6 @@ import type { Collection } from "../../types";
 import { renderCollectionIcon } from "../../utils/iconRenderer";
 import { useTranslation } from "react-i18next";
 import { PinIcon, Star } from "lucide-react";
-import { Skeleton } from "../ui/Skeleton";
 interface CollectionListProps {
   collections: Collection[];
   loading: boolean;
@@ -272,13 +271,10 @@ export const CollectionList = ({
 
           {/* 최상위 컬렉션들만 표시 */}
           {loading ? (
-            <div className="space-y-2 mt-1">
-              {Array.from({ length: 4 }).map((_, idx) => (
-                <Skeleton
-                  key={`collection-collapsed-skeleton-${idx}`}
-                  className="h-10 w-full rounded-lg"
-                />
-              ))}
+            <div className="space-y-2 mt-1 flex items-center justify-center py-4">
+              <div className="text-gray-500 dark:text-gray-400 text-sm">
+                {t("common.loading")}
+              </div>
             </div>
           ) : (
             collections
@@ -416,13 +412,10 @@ export const CollectionList = ({
           </button>
 
           {loading ? (
-            <div className="mt-2 space-y-2">
-              {Array.from({ length: 6 }).map((_, idx) => (
-                <Skeleton
-                  key={`collection-skeleton-${idx}`}
-                  className="h-10 w-full rounded-lg"
-                />
-              ))}
+            <div className="mt-2 flex items-center justify-center py-8">
+              <div className="text-gray-500 dark:text-gray-400">
+                {t("common.loading")}
+              </div>
             </div>
           ) : (
             <>

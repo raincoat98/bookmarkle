@@ -31,7 +31,8 @@
     "adding": "Adding...",
     "updating": "Updating...",
     "processing": "Processing...",
-    "countUnit": ""
+    "countUnit": "",
+    "moreActions": "More Actions"
   },
   "auth": {
     "login": "Login",
@@ -111,6 +112,11 @@
     "bookmarkUrlRequired": "Please enter a URL.",
     "invalidUrl": "Please enter a valid URL.",
     "confirmDelete": "Are you sure you want to delete this bookmark?",
+    "deleteBookmarkConfirm": "Are you sure you want to delete the following bookmark?",
+    "deleteWithEnter": "Press Enter to delete",
+    "cancelWithEsc": "Press ESC to cancel",
+    "deleting": "Deleting...",
+    "faviconRefreshError": "Failed to refresh favicon.",
     "noBookmarksFound": "No bookmarks found.",
     "searchPlaceholder": "Search bookmarks...",
     "filterByCollection": "Filter by Collection",
@@ -162,7 +168,6 @@
     "bookmarkMovedDown": "\"{{title}}\" moved down! 🔽",
     "noSearchResults": "No search results. Try a different search term.",
     "faviconRefreshed": "Favicon has been refreshed.",
-    "faviconRefreshError": "An error occurred while refreshing the favicon.",
     "favoriteToggleError": "An error occurred while changing favorite status.",
     "reorderError": "An error occurred while reordering bookmarks."
   },
@@ -260,10 +265,16 @@
     "bookmarkList": "Bookmark List",
     "bookmarkListDescription": "Manage all bookmarks",
     "dataManagement": "Data Management",
-    "exportDataDescription": "Export bookmark data to a file",
+    "exportDataDescription": "Export bookmark data to a JSON file",
     "export": "Export",
-    "importDataDescription": "Import bookmark data from a file",
+    "exportChromeBookmarks": "Export HTML",
+    "exportChromeBookmarksDescription": "Chrome-compatible HTML format",
+    "exportChrome": "Export HTML",
+    "importDataDescription": "Import bookmark data from a JSON file",
     "import": "Import",
+    "importChromeBookmarks": "Import HTML",
+    "importChromeBookmarksDescription": "Chrome bookmark HTML file",
+    "importChrome": "Import HTML",
     "accountInfo": "Account Information",
     "user": "User",
     "accountManagement": "Account Management",
@@ -370,6 +381,8 @@
     "humidity": "Humidity",
     "windSpeed": "Wind speed",
     "weeklyWeather": "Weekly Weather",
+    "hourlyWeather": "Today's Hourly Weather",
+    "noHourlyData": "No hourly weather data available",
     "today": "Today",
     "tomorrow": "Tomorrow",
     "currentLocation": "Current location",
@@ -574,10 +587,5 @@
         "goToPricing": "Go to Pricing"
       }
     }
-  },
-  "admin": {
-    "title": "Admin Dashboard",
-    "description": "Manage all users and view statistics.",
-    "users": "User Management"
   }
 }

@@ -24,7 +24,7 @@ export const LandingPage: React.FC = () => {
 
   const handleGetStarted = () => {
     // 로그인 페이지로 네비게이션
-    navigate("/login");
+    navigate("/");
   };
 
   const features = [
@@ -34,8 +34,7 @@ export const LandingPage: React.FC = () => {
         defaultValue: "스마트 북마킹",
       }),
       description: t("landing.features.smartBookmarking.description", {
-        defaultValue:
-          "원하는 웹페이지를 한 번에 저장하고 자동으로 분류합니다.",
+        defaultValue: "원하는 웹페이지를 한 번에 저장하고 자동으로 분류합니다.",
       }),
       color: "from-blue-500 to-cyan-500",
     },
@@ -164,13 +163,19 @@ export const LandingPage: React.FC = () => {
                 className="btn-primary flex items-center space-x-2"
               >
                 <Chrome className="w-4 h-4" />
-                <span>{t("landing.nav.chromeInstall", { defaultValue: "Chrome 설치" })}</span>
+                <span>
+                  {t("landing.nav.chromeInstall", {
+                    defaultValue: "Chrome 설치",
+                  })}
+                </span>
               </a>
               <button
                 onClick={handleGetStarted}
                 className="btn-secondary flex items-center space-x-2"
               >
-                <span>{t("landing.nav.getStarted", { defaultValue: "시작하기" })}</span>
+                <span>
+                  {t("landing.nav.getStarted", { defaultValue: "시작하기" })}
+                </span>
               </button>
             </div>
 
@@ -212,7 +217,11 @@ export const LandingPage: React.FC = () => {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Chrome className="w-4 h-4" />
-                <span>{t("landing.nav.chromeInstall", { defaultValue: "Chrome 설치" })}</span>
+                <span>
+                  {t("landing.nav.chromeInstall", {
+                    defaultValue: "Chrome 설치",
+                  })}
+                </span>
               </a>
               <button
                 onClick={() => {
@@ -221,7 +230,9 @@ export const LandingPage: React.FC = () => {
                 }}
                 className="btn-secondary w-full flex items-center justify-center space-x-2"
               >
-                <span>{t("landing.nav.getStarted", { defaultValue: "시작하기" })}</span>
+                <span>
+                  {t("landing.nav.getStarted", { defaultValue: "시작하기" })}
+                </span>
               </button>
             </div>
           )}
@@ -271,21 +282,31 @@ export const LandingPage: React.FC = () => {
               className="btn-primary text-lg px-8 py-4 flex items-center space-x-2 group"
             >
               <Chrome className="w-5 h-5" />
-              <span>{t("landing.hero.chromeInstall", { defaultValue: "Chrome에서 설치하기" })}</span>
+              <span>
+                {t("landing.hero.chromeInstall", {
+                  defaultValue: "Chrome에서 설치하기",
+                })}
+              </span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </a>
             <button
               onClick={handleGetStarted}
               className="btn-secondary text-lg px-8 py-4 flex items-center space-x-2"
             >
-              <span>{t("landing.hero.cta", { defaultValue: "무료로 시작하기" })}</span>
+              <span>
+                {t("landing.hero.cta", { defaultValue: "무료로 시작하기" })}
+              </span>
             </button>
             <a
               href="#features"
               className="btn-ghost text-lg px-8 py-4 flex items-center space-x-2"
             >
               <Globe className="w-5 h-5" />
-              <span>{t("landing.hero.learnMore", { defaultValue: "자세히 알아보기" })}</span>
+              <span>
+                {t("landing.hero.learnMore", {
+                  defaultValue: "자세히 알아보기",
+                })}
+              </span>
             </a>
           </div>
 
@@ -328,7 +349,10 @@ export const LandingPage: React.FC = () => {
       </section>
 
       {/* Features Section */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-gray-800/50">
+      <section
+        id="features"
+        className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-gray-800/50"
+      >
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white mb-4">
@@ -432,14 +456,20 @@ export const LandingPage: React.FC = () => {
               className="bg-white text-brand-600 hover:bg-gray-50 font-bold text-lg px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2"
             >
               <Chrome className="w-5 h-5" />
-              <span>{t("landing.cta.chromeInstall", { defaultValue: "Chrome에서 설치하기" })}</span>
+              <span>
+                {t("landing.cta.chromeInstall", {
+                  defaultValue: "Chrome에서 설치하기",
+                })}
+              </span>
               <ArrowRight className="w-5 h-5" />
             </a>
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/")}
               className="bg-white/10 backdrop-blur-lg text-white hover:bg-white/20 font-bold text-lg px-8 py-4 rounded-2xl border border-white/30 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 flex items-center space-x-2"
             >
-              <span>{t("landing.cta.button", { defaultValue: "무료로 시작하기" })}</span>
+              <span>
+                {t("landing.cta.button", { defaultValue: "무료로 시작하기" })}
+              </span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>
@@ -461,7 +491,9 @@ export const LandingPage: React.FC = () => {
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
               <Check className="w-6 h-6 text-white mb-2 mx-auto" />
               <p className="text-white font-medium">
-                {t("landing.cta.feature3", { defaultValue: "모든 기능 무료 체험" })}
+                {t("landing.cta.feature3", {
+                  defaultValue: "모든 기능 무료 체험",
+                })}
               </p>
             </div>
           </div>
@@ -489,4 +521,3 @@ export const LandingPage: React.FC = () => {
     </div>
   );
 };
-

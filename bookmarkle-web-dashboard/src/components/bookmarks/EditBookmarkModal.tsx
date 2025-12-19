@@ -34,22 +34,31 @@ export const EditBookmarkModal = ({
   const [faviconLoading, setFaviconLoading] = useState(false);
   const [customFaviconUrl, setCustomFaviconUrl] = useState("");
   const [showCustomFaviconInput, setShowCustomFaviconInput] = useState(false);
+  const [originalFavicon, setOriginalFavicon] = useState("");
 
   // 북마크 데이터가 변경될 때 폼 데이터 업데이트
   useEffect(() => {
     if (bookmark) {
+      const favicon = bookmark.favicon || "";
       setFormData({
         title: bookmark.title,
         url: bookmark.url,
         description: bookmark.description || "",
-        favicon: bookmark.favicon || "",
-        collection: bookmark.collection || collections[0]?.id || "",
+        favicon: favicon,
+        collection: bookmark.collection || "",
         tags: bookmark.tags || [],
         isFavorite: bookmark.isFavorite || false,
       });
-      // 커스텀 파비콘 관련 상태 초기화
-      setCustomFaviconUrl("");
-      setShowCustomFaviconInput(false);
+      // 원본 파비콘 저장
+      setOriginalFavicon(favicon);
+      // 커스텀 파비콘이면 입력 필드에 표시하고 열기
+      if (isCustomFavicon(favicon)) {
+        setCustomFaviconUrl(favicon);
+        setShowCustomFaviconInput(true);
+      } else {
+        setCustomFaviconUrl("");
+        setShowCustomFaviconInput(false);
+      }
     }
   }, [bookmark, collections]);
 
@@ -60,12 +69,18 @@ export const EditBookmarkModal = ({
         setFaviconLoading(true);
         try {
           const defaultFavicon = getFaviconUrl(formData.url);
-          setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: defaultFavicon }));
+          setFormData((prev: BookmarkFormData) => ({
+            ...prev,
+            favicon: defaultFavicon,
+          }));
 
           const actualFavicon = await findFaviconFromWebsite(formData.url);
-          setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: actualFavicon }));
-        } catch (error) {
-          console.error("파비콘 가져오기 실패:", error);
+          setFormData((prev: BookmarkFormData) => ({
+            ...prev,
+            favicon: actualFavicon,
+          }));
+        } catch {
+          // 기본 파비콘은 이미 설정되어 있음
         } finally {
           setFaviconLoading(false);
         }
@@ -98,7 +113,10 @@ export const EditBookmarkModal = ({
   };
 
   const handleRemoveTag = (tag: string) => {
-    setFormData({ ...formData, tags: formData.tags.filter((t: string) => t !== tag) });
+    setFormData({
+      ...formData,
+      tags: formData.tags.filter((t: string) => t !== tag),
+    });
   };
 
   // URL 유효성 검사
@@ -111,14 +129,37 @@ export const EditBookmarkModal = ({
     }
   };
 
-  // 커스텀 파비콘 URL 적용
-  const handleApplyCustomFavicon = () => {
+  // 파비콘이 직접 입력한 것인지 확인 (Google 파비콘 서비스가 아닌 경우)
+  const isCustomFavicon = (faviconUrl: string | undefined): boolean => {
+    if (!faviconUrl) return false;
+    // Google 파비콘 서비스 URL 패턴 확인
+    return !faviconUrl.includes("google.com/s2/favicons");
+  };
+
+  // 커스텀 파비콘 URL 적용 (즉시 반영 및 저장)
+  const handleApplyCustomFavicon = async (
+    e: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    e.preventDefault();
+    if (!bookmark) return;
+
     const trimmedUrl = customFaviconUrl.trim();
     if (trimmedUrl) {
       if (isValidUrl(trimmedUrl)) {
-        setFormData({ ...formData, favicon: trimmedUrl });
-        setShowCustomFaviconInput(false);
-        toast.success(t("bookmarks.faviconApplied"));
+        // 파비콘 업데이트된 폼 데이터 생성
+        const updatedFormData = { ...formData, favicon: trimmedUrl };
+        setFormData(updatedFormData);
+
+        // 바로 북마크 업데이트
+        setLoading(true);
+        try {
+          await onUpdate(bookmark.id, updatedFormData);
+          toast.success(t("bookmarks.faviconApplied"));
+        } catch {
+          toast.error(t("bookmarks.bookmarkUpdateError"));
+        } finally {
+          setLoading(false);
+        }
       } else {
         toast.error(t("bookmarks.invalidUrlFormat"));
       }
@@ -131,12 +172,17 @@ export const EditBookmarkModal = ({
       setFaviconLoading(true);
       try {
         const defaultFavicon = getFaviconUrl(formData.url);
-        setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: defaultFavicon }));
+        setFormData((prev: BookmarkFormData) => ({
+          ...prev,
+          favicon: defaultFavicon,
+        }));
 
         const actualFavicon = await findFaviconFromWebsite(formData.url);
-        setFormData((prev: BookmarkFormData) => ({ ...prev, favicon: actualFavicon }));
-      } catch (error) {
-        console.error("파비콘 가져오기 실패:", error);
+        setFormData((prev: BookmarkFormData) => ({
+          ...prev,
+          favicon: actualFavicon,
+        }));
+      } catch {
         toast.error(t("bookmarks.faviconFetchError"));
       } finally {
         setFaviconLoading(false);
@@ -148,12 +194,19 @@ export const EditBookmarkModal = ({
     e.preventDefault();
     if (!bookmark || !formData.title || !formData.url) return;
 
+    // 커스텀 파비콘 입력 필드가 열려있고 값이 있으면 먼저 적용
+    if (showCustomFaviconInput && customFaviconUrl.trim()) {
+      const trimmedUrl = customFaviconUrl.trim();
+      if (isValidUrl(trimmedUrl)) {
+        setFormData({ ...formData, favicon: trimmedUrl });
+      }
+    }
+
     setLoading(true);
     try {
       await onUpdate(bookmark.id, formData);
       onClose();
-    } catch (error) {
-      console.error("Error updating bookmark:", error);
+    } catch {
       toast.error(t("bookmarks.bookmarkUpdateError"));
     } finally {
       setLoading(false);
@@ -306,9 +359,17 @@ export const EditBookmarkModal = ({
                       </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          setShowCustomFaviconInput(!showCustomFaviconInput)
-                        }
+                        onClick={() => {
+                          if (!showCustomFaviconInput) {
+                            // 입력 필드를 열 때 현재 파비콘 URL 표시
+                            if (isCustomFavicon(formData.favicon)) {
+                              setCustomFaviconUrl(formData.favicon || "");
+                            } else {
+                              setCustomFaviconUrl("");
+                            }
+                          }
+                          setShowCustomFaviconInput(!showCustomFaviconInput);
+                        }}
                         className="px-2 py-1 text-xs bg-emerald-500 text-white rounded hover:bg-emerald-600 transition-all duration-200 flex items-center justify-center"
                       >
                         <svg
@@ -324,7 +385,9 @@ export const EditBookmarkModal = ({
                             d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                           />
                         </svg>
-                        {t("bookmarks.customFaviconInput")}
+                        {isCustomFavicon(formData.favicon)
+                          ? t("common.edit")
+                          : t("bookmarks.customFaviconInput")}
                       </button>
                     </div>
                   </div>
@@ -343,16 +406,31 @@ export const EditBookmarkModal = ({
                         <button
                           type="button"
                           onClick={handleApplyCustomFavicon}
-                          disabled={!customFaviconUrl.trim()}
-                          className="flex-1 px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                          disabled={
+                            !customFaviconUrl.trim() ||
+                            customFaviconUrl.trim() === formData.favicon ||
+                            loading
+                          }
+                          className="flex-1 px-3 py-2 text-sm bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center"
                         >
-                          {t("common.apply")}
+                          {loading ? (
+                            <>
+                              <div className="spinner w-3 h-3 mr-2"></div>
+                              <span>{t("common.updating")}</span>
+                            </>
+                          ) : (
+                            t("common.apply")
+                          )}
                         </button>
                         <button
                           type="button"
                           onClick={() => {
                             setShowCustomFaviconInput(false);
-                            setCustomFaviconUrl("");
+                            setCustomFaviconUrl(
+                              isCustomFavicon(originalFavicon)
+                                ? originalFavicon
+                                : ""
+                            );
                           }}
                           className="flex-1 px-3 py-2 text-sm bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-all duration-200"
                         >

@@ -6,14 +6,18 @@ interface GeneralSettingsProps {
   defaultPage: string;
   onDefaultPageChange: (page: string) => void;
   onExportData: () => void;
+  onExportChromeBookmarks: () => void;
   onImportData: () => void;
+  onImportChromeBookmarks: () => void;
 }
 
 export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   defaultPage,
   onDefaultPageChange,
   onExportData,
+  onExportChromeBookmarks,
   onImportData,
+  onImportChromeBookmarks,
 }) => {
   const { t } = useTranslation();
 
@@ -86,6 +90,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
           {t("settings.dataManagement")}
         </h3>
         <div className="space-y-4">
+          {/* 데이터 내보내기 */}
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">
@@ -103,6 +108,7 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
               {t("settings.export")}
             </button>
           </div>
+          {/* 데이터 가져오기 */}
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-white">
@@ -118,6 +124,46 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
             >
               <Upload className="w-4 h-4 mr-2" />
               {t("settings.import")}
+            </button>
+          </div>
+
+          {/* 구분선 */}
+          <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
+
+          {/* HTML 내보내기 */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {t("settings.exportChromeBookmarks")}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("settings.exportChromeBookmarksDescription")}
+              </p>
+            </div>
+            <button
+              onClick={onExportChromeBookmarks}
+              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {t("settings.exportChrome")}
+            </button>
+          </div>
+          {/* HTML 가져오기 */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium text-gray-900 dark:text-white">
+                {t("settings.importChromeBookmarks")}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("settings.importChromeBookmarksDescription")}
+              </p>
+            </div>
+            <button
+              onClick={onImportChromeBookmarks}
+              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {t("settings.importChrome")}
             </button>
           </div>
         </div>

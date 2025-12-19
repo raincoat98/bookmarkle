@@ -1,9 +1,71 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Edit, Trash2, Heart, Sparkles, Globe } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Bookmark, Collection } from "../../types";
-import { Skeleton } from "../ui/Skeleton";
+
+// 파비콘 표시 컴포넌트
+interface FaviconDisplayProps {
+  bookmark: Bookmark;
+  fallbackIcon: React.ReactNode;
+  className?: string;
+}
+
+const FaviconDisplay: React.FC<FaviconDisplayProps> = ({
+  bookmark,
+  fallbackIcon,
+  className = "w-full h-full object-cover",
+}) => {
+  const [showCustomFavicon, setShowCustomFavicon] = useState(
+    !!bookmark.favicon
+  );
+  const [customFaviconError, setCustomFaviconError] = useState(false);
+  const [googleFaviconError, setGoogleFaviconError] = useState(false);
+
+  const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${
+    new URL(bookmark.url).hostname
+  }&sz=32`;
+
+  // 북마크가 변경될 때 상태 리셋
+  useEffect(() => {
+    setShowCustomFavicon(!!bookmark.favicon);
+    setCustomFaviconError(false);
+    setGoogleFaviconError(false);
+  }, [bookmark.id, bookmark.favicon]);
+
+  // 모든 파비콘이 실패한 경우 fallback 표시
+  if (customFaviconError && googleFaviconError) {
+    return <>{fallbackIcon}</>;
+  }
+
+  return (
+    <>
+      {/* 사용자가 직접 입력한 파비콘 */}
+      {bookmark.favicon && showCustomFavicon && !customFaviconError && (
+        <img
+          src={bookmark.favicon}
+          alt={bookmark.title}
+          className={className}
+          onError={() => {
+            setCustomFaviconError(true);
+            setShowCustomFavicon(false);
+          }}
+        />
+      )}
+      {/* Google 파비콘 서비스 (커스텀 파비콘이 없거나 실패한 경우) */}
+      {(!bookmark.favicon || customFaviconError) && !googleFaviconError && (
+        <img
+          src={googleFaviconUrl}
+          alt={bookmark.title}
+          className={className}
+          onError={() => {
+            setGoogleFaviconError(true);
+          }}
+        />
+      )}
+    </>
+  );
+};
 
 interface BookmarksWidgetProps {
   bookmarks: Bookmark[];
@@ -23,9 +85,8 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isMobile, setIsMobile] = useState(false);
-  const [touchedBookmarkId, setTouchedBookmarkId] = useState<string | null>(
-    null
-  );
+  // 버튼 클릭 시 카드 클릭 방지를 위한 플래그
+  const buttonClickedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -79,41 +140,10 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
   };
 
   if (loading) {
-    const skeletonCards = Array.from({ length: 10 });
-
     return (
-      <div className="card-glass p-4 sm:p-6 h-full flex flex-col">
-        <Skeleton className="h-5 w-32 mb-6" />
-        <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-          <div className="flex flex-col bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-4 border border-yellow-200/50 dark:border-yellow-800/50">
-            <Skeleton className="h-4 w-24 mb-4" />
-            <div className="flex flex-wrap gap-3 flex-1">
-              {skeletonCards.map((_, idx) => (
-                <div
-                  key={`bookmarks-favorite-skeleton-${idx}`}
-                  className="w-20 h-24 flex flex-col items-center justify-center gap-3 rounded-xl border border-white/40 dark:border-gray-600/40 bg-white/70 dark:bg-gray-800/70"
-                >
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-4 border border-blue-200/50 dark:border-blue-800/50">
-            <Skeleton className="h-4 w-28 mb-4" />
-            <div className="flex flex-wrap gap-3 flex-1">
-              {skeletonCards.map((_, idx) => (
-                <div
-                  key={`bookmarks-recent-skeleton-${idx}`}
-                  className="w-20 h-28 flex flex-col items-center justify-center gap-3 rounded-xl border border-white/40 dark:border-gray-600/40 bg-white/70 dark:bg-gray-800/70"
-                >
-                  <Skeleton className="h-10 w-10 rounded-xl" />
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-3 w-12" />
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="card-glass p-4 sm:p-6 h-full flex flex-col items-center justify-center">
+        <div className="text-gray-500 dark:text-gray-400">
+          {t("common.loading")}
         </div>
       </div>
     );
@@ -124,67 +154,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
 
   const handleFaviconClick = (url: string) => {
     window.open(url, "_blank");
-  };
-
-  // 길게 누르기 처리 함수 생성기
-  const createLongPressHandlers = (
-    onLongPress: () => void,
-    onClick: () => void,
-    delay = 1000,
-    bookmarkId?: string
-  ) => {
-    let timeoutRef: NodeJS.Timeout | null = null;
-    let startTimeRef = 0;
-    let movedRef = false;
-
-    const start = () => {
-      movedRef = false;
-      startTimeRef = Date.now();
-      if (bookmarkId) {
-        setTouchedBookmarkId(bookmarkId);
-      }
-      timeoutRef = setTimeout(() => {
-        if (!movedRef) {
-          onLongPress();
-        }
-      }, delay);
-    };
-
-    const clear = () => {
-      if (timeoutRef) {
-        clearTimeout(timeoutRef);
-        timeoutRef = null;
-      }
-    };
-
-    const move = () => {
-      movedRef = true;
-      clear();
-    };
-
-    const end = () => {
-      const duration = Date.now() - startTimeRef;
-      clear();
-      if (bookmarkId) {
-        setTimeout(() => setTouchedBookmarkId(null), 300);
-      }
-
-      // 짧게 눌렀고 이동하지 않았으면 클릭 처리
-      if (duration < delay && !movedRef) {
-        onClick();
-      }
-    };
-
-    return {
-      onMouseDown: start,
-      onMouseUp: end,
-      onMouseMove: move,
-      onMouseLeave: clear,
-      onTouchStart: start,
-      onTouchEnd: end,
-      onTouchMove: move,
-      onTouchCancel: clear,
-    };
   };
 
   return (
@@ -223,13 +192,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           {favoritesToShow.length > 0 ? (
             <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
               {favoritesToShow.map((bookmark, index) => {
-                const longPressHandlers = createLongPressHandlers(
-                  () => onEdit(bookmark),
-                  () => handleFaviconClick(bookmark.url),
-                  1000,
-                  bookmark.id
-                );
-
                 return (
                   <motion.div
                     key={bookmark.id}
@@ -237,8 +199,17 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
                     whileTap={isMobile ? { scale: 0.95 } : undefined}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
-                    {...longPressHandlers}
+                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto cursor-pointer"
+                    onClick={() => {
+                      // 버튼 클릭이 아닌 경우에만 카드 클릭 처리
+                      if (!buttonClickedRef.current) {
+                        handleFaviconClick(bookmark.url);
+                      }
+                      // 다음 클릭을 위해 플래그 리셋 (약간의 지연 후)
+                      setTimeout(() => {
+                        buttonClickedRef.current = false;
+                      }, 100);
+                    }}
                   >
                     <div
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
@@ -247,26 +218,14 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         handleFaviconClick(bookmark.url);
                       }}
                     >
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${
-                          new URL(bookmark.url).hostname
-                        }&sz=32`}
-                        alt={bookmark.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                          const fallback =
-                            target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = "flex";
-                        }}
+                      <FaviconDisplay
+                        bookmark={bookmark}
+                        fallbackIcon={
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500">
+                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
+                          </div>
+                        }
                       />
-                      <div
-                        className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500"
-                        style={{ display: "none" }}
-                      >
-                        <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
-                      </div>
                     </div>
 
                     <p
@@ -279,9 +238,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div
                       className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 transition-all duration-300 transform ${
                         isMobile
-                          ? touchedBookmarkId === bookmark.id
-                            ? "opacity-100 scale-110"
-                            : "opacity-70"
+                          ? "opacity-70"
                           : "opacity-0 group-hover/fav-section:opacity-100"
                       }`}
                     >
@@ -289,25 +246,32 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          e.nativeEvent.stopImmediatePropagation();
+                          buttonClickedRef.current = true;
                           onToggleFavorite(bookmark.id, false);
                         }}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
+                        }}
+                        onPointerDown={(e) => {
+                          // 마우스와 터치 이벤트 모두 처리
+                          e.preventDefault();
+                          e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchStart={(e) => {
-                          e.preventDefault();
+                          // passive 이벤트 리스너 문제 해결
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchEnd={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
                         }}
-                        className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:bg-red-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200"
+                        className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:bg-red-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
                         title={t("bookmarks.removeFromFavorites")}
                       >
-                        <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current" />
+                        <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current pointer-events-none" />
                       </button>
                     </div>
                   </motion.div>
@@ -342,13 +306,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
           {recentsToShow.length > 0 ? (
             <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
               {recentsToShow.map((bookmark, index) => {
-                const longPressHandlers = createLongPressHandlers(
-                  () => onEdit(bookmark),
-                  () => handleFaviconClick(bookmark.url),
-                  1000,
-                  bookmark.id
-                );
-
                 return (
                   <motion.div
                     key={bookmark.id}
@@ -356,8 +313,17 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
                     whileTap={isMobile ? { scale: 0.95 } : undefined}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto"
-                    {...longPressHandlers}
+                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto cursor-pointer"
+                    onClick={() => {
+                      // 버튼 클릭이 아닌 경우에만 카드 클릭 처리
+                      if (!buttonClickedRef.current) {
+                        handleFaviconClick(bookmark.url);
+                      }
+                      // 다음 클릭을 위해 플래그 리셋 (약간의 지연 후)
+                      setTimeout(() => {
+                        buttonClickedRef.current = false;
+                      }, 100);
+                    }}
                   >
                     <div
                       className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
@@ -366,26 +332,14 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         handleFaviconClick(bookmark.url);
                       }}
                     >
-                      <img
-                        src={`https://www.google.com/s2/favicons?domain=${
-                          new URL(bookmark.url).hostname
-                        }&sz=32`}
-                        alt={bookmark.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = "none";
-                          const fallback =
-                            target.nextElementSibling as HTMLElement;
-                          if (fallback) fallback.style.display = "flex";
-                        }}
+                      <FaviconDisplay
+                        bookmark={bookmark}
+                        fallbackIcon={
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600">
+                            <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
+                          </div>
+                        }
                       />
-                      <div
-                        className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600"
-                        style={{ display: "none" }}
-                      >
-                        <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
-                      </div>
                     </div>
 
                     <p
@@ -402,9 +356,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                     <div
                       className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 transition-all duration-300 transform ${
                         isMobile
-                          ? touchedBookmarkId === bookmark.id
-                            ? "opacity-100 scale-110"
-                            : "opacity-70"
+                          ? "opacity-70"
                           : "opacity-0 group-hover/recent-section:opacity-100"
                       }`}
                     >
@@ -412,22 +364,29 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          e.nativeEvent.stopImmediatePropagation();
+                          buttonClickedRef.current = true;
                           onToggleFavorite(bookmark.id, !bookmark.isFavorite);
                         }}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
+                        }}
+                        onPointerDown={(e) => {
+                          // 마우스와 터치 이벤트 모두 처리
+                          e.preventDefault();
+                          e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchStart={(e) => {
-                          e.preventDefault();
+                          // passive 이벤트 리스너 문제 해결
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchEnd={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
                         }}
-                        className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 active:bg-yellow-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200"
+                        className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 active:bg-yellow-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
                         title={
                           bookmark.isFavorite
                             ? t("bookmarks.removeFromFavorites")
@@ -435,7 +394,7 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         }
                       >
                         <Heart
-                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 ${
+                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 pointer-events-none ${
                             bookmark.isFavorite ? "fill-current" : ""
                           }`}
                         />
@@ -453,49 +412,63 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          e.nativeEvent.stopImmediatePropagation();
+                          buttonClickedRef.current = true;
                           onEdit(bookmark);
                         }}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
+                        }}
+                        onPointerDown={(e) => {
+                          // 마우스와 터치 이벤트 모두 처리
+                          e.preventDefault();
+                          e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchStart={(e) => {
-                          e.preventDefault();
+                          // passive 이벤트 리스너 문제 해결
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchEnd={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
                         }}
-                        className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 active:bg-blue-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200"
+                        className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 active:bg-blue-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
                         title={t("common.edit")}
                       >
-                        <Edit className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                        <Edit className="w-2 h-2 sm:w-2.5 sm:h-2.5 pointer-events-none" />
                       </button>
                       <button
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
-                          e.nativeEvent.stopImmediatePropagation();
+                          buttonClickedRef.current = true;
                           onDelete(bookmark.id);
                         }}
                         onMouseDown={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
+                        }}
+                        onPointerDown={(e) => {
+                          // 마우스와 터치 이벤트 모두 처리
+                          e.preventDefault();
+                          e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchStart={(e) => {
-                          e.preventDefault();
+                          // passive 이벤트 리스너 문제 해결
                           e.stopPropagation();
+                          buttonClickedRef.current = true;
                         }}
                         onTouchEnd={(e) => {
-                          e.preventDefault();
                           e.stopPropagation();
                         }}
-                        className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:bg-red-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200"
+                        className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:bg-red-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
                         title={t("common.delete")}
                       >
-                        <Trash2 className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
+                        <Trash2 className="w-2 h-2 sm:w-2.5 sm:h-2.5 pointer-events-none" />
                       </button>
                     </div>
                   </motion.div>
