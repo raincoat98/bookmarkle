@@ -190,21 +190,20 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
       } else {
         console.log("✅ Auth callback fired: user logged out");
         // Firebase Auth가 null을 반환했지만, idToken이나 user가 있으면
-        // 익스텐션 새로고침 시 일시적으로 null이 될 수 있으므로 상태 유지
+        // extension에서 받은 인증 상태이므로 상태 유지 (Firebase Auth 재동기화 대기)
         const currentState = useAuthStore.getState();
         if (currentState.idToken || currentState.user) {
-          console.log(
-            "⚠️ Firebase Auth returned null but idToken/user exists, keeping current state (Firebase Auth 재동기화 대기 중)"
-          );
+          // Extension에서 받은 인증 상태가 있으면 유지
+          // Firebase Auth는 나중에 동기화될 수 있음 (예: 페이지 새로고침, 다른 탭에서 로그인 등)
+          // 이 경우 리스너를 정리하여 권한 오류를 방지하고,
+          // Firebase Auth가 동기화되면 onAuthStateChanged가 다시 호출되어 자동으로 재설정됨
 
-          // Firebase Auth가 재동기화될 때까지 Firestore 접근을 막기 위해
-          // 리스너를 정리하여 권한 오류를 방지
-          // onAuthStateChanged가 다시 호출되면 자동으로 재설정됨
+          // 리스너 정리는 조용히 처리 (로그 제거)
           try {
             const bookmarkStore = await import("./bookmarkStore");
             bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-          } catch (error) {
-            console.warn("북마크 리스너 정리 중 오류:", error);
+          } catch {
+            // 조용히 처리
           }
 
           try {
@@ -212,8 +211,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set) => ({
             subscriptionStore.useSubscriptionStore
               .getState()
               .cleanupAllListeners();
-          } catch (error) {
-            console.warn("구독 리스너 정리 중 오류:", error);
+          } catch {
+            // 조용히 처리
           }
 
           set({ loading: false });
