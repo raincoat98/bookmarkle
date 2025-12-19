@@ -176,8 +176,37 @@ function handleInternalMessage(msg, sender, sendResponse) {
       .then((authState) => {
         // 로그아웃 상태면 offscreen 값으로 덮어쓰지 않음
         if (!currentUser && !authState?.user) {
-          // 둘 다 null이면 정상 (로그아웃 상태 유지)
-          markOffscreenSynced(true);
+          // 둘 다 null이면 웹 탭에서 인증 상태 확인 (익스텐션 재설치 시나리오)
+          console.log(
+            "🔍 [background] Both background and offscreen are null, checking web tabs for auth state"
+          );
+          getAuthStateFromWebTabs()
+            .then((webAuthState) => {
+              if (webAuthState?.user && webAuthState?.idToken) {
+                // 웹에서 로그인한 상태면 동기화
+                console.log(
+                  "✅ [background] Found logged-in user in web tabs, syncing:",
+                  webAuthState.user.uid
+                );
+                processAuthPayload(webAuthState.user, {
+                  idToken: webAuthState.idToken,
+                  refreshToken: webAuthState.refreshToken,
+                });
+              } else {
+                // 웹에서도 로그아웃 상태면 정상 (로그아웃 상태 유지)
+                console.log(
+                  "✅ [background] Web tabs also show logout state, keeping logout"
+                );
+              }
+              markOffscreenSynced(true);
+            })
+            .catch((error) => {
+              console.warn(
+                "⚠️ Failed to get auth state from web tabs:",
+                error
+              );
+              markOffscreenSynced(true);
+            });
           return;
         }
 
@@ -581,6 +610,49 @@ function sendMessageToWebTabs(message) {
           // 탭이 응답하지 않을 수 있으므로 무시
         }
       });
+    });
+  });
+}
+
+async function getAuthStateFromWebTabs() {
+  return new Promise((resolve) => {
+    chrome.tabs.query({ url: WEB_URL_PATTERNS }, (tabs) => {
+      if (!tabs || tabs.length === 0) {
+        resolve(null);
+        return;
+      }
+
+      // 첫 번째 탭에서 인증 상태 요청
+      const tab = tabs[0];
+      if (typeof tab.id !== "number") {
+        resolve(null);
+        return;
+      }
+
+      chrome.tabs.sendMessage(
+        tab.id,
+        { type: "REQUEST_WEB_AUTH_STATE" },
+        (response) => {
+          if (chrome.runtime.lastError) {
+            console.warn(
+              "⚠️ Failed to request auth state from web tab:",
+              chrome.runtime.lastError.message
+            );
+            resolve(null);
+            return;
+          }
+
+          if (response?.ok && response?.payload?.user && response?.payload?.idToken) {
+            resolve({
+              user: response.payload.user,
+              idToken: response.payload.idToken,
+              refreshToken: response.payload.refreshToken || null,
+            });
+          } else {
+            resolve(null);
+          }
+        }
+      );
     });
   });
 }
