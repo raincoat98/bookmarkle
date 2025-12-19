@@ -222,7 +222,9 @@ export function initializeTokenMessageHandler() {
           : "null";
         const lastStateKey = lastProcessedExtensionState
           ? lastProcessedExtensionState.userId
-            ? `${lastProcessedExtensionState.userId}:${lastProcessedExtensionState.idToken?.slice(0, 20)}`
+            ? `${
+                lastProcessedExtensionState.userId
+              }:${lastProcessedExtensionState.idToken?.slice(0, 20)}`
             : "null"
           : null;
 
@@ -252,7 +254,7 @@ export function initializeTokenMessageHandler() {
             if (idToken) {
               authStore.setIdToken(idToken);
             }
-            
+
             // extension에서 받은 사용자 정보를 authStore에 저장
             // serializeUser로 직렬화된 객체이므로, User 타입으로 캐스팅
             authStore.setUser(extensionUser as User);
@@ -307,6 +309,18 @@ export function initializeTokenMessageHandler() {
           }
         } else {
           // extension에서 로그아웃 상태(null)를 보낸 경우
+          // 하지만 웹의 Firebase Auth가 여전히 로그인되어 있으면 로그아웃하지 않음
+          // (iframe/offscreen에서 로그아웃되어도 웹에서는 유지되어야 함)
+          const currentFirebaseUser = auth.currentUser;
+          if (currentFirebaseUser) {
+            console.log(
+              "ℹ️ [tokenMessageHandler] Extension sent null (logout), but Firebase Auth still has user, ignoring extension logout"
+            );
+            // Firebase Auth에 사용자가 있으면 extension의 로그아웃 상태를 무시
+            // 웹에서 직접 로그인한 상태를 유지
+            return;
+          }
+
           // 이미 로그아웃 상태면 중복 처리 방지 (웹에서 직접 로그아웃한 경우)
           if (authStore.user === null && authStore.idToken === null) {
             console.log(
