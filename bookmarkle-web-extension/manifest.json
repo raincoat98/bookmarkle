@@ -1,0 +1,53 @@
+{
+  "manifest_version": 3,
+  "name": "북마클",
+  "version": "1.0.0",
+  "description": "북마크를 한곳에서 관리하는 생산성 앱",
+  "permissions": ["tabs", "scripting", "offscreen", "storage"],
+  "host_permissions": [
+    "https://*.firebaseapp.com/*",
+    "https://*.googleapis.com/*",
+    "https://*.web.app/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["offscreen.html"],
+      "matches": [
+        "https://*.firebaseapp.com/*",
+        "https://*.web.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ]
+    }
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.firebaseapp.com/*",
+        "https://*.web.app/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
+      "js": ["content-script.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon16.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

@@ -39,6 +39,16 @@ echo -e "${NC}"
 # 프로젝트 파라미터 처리
 PROJECT="${1:-all}"
 
+# 사용 가능한 프로젝트 목록
+AVAILABLE_PROJECTS=("dashboard" "my-extension" "all")
+
+# 프로젝트명 검증
+if [[ ! " ${AVAILABLE_PROJECTS[@]} " =~ " ${PROJECT} " ]]; then
+    log_error "알 수 없는 프로젝트: $PROJECT"
+    log_info "사용 가능한 프로젝트: ${AVAILABLE_PROJECTS[*]}"
+    exit 1
+fi
+
 log_info "빌드 대상: $PROJECT"
 
 # 루트 디렉토리 저장
@@ -119,12 +129,12 @@ build_dashboard() {
 build_my_extension() {
     log_info "🧩 북마클 브라우저 확장 빌드 및 패키징..."
     
-    if [ ! -d "bookmarkle-browser-extension" ]; then
-        log_error "bookmarkle-browser-extension 디렉토리가 없습니다!"
+    if [ ! -d "bookmarkle-web-extension" ]; then
+        log_error "bookmarkle-web-extension 디렉토리가 없습니다!"
         return 1
     fi
     
-    cd bookmarkle-browser-extension
+    cd bookmarkle-web-extension
     
     # manifest.json 확인
     if [ ! -f "manifest.json" ]; then
@@ -146,13 +156,13 @@ build_my_extension() {
     fi
     
     # 필수 파일들 확인
-    REQUIRED_FILES=("background/index.js" "popup/index.html" "popup/scripts/main.js")
+    REQUIRED_FILES=("background.js" "popup.html" "popup.js" "content-script.js" "manifest.json")
     for file in "${REQUIRED_FILES[@]}"; do
         if [ ! -f "$file" ]; then
-            log_warning "권장 파일이 없습니다: $file"
+            log_warning "필수 파일이 없습니다: $file"
         else
-            # JavaScript 파일 문법 검증 (ES 모듈 파일은 제외 - esbuild로 번들링됨)
-            if [[ "$file" == *.js ]] && [[ "$file" != background/*.js ]] && command -v node &> /dev/null; then
+            # JavaScript 파일 문법 검증
+            if [[ "$file" == *.js ]] && command -v node &> /dev/null; then
                 if node -c "$file"; then
                     log_success "$file 문법 검증 완료"
                 else
@@ -160,51 +170,40 @@ build_my_extension() {
                     cd "$ROOT_DIR"
                     return 1
                 fi
-            elif [[ "$file" == background/*.js ]]; then
-                log_info "$file는 ES 모듈이므로 esbuild로 번들링 시 검증됩니다"
             fi
         fi
     done
 
-    # 백그라운드 스크립트 번들링
-    log_info "백그라운드 스크립트 번들링 중..."
-    if npm run bundle:background; then
-        log_success "백그라운드 스크립트 번들링 완료"
+    # Vite 빌드 실행
+    log_info "Vite 빌드 실행 중..."
+    if npm run build; then
+        log_success "Vite 빌드 완료"
     else
-        log_error "백그라운드 스크립트 번들링 실패"
+        log_error "Vite 빌드 실패"
         cd "$ROOT_DIR"
         return 1
     fi
 
     # 빌드 디렉토리 생성
-    BUILD_DIR="../build/bookmarkle-browser-extension"
+    BUILD_DIR="../build/bookmarkle-web-extension"
     rm -rf "$BUILD_DIR"
     mkdir -p "$BUILD_DIR"
     
-    # 파일들 복사 (불필요한 파일 제외, background 소스 파일은 제외하고 번들만 사용)
-    log_info "Extension 파일들을 빌드 디렉토리로 복사 중..."
-    rsync -av \
-        --exclude='*.DS_Store' \
-        --exclude='*.git*' \
-        --exclude='node_modules' \
-        --exclude='*.log' \
-        --exclude='.env' \
-        --exclude='.env.*' \
-        --exclude='*.env' \
-        --exclude='dist' \
-        --exclude='background' \
-        . "$BUILD_DIR/"
+    # Vite 빌드 결과(dist)를 빌드 디렉토리로 복사
+    log_info "Extension 빌드 파일들을 빌드 디렉토리로 복사 중..."
+    if [ -d "dist" ]; then
+        cp -r dist/* "$BUILD_DIR/"
+        log_success "빌드 파일 복사 완료"
+    else
+        log_error "dist 디렉토리를 찾을 수 없습니다"
+        cd "$ROOT_DIR"
+        return 1
+    fi
 
-    # 번들된 백그라운드 스크립트 복사
-    log_info "번들된 백그라운드 스크립트를 복사 중..."
-    mkdir -p "$BUILD_DIR/background"
-    cp dist/background.js "$BUILD_DIR/background/index.js"
-    log_success "번들된 파일 복사 완료: background/index.js"
-
-    # 환경 변수 치환 스크립트 실행
-    if [ -f "../bookmarkle-browser-extension/inject-config.sh" ]; then
-        log_info "환경 변수 치환(inject-config.sh) 실행 중..."
-        if ../bookmarkle-browser-extension/inject-config.sh "$BUILD_DIR"; then
+    # 환경 변수 치환 스크립트 실행 (build-config.js)
+    if [ -f "build-config.js" ]; then
+        log_info "환경 변수 치환(build-config.js) 실행 중..."
+        if node build-config.js; then
             log_success "환경 변수 치환 완료"
         else
             log_error "환경 변수 치환 실패"
@@ -212,7 +211,7 @@ build_my_extension() {
             return 1
         fi
     else
-        log_warning "inject-config.sh 스크립트를 찾을 수 없습니다."
+        log_warning "build-config.js 스크립트를 찾을 수 없습니다."
     fi
 
     # .env 파일이 복사되었는지 확인하고 삭제
@@ -222,31 +221,19 @@ build_my_extension() {
         log_success ".env 파일 제거 완료"
     fi
     
-
-    # _locales 폴더가 제대로 복사되었는지 확인
-    if [ -d "$BUILD_DIR/_locales" ]; then
-        log_success "_locales 폴더 복사 확인 완료"
-    elif [ -d "_locales" ]; then
-        log_info "_locales 폴더를 별도로 복사 중..."
-        cp -r _locales "$BUILD_DIR/"
-        log_success "_locales 폴더 복사 완료"
-    else
-        log_warning "_locales 폴더를 찾을 수 없습니다"
-    fi
-    
     # zip 파일로 패키징
     cd ../build
-    EXTENSION_ZIP="bookmarkle-browser-extension-$(date '+%Y%m%d-%H%M%S').zip"
+    EXTENSION_ZIP="bookmarkle-web-extension-$(date '+%Y%m%d-%H%M%S').zip"
     log_info "확장 프로그램을 패키징 중: $EXTENSION_ZIP"
     
-    zip -r "$EXTENSION_ZIP" bookmarkle-browser-extension/ > /dev/null
+    zip -r "$EXTENSION_ZIP" bookmarkle-web-extension/ > /dev/null
     
     if [ -f "$EXTENSION_ZIP" ]; then
         PACKAGE_SIZE=$(du -sh "$EXTENSION_ZIP" | cut -f1)
         log_success "북마클 브라우저 확장 빌드 완료!"
         echo -e "${GREEN}📦 패키지 파일: ${BLUE}$(pwd)/$EXTENSION_ZIP${NC}"
         echo -e "${GREEN}📏 패키지 크기: ${BLUE}$PACKAGE_SIZE${NC}"
-        echo -e "${GREEN}📁 빌드 디렉토리: ${BLUE}$(pwd)/bookmarkle-browser-extension${NC}"
+        echo -e "${GREEN}📁 빌드 디렉토리: ${BLUE}$(pwd)/bookmarkle-web-extension${NC}"
         
         log_info "Chrome 웹 스토어 개발자 대시보드에서 업로드하세요"
     else
@@ -275,11 +262,15 @@ case $PROJECT in
 
         if build_dashboard; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            log_warning "대시보드 빌드 실패 또는 건너뜀"
         fi
 
         echo ""
         if build_my_extension; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            log_warning "Extension 빌드 실패 또는 건너뜀"
         fi
         
         echo ""
@@ -293,8 +284,8 @@ case $PROJECT in
         echo ""
         echo -e "${BLUE}📋 빌드 결과 요약:${NC}"
         [ -d "bookmarkle-web-dashboard/dist" ] && echo "• 북마클 웹 대시보드: bookmarkle-web-dashboard/dist/ (호스팅 준비됨)"
-        if compgen -G "build/bookmarkle-browser-extension-*.zip" > /dev/null; then
-            echo "• 북마클 브라우저 확장: build/bookmarkle-browser-extension-*.zip (스토어 업로드 준비됨)"
+        if compgen -G "build/bookmarkle-web-extension-*.zip" > /dev/null; then
+            echo "• 북마클 브라우저 확장: build/bookmarkle-web-extension-*.zip (스토어 업로드 준비됨)"
         fi
         ;;
     *)

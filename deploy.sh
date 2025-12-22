@@ -116,14 +116,14 @@ deploy_dashboard() {
 
 # 북마클 브라우저 확장 패키징 함수
 deploy_my_extension() {
-    log_info "🧩 북마클 브라우저 확장 패키징..."
+    log_info "🧩 북마클 브라우저 확장 빌드 및 패키징..."
     
-    if [ ! -d "bookmarkle-browser-extension" ]; then
-        log_error "bookmarkle-browser-extension 디렉토리가 없습니다!"
+    if [ ! -d "bookmarkle-web-extension" ]; then
+        log_error "bookmarkle-web-extension 디렉토리가 없습니다!"
         return 1
     fi
     
-    cd bookmarkle-browser-extension
+    cd bookmarkle-web-extension
     
     # manifest.json 확인
     if [ ! -f "manifest.json" ]; then
@@ -132,28 +132,72 @@ deploy_my_extension() {
         return 1
     fi
     
-    # 필수 파일들 확인
-    REQUIRED_FILES=("background/index.js" "popup/index.html" "popup/scripts/main.js")
-    for file in "${REQUIRED_FILES[@]}"; do
-        if [ ! -f "$file" ]; then
-            log_warning "권장 파일이 없습니다: $file"
-        fi
-    done
+    # package.json 확인
+    if [ ! -f "package.json" ]; then
+        log_error "package.json이 없습니다!"
+        cd "$ROOT_DIR"
+        return 1
+    fi
+    
+    # 의존성 설치
+    if [ ! -d "node_modules" ]; then
+        log_info "의존성 설치 중..."
+        npm install
+    fi
+    
+    # Vite 빌드 실행
+    log_info "Vite 빌드 실행 중..."
+    if npm run build; then
+        log_success "Vite 빌드 완료"
+    else
+        log_error "Vite 빌드 실패"
+        cd "$ROOT_DIR"
+        return 1
+    fi
     
     # build 디렉토리 생성
-    BUILD_DIR="../build"
+    BUILD_DIR="../build/bookmarkle-web-extension"
+    rm -rf "$BUILD_DIR"
     mkdir -p "$BUILD_DIR"
     
-    # zip 파일로 패키징
-    EXTENSION_ZIP="$BUILD_DIR/bookmarkle-browser-extension-$(date '+%Y%m%d-%H%M%S').zip"
-    log_info "확장 프로그램을 패키징 중: $(basename "$EXTENSION_ZIP")"
+    # Vite 빌드 결과(dist)를 빌드 디렉토리로 복사
+    log_info "Extension 빌드 파일들을 빌드 디렉토리로 복사 중..."
+    if [ -d "dist" ]; then
+        cp -r dist/* "$BUILD_DIR/"
+        log_success "빌드 파일 복사 완료"
+    else
+        log_error "dist 디렉토리를 찾을 수 없습니다"
+        cd "$ROOT_DIR"
+        return 1
+    fi
+
+    # 환경 변수 치환 스크립트 실행 (build-config.js)
+    if [ -f "build-config.js" ]; then
+        log_info "환경 변수 치환(build-config.js) 실행 중..."
+        if node build-config.js; then
+            log_success "환경 변수 치환 완료"
+        else
+            log_error "환경 변수 치환 실패"
+            cd "$ROOT_DIR"
+            return 1
+        fi
+    else
+        log_warning "build-config.js 스크립트를 찾을 수 없습니다."
+    fi
     
-    zip -r "$EXTENSION_ZIP" . -x "*.DS_Store" "*.git*" "node_modules/*"
+    # zip 파일로 패키징
+    cd ../build
+    EXTENSION_ZIP="bookmarkle-web-extension-$(date '+%Y%m%d-%H%M%S').zip"
+    log_info "확장 프로그램을 패키징 중: $EXTENSION_ZIP"
+    
+    zip -r "$EXTENSION_ZIP" bookmarkle-web-extension/ > /dev/null
     
     if [ -f "$EXTENSION_ZIP" ]; then
+        PACKAGE_SIZE=$(du -sh "$EXTENSION_ZIP" | cut -f1)
         log_success "북마클 브라우저 확장 패키징 완료!"
-        echo -e "${GREEN}📦 패키지 파일: ${BLUE}$EXTENSION_ZIP${NC}"
-        echo -e "${GREEN}📁 빌드 디렉토리: ${BLUE}$BUILD_DIR${NC}"
+        echo -e "${GREEN}📦 패키지 파일: ${BLUE}$(pwd)/$EXTENSION_ZIP${NC}"
+        echo -e "${GREEN}📏 패키지 크기: ${BLUE}$PACKAGE_SIZE${NC}"
+        echo -e "${GREEN}📁 빌드 디렉토리: ${BLUE}$(pwd)/bookmarkle-web-extension${NC}"
         log_info "Chrome 웹 스토어 개발자 대시보드에서 업로드하세요"
     else
         log_error "북마클 브라우저 확장 패키징 실패!"

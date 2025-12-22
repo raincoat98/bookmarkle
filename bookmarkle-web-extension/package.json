@@ -1,0 +1,17 @@
+{
+  "name": "bookmarkle-web-extension",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "북마클 Chrome Extension",
+  "scripts": {
+    "build": "vite build && node build-config.js"
+  },
+  "dependencies": {
+    "lucide": "^0.473.0"
+  },
+  "devDependencies": {
+    "dotenv": "^16.3.1",
+    "terser": "^5.44.1",
+    "vite": "^5.0.0"
+  }
+}

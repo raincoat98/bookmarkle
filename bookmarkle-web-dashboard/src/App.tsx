@@ -35,7 +35,6 @@ import {
   useSubscriptionStore,
   initializeTheme,
 } from "./stores";
-import { initializeTokenMessageHandler } from "./utils/tokenMessageHandler";
 import { auth } from "./firebase";
 
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
@@ -101,6 +100,9 @@ function AppRoutes() {
         {/* 공개 라우트 - 모든 사용자 접근 가능 */}
         <Route path="/about" element={<LandingPage />} />
 
+        {/* SignIn Popup 라우트 (Extension에서 사용) */}
+        <Route path="/signin-popup" element={<LoginScreen />} />
+
         {/* 로그인 필요 라우트 */}
         {!user ? (
           <>
@@ -164,7 +166,7 @@ function AppRoutes() {
 }
 
 function App() {
-  const { user, loading, initializeAuth } = useAuthStore();
+  const { user, loading, initializeAuth, logout } = useAuthStore();
   const { rawBookmarks, cleanupOldTrash } = useBookmarkStore();
   const { collections } = useCollectionStore();
   const { subscribeToSubscription } = useSubscriptionStore();
@@ -179,16 +181,32 @@ function App() {
     const unsubscribeAuth = initializeAuth();
     const unsubscribeTheme = initializeTheme();
 
-    // Extension offscreen에 주기적으로 토큰 전송
-    const unsubscribeToken = initializeTokenMessageHandler();
-
     return () => {
       unsubscribeAuth();
       unsubscribeTheme();
-      unsubscribeToken();
       authInitialized.current = false; // cleanup 시 리셋
     };
   }, [initializeAuth]); // ESLint 경고 해결
+
+  // Extension 로그아웃 메시지 수신 처리
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      // 보안: 동일 출처에서만 수신
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+
+      if (event.data?.type === "EXTENSION_LOGOUT") {
+        console.log("🔓 Extension으로부터 로그아웃 메시지 수신");
+        logout().catch((error) => {
+          console.error("Extension 로그아웃 처리 중 오류:", error);
+        });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [logout]);
 
   useEffect(() => {
     // user가 null이면 리스너 정리는 authStore의 onAuthStateChanged에서 처리됨

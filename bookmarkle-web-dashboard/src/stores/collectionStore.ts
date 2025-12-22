@@ -13,50 +13,6 @@ import {
 import { db } from "../firebase";
 import type { Collection, CollectionFormData } from "../types";
 
-let lastCollectionsBroadcastSignature = "";
-
-function getCollectionsSignature(collections: Collection[]): string {
-  return collections
-    .map((collection) => {
-      const updatedAt =
-        collection.updatedAt instanceof Date
-          ? collection.updatedAt.getTime()
-          : typeof collection.updatedAt === "number"
-          ? collection.updatedAt
-          : 0;
-      return [
-        collection.id,
-        collection.name,
-        collection.icon ?? "",
-        collection.parentId ?? "",
-        collection.isPinned ? "1" : "0",
-        updatedAt,
-      ].join("|");
-    })
-    .join(";");
-}
-
-const notifyExtensionCollectionsUpdated = (collections: Collection[]) => {
-  if (typeof window === "undefined") return;
-  const signature = getCollectionsSignature(collections);
-  if (signature === lastCollectionsBroadcastSignature) {
-    return;
-  }
-  lastCollectionsBroadcastSignature = signature;
-
-  try {
-    window.postMessage(
-      {
-        source: "bookmarkhub",
-        type: "COLLECTIONS_UPDATED",
-      },
-      window.origin
-    );
-  } catch (error) {
-    console.warn("컬렉션 동기화 브로드캐스트 실패:", error);
-  }
-};
-
 interface CollectionState {
   collections: Collection[];
   loading: boolean;
@@ -173,7 +129,6 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
         set((state) => ({
           collections: [newCollection, ...state.collections],
         }));
-        notifyExtensionCollectionsUpdated(get().collections);
         return docRef.id;
       } catch (error) {
         console.error("Error adding collection:", error);
@@ -203,7 +158,6 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
               : collection
           ),
         }));
-        notifyExtensionCollectionsUpdated(get().collections);
       } catch (error) {
         console.error("Error updating collection:", error);
         throw error;
@@ -253,7 +207,6 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
             (collection) => collection.id !== collectionId
           ),
         }));
-        notifyExtensionCollectionsUpdated(get().collections);
       } catch (error) {
         console.error("Error deleting collection:", error);
         throw error;
@@ -312,7 +265,6 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
               return a.name.localeCompare(b.name);
             }),
         }));
-        notifyExtensionCollectionsUpdated(get().collections);
       } catch (error) {
         console.error("Error setting pin:", error);
         throw error;

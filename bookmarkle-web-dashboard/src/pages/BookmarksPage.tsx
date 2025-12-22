@@ -33,11 +33,10 @@ import { useShallow } from "zustand/react/shallow";
 import { auth } from "../firebase";
 
 export const BookmarksPage: React.FC = () => {
-  const { user, isActive, isActiveLoading } = useAuthStore(
+  const { user, isActive } = useAuthStore(
     useShallow((state) => ({
       user: state.user,
       isActive: state.isActive,
-      isActiveLoading: state.isActiveLoading,
     }))
   );
   const { plan, limits } = useSubscriptionStore(
@@ -594,7 +593,7 @@ export const BookmarksPage: React.FC = () => {
   }
 
   // 비활성화된 사용자 체크
-  if (!isActiveLoading && isActive === false) {
+  if (isActive === false) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <DisabledUserMessage />
