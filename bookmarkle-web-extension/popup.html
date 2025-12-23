@@ -179,13 +179,26 @@
         </footer>
       </div>
 
-      <div id="loginButtons" class="login-controls" style="display: flex">
-        <button id="loginGoogleBtn" class="secondary-btn">
-          Google로 로그인
+      <div id="loginButtons" class="login-controls" style="display: none">
+        <button id="loginEmailBtn" class="login-btn">
+          로그인
         </button>
-        <button id="loginEmailBtn" class="secondary-btn">
-          이메일로 로그인
-        </button>
+        <div class="login-info">
+          <ul class="login-info-list">
+            <li>북마크는 Firebase에 안전하게 저장됩니다</li>
+            <li>여러 기기에서 동기화됩니다</li>
+            <li>개인정보는 보호됩니다</li>
+          </ul>
+          <div class="login-footer">
+            <div class="privacy-info">
+              <span style="margin-right: 4px">🔒</span>
+              <span>개인정보처리방침</span>
+            </div>
+            <div class="contact-info">
+              문의: <a href="mailto:ww57403@gmail.com">ww57403@gmail.com</a>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div id="loading" class="loading" style="display: none">로그인 중...</div>
@@ -217,15 +230,25 @@
             "
             >아이콘 (선택사항)</label
           >
-          <input
-            type="text"
-            id="collectionModalIconInput"
-            class="collection-modal-input"
-            placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
-            autocomplete="off"
-            maxlength="2"
-            style="margin-bottom: 0"
-          />
+          <div style="display: flex; gap: 8px; align-items: center">
+            <input
+              type="text"
+              id="collectionModalIconInput"
+              class="collection-modal-input"
+              placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
+              autocomplete="off"
+              maxlength="2"
+              style="margin-bottom: 0; flex: 1"
+            />
+            <button
+              id="emojiPickerBtn"
+              type="button"
+              class="emoji-picker-btn"
+              title="이모지 선택"
+            >
+              😀
+            </button>
+          </div>
         </div>
         <div>
           <label
@@ -260,6 +283,11 @@
           </button>
         </div>
       </div>
+    </div>
+
+    <!-- 이모지 Picker 모달 -->
+    <div id="emojiPickerModal" class="emoji-picker-modal">
+      <div id="emojiPickerContainer" class="emoji-picker-container"></div>
     </div>
 
     <script src="lucide.js"></script>

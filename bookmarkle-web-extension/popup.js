@@ -1,3 +1,7 @@
+// emoji-mart import
+import { Picker } from "emoji-mart";
+import data from "@emoji-mart/data";
+
 // lucide.js를 사용하여 data-lucide 속성의 아이콘을 자동 렌더링
 function initializeIcons() {
   if (window.lucide && window.lucide.createIcons) {
@@ -15,13 +19,11 @@ function reinitializeLucideIcons() {
   initializeIcons();
 }
 
-const COLLECTION_MANAGE_URL = "https://bookmarkle.app/dashboard/collections";
 const SUPPORT_URL = "https://bookmarkle.app/support";
 const BUG_REPORT_URL =
   "https://github.com/raincoat98/bookmakle/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen";
 
 const loginButtons = document.getElementById("loginButtons");
-const loginGoogleBtn = document.getElementById("loginGoogleBtn");
 const loginEmailBtn = document.getElementById("loginEmailBtn");
 const loggedInContent = document.getElementById("loggedInContent");
 const userHeaderDiv = document.getElementById("userHeader");
@@ -61,6 +63,9 @@ const collectionModalInput = document.getElementById("collectionModalInput");
 const collectionModalIconInput = document.getElementById(
   "collectionModalIconInput"
 );
+const emojiPickerBtn = document.getElementById("emojiPickerBtn");
+const emojiPickerModal = document.getElementById("emojiPickerModal");
+const emojiPickerContainer = document.getElementById("emojiPickerContainer");
 const collectionModalCloseBtn = document.getElementById(
   "collectionModalCloseBtn"
 );
@@ -285,6 +290,60 @@ function clearCollection() {
   hideCollectionDropdown();
 }
 
+let emojiPickerInstance = null;
+
+async function initializeEmojiPicker() {
+  if (!emojiPickerContainer || emojiPickerInstance) return;
+
+  try {
+    emojiPickerInstance = new Picker({
+      data: data,
+      onEmojiSelect: (emoji) => {
+        if (collectionModalIconInput) {
+          collectionModalIconInput.value = emoji.native;
+          collectionModalIconInput.dispatchEvent(new Event("input"));
+        }
+        // 이모지 선택 후 picker 숨기기
+        hideEmojiPicker();
+      },
+      onClickOutside: () => {
+        hideEmojiPicker();
+      },
+      locale: "ko",
+      theme: "dark",
+      previewPosition: "none",
+      skinTonePosition: "none",
+    });
+
+    emojiPickerContainer.appendChild(emojiPickerInstance);
+  } catch (error) {
+    console.error("이모지 picker 초기화 실패:", error);
+  }
+}
+
+async function showEmojiPicker() {
+  if (!emojiPickerModal || !emojiPickerContainer) return;
+
+  if (!emojiPickerInstance) {
+    await initializeEmojiPicker();
+  }
+
+  if (emojiPickerModal) {
+    const isVisible = emojiPickerModal.classList.contains("show");
+    if (isVisible) {
+      emojiPickerModal.classList.remove("show");
+    } else {
+      emojiPickerModal.classList.add("show");
+    }
+  }
+}
+
+function hideEmojiPicker() {
+  if (emojiPickerModal) {
+    emojiPickerModal.classList.remove("show");
+  }
+}
+
 function showCollectionModal(initialName = "") {
   if (collectionModal) {
     if (collectionModalInput) {
@@ -298,6 +357,8 @@ function showCollectionModal(initialName = "") {
     if (collectionDropdown) {
       collectionDropdown.style.display = "none";
     }
+    // 이모지 picker 숨기기
+    hideEmojiPicker();
   }
 }
 
@@ -310,6 +371,8 @@ function closeCollectionModal() {
     if (collectionModalIconInput) {
       collectionModalIconInput.value = "";
     }
+    // 이모지 picker 숨기기
+    hideEmojiPicker();
   }
 }
 
@@ -320,8 +383,8 @@ async function createCollectionFromModal() {
     return;
   }
 
-  // 아이콘 가져오기 (선택사항)
-  const icon = collectionModalIconInput?.value?.trim() || "";
+  // 아이콘 가져오기 (선택사항, 없으면 기본값 "Folder")
+  const icon = collectionModalIconInput?.value?.trim() || "Folder";
 
   // 중복 확인
   const existingCollection = collections.find(
@@ -570,29 +633,23 @@ function openExternalLink(url) {
   chrome.tabs.create({ url });
 }
 
-function handleLogin(mode) {
-  const loginBtn = mode === "google" ? loginGoogleBtn : loginEmailBtn;
-  if (!loginBtn) return;
+function handleLogin() {
+  if (!loginEmailBtn) return;
 
-  loginBtn.disabled = true;
-  if (mode === "google" && loginEmailBtn) loginEmailBtn.disabled = true;
-  if (mode === "email" && loginGoogleBtn) loginGoogleBtn.disabled = true;
+  loginEmailBtn.disabled = true;
   if (loadingDiv) {
     loadingDiv.style.display = "block";
   }
   updateStatus("로그인 페이지를 여는 중...", "neutral");
 
-  const messageType = mode === "google" ? "LOGIN_GOOGLE" : "LOGIN_EMAIL";
-  chrome.runtime.sendMessage({ type: messageType }, () => {
+  chrome.runtime.sendMessage({ type: "LOGIN_EMAIL" }, () => {
     if (chrome.runtime.lastError) {
       console.error("로그인 메시지 오류:", chrome.runtime.lastError);
       updateStatus("로그인 요청 중 오류가 발생했습니다.", "error");
       if (loadingDiv) {
         loadingDiv.style.display = "none";
       }
-      loginBtn.disabled = false;
-      if (mode === "google" && loginEmailBtn) loginEmailBtn.disabled = false;
-      if (mode === "email" && loginGoogleBtn) loginGoogleBtn.disabled = false;
+      loginEmailBtn.disabled = false;
     } else {
       updateStatus(
         "로그인 페이지가 열렸습니다. 새 탭에서 진행해주세요.",
@@ -711,7 +768,6 @@ function updateLoginUI(isLoggedIn, user = null) {
       loadingDiv.style.display = "none";
     }
     displayUserInfo(user);
-    updateStatus("로그인 되어 있습니다.", "success");
     // loggedInContent가 표시된 후에 데이터 로드 (약간의 지연)
     setTimeout(() => {
       fetchCollectionsList();
@@ -758,8 +814,7 @@ document.addEventListener("click", (event) => {
   }
 });
 
-loginGoogleBtn?.addEventListener("click", () => handleLogin("google"));
-loginEmailBtn?.addEventListener("click", () => handleLogin("email"));
+loginEmailBtn?.addEventListener("click", () => handleLogin());
 menuBtn?.addEventListener("click", (event) => {
   event.stopPropagation();
   if (dropdownMenu) {
@@ -836,17 +891,14 @@ collectionModalIconInput?.addEventListener("input", (event) => {
 });
 
 collectionModalIconInput?.addEventListener("keydown", (event) => {
-  // 일반 문자 키 입력 차단 (이모지는 composition 이벤트로 처리됨)
-  if (event.key.length === 1) {
+  // 일반 문자 키 입력 차단 (이모지는 허용)
+  // input 이벤트에서 필터링하므로 keydown에서는 완전히 차단하지 않음
+  if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
     const keyCode = event.key.charCodeAt(0);
-    // ASCII 문자 또는 한글 범위인 경우 차단
+    // ASCII 문자만 차단 (한글과 이모지는 input 이벤트에서 처리)
     const isASCII = /[\x00-\x7F]/.test(event.key);
-    const isHangul =
-      (keyCode >= 0xac00 && keyCode <= 0xd7a3) || // 완성형 한글
-      (keyCode >= 0x1100 && keyCode <= 0x11ff) || // 한글 자모
-      (keyCode >= 0x3130 && keyCode <= 0x318f); // 호환용 한글 자모
 
-    if (isASCII || isHangul) {
+    if (isASCII) {
       // Backspace, Delete, Arrow keys 등은 허용
       if (
         ![
@@ -864,25 +916,19 @@ collectionModalIconInput?.addEventListener("keydown", (event) => {
   }
 });
 
-// composition 이벤트로 한글 입력 차단
-collectionModalIconInput?.addEventListener("compositionstart", (event) => {
-  event.preventDefault();
+// composition 이벤트는 이모지 입력을 위해 허용
+// input 이벤트에서 한글과 ASCII를 필터링하므로 composition 이벤트는 방해하지 않음
+
+// 이모지 picker 버튼 이벤트
+emojiPickerBtn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  showEmojiPicker();
 });
 
-collectionModalIconInput?.addEventListener("compositionupdate", (event) => {
-  event.preventDefault();
-});
-
-collectionModalIconInput?.addEventListener("compositionend", (event) => {
-  event.preventDefault();
-  // 입력된 한글 제거
-  if (collectionModalIconInput) {
-    const value = collectionModalIconInput.value;
-    const cleaned = value
-      .replace(/[\uAC00-\uD7A3]/g, "")
-      .replace(/[\u1100-\u11FF]/g, "")
-      .replace(/[\u3130-\u318F]/g, "");
-    collectionModalIconInput.value = cleaned;
+// 이모지 picker 모달 외부 클릭 시 닫기
+emojiPickerModal?.addEventListener("click", (event) => {
+  if (event.target === emojiPickerModal) {
+    hideEmojiPicker();
   }
 });
 
