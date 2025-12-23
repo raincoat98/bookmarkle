@@ -28,7 +28,45 @@ async function refreshIdTokenWithRefreshToken() {
   try {
     console.log("🔐 Refresh Token으로 ID Token 갱신 시도");
 
-    const url = "https://securetoken.googleapis.com/v1/token";
+    // API 키 상태 확인 (디버깅용)
+    const apiKeyStatus = {
+      exists: !!FIREBASE_API_KEY,
+      type: typeof FIREBASE_API_KEY,
+      length: FIREBASE_API_KEY?.length || 0,
+      isEmpty:
+        !FIREBASE_API_KEY ||
+        (typeof FIREBASE_API_KEY === "string" &&
+          FIREBASE_API_KEY.trim() === ""),
+      isPlaceholder: FIREBASE_API_KEY === "FIREBASE_API_KEY_PLACEHOLDER",
+      preview:
+        FIREBASE_API_KEY && typeof FIREBASE_API_KEY === "string"
+          ? `${FIREBASE_API_KEY.substring(0, 15)}...`
+          : "없음",
+    };
+    console.log(
+      "🔐 FIREBASE_API_KEY 상태:",
+      JSON.stringify(apiKeyStatus, null, 2)
+    );
+
+    // Firebase securetoken API는 API 키가 필요합니다
+    // API 키 유효성 검사: 길이가 20자 이상이고 "AIza"로 시작하는지 확인
+    const isValidApiKey =
+      FIREBASE_API_KEY &&
+      typeof FIREBASE_API_KEY === "string" &&
+      FIREBASE_API_KEY.trim().length >= 20 &&
+      FIREBASE_API_KEY.startsWith("AIza");
+
+    if (!isValidApiKey) {
+      console.error("🔐 Firebase API 키가 유효하지 않음", {
+        hasKey: !!FIREBASE_API_KEY,
+        type: typeof FIREBASE_API_KEY,
+        length: FIREBASE_API_KEY?.length || 0,
+        startsWithAIza: FIREBASE_API_KEY?.startsWith?.("AIza") || false,
+      });
+      return null;
+    }
+
+    const url = `https://securetoken.googleapis.com/v1/token?key=${FIREBASE_API_KEY}`;
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -41,29 +79,58 @@ async function refreshIdTokenWithRefreshToken() {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error("🔐 토큰 갱신 실패:", error);
-      throw new Error(error.error_description || "토큰 갱신 실패");
+      let errorMessage = "토큰 갱신 실패";
+      try {
+        const error = await response.json();
+        console.error("🔐 토큰 갱신 실패:", JSON.stringify(error, null, 2));
+        errorMessage =
+          error.error?.message || error.error_description || errorMessage;
+      } catch (e) {
+        console.error(
+          "🔐 토큰 갱신 실패 (응답 파싱 불가):",
+          response.status,
+          response.statusText
+        );
+        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      }
+      throw new Error(errorMessage);
     }
 
     const data = await response.json();
     const newIdToken = data.id_token;
+    const newRefreshToken = data.refresh_token; // 새로운 refresh token도 받을 수 있음
 
     if (newIdToken) {
       console.log("✅ ID Token 갱신 완료 (Refresh Token 사용)");
       currentIdToken = newIdToken;
 
+      // 새로운 refresh token이 있으면 업데이트
+      if (newRefreshToken) {
+        currentRefreshToken = newRefreshToken;
+        console.log("✅ Refresh Token도 업데이트됨");
+      }
+
       // storage에도 저장
       try {
-        await chrome.storage.local.set({ idToken: newIdToken });
+        const storageData = { idToken: newIdToken };
+        if (newRefreshToken) {
+          storageData.refreshToken = newRefreshToken;
+        }
+        await chrome.storage.local.set(storageData);
       } catch (e) {
         console.warn("⚠️ 갱신된 토큰 저장 실패:", e);
       }
 
       return newIdToken;
+    } else {
+      console.error("🔐 응답에 id_token이 없음:", data);
+      return null;
     }
   } catch (error) {
-    console.error("🔐 Refresh Token 기반 토큰 갱신 실패:", error);
+    console.error(
+      "🔐 Refresh Token 기반 토큰 갱신 실패:",
+      error.message || error
+    );
     return null;
   }
 }
@@ -77,12 +144,13 @@ async function getRefreshIdTokenFromWeb() {
       // Content Script를 통해 토큰 요청
       chrome.tabs.query({}, (tabs) => {
         let tokenReceived = false;
-        let tabsToTry = tabs.filter(tab =>
-          tab.url &&
-          (tab.url.includes("firebase") ||
-           tab.url.includes("localhost") ||
-           tab.url.includes("127.0.0.1") ||
-           tab.url.includes("bookmarkle.app"))
+        let tabsToTry = tabs.filter(
+          (tab) =>
+            tab.url &&
+            (tab.url.includes("firebase") ||
+              tab.url.includes("localhost") ||
+              tab.url.includes("127.0.0.1") ||
+              tab.url.includes("bookmarkle.app"))
         );
 
         if (tabsToTry.length === 0) {
@@ -102,7 +170,10 @@ async function getRefreshIdTokenFromWeb() {
             { type: "TOKEN_REQUEST" },
             (response) => {
               if (chrome.runtime.lastError) {
-                console.warn(`🔐 탭 ${tab.id}에서 토큰 요청 실패:`, chrome.runtime.lastError.message);
+                console.warn(
+                  `🔐 탭 ${tab.id}에서 토큰 요청 실패:`,
+                  chrome.runtime.lastError.message
+                );
               } else {
                 console.log(`🔐 탭 ${tab.id}에 토큰 요청 전송`);
               }
@@ -145,7 +216,11 @@ function sendAuthError(error) {
 // 저장된 사용자 정보 및 토큰 복원
 async function restoreUserInfo() {
   try {
-    const stored = await chrome.storage.local.get(["user", "idToken", "refreshToken"]);
+    const stored = await chrome.storage.local.get([
+      "user",
+      "idToken",
+      "refreshToken",
+    ]);
 
     // User 정보 복원
     if (stored?.user) {
@@ -194,13 +269,14 @@ async function restoreUserInfo() {
 
 // ===== Firestore REST API 함수 =====
 
-// Firestore 쿼리 실행 (WHERE 절)
+// Firestore 쿼리 실행 (WHERE 절) - 토큰 만료 시 자동 갱신 및 재시도
 async function runFirestoreQuery(
   collectionId,
   fieldPath,
   operator,
   value,
-  idToken
+  idToken,
+  retryOnAuthError = true
 ) {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents:runQuery`;
@@ -227,8 +303,38 @@ async function runFirestoreQuery(
       body: JSON.stringify(body),
     });
 
+    // 401 Unauthorized 오류 발생 시 토큰 갱신 후 재시도
+    if (!response.ok && response.status === 401 && retryOnAuthError) {
+      console.log("🔐 401 오류 감지, 토큰 갱신 후 재시도");
+
+      // 1단계: Refresh Token으로 갱신
+      let refreshedToken = await refreshIdTokenWithRefreshToken();
+
+      // 2단계: 실패하면 웹 탭에서 요청
+      if (!refreshedToken) {
+        console.log("⚠️ Refresh Token 갱신 실패, 웹 탭에서 요청 시도");
+        refreshedToken = await getRefreshIdTokenFromWeb();
+      }
+
+      if (refreshedToken) {
+        currentIdToken = refreshedToken;
+        console.log("✅ 토큰 갱신 완료, API 재시도");
+        // 재시도 (무한 루프 방지를 위해 retryOnAuthError를 false로)
+        return runFirestoreQuery(
+          collectionId,
+          fieldPath,
+          operator,
+          value,
+          refreshedToken,
+          false
+        );
+      } else {
+        throw new Error("토큰 갱신 실패. 다시 로그인해주세요.");
+      }
+    }
+
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       throw new Error(
         `Firestore API 오류: ${errorData.error?.message || response.statusText}`
       );
@@ -242,17 +348,34 @@ async function runFirestoreQuery(
   }
 }
 
-// Firestore 문서 추가
-async function addFirestoreDocument(collectionId, documentData, idToken) {
+// Firestore 문서 추가 - 토큰 만료 시 자동 갱신 및 재시도
+async function addFirestoreDocument(
+  collectionId,
+  documentData,
+  idToken,
+  retryOnAuthError = true
+) {
   try {
     const url = `https://firestore.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/databases/(default)/documents/${collectionId}`;
 
     // Firestore API용 데이터 포맷 변환
     const firestoreData = {};
     for (const [key, value] of Object.entries(documentData)) {
+      // undefined 값은 건너뛰기
+      if (value === undefined) {
+        continue;
+      }
+
       if (value === null) {
         firestoreData[key] = { nullValue: null };
+      } else if (value instanceof Date) {
+        // Date 객체를 Firestore Timestamp로 변환
+        firestoreData[key] = {
+          timestampValue: value.toISOString(),
+        };
       } else if (typeof value === "string") {
+        // 빈 문자열도 명시적으로 포함 (description 필드 등)
+        // Firestore는 빈 문자열을 저장할 수 있음
         firestoreData[key] = { stringValue: value };
       } else if (typeof value === "number") {
         firestoreData[key] = { integerValue: value.toString() };
@@ -272,6 +395,19 @@ async function addFirestoreDocument(collectionId, documentData, idToken) {
       }
     }
 
+    // 디버깅: description 필드가 포함되었는지 확인
+    if (
+      collectionId === "collections" &&
+      documentData.description !== undefined
+    ) {
+      console.log("📝 description 필드 포함 여부:", {
+        inDocumentData: "description" in documentData,
+        value: documentData.description,
+        inFirestoreData: "description" in firestoreData,
+        firestoreValue: firestoreData.description,
+      });
+    }
+
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -283,8 +419,36 @@ async function addFirestoreDocument(collectionId, documentData, idToken) {
       }),
     });
 
+    // 401 Unauthorized 오류 발생 시 토큰 갱신 후 재시도
+    if (!response.ok && response.status === 401 && retryOnAuthError) {
+      console.log("🔐 401 오류 감지, 토큰 갱신 후 재시도");
+
+      // 1단계: Refresh Token으로 갱신
+      let refreshedToken = await refreshIdTokenWithRefreshToken();
+
+      // 2단계: 실패하면 웹 탭에서 요청
+      if (!refreshedToken) {
+        console.log("⚠️ Refresh Token 갱신 실패, 웹 탭에서 요청 시도");
+        refreshedToken = await getRefreshIdTokenFromWeb();
+      }
+
+      if (refreshedToken) {
+        currentIdToken = refreshedToken;
+        console.log("✅ 토큰 갱신 완료, API 재시도");
+        // 재시도 (무한 루프 방지를 위해 retryOnAuthError를 false로)
+        return addFirestoreDocument(
+          collectionId,
+          documentData,
+          refreshedToken,
+          false
+        );
+      } else {
+        throw new Error("토큰 갱신 실패. 다시 로그인해주세요.");
+      }
+    }
+
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       throw new Error(
         `Firestore API 오류: ${errorData.error?.message || response.statusText}`
       );
@@ -625,17 +789,26 @@ async function handleCreateCollection(request, sendResponse) {
 
     // Firestore REST API로 컬렉션 생성
     try {
+      const now = new Date();
+      const collectionDocument = {
+        name: collectionData.name.trim(),
+        userId: currentUser.uid,
+        icon: collectionData.icon || "Folder",
+        description: "",
+        parentId: collectionData.parentId || null,
+        isPinned: false,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      console.log(
+        "📝 컬렉션 데이터:",
+        JSON.stringify(collectionDocument, null, 2)
+      );
+
       const result = await addFirestoreDocument(
         "collections",
-        {
-          name: collectionData.name.trim(),
-          userId: currentUser.uid,
-          icon: collectionData.icon || "",
-          parentId: collectionData.parentId || null,
-          isPinned: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
+        collectionDocument,
         currentIdToken
       );
 
