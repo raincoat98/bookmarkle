@@ -455,4 +455,50 @@ export async function checkAdminStatus(uid: string): Promise<boolean> {
   }
 }
 
+/**
+ * Firebase Refresh Token 추출
+ * Extension에서 토큰 갱신 시 사용
+ */
+export function getRefreshToken(): string | null {
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("🔐 현재 로그인된 사용자 없음");
+      return null;
+    }
+
+    // 방법 1: stsTokenManager에서 직접 접근 (비공개 API이지만 실제로 작동)
+    if (
+      (user as any).stsTokenManager &&
+      (user as any).stsTokenManager.refreshToken
+    ) {
+      const refreshToken = (user as any).stsTokenManager.refreshToken;
+      console.log("✅ Refresh Token 추출 완료 (stsTokenManager)");
+      return refreshToken;
+    }
+
+    // 방법 2: localStorage에서 Firebase 세션 정보 읽기
+    const firebaseKey = `firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`;
+    const authUserData = localStorage.getItem(firebaseKey);
+
+    if (authUserData) {
+      try {
+        const parsed = JSON.parse(authUserData);
+        if (parsed.stsTokenManager?.refreshToken) {
+          console.log("✅ Refresh Token 추출 완료 (localStorage)");
+          return parsed.stsTokenManager.refreshToken;
+        }
+      } catch (parseError) {
+        console.warn("🔐 localStorage 파싱 실패:", parseError);
+      }
+    }
+
+    console.warn("🔐 Refresh Token을 찾을 수 없음");
+    return null;
+  } catch (error) {
+    console.error("🔐 Refresh Token 추출 오류:", error);
+    return null;
+  }
+}
+
 export default app;

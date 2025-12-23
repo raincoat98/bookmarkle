@@ -150,6 +150,64 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       }
     });
 
-    return unsubscribeAuth;
+    // Extension으로부터 토큰 요청 처리
+    const handleExtensionTokenRequest = (event: MessageEvent) => {
+      if (
+        event.data &&
+        event.data.type === "TOKEN_REQUEST" &&
+        event.origin === window.location.origin
+      ) {
+        console.log("🔐 Extension으로부터 토큰 요청 수신");
+        const currentState = get();
+
+        if (currentState.user && currentState.idToken) {
+          // 최신 토큰 가져오기
+          currentState.user.getIdToken(true).then((freshToken) => {
+            console.log("🔐 Extension에 갱신된 토큰 전송");
+            window.postMessage(
+              {
+                type: "TOKEN_RESPONSE",
+                idToken: freshToken,
+                user: {
+                  uid: currentState.user!.uid,
+                  email: currentState.user!.email,
+                  displayName: currentState.user!.displayName,
+                },
+              },
+              window.location.origin
+            );
+          }).catch((error) => {
+            console.error("🔐 토큰 갱신 실패:", error);
+            window.postMessage(
+              {
+                type: "TOKEN_RESPONSE",
+                idToken: null,
+                error: "토큰을 가져올 수 없습니다.",
+              },
+              window.location.origin
+            );
+          });
+        } else {
+          console.warn("🔐 사용자 정보 없음, 토큰 요청 거부");
+          window.postMessage(
+            {
+              type: "TOKEN_RESPONSE",
+              idToken: null,
+              error: "로그인되지 않음",
+            },
+            window.location.origin
+          );
+        }
+      }
+    };
+
+    // postMessage 리스너 추가
+    window.addEventListener("message", handleExtensionTokenRequest);
+
+    // 정리 함수 반환 (unsubscribe와 eventListener 제거)
+    return () => {
+      unsubscribeAuth();
+      window.removeEventListener("message", handleExtensionTokenRequest);
+    };
   },
 }));

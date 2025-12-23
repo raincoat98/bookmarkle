@@ -7,6 +7,7 @@ import {
   detectBrowser,
   getBrowserCompatibilityMessage,
 } from "../../utils/browserDetection";
+import { getRefreshToken } from "../../firebase";
 
 export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
@@ -42,6 +43,8 @@ export const LoginScreen = () => {
     const handleAuthSuccess = async () => {
       try {
         const idToken = await user.getIdToken();
+        const refreshToken = getRefreshToken();
+
         const userData = {
           uid: user.uid,
           email: user.email ?? "",
@@ -53,6 +56,7 @@ export const LoginScreen = () => {
           type: "AUTH_RESULT",
           user: userData,
           idToken: idToken,
+          refreshToken: refreshToken, // Refresh Token 추가
           timestamp: Date.now(),
         };
 
@@ -76,6 +80,7 @@ export const LoginScreen = () => {
             type: "AUTH_RESULT",
             user: userData,
             idToken: idToken,
+            refreshToken: refreshToken, // Refresh Token 추가
           },
           window.location.origin
         );
