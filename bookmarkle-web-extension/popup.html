@@ -4,387 +4,257 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>북마클</title>
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        width: 400px;
-        padding: 20px;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        background: linear-gradient(135deg, #002321 0%, #0b4d3f 100%);
-        color: #333;
-      }
-
-      .container {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        background: white;
-        margin: 0;
-        padding: 30px 25px;
-        border-radius: 16px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-      }
-
-      h2 {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1a8f8e;
-        margin-bottom: 25px;
-        letter-spacing: -0.5px;
-      }
-
-      .status {
-        padding: 14px 16px;
-        border-radius: 8px;
-        font-size: 13px;
-        margin-bottom: 20px;
-        font-weight: 500;
-      }
-
-      .status.logged-in {
-        background-color: rgba(81, 207, 102, 0.1);
-        color: #51cf66;
-        border: 1px solid rgba(81, 207, 102, 0.3);
-      }
-
-      .status.logged-out {
-        background-color: rgba(255, 107, 107, 0.1);
-        color: #ff6b6b;
-        border: 1px solid rgba(255, 107, 107, 0.3);
-      }
-
-      button {
-        padding: 12px 20px;
-        background-color: #0f6e6d;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(15, 110, 109, 0.2);
-      }
-
-      button:hover:not(:disabled) {
-        background-color: #0a5857;
-        box-shadow: 0 4px 12px rgba(15, 110, 109, 0.3);
-      }
-
-      button:active:not(:disabled) {
-        background-color: #084844;
-        box-shadow: 0 2px 6px rgba(15, 110, 109, 0.2);
-      }
-
-      button:disabled {
-        background-color: #ccc;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
-
-      #logoutBtn {
-        background-color: #ff6b6b;
-        box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
-      }
-
-      #logoutBtn:hover:not(:disabled) {
-        background-color: #ff5252;
-        box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-      }
-
-      #logoutBtn:active:not(:disabled) {
-        background-color: #ff3333;
-        box-shadow: 0 2px 6px rgba(255, 107, 107, 0.2);
-      }
-
-      .user-info {
-        padding: 14px;
-        background-color: #f9f9f9;
-        border: 1px solid #f0f0f0;
-        border-radius: 8px;
-        font-size: 13px;
-        margin-bottom: 15px;
-      }
-
-      .user-info strong {
-        display: block;
-        margin-bottom: 8px;
-        color: #1a1a1a;
-        font-weight: 600;
-      }
-
-      .user-info div {
-        color: #666;
-        line-height: 1.6;
-      }
-
-      #loginButtons {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-      }
-
-      .loading {
-        text-align: center;
-        color: #999;
-        font-size: 13px;
-        padding: 15px;
-      }
-
-      .user-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 12px 14px;
-        background: #f9f9f9;
-        border-radius: 8px;
-        margin-bottom: 15px;
-        position: relative;
-      }
-
-      .user-email-badge {
-        font-size: 13px;
-        font-weight: 500;
-        color: #333;
-      }
-
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .status-badge {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        background: #51cf66;
-        box-shadow: 0 0 0 2px rgba(81, 207, 102, 0.2);
-      }
-
-      .status-badge.logged-out {
-        background: #ff6b6b;
-        box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.2);
-      }
-
-      .menu-btn {
-        background: transparent;
-        border: none;
-        font-size: 16px;
-        cursor: pointer;
-        padding: 4px 6px;
-        color: #666;
-        border-radius: 4px;
-        font-weight: bold;
-      }
-
-      .menu-btn:hover {
-        background: rgba(0, 0, 0, 0.05) !important;
-      }
-
-      .dropdown-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: white;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        z-index: 1000;
-        min-width: 180px;
-        margin-top: 8px;
-      }
-
-      .menu-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        width: 100%;
-        padding: 12px 16px;
-        border: none;
-        background: white;
-        cursor: pointer;
-        text-align: left;
-        font-size: 14px;
-        color: #333;
-        transition: background-color 0.2s;
-      }
-
-      .menu-item:first-child {
-        border-radius: 8px 8px 0 0;
-      }
-
-      .menu-item:last-child {
-        border-radius: 0 0 8px 8px;
-      }
-
-      .menu-item:hover:not(:disabled) {
-        background: rgba(0, 0, 0, 0.05);
-      }
-
-      .menu-item.danger {
-        color: #ff6b6b;
-      }
-
-      .menu-item:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-      }
-
-      .menu-icon {
-        display: inline-block;
-        width: 16px;
-        text-align: center;
-      }
-
-      .coming-soon {
-        font-size: 11px;
-        color: #999;
-        margin-left: auto;
-      }
-
-      .save-bookmark-btn {
-        width: 100%;
-        padding: 14px 20px;
-        background: linear-gradient(135deg, #1a8f8e 0%, #0f6e6d 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 15px;
-        font-weight: 600;
-        margin-bottom: 15px;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(26, 143, 142, 0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-
-      .save-bookmark-btn:hover:not(:disabled) {
-        background: linear-gradient(135deg, #0f6e6d 0%, #0a5857 100%);
-        box-shadow: 0 4px 12px rgba(26, 143, 142, 0.4);
-        transform: translateY(-1px);
-      }
-
-      .save-bookmark-btn:active:not(:disabled) {
-        transform: translateY(0);
-        box-shadow: 0 2px 6px rgba(26, 143, 142, 0.3);
-      }
-
-      .save-bookmark-btn:disabled {
-        background: #ccc;
-        cursor: not-allowed;
-        box-shadow: none;
-        transform: none;
-      }
-
-      .user-info-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: none;
-        align-items: center;
-        justify-content: center;
-        z-index: 2000;
-      }
-
-      .user-info-modal.show {
-        display: flex;
-      }
-
-      .user-info-modal-content {
-        background: white;
-        padding: 25px;
-        border-radius: 12px;
-        max-width: 400px;
-        width: 90%;
-      }
-
-      .user-info-modal-close {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #999;
-      }
-    </style>
+    <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="container">
-      <h2>📚 북마클</h2>
+    <div class="popup-card">
+      <div id="loggedInContent" style="display: none">
+        <header class="popup-header">
+          <div class="brand-block">
+            <div class="brand-icon" id="brandIcon" data-lucide="bookmark"></div>
+            <div>
+              <p class="brand-title">북마클</p>
+            </div>
+          </div>
+          <div class="user-wrapper">
+            <div id="userHeader" class="user-header" style="display: none">
+              <div class="user-email-badge">
+                <span id="userEmail"></span>
+              </div>
+              <div class="header-actions">
+                <span id="statusBadge" class="status-badge"></span>
+                <button id="menuBtn" class="menu-btn" title="메뉴">
+                  <span id="menuIcon" data-lucide="more-vertical"></span>
+                </button>
+                <div
+                  id="dropdownMenu"
+                  class="dropdown-menu"
+                  style="display: none"
+                >
+                  <button class="menu-item" id="menuUserInfo">
+                    <span
+                      class="menu-icon"
+                      id="userIcon"
+                      data-lucide="user"
+                    ></span>
+                    <span>사용자 정보</span>
+                  </button>
+                  <button class="menu-item" id="menuSettings" disabled>
+                    <span
+                      class="menu-icon"
+                      id="settingsIcon"
+                      data-lucide="settings"
+                    ></span>
+                    <span>설정</span>
+                    <span class="coming-soon">(곧 제공)</span>
+                  </button>
+                  <button class="menu-item danger" id="menuLogout">
+                    <span
+                      class="menu-icon"
+                      id="logoutIcon"
+                      data-lucide="log-out"
+                    ></span>
+                    <span>로그아웃</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
 
-      <div id="userHeader" class="user-header" style="display: none">
-        <div class="user-email-badge">
-          <span id="userEmail"></span>
-        </div>
-        <div class="header-actions">
-          <span id="statusBadge" class="status-badge"></span>
-          <button id="menuBtn" class="menu-btn" title="메뉴">⋮</button>
-          <div id="dropdownMenu" class="dropdown-menu" style="display: none">
-            <button class="menu-item" id="menuUserInfo">
-              <span class="menu-icon" id="userIcon"></span>
-              <span>사용자 정보</span>
-            </button>
-            <button class="menu-item" id="menuSettings" disabled>
-              <span class="menu-icon" id="settingsIcon"></span>
-              <span>설정</span>
-              <span class="coming-soon">(곧 제공)</span>
-            </button>
-            <button class="menu-item danger" id="menuLogout">
-              <span class="menu-icon" id="logoutIcon"></span>
-              <span>로그아웃</span>
+        <section class="field-group">
+          <label class="field-label">현재 페이지</label>
+          <div class="current-page-card">
+            <input id="currentPageInput" type="text" readonly />
+            <button id="copyUrlBtn" class="ghost-btn" type="button">
+              복사
             </button>
           </div>
-        </div>
+        </section>
+
+        <section class="field-group">
+          <label class="field-label">메모 <span>(선택사항)</span></label>
+          <textarea
+            id="memoTextarea"
+            placeholder="이 페이지에 대한 메모를 작성하세요..."
+          ></textarea>
+        </section>
+
+        <section class="field-group">
+          <label class="field-label">컬렉션 <span>(선택사항)</span></label>
+          <div class="collection-input-wrapper">
+            <input
+              id="collectionInput"
+              type="text"
+              placeholder="선택 없음"
+              readonly
+              autocomplete="off"
+            />
+            <div
+              id="collectionDropdown"
+              class="collection-dropdown"
+              style="display: none"
+            >
+              <input
+                id="collectionSearchInput"
+                type="text"
+                class="collection-search-input"
+                placeholder="컬렉션 검색..."
+                autocomplete="off"
+              />
+              <div
+                id="collectionDropdownList"
+                class="collection-dropdown-list"
+              ></div>
+              <div
+                id="collectionCreateOption"
+                class="collection-create-option"
+                style="display: none"
+              >
+                <span
+                  id="createIcon"
+                  style="display: inline-block; margin-right: 4px"
+                  data-lucide="plus"
+                ></span
+                ><span>새로 만들기: "</span><span id="newCollectionName"></span
+                ><span>"</span>
+              </div>
+            </div>
+            <button
+              id="refreshCollectionsBtn"
+              class="icon-btn"
+              type="button"
+              title="새로고침"
+            >
+              <span id="refreshIcon" data-lucide="rotate-ccw"></span>
+            </button>
+            <button
+              id="newCollectionBtn"
+              class="icon-btn"
+              type="button"
+              title="웹에서 컬렉션 관리"
+            >
+              <span id="plusIcon" data-lucide="plus"></span>
+            </button>
+          </div>
+          <input type="hidden" id="selectedCollectionId" value="" />
+        </section>
+
+        <section class="field-group">
+          <label class="field-label">태그 <span>(선택사항)</span></label>
+          <input
+            id="tagInput"
+            type="text"
+            placeholder="엔터로 태그 추가 (쉼표로 구분)"
+          />
+          <div id="tagList" class="tag-list"></div>
+        </section>
+
+        <button id="saveBookmarkBtn" class="primary-btn">북마크 저장</button>
+
+        <div id="statusMessage" class="status-chip" style="display: none"></div>
+
+        <footer class="footer-row">
+          <button
+            id="supportLink"
+            class="text-link"
+            type="button"
+            disabled
+            style="opacity: 0.5; cursor: not-allowed"
+          >
+            ★ 후원하기
+          </button>
+          <span class="divider">|</span>
+          <button id="bugLink" class="text-link" type="button">
+            버그 등록하기
+          </button>
+        </footer>
       </div>
 
-      <div id="userInfoModal" class="user-info-modal">
-        <div class="user-info-modal-content">
-          <button class="user-info-modal-close" id="modalCloseBtn">✕</button>
-          <strong>사용자 정보:</strong>
-          <div id="userDetails" style="margin-top: 15px"></div>
-        </div>
-      </div>
-
-      <div id="saveBookmarkSection" style="display: none">
-        <button id="saveBookmarkBtn" class="save-bookmark-btn">
-          📚 현재 페이지 북마크
+      <div id="loginButtons" class="login-controls" style="display: flex">
+        <button id="loginGoogleBtn" class="secondary-btn">
+          Google로 로그인
         </button>
-      </div>
-
-      <div id="dataInfo" class="user-info" style="display: none">
-        <strong>컬렉션 정보:</strong>
-        <div id="dataCount">로딩 중...</div>
-      </div>
-
-      <div id="statusMessage" class="status" style="display: none"></div>
-
-      <div
-        id="loginButtons"
-        style="display: flex; flex-direction: column; gap: 10px"
-      >
-        <button id="loginGoogleBtn">Google로 로그인</button>
-        <button id="loginEmailBtn">이메일로 로그인</button>
+        <button id="loginEmailBtn" class="secondary-btn">
+          이메일로 로그인
+        </button>
       </div>
 
       <div id="loading" class="loading" style="display: none">로그인 중...</div>
     </div>
 
+    <div id="userInfoModal" class="user-info-modal">
+      <div class="user-info-modal-content">
+        <button class="user-info-modal-close" id="modalCloseBtn">
+          <span id="modalCloseIcon" data-lucide="x"></span>
+        </button>
+        <strong>사용자 정보:</strong>
+        <div id="userDetails" style="margin-top: 15px"></div>
+      </div>
+    </div>
+
+    <div id="collectionModal" class="collection-modal">
+      <div class="collection-modal-content">
+        <button class="collection-modal-close" id="collectionModalCloseBtn">
+          <span id="collectionModalCloseIcon" data-lucide="x"></span>
+        </button>
+        <div class="collection-modal-title">새 컬렉션 만들기</div>
+        <div style="margin-bottom: 12px">
+          <label
+            style="
+              display: block;
+              margin-bottom: 6px;
+              font-size: 13px;
+              color: rgba(255, 255, 255, 0.8);
+            "
+            >아이콘 (선택사항)</label
+          >
+          <input
+            type="text"
+            id="collectionModalIconInput"
+            class="collection-modal-input"
+            placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
+            autocomplete="off"
+            maxlength="2"
+            style="margin-bottom: 0"
+          />
+        </div>
+        <div>
+          <label
+            style="
+              display: block;
+              margin-bottom: 6px;
+              font-size: 13px;
+              color: rgba(255, 255, 255, 0.8);
+            "
+            >이름</label
+          >
+          <input
+            type="text"
+            id="collectionModalInput"
+            class="collection-modal-input"
+            placeholder="컬렉션 이름을 입력하세요..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="collection-modal-actions">
+          <button
+            id="collectionModalCancelBtn"
+            class="collection-modal-btn collection-modal-btn-cancel"
+          >
+            취소
+          </button>
+          <button
+            id="collectionModalCreateBtn"
+            class="collection-modal-btn collection-modal-btn-create"
+          >
+            만들기
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="lucide.js"></script>
     <script src="popup.js"></script>
   </body>
 </html>

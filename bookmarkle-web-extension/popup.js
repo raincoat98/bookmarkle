@@ -1,425 +1,955 @@
-// Popup Script
-
-import { User, Settings, LogOut } from "lucide";
-
-// ===== 아이콘 헬퍼 함수 =====
-
-// lucide 아이콘을 SVG 문자열로 변환하는 헬퍼 함수
-function iconToSvg(iconData, options = {}) {
-  const { width = 24, height = 24, class: className = "" } = options;
-
-  // iconData는 ["svg", attrs, children] 형태의 배열
-  if (!Array.isArray(iconData) || iconData.length < 2) {
-    console.error("Invalid icon data:", iconData);
-    return "";
-  }
-
-  const [tag, attrs, children] = iconData;
-
-  // 기본 SVG 속성에 옵션으로 전달된 크기와 클래스 적용
-  const svgAttrs = {
-    ...attrs,
-    width: width.toString(),
-    height: height.toString(),
-  };
-
-  if (className) {
-    svgAttrs.class = className;
-  }
-
-  // 속성을 문자열로 변환 (속성 이름은 그대로 사용)
-  const attrsStr = Object.entries(svgAttrs)
-    .map(([key, value]) => `${key}="${value}"`)
-    .join(" ");
-
-  // children 처리 (재귀적으로 처리)
-  function renderChildren(childrenArray) {
-    if (!Array.isArray(childrenArray)) {
-      return "";
-    }
-
-    return childrenArray
-      .map((child) => {
-        if (Array.isArray(child) && child.length >= 2) {
-          const [childTag, childAttrs, childChildren] = child;
-          const childAttrsStr = Object.entries(childAttrs || {})
-            .map(([key, value]) => `${key}="${value}"`)
-            .join(" ");
-
-          if (
-            childChildren &&
-            Array.isArray(childChildren) &&
-            childChildren.length > 0
-          ) {
-            return `<${childTag} ${childAttrsStr}>${renderChildren(
-              childChildren
-            )}</${childTag}>`;
-          }
-          return `<${childTag} ${childAttrsStr} />`;
-        }
-        return "";
-      })
-      .join("");
-  }
-
-  const childrenStr = renderChildren(children || []);
-
-  return `<svg ${attrsStr}>${childrenStr}</svg>`;
-}
-
-// ===== 아이콘 초기화 =====
+// lucide.js를 사용하여 data-lucide 속성의 아이콘을 자동 렌더링
 function initializeIcons() {
-  const userIconEl = document.getElementById("userIcon");
-  const settingsIconEl = document.getElementById("settingsIcon");
-  const logoutIconEl = document.getElementById("logoutIcon");
-
-  if (userIconEl) {
-    // User는 이미 아이콘 정의 배열이거나 함수일 수 있음
-    const userIconData = typeof User === "function" ? User() : User;
-    userIconEl.innerHTML = iconToSvg(userIconData, {
-      width: 16,
-      height: 16,
-      class: "lucide-icon",
-    });
-  }
-
-  if (settingsIconEl) {
-    const settingsIconData =
-      typeof Settings === "function" ? Settings() : Settings;
-    settingsIconEl.innerHTML = iconToSvg(settingsIconData, {
-      width: 16,
-      height: 16,
-      class: "lucide-icon",
-    });
-  }
-
-  if (logoutIconEl) {
-    const logoutIconData = typeof LogOut === "function" ? LogOut() : LogOut;
-    logoutIconEl.innerHTML = iconToSvg(logoutIconData, {
-      width: 16,
-      height: 16,
-      class: "lucide-icon",
-    });
+  if (window.lucide && window.lucide.createIcons) {
+    try {
+      window.lucide.createIcons();
+    } catch (error) {
+      console.error("Icon initialization error:", error);
+    }
+  } else {
+    console.warn("Lucide library not fully loaded");
   }
 }
 
-// ===== DOM 요소 =====
+function reinitializeLucideIcons() {
+  initializeIcons();
+}
+
+const COLLECTION_MANAGE_URL = "https://bookmarkle.app/dashboard/collections";
+const SUPPORT_URL = "https://bookmarkle.app/support";
+const BUG_REPORT_URL =
+  "https://github.com/raincoat98/bookmakle/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen";
+
 const loginButtons = document.getElementById("loginButtons");
 const loginGoogleBtn = document.getElementById("loginGoogleBtn");
 const loginEmailBtn = document.getElementById("loginEmailBtn");
+const loggedInContent = document.getElementById("loggedInContent");
 const userHeaderDiv = document.getElementById("userHeader");
 const userEmailSpan = document.getElementById("userEmail");
 const statusBadge = document.getElementById("statusBadge");
 const menuBtn = document.getElementById("menuBtn");
 const dropdownMenu = document.getElementById("dropdownMenu");
 const menuUserInfo = document.getElementById("menuUserInfo");
+const menuSettings = document.getElementById("menuSettings");
 const menuLogout = document.getElementById("menuLogout");
 const userInfoModal = document.getElementById("userInfoModal");
 const userDetailsDiv = document.getElementById("userDetails");
 const modalCloseBtn = document.getElementById("modalCloseBtn");
 const loadingDiv = document.getElementById("loading");
-const dataInfoDiv = document.getElementById("dataInfo");
-const dataCountDiv = document.getElementById("dataCount");
 const statusMessageDiv = document.getElementById("statusMessage");
-const saveBookmarkSection = document.getElementById("saveBookmarkSection");
 const saveBookmarkBtn = document.getElementById("saveBookmarkBtn");
+const currentPageInput = document.getElementById("currentPageInput");
+const copyUrlBtn = document.getElementById("copyUrlBtn");
+const memoTextarea = document.getElementById("memoTextarea");
+const collectionInput = document.getElementById("collectionInput");
+const selectedCollectionId = document.getElementById("selectedCollectionId");
+const collectionDropdown = document.getElementById("collectionDropdown");
+const collectionSearchInput = document.getElementById("collectionSearchInput");
+const collectionDropdownList = document.getElementById(
+  "collectionDropdownList"
+);
+const collectionCreateOption = document.getElementById(
+  "collectionCreateOption"
+);
+const newCollectionName = document.getElementById("newCollectionName");
+const refreshCollectionsBtn = document.getElementById("refreshCollectionsBtn");
+const newCollectionBtn = document.getElementById("newCollectionBtn");
+const collectionModal = document.getElementById("collectionModal");
+const collectionModalInput = document.getElementById("collectionModalInput");
+const collectionModalIconInput = document.getElementById(
+  "collectionModalIconInput"
+);
+const collectionModalCloseBtn = document.getElementById(
+  "collectionModalCloseBtn"
+);
+const collectionModalCancelBtn = document.getElementById(
+  "collectionModalCancelBtn"
+);
+const collectionModalCreateBtn = document.getElementById(
+  "collectionModalCreateBtn"
+);
+const tagInput = document.getElementById("tagInput");
+const tagList = document.getElementById("tagList");
+const supportLink = document.getElementById("supportLink");
+const bugLink = document.getElementById("bugLink");
 
-// ===== 헬퍼 함수 =====
+let currentTabInfo = null;
+let tags = [];
+let isSaving = false;
+let userIsLoggedIn = false;
+let statusTimeoutId = null;
+let isComposing = false;
+let collections = [];
+let filteredCollections = [];
 
-// 사용자 정보 표시 (XSS 방지)
 function displayUserInfo(user) {
+  if (!userDetailsDiv) return;
   userDetailsDiv.innerHTML = "";
 
-  const emailDiv = document.createElement("div");
-  emailDiv.textContent = `이메일: ${user.email || "N/A"}`;
+  const rows = [
+    { label: "이메일", value: user.email },
+    { label: "이름", value: user.displayName },
+    { label: "UID", value: user.uid },
+  ];
 
-  const nameDiv = document.createElement("div");
-  nameDiv.textContent = `이름: ${user.displayName || "N/A"}`;
-
-  const uidDiv = document.createElement("div");
-  uidDiv.textContent = `UID: ${user.uid || "N/A"}`;
-
-  userDetailsDiv.appendChild(emailDiv);
-  userDetailsDiv.appendChild(nameDiv);
-  userDetailsDiv.appendChild(uidDiv);
-}
-
-// 모달 열기
-function showUserInfoModal() {
-  userInfoModal.classList.add("show");
-}
-
-// 모달 닫기
-function closeUserInfoModal() {
-  userInfoModal.classList.remove("show");
-  dropdownMenu.style.display = "none";
-  reinitializeLucideIcons();
-}
-
-// 데이터 정보 UI 업데이트
-function updateDataInfo(display = true, text = null) {
-  if (dataInfoDiv) {
-    dataInfoDiv.style.display = display ? "block" : "none";
-  }
-  if (dataCountDiv && text !== null) {
-    dataCountDiv.textContent = text;
-  }
-}
-
-// 상태 메시지 UI 업데이트
-function updateStatus(message, isSuccess = false) {
-  if (statusMessageDiv) {
-    statusMessageDiv.textContent = message;
-    statusMessageDiv.style.display = "block";
-    statusMessageDiv.className = isSuccess
-      ? "status logged-in"
-      : "status logged-out";
-
-    // 3초 후 자동 숨김
-    setTimeout(() => {
-      statusMessageDiv.style.display = "none";
-    }, 3000);
-  }
-}
-
-// Lucide 아이콘 다시 초기화
-function reinitializeLucideIcons() {
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-}
-
-// 로그인 상태 UI 업데이트
-function updateLoginUI(isLoggedIn, user = null) {
-  if (isLoggedIn && user) {
-    // 로그인 상태
-    userEmailSpan.textContent = user.email || "사용자";
-    statusBadge.className = "status-badge";
-    displayUserInfo(user);
-    userHeaderDiv.style.display = "flex";
-    saveBookmarkSection.style.display = "block";
-    if (loginButtons) loginButtons.style.display = "none";
-    loadDataCount();
-  } else {
-    // 로그인되지 않은 상태
-    userHeaderDiv.style.display = "none";
-    saveBookmarkSection.style.display = "none";
-    updateDataInfo(false);
-    if (loginButtons) loginButtons.style.display = "flex";
-    closeUserInfoModal();
-  }
-  reinitializeLucideIcons();
-}
-
-// ===== 비즈니스 로직 =====
-
-// 인증 상태 로드
-async function loadAuthState() {
-  try {
-    chrome.storage.local.get(["user"], (result) => {
-      if (chrome.runtime.lastError) {
-        console.error("저장된 상태 로드 오류:", chrome.runtime.lastError);
-        requestUserFromBackground();
-        return;
-      }
-
-      const storedUser = result?.user;
-      if (storedUser) {
-        console.log("✅ Storage에서 사용자 정보 복원:", storedUser.email);
-        updateLoginUI(true, storedUser);
-      } else {
-        console.log("📭 Storage에 사용자 정보 없음 - Background에서 요청");
-        requestUserFromBackground();
-      }
-    });
-  } catch (error) {
-    console.error("상태 로드 오류:", error);
-    updateStatus("로그인되지 않음", false);
-  }
-}
-
-// Background에서 메모리 정보 요청 (fallback)
-function requestUserFromBackground() {
-  chrome.runtime.sendMessage({ type: "GET_CURRENT_USER" }, (response) => {
-    if (chrome.runtime.lastError) {
-      console.warn("Background 상태 로드 실패:", chrome.runtime.lastError);
-      updateLoginUI(false);
-      return;
-    }
-
-    updateLoginUI(!!response?.user, response?.user || null);
+  rows.forEach(({ label, value }) => {
+    const row = document.createElement("div");
+    row.textContent = `${label}: ${value || "N/A"}`;
+    userDetailsDiv.appendChild(row);
   });
 }
 
-// 컬렉션 개수 로드
-async function loadDataCount() {
-  console.log("📊 컬렉션 개수 로드 시작");
-  updateDataInfo(true, "로딩 중...");
+function showUserInfoModal() {
+  userInfoModal?.classList.add("show");
+  if (dropdownMenu) {
+    dropdownMenu.style.display = "none";
+  }
+}
+
+function closeUserInfoModal() {
+  userInfoModal?.classList.remove("show");
+  if (dropdownMenu) {
+    dropdownMenu.style.display = "none";
+  }
+}
+
+function updateStatus(message, variant = "neutral", autoHide = true) {
+  if (!statusMessageDiv) return;
+  statusMessageDiv.textContent = message;
+  statusMessageDiv.classList.remove("success", "error");
+
+  if (variant === "success") {
+    statusMessageDiv.classList.add("success");
+  } else if (variant === "error") {
+    statusMessageDiv.classList.add("error");
+  }
+
+  statusMessageDiv.style.display = "block";
+  window.clearTimeout(statusTimeoutId);
+  if (autoHide) {
+    statusTimeoutId = window.setTimeout(() => {
+      statusMessageDiv.style.display = "none";
+    }, 3500);
+  }
+}
+
+function setCollectionControlsState() {
+  const disabled = !userIsLoggedIn;
+  if (collectionInput) collectionInput.disabled = disabled;
+  if (refreshCollectionsBtn) refreshCollectionsBtn.disabled = disabled;
+  if (newCollectionBtn) newCollectionBtn.disabled = disabled;
+}
+
+function setSaveButtonState() {
+  if (!saveBookmarkBtn) return;
+  saveBookmarkBtn.disabled = !userIsLoggedIn || isSaving;
+}
+
+function queryActiveTab() {
+  return new Promise((resolve, reject) => {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+      } else {
+        resolve(tabs);
+      }
+    });
+  });
+}
+
+async function loadCurrentTabInfo() {
+  try {
+    const tabs = await queryActiveTab();
+    if (tabs && tabs.length > 0) {
+      currentTabInfo = tabs[0];
+      if (currentPageInput) {
+        currentPageInput.value = currentTabInfo.url || "";
+      }
+    }
+  } catch (error) {
+    console.error("현재 탭 정보 로드 실패:", error);
+    updateStatus("현재 탭 정보를 가져오지 못했습니다.", "error");
+  }
+}
+
+function updateCollectionsList(newCollections = []) {
+  collections = newCollections;
+  filterCollections("");
+}
+
+function filterCollections(searchText = "") {
+  const search = searchText.trim().toLowerCase();
+  filteredCollections = search
+    ? collections.filter((col) => col.name.toLowerCase().includes(search))
+    : collections;
+
+  // 드롭다운 업데이트
+  if (collectionDropdownList) {
+    collectionDropdownList.innerHTML = "";
+
+    // "선택 없음" 옵션 추가 (검색 중이 아닐 때만)
+    if (!search) {
+      const noneItem = document.createElement("div");
+      noneItem.className = "collection-dropdown-item";
+      noneItem.textContent = "선택 없음";
+      noneItem.addEventListener("click", () => {
+        clearCollection();
+      });
+      collectionDropdownList.appendChild(noneItem);
+    }
+
+    if (filteredCollections.length > 0) {
+      filteredCollections.forEach((collection) => {
+        const item = document.createElement("div");
+        item.className = "collection-dropdown-item";
+        // 아이콘이 있으면 아이콘과 이름을 함께 표시
+        if (collection.icon) {
+          item.innerHTML = `<span style="margin-right: 6px;">${collection.icon}</span>${collection.name}`;
+        } else {
+          item.textContent = collection.name;
+        }
+        item.addEventListener("click", () => {
+          selectCollection(collection);
+        });
+        collectionDropdownList.appendChild(item);
+      });
+    } else if (search) {
+      // 검색 결과가 없을 때
+      const noResult = document.createElement("div");
+      noResult.className = "collection-dropdown-item";
+      noResult.style.color = "rgba(255, 255, 255, 0.5)";
+      noResult.style.cursor = "default";
+      noResult.textContent = "검색 결과가 없습니다";
+      collectionDropdownList.appendChild(noResult);
+    }
+  }
+
+  // 새로 만들기 옵션 표시
+  if (collectionCreateOption && newCollectionName) {
+    const exactMatch = collections.some(
+      (col) => col.name.toLowerCase() === search
+    );
+
+    if (search && !exactMatch) {
+      newCollectionName.textContent = searchText.trim();
+      collectionCreateOption.style.display = "block";
+    } else {
+      collectionCreateOption.style.display = "none";
+    }
+  }
+}
+
+function showCollectionDropdown() {
+  if (collectionDropdown) {
+    collectionDropdown.style.display = "flex";
+    // 검색 인풋 초기화 및 포커스
+    if (collectionSearchInput) {
+      collectionSearchInput.value = "";
+      collectionSearchInput.focus();
+      filterCollections("");
+    }
+  }
+}
+
+function hideCollectionDropdown() {
+  if (collectionDropdown) {
+    collectionDropdown.style.display = "none";
+    if (collectionSearchInput) {
+      collectionSearchInput.value = "";
+    }
+  }
+}
+
+function selectCollection(collection) {
+  if (collectionInput) {
+    // 아이콘이 있으면 아이콘과 이름을 함께 표시
+    collectionInput.value = collection.icon
+      ? `${collection.icon} ${collection.name}`
+      : collection.name;
+  }
+  if (selectedCollectionId) {
+    selectedCollectionId.value = collection.id;
+  }
+  hideCollectionDropdown();
+}
+
+function clearCollection() {
+  if (collectionInput) {
+    collectionInput.value = "";
+  }
+  if (selectedCollectionId) {
+    selectedCollectionId.value = "";
+  }
+  hideCollectionDropdown();
+}
+
+function showCollectionModal(initialName = "") {
+  if (collectionModal) {
+    if (collectionModalInput) {
+      collectionModalInput.value = initialName;
+      collectionModalInput.focus();
+    }
+    if (collectionModalIconInput) {
+      collectionModalIconInput.value = "";
+    }
+    collectionModal.classList.add("show");
+    if (collectionDropdown) {
+      collectionDropdown.style.display = "none";
+    }
+  }
+}
+
+function closeCollectionModal() {
+  if (collectionModal) {
+    collectionModal.classList.remove("show");
+    if (collectionModalInput) {
+      collectionModalInput.value = "";
+    }
+    if (collectionModalIconInput) {
+      collectionModalIconInput.value = "";
+    }
+  }
+}
+
+async function createCollectionFromModal() {
+  const name = collectionModalInput?.value?.trim();
+  if (!name) {
+    updateStatus("컬렉션 이름을 입력해주세요.", "error");
+    return;
+  }
+
+  // 아이콘 가져오기 (선택사항)
+  const icon = collectionModalIconInput?.value?.trim() || "";
+
+  // 중복 확인
+  const existingCollection = collections.find(
+    (col) => col.name.toLowerCase() === name.toLowerCase()
+  );
+
+  if (existingCollection) {
+    updateStatus("이미 존재하는 컬렉션입니다.", "error");
+    selectCollection(existingCollection);
+    closeCollectionModal();
+    return;
+  }
+
+  // 컬렉션 생성
+  if (collectionModalCreateBtn) {
+    collectionModalCreateBtn.disabled = true;
+    collectionModalCreateBtn.textContent = "만드는 중...";
+  }
 
   try {
-    chrome.runtime.sendMessage("GET_DATA_COUNT", (response) => {
-      console.log("📥 Background로부터 응답 수신:", response);
+    const createResponse = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        {
+          type: "CREATE_COLLECTION",
+          collectionData: { name: name, icon: icon },
+        },
+        (result) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+    });
 
+    if (createResponse?.success && createResponse?.collectionId) {
+      // 컬렉션 목록 새로고침
+      await fetchCollectionsList();
+
+      // 새로 생성된 컬렉션 선택
+      const newCollection = collections.find(
+        (col) => col.id === createResponse.collectionId
+      );
+      if (newCollection) {
+        selectCollection(newCollection);
+      }
+
+      updateStatus("컬렉션이 생성되었습니다! 🎉", "success");
+      closeCollectionModal();
+    } else {
+      updateStatus(
+        createResponse?.error || "컬렉션 생성에 실패했습니다.",
+        "error"
+      );
+    }
+  } catch (error) {
+    console.error("컬렉션 생성 실패:", error);
+    updateStatus("컬렉션 생성 중 오류가 발생했습니다.", "error");
+  } finally {
+    if (collectionModalCreateBtn) {
+      collectionModalCreateBtn.disabled = false;
+      collectionModalCreateBtn.textContent = "만들기";
+    }
+  }
+}
+
+function fetchCollectionsList() {
+  return new Promise((resolve) => {
+    if (!userIsLoggedIn) {
+      updateCollectionsList([]);
+      resolve();
+      return;
+    }
+
+    chrome.runtime.sendMessage({ type: "FETCH_COLLECTIONS" }, (response) => {
       if (chrome.runtime.lastError) {
-        console.error("컬렉션 개수 가져오기 실패:", chrome.runtime.lastError);
-        updateDataInfo(true, "컬렉션을 가져올 수 없습니다");
+        console.error("컬렉션 목록 로드 오류:", chrome.runtime.lastError);
+        updateStatus("컬렉션 목록을 가져올 수 없습니다.", "error");
+        resolve();
         return;
       }
 
-      if (response?.success) {
-        console.log("✅ 컬렉션 개수:", response.count);
-        updateDataInfo(true, `총 ${response.count}개 컬렉션`);
+      if (response?.success && Array.isArray(response.collections)) {
+        updateCollectionsList(response.collections);
       } else {
-        console.error("❌ 컬렉션 개수 가져오기 실패:", response?.error);
-        updateDataInfo(true, response?.error || "컬렉션을 가져올 수 없습니다");
+        updateStatus(response?.error || "컬렉션 로드에 실패했습니다.", "error");
+        updateCollectionsList([]);
       }
+      resolve();
     });
-  } catch (error) {
-    console.error("컬렉션 개수 로드 오류:", error);
-    updateDataInfo(true, "컬렉션을 가져올 수 없습니다");
+  });
+}
+
+function addTagsFromInput(value) {
+  if (!value) return;
+  const trimmedValue = value.trim();
+  if (!trimmedValue) return;
+
+  // 쉼표나 줄바꿈으로 분리
+  const rawTags = trimmedValue
+    .split(/[,\n]/)
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+
+  let added = false;
+  rawTags.forEach((tag) => {
+    if (!tags.includes(tag)) {
+      tags.push(tag);
+      added = true;
+    }
+  });
+  if (added) {
+    renderTags();
   }
 }
 
-// 북마크 저장
+function renderTags() {
+  if (!tagList) return;
+  tagList.innerHTML = "";
+  tags.forEach((tag) => {
+    const chip = document.createElement("span");
+    chip.className = "tag-chip";
+    const nameSpan = document.createElement("span");
+    nameSpan.textContent = tag;
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.textContent = "✕";
+    removeBtn.addEventListener("click", () => {
+      tags = tags.filter((item) => item !== tag);
+      renderTags();
+    });
+    chip.appendChild(nameSpan);
+    chip.appendChild(removeBtn);
+    tagList.appendChild(chip);
+  });
+}
+
 async function saveCurrentPageBookmark() {
-  console.log("📚 북마크 저장 시작");
+  if (isSaving) return;
+  if (!userIsLoggedIn) {
+    updateStatus("로그인 후에 북마크를 저장할 수 있습니다.", "error");
+    return;
+  }
 
-  saveBookmarkBtn.disabled = true;
-  saveBookmarkBtn.textContent = "저장 중...";
+  await loadCurrentTabInfo();
+  if (!currentTabInfo || !currentTabInfo.url || !currentTabInfo.title) {
+    updateStatus("저장할 페이지 정보를 가져오지 못했습니다.", "error");
+    return;
+  }
 
-  try {
-    const response = await chrome.runtime.sendMessage("SAVE_BOOKMARK");
+  // 컬렉션 처리: 선택된 컬렉션 ID 사용
+  let collectionId = selectedCollectionId?.value || null;
 
-    if (chrome.runtime.lastError) {
-      throw new Error(chrome.runtime.lastError.message);
+  // 입력된 이름이 있지만 ID가 없으면 기존 컬렉션에서 찾기
+  let collectionName = collectionInput?.value?.trim() || "";
+  // 아이콘 이모지가 포함되어 있으면 제거 (이모지는 보통 단일 문자이므로 첫 번째 문자를 확인)
+  // 간단하게 공백으로 split하고 첫 번째가 이모지인지 확인하거나, 이름만 추출
+  if (collectionName) {
+    // 아이콘과 이름이 "이모지 이름" 형식으로 되어 있다면 이름만 추출
+    const parts = collectionName.split(/\s+/);
+    if (parts.length > 1 && parts[0].length === 1) {
+      // 첫 번째 부분이 단일 문자(이모지)일 가능성이 높음
+      collectionName = parts.slice(1).join(" ");
     }
+  }
+  if (collectionName && !collectionId) {
+    const existingCollection = collections.find(
+      (col) => col.name.toLowerCase() === collectionName.toLowerCase()
+    );
+
+    if (existingCollection) {
+      collectionId = existingCollection.id;
+    } else {
+      // 컬렉션이 없으면 모달 열기
+      updateStatus("컬렉션을 먼저 생성해주세요.", "error");
+      showCollectionModal(collectionName);
+      return;
+    }
+  }
+
+  const bookmarkData = {
+    title: currentTabInfo.title,
+    url: currentTabInfo.url,
+    description: memoTextarea?.value?.trim() || "",
+    collection: collectionId,
+    tags: [...tags],
+  };
+
+  isSaving = true;
+  setSaveButtonState();
+  const previousButtonText = saveBookmarkBtn?.textContent;
+  if (saveBookmarkBtn) {
+    saveBookmarkBtn.textContent = "저장 중...";
+  }
+  try {
+    const response = await new Promise((resolve, reject) => {
+      chrome.runtime.sendMessage(
+        { type: "SAVE_BOOKMARK", bookmarkData },
+        (result) => {
+          if (chrome.runtime.lastError) {
+            reject(chrome.runtime.lastError);
+          } else {
+            resolve(result);
+          }
+        }
+      );
+    });
 
     if (response?.success) {
-      console.log("✅ 북마크 저장 성공:", response.bookmarkId);
-      updateStatus("북마크가 저장되었습니다! 🎉", true);
-
-      // 데이터 개수 새로고침
-      setTimeout(() => {
-        loadDataCount();
-      }, 500);
+      updateStatus("북마크가 저장되었습니다! 🎉", "success");
     } else {
-      console.error("❌ 북마크 저장 실패:", response?.error);
-      updateStatus(response?.error || "북마크 저장 중 오류가 발생했습니다", false);
+      updateStatus(response?.error || "북마크 저장에 실패했습니다.", "error");
     }
   } catch (error) {
-    console.error("북마크 저장 오류:", error);
-    updateStatus("북마크 저장 중 오류가 발생했습니다: " + error.message, false);
+    console.error("북마크 저장 실패:", error);
+    updateStatus(
+      error?.message || "북마크 저장 중 오류가 발생했습니다.",
+      "error"
+    );
   } finally {
-    saveBookmarkBtn.disabled = false;
-    saveBookmarkBtn.textContent = "📚 현재 페이지 북마크";
+    isSaving = false;
+    setSaveButtonState();
+    if (saveBookmarkBtn && previousButtonText) {
+      saveBookmarkBtn.textContent = previousButtonText;
+    }
   }
 }
 
-// ===== 이벤트 리스너 =====
+function copyCurrentUrl() {
+  if (!currentPageInput || !currentPageInput.value) {
+    updateStatus("복사할 URL을 찾을 수 없습니다.", "error");
+    return;
+  }
 
-// 로그인 처리 헬퍼 함수
+  navigator.clipboard
+    .writeText(currentPageInput.value)
+    .then(() => updateStatus("URL이 복사되었습니다.", "success"))
+    .catch((error) => {
+      console.error("URL 복사 실패:", error);
+      updateStatus("URL을 복사할 수 없습니다.", "error");
+    });
+}
+
+function openExternalLink(url) {
+  chrome.tabs.create({ url });
+}
+
 function handleLogin(mode) {
   const loginBtn = mode === "google" ? loginGoogleBtn : loginEmailBtn;
+  if (!loginBtn) return;
+
   loginBtn.disabled = true;
   if (mode === "google" && loginEmailBtn) loginEmailBtn.disabled = true;
   if (mode === "email" && loginGoogleBtn) loginGoogleBtn.disabled = true;
-  loadingDiv.style.display = "block";
-  updateStatus("로그인 페이지를 여는 중...", false);
+  if (loadingDiv) {
+    loadingDiv.style.display = "block";
+  }
+  updateStatus("로그인 페이지를 여는 중...", "neutral");
 
   const messageType = mode === "google" ? "LOGIN_GOOGLE" : "LOGIN_EMAIL";
-  chrome.runtime.sendMessage(messageType, () => {
+  chrome.runtime.sendMessage({ type: messageType }, () => {
     if (chrome.runtime.lastError) {
-      console.error("메시지 전송 오류:", chrome.runtime.lastError);
-      updateStatus("로그인 실패: " + chrome.runtime.lastError.message, false);
-      loadingDiv.style.display = "none";
+      console.error("로그인 메시지 오류:", chrome.runtime.lastError);
+      updateStatus("로그인 요청 중 오류가 발생했습니다.", "error");
+      if (loadingDiv) {
+        loadingDiv.style.display = "none";
+      }
       loginBtn.disabled = false;
       if (mode === "google" && loginEmailBtn) loginEmailBtn.disabled = false;
       if (mode === "email" && loginGoogleBtn) loginGoogleBtn.disabled = false;
     } else {
       updateStatus(
-        "로그인 페이지가 열렸습니다. 새 탭에서 로그인을 진행하세요.",
-        false
+        "로그인 페이지가 열렸습니다. 새 탭에서 진행해주세요.",
+        "neutral"
       );
     }
   });
 }
 
-// Google 로그인 버튼 클릭
-loginGoogleBtn.addEventListener("click", () => {
-  handleLogin("google");
-});
+function requestUserFromBackground() {
+  chrome.runtime.sendMessage({ type: "GET_CURRENT_USER" }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.warn(
+        "Background 사용자 정보 로드 실패:",
+        chrome.runtime.lastError
+      );
+      updateLoginUI(false);
+      return;
+    }
+    updateLoginUI(!!response?.user, response?.user || null);
+  });
+}
 
-// 이메일 로그인 버튼 클릭
-loginEmailBtn.addEventListener("click", () => {
-  handleLogin("email");
-});
+function loadAuthState() {
+  return new Promise((resolve) => {
+    try {
+      chrome.storage.local.get(["user"], (result) => {
+        if (chrome.runtime.lastError) {
+          console.error("사용자 정보 로드 오류:", chrome.runtime.lastError);
+          requestUserFromBackground();
+          resolve();
+          return;
+        }
+        const storedUser = result?.user;
+        if (storedUser) {
+          updateLoginUI(true, storedUser);
+        } else {
+          requestUserFromBackground();
+        }
+        resolve();
+      });
+    } catch (error) {
+      console.error("로그인 상태 확인 오류:", error);
+      updateStatus("로그인 상태를 확인할 수 없습니다.", "error");
+      resolve();
+    }
+  });
+}
 
-// 메뉴 버튼 클릭
-menuBtn.addEventListener("click", (e) => {
-  e.stopPropagation();
-  dropdownMenu.style.display =
-    dropdownMenu.style.display === "none" ? "block" : "none";
-});
+function updateLoginUI(isLoggedIn, user = null) {
+  userIsLoggedIn = isLoggedIn;
+  if (isLoggedIn && user) {
+    // displayName이 있으면 우선 표시, 없으면 이메일 표시
+    userEmailSpan.textContent = user.displayName || user.email || "사용자";
+    statusBadge?.classList.remove("logged-out");
+    if (loggedInContent) {
+      loggedInContent.style.display = "block";
+    }
+    if (userHeaderDiv) {
+      userHeaderDiv.style.display = "flex";
+    }
+    if (loginButtons) {
+      loginButtons.style.display = "none";
+    }
+    if (loadingDiv) {
+      loadingDiv.style.display = "none";
+    }
+    displayUserInfo(user);
+    updateStatus("로그인 되어 있습니다.", "success");
+    // loggedInContent가 표시된 후에 데이터 로드 (약간의 지연)
+    setTimeout(() => {
+      fetchCollectionsList();
+    }, 0);
+    setCollectionControlsState();
+    setSaveButtonState();
+  } else {
+    statusBadge?.classList.add("logged-out");
+    if (loggedInContent) {
+      loggedInContent.style.display = "none";
+    }
+    if (userHeaderDiv) {
+      userHeaderDiv.style.display = "none";
+    }
+    if (loginButtons) {
+      loginButtons.style.display = "flex";
+    }
+    tags = [];
+    renderTags();
+    setCollectionControlsState();
+    setSaveButtonState();
+  }
+  reinitializeLucideIcons();
+}
 
-// 문서 클릭 시 드롭다운 닫기
-document.addEventListener("click", (e) => {
-  if (!menuBtn.contains(e.target) && !dropdownMenu.contains(e.target)) {
-    dropdownMenu.style.display = "none";
+document.addEventListener("click", (event) => {
+  if (
+    !menuBtn?.contains(event.target) &&
+    !dropdownMenu?.contains(event.target)
+  ) {
+    if (dropdownMenu) {
+      dropdownMenu.style.display = "none";
+    }
+  }
+
+  // 컬렉션 드롭다운 외부 클릭 시 닫기
+  if (
+    collectionInput &&
+    !collectionInput.contains(event.target) &&
+    collectionDropdown &&
+    !collectionDropdown.contains(event.target)
+  ) {
+    hideCollectionDropdown();
   }
 });
 
-// 사용자 정보 메뉴 클릭
-menuUserInfo.addEventListener("click", () => {
-  showUserInfoModal();
-  dropdownMenu.style.display = "none";
+loginGoogleBtn?.addEventListener("click", () => handleLogin("google"));
+loginEmailBtn?.addEventListener("click", () => handleLogin("email"));
+menuBtn?.addEventListener("click", (event) => {
+  event.stopPropagation();
+  if (dropdownMenu) {
+    dropdownMenu.style.display =
+      dropdownMenu.style.display === "block" ? "none" : "block";
+  }
 });
-
-// 로그아웃 메뉴 클릭
-menuLogout.addEventListener("click", () => {
+menuUserInfo?.addEventListener("click", () => {
+  showUserInfoModal();
+});
+menuLogout?.addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "LOGOUT" }, () => {
     if (chrome.runtime.lastError) {
       console.error("로그아웃 오류:", chrome.runtime.lastError);
       return;
     }
-
     updateLoginUI(false);
   });
+  if (dropdownMenu) {
+    dropdownMenu.style.display = "none";
+  }
 });
-
-// 모달 닫기 버튼 클릭
-modalCloseBtn.addEventListener("click", () => {
-  closeUserInfoModal();
-});
-
-// 모달 배경 클릭 시 닫기
-userInfoModal.addEventListener("click", (e) => {
-  if (e.target === userInfoModal) {
+modalCloseBtn?.addEventListener("click", () => closeUserInfoModal());
+userInfoModal?.addEventListener("click", (event) => {
+  if (event.target === userInfoModal) {
     closeUserInfoModal();
   }
 });
 
-// 북마크 저장 버튼 클릭
-saveBookmarkBtn.addEventListener("click", () => {
-  saveCurrentPageBookmark();
+// 컬렉션 모달 이벤트 리스너
+collectionModalCloseBtn?.addEventListener("click", () =>
+  closeCollectionModal()
+);
+collectionModalCancelBtn?.addEventListener("click", () =>
+  closeCollectionModal()
+);
+collectionModal?.addEventListener("click", (event) => {
+  if (event.target === collectionModal) {
+    closeCollectionModal();
+  }
 });
-
-// Storage 변경 이벤트 리스너
-chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.user) {
-    console.log("📥 Storage 변경 감지 - 상태 업데이트 중...");
-    updateLoginUI(!!changes.user.newValue, changes.user.newValue || null);
+collectionModalCreateBtn?.addEventListener("click", () =>
+  createCollectionFromModal()
+);
+collectionModalInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    createCollectionFromModal();
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    closeCollectionModal();
   }
 });
 
-// Background에서 인증 성공 메시지 수신
+// 아이콘 입력 필드: 이모지만 허용, 일반 문자 및 한글 입력 차단
+collectionModalIconInput?.addEventListener("input", (event) => {
+  const value = event.target.value;
+  // ASCII 문자(영문, 숫자, 특수문자) 및 한글 제거
+  // 한글 유니코드 범위: \uAC00-\uD7A3 (완성형), \u1100-\u11FF (자모), \u3130-\u318F (호환용)
+  const emojiOnly = value
+    .replace(/[\x00-\x7F]/g, "") // ASCII 제거
+    .replace(/[\uAC00-\uD7A3]/g, "") // 완성형 한글 제거
+    .replace(/[\u1100-\u11FF]/g, "") // 한글 자모 제거
+    .replace(/[\u3130-\u318F]/g, ""); // 호환용 한글 자모 제거
+  if (value !== emojiOnly) {
+    event.target.value = emojiOnly;
+  }
+});
+
+collectionModalIconInput?.addEventListener("keydown", (event) => {
+  // 일반 문자 키 입력 차단 (이모지는 composition 이벤트로 처리됨)
+  if (event.key.length === 1) {
+    const keyCode = event.key.charCodeAt(0);
+    // ASCII 문자 또는 한글 범위인 경우 차단
+    const isASCII = /[\x00-\x7F]/.test(event.key);
+    const isHangul =
+      (keyCode >= 0xac00 && keyCode <= 0xd7a3) || // 완성형 한글
+      (keyCode >= 0x1100 && keyCode <= 0x11ff) || // 한글 자모
+      (keyCode >= 0x3130 && keyCode <= 0x318f); // 호환용 한글 자모
+
+    if (isASCII || isHangul) {
+      // Backspace, Delete, Arrow keys 등은 허용
+      if (
+        ![
+          "Backspace",
+          "Delete",
+          "ArrowLeft",
+          "ArrowRight",
+          "ArrowUp",
+          "ArrowDown",
+        ].includes(event.key)
+      ) {
+        event.preventDefault();
+      }
+    }
+  }
+});
+
+// composition 이벤트로 한글 입력 차단
+collectionModalIconInput?.addEventListener("compositionstart", (event) => {
+  event.preventDefault();
+});
+
+collectionModalIconInput?.addEventListener("compositionupdate", (event) => {
+  event.preventDefault();
+});
+
+collectionModalIconInput?.addEventListener("compositionend", (event) => {
+  event.preventDefault();
+  // 입력된 한글 제거
+  if (collectionModalIconInput) {
+    const value = collectionModalIconInput.value;
+    const cleaned = value
+      .replace(/[\uAC00-\uD7A3]/g, "")
+      .replace(/[\u1100-\u11FF]/g, "")
+      .replace(/[\u3130-\u318F]/g, "");
+    collectionModalIconInput.value = cleaned;
+  }
+});
+
+copyUrlBtn?.addEventListener("click", () => copyCurrentUrl());
+saveBookmarkBtn?.addEventListener("click", () => saveCurrentPageBookmark());
+
+refreshCollectionsBtn?.addEventListener("click", () => fetchCollectionsList());
+newCollectionBtn?.addEventListener("click", () => {
+  hideCollectionDropdown();
+  showCollectionModal("");
+});
+
+// 컬렉션 입력 필드 이벤트 - 드롭다운 열기
+collectionInput?.addEventListener("click", () => {
+  showCollectionDropdown();
+});
+
+collectionInput?.addEventListener("focus", () => {
+  showCollectionDropdown();
+});
+
+// 컬렉션 검색 인풋 이벤트
+collectionSearchInput?.addEventListener("input", (event) => {
+  const value = event.target.value;
+  filterCollections(value);
+});
+
+collectionSearchInput?.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    hideCollectionDropdown();
+    collectionInput?.blur();
+  }
+});
+
+// 새 컬렉션 생성 옵션 클릭 - 모달 열기
+collectionCreateOption?.addEventListener("click", () => {
+  const name = newCollectionName?.textContent?.trim();
+  if (name) {
+    hideCollectionDropdown();
+    showCollectionModal(name);
+  }
+});
+
+let isProcessingTag = false;
+
+// 한글 입력 중인지 확인
+tagInput?.addEventListener("compositionstart", () => {
+  isComposing = true;
+});
+
+tagInput?.addEventListener("compositionend", () => {
+  isComposing = false;
+});
+
+tagInput?.addEventListener("keydown", (event) => {
+  // 한글 입력 중이면 무시
+  if (isComposing) return;
+
+  if (event.key === "Enter") {
+    event.preventDefault();
+    if (isProcessingTag) return;
+    isProcessingTag = true;
+    const value = tagInput.value.trim();
+    if (value) {
+      addTagsFromInput(value);
+      tagInput.value = "";
+    }
+    setTimeout(() => {
+      isProcessingTag = false;
+    }, 100);
+  } else if (event.key === ",") {
+    event.preventDefault();
+    if (isProcessingTag) return;
+    isProcessingTag = true;
+    const value = tagInput.value.trim();
+    if (value) {
+      addTagsFromInput(value);
+      tagInput.value = "";
+    }
+    setTimeout(() => {
+      isProcessingTag = false;
+    }, 100);
+  }
+});
+
+tagInput?.addEventListener("blur", () => {
+  if (isProcessingTag || isComposing) return;
+  const value = tagInput.value.trim();
+  if (value) {
+    addTagsFromInput(value);
+    tagInput.value = "";
+  }
+});
+
+supportLink?.addEventListener("click", () => openExternalLink(SUPPORT_URL));
+bugLink?.addEventListener("click", () => openExternalLink(BUG_REPORT_URL));
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === "local" && changes.user) {
+    const userValue = changes.user.newValue;
+    updateLoginUI(!!userValue, userValue || null);
+  }
+});
+
 chrome.runtime.onMessage.addListener((message) => {
-  if (message.type === "AUTH_SUCCESS") {
-    updateStatus("로그인 성공!", true);
+  if (message?.type === "AUTH_SUCCESS") {
+    updateStatus("로그인 성공!", "success");
     updateLoginUI(true, message.user);
   }
 });
 
-// ===== 초기화 =====
+setCollectionControlsState();
+setSaveButtonState();
 
-initializeIcons();
-loadAuthState();
+// DOM이 완전히 로드된 후 아이콘 초기화
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initializeIcons);
+} else {
+  // DOM이 이미 로드됨
+  setTimeout(initializeIcons, 0);
+}
+
+// 팝업 초기화 - loadAuthState가 완료될 때까지 기다린 후 다른 초기화 수행
+(async () => {
+  await loadAuthState();
+  loadCurrentTabInfo();
+})();
