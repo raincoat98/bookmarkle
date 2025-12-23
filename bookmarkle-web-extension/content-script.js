@@ -70,6 +70,7 @@ function handleAuthResult(event) {
       type: "AUTH_RESULT_FROM_WEB",
       user: event.data.user,
       idToken: event.data.idToken,
+      refreshToken: event.data.refreshToken, // Refresh Token 추가
     },
     (response) => {
       if (chrome.runtime.lastError) {
@@ -79,6 +80,58 @@ function handleAuthResult(event) {
       }
     }
   );
+}
+
+// 토큰 요청 처리
+function handleTokenRequest(sendResponse) {
+  console.log("🔐 토큰 요청 수신 (content script)");
+  sendResponse({ received: true });
+
+  // 웹 앱에 토큰 요청 메시지 전송
+  window.postMessage(
+    {
+      type: "TOKEN_REQUEST",
+    },
+    window.location.origin
+  );
+
+  // 응답 핸들러 설정
+  const responseHandler = (event) => {
+    if (
+      event.data &&
+      event.data.type === "TOKEN_RESPONSE" &&
+      event.origin === window.location.origin
+    ) {
+      window.removeEventListener("message", responseHandler);
+      clearTimeout(timeoutId);
+      console.log("🔐 토큰 응답 수신 (content script):", {
+        hasToken: !!event.data.idToken,
+        hasUser: !!event.data.user,
+      });
+
+      // Background에 토큰 전달
+      chrome.runtime.sendMessage({
+        type: "TOKEN_RESPONSE_FROM_WEB",
+        idToken: event.data.idToken,
+        user: event.data.user,
+      });
+    }
+  };
+
+  window.addEventListener("message", responseHandler);
+
+  // 타임아웃 (5초)
+  const timeoutId = setTimeout(() => {
+    window.removeEventListener("message", responseHandler);
+    console.warn("🔐 토큰 응답 타임아웃 (content script)");
+    chrome.runtime.sendMessage({
+      type: "TOKEN_RESPONSE_FROM_WEB",
+      idToken: null,
+      error: "웹 앱으로부터 토큰을 받지 못했습니다.",
+    });
+  }, 5000);
+
+  return false;
 }
 
 // ===== 이벤트 리스너 =====
@@ -92,6 +145,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   if (message.type === "GET_DATA_COUNT") {
     return handleGetDataCount(sendResponse);
+  }
+
+  if (message.type === "TOKEN_REQUEST") {
+    return handleTokenRequest(sendResponse);
   }
 
   if (message.type === "EXTENSION_LOGOUT") {

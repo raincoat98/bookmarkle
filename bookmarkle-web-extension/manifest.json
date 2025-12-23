@@ -3,7 +3,7 @@
   "name": "북마클",
   "version": "1.0.0",
   "description": "북마크를 한곳에서 관리하는 생산성 앱",
-  "permissions": ["tabs", "scripting", "offscreen", "storage"],
+  "permissions": ["tabs", "scripting", "storage"],
   "host_permissions": [
     "https://*.firebaseapp.com/*",
     "https://*.googleapis.com/*",
@@ -14,17 +14,7 @@
   "background": {
     "service_worker": "background.js"
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["offscreen.html"],
-      "matches": [
-        "https://*.firebaseapp.com/*",
-        "https://*.web.app/*",
-        "http://localhost/*",
-        "http://127.0.0.1/*"
-      ]
-    }
-  ],
+  "web_accessible_resources": [],
   "content_scripts": [
     {
       "matches": [

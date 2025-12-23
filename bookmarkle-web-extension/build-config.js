@@ -55,7 +55,7 @@ if (fs.existsSync(manifestPath)) {
   }
 }
 
-// background.js에 SIGNIN_POPUP_URL 주입
+// background.js에 SIGNIN_POPUP_URL 및 FIREBASE_PROJECT_ID 주입
 const backgroundPath = path.join(distDir, "background.js");
 if (fs.existsSync(backgroundPath)) {
   const signinPopupUrlWithParam =
@@ -69,43 +69,14 @@ if (fs.existsSync(backgroundPath)) {
     /"SIGNIN_POPUP_URL_PLACEHOLDER"/g,
     `"${signinPopupUrlWithParam}"`
   );
+  content = content.replace(
+    /"FIREBASE_PROJECT_ID_PLACEHOLDER"/g,
+    `"${firebaseProjectId}"`
+  );
   fs.writeFileSync(backgroundPath, content, "utf8");
   console.log("✅ background.js 환경 변수 주입 완료");
   console.log(`   SIGNIN_POPUP_URL: ${signinPopupUrlWithParam}`);
-}
-
-// offscreen.js에 Firebase Config 주입
-const offscreenPath = path.join(distDir, "offscreen.js");
-if (fs.existsSync(offscreenPath)) {
-  let content = fs.readFileSync(offscreenPath, "utf8");
-
-  content = content.replace(
-    /apiKey:"FIREBASE_API_KEY_PLACEHOLDER"/,
-    `apiKey:"${firebaseApiKey}"`
-  );
-  content = content.replace(
-    /authDomain:"FIREBASE_AUTH_DOMAIN_PLACEHOLDER"/,
-    `authDomain:"${firebaseAuthDomain}"`
-  );
-  content = content.replace(
-    /projectId:"FIREBASE_PROJECT_ID_PLACEHOLDER"/,
-    `projectId:"${firebaseProjectId}"`
-  );
-  content = content.replace(
-    /storageBucket:"FIREBASE_STORAGE_BUCKET_PLACEHOLDER"/,
-    `storageBucket:"${firebaseStorageBucket}"`
-  );
-  content = content.replace(
-    /messagingSenderId:"FIREBASE_MESSAGING_SENDER_ID_PLACEHOLDER"/,
-    `messagingSenderId:"${firebaseMessagingSenderId}"`
-  );
-  content = content.replace(
-    /appId:"FIREBASE_APP_ID_PLACEHOLDER"/,
-    `appId:"${firebaseAppId}"`
-  );
-
-  fs.writeFileSync(offscreenPath, content, "utf8");
-  console.log("✅ offscreen.js 환경 변수 주입 완료");
+  console.log(`   FIREBASE_PROJECT_ID: ${firebaseProjectId}`);
 }
 
 console.log("\n🎉 Vite 번들링 및 환경 변수 주입 완료!");
