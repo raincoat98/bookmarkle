@@ -3,7 +3,8 @@
   "name": "북마클",
   "version": "1.0.0",
   "description": "북마크를 한곳에서 관리하는 생산성 앱",
-  "permissions": ["tabs", "scripting", "storage"],
+  "homepage_url": "https://chromewebstore.google.com/detail/%EB%B6%81%EB%A7%88%ED%81%B4/lkkbdejelaagaipenlheijafnjggkdcm",
+  "permissions": ["tabs", "scripting", "storage", "contextMenus"],
   "host_permissions": [
     "https://*.firebaseapp.com/*",
     "https://*.googleapis.com/*",

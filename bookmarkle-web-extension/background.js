@@ -1042,6 +1042,20 @@ async function handleMessage(message, sender, sendResponse) {
       return true; // 비동기 응답 처리
     }
 
+    if (messageType === "QUICK_SAVE_BOOKMARK") {
+      console.log("⚡ 빠른 실행 모드: 북마크 저장 요청 수신");
+      const result = await quickSaveBookmark();
+      sendResponse(result);
+      return true; // 비동기 응답 처리
+    }
+
+    if (messageType === "QUICK_SAVE_BOOKMARK") {
+      console.log("⚡ 빠른 실행 모드: 북마크 저장 요청 수신");
+      const result = await quickSaveBookmark();
+      sendResponse(result);
+      return true; // 비동기 응답 처리
+    }
+
     if (messageType === "GET_CURRENT_USER") {
       if (!currentUser) {
         await restoreUserInfo();
@@ -1178,9 +1192,351 @@ chrome.runtime.onInstalled?.addListener(async (details) => {
   await restoreUserInfo();
 });
 
+// ===== 컨텍스트 메뉴 =====
+
+const DASHBOARD_URL = "https://bookmarkhub-5ea6c.web.app";
+const GITHUB_URL = "https://github.com/raincoat98/bookmakle";
+const BUG_REPORT_URL =
+  "https://github.com/raincoat98/bookmakle/issues?q=sort%3Aupdated-desc+is%3Aissue+is%3Aopen";
+
+// 컨텍스트 메뉴 생성
+async function createContextMenus() {
+  try {
+    // 빠른 실행 모드 상태 확인
+    const quickModeResult = await chrome.storage.local.get(["quickMode"]);
+    const isQuickModeEnabled = quickModeResult.quickMode || false;
+    const quickModeTitle = isQuickModeEnabled
+      ? "⚡ 빠른 실행 모드 비활성화"
+      : "⚡ 빠른 실행 모드 활성화";
+
+    // 기존 메뉴 제거 (중복 방지)
+    chrome.contextMenus.removeAll(() => {
+      // 빠른 실행 모드 활성화/비활성화
+      chrome.contextMenus.create(
+        {
+          id: "quick-mode",
+          title: quickModeTitle,
+          contexts: ["all"],
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("컨텍스트 메뉴 생성 오류:", chrome.runtime.lastError);
+          } else {
+            console.log("✅ 컨텍스트 메뉴 생성: 빠른 실행 모드");
+          }
+        }
+      );
+
+      // 대시보드 열기
+      chrome.contextMenus.create(
+        {
+          id: "open-dashboard",
+          title: "📊 대시보드 열기",
+          contexts: ["all"],
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("컨텍스트 메뉴 생성 오류:", chrome.runtime.lastError);
+          } else {
+            console.log("✅ 컨텍스트 메뉴 생성: 대시보드");
+          }
+        }
+      );
+
+      // 구분선
+      chrome.contextMenus.create(
+        {
+          id: "separator-1",
+          type: "separator",
+          contexts: ["all"],
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("컨텍스트 메뉴 생성 오류:", chrome.runtime.lastError);
+          }
+        }
+      );
+
+      // GitHub 저장소
+      chrome.contextMenus.create(
+        {
+          id: "open-github",
+          title: "🐙 GitHub 저장소",
+          contexts: ["all"],
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("컨텍스트 메뉴 생성 오류:", chrome.runtime.lastError);
+          } else {
+            console.log("✅ 컨텍스트 메뉴 생성: GitHub");
+          }
+        }
+      );
+
+      // 버그 리포트
+      chrome.contextMenus.create(
+        {
+          id: "open-bug-report",
+          title: "🐛 버그 리포트",
+          contexts: ["all"],
+        },
+        () => {
+          if (chrome.runtime.lastError) {
+            console.error("컨텍스트 메뉴 생성 오류:", chrome.runtime.lastError);
+          } else {
+            console.log("✅ 컨텍스트 메뉴 생성: 버그 리포트");
+          }
+        }
+      );
+
+      console.log("✅ 컨텍스트 메뉴 생성 완료");
+    });
+  } catch (error) {
+    console.error("❌ 컨텍스트 메뉴 생성 실패:", error);
+  }
+}
+
+// 컨텍스트 메뉴 클릭 이벤트 처리 (중복 방지)
+let lastClickTime = {};
+const CLICK_DEBOUNCE_MS = 500; // 500ms 내 중복 클릭 방지
+
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  try {
+    const now = Date.now();
+    const menuItemId = info.menuItemId;
+
+    // 중복 클릭 방지
+    if (
+      lastClickTime[menuItemId] &&
+      now - lastClickTime[menuItemId] < CLICK_DEBOUNCE_MS
+    ) {
+      console.log("⚠️ 중복 클릭 무시:", menuItemId);
+      return;
+    }
+
+    lastClickTime[menuItemId] = now;
+
+    switch (menuItemId) {
+      case "quick-mode":
+        // 빠른 실행 모드 토글
+        chrome.storage.local.get(["quickMode"], async (result) => {
+          const newQuickMode = !result.quickMode;
+          await chrome.storage.local.set({ quickMode: newQuickMode });
+          console.log("빠른 실행 모드:", newQuickMode ? "활성화" : "비활성화");
+          // 컨텍스트 메뉴 다시 생성하여 텍스트 업데이트
+          await createContextMenus();
+          // popup 상태도 업데이트
+          await updateQuickModePopup();
+        });
+        break;
+
+      case "open-dashboard":
+        // 대시보드 열기
+        chrome.tabs.create({ url: DASHBOARD_URL });
+        break;
+
+      case "open-github":
+        // GitHub 저장소 열기
+        chrome.tabs.create({ url: GITHUB_URL });
+        break;
+
+      case "open-bug-report":
+        // 버그 리포트 열기
+        chrome.tabs.create({ url: BUG_REPORT_URL });
+        break;
+
+      default:
+        console.log("알 수 없는 메뉴 항목:", menuItemId);
+    }
+  } catch (error) {
+    console.error("컨텍스트 메뉴 처리 오류:", error);
+  }
+});
+
+// ===== 빠른 실행 모드 =====
+
+// 빠른 실행 모드 상태에 따라 popup 활성/비활성화
+async function updateQuickModePopup() {
+  try {
+    const result = await chrome.storage.local.get(["quickMode"]);
+    const isQuickModeEnabled = result.quickMode || false;
+
+    if (isQuickModeEnabled) {
+      // 빠른 실행 모드 활성화 → popup 비활성화, onClicked 리스너 사용
+      chrome.action.setPopup({ popup: "" });
+      console.log("⚡ 빠른 실행 모드: popup 비활성화");
+    } else {
+      // 빠른 실행 모드 비활성화 → popup 활성화
+      chrome.action.setPopup({ popup: "popup.html" });
+      console.log("📋 일반 모드: popup 활성화");
+    }
+  } catch (error) {
+    console.error("❌ 빠른 실행 모드 popup 업데이트 실패:", error);
+  }
+}
+
+// 확장 프로그램 아이콘 클릭 처리 (빠른 실행 모드일 때만)
+chrome.action.onClicked.addListener(async (tab) => {
+  try {
+    // 빠른 실행 모드 확인
+    const quickModeResult = await chrome.storage.local.get(["quickMode"]);
+    const isQuickModeEnabled = quickModeResult.quickMode || false;
+
+    if (!isQuickModeEnabled) {
+      // 빠른 실행 모드가 꺼져있으면 popup이 열림 (기본 동작)
+      return;
+    }
+
+    // 로그인 상태 확인
+    if (!currentUser) {
+      await restoreUserInfo();
+    }
+
+    if (!currentUser || !currentUser.uid) {
+      console.log("⚠️ 빠른 실행 모드: 로그인되지 않음");
+      // 로그인 안되어 있으면 popup 활성화하여 로그인 유도
+      chrome.action.setPopup({ popup: "popup.html" });
+      chrome.action.openPopup();
+      return;
+    }
+
+    // 빠른 실행 모드 활성화 + 로그인됨 → 바로 북마크 저장
+    console.log("⚡ 빠른 실행 모드: 바로 북마크 저장");
+
+    const saveResult = await quickSaveBookmark();
+
+    if (saveResult.success) {
+      console.log("✅ 빠른 실행 모드: 북마크 저장 완료");
+      // 성공 알림
+      chrome.action.setBadgeText({ text: "✓" });
+      chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
+      setTimeout(() => {
+        chrome.action.setBadgeText({ text: "" });
+      }, 2000);
+    } else {
+      // 실패 알림 (X 표시)
+      chrome.action.setBadgeText({ text: "✕" });
+      chrome.action.setBadgeBackgroundColor({ color: "#F44336" });
+      setTimeout(() => {
+        chrome.action.setBadgeText({ text: "" });
+      }, 2000);
+    }
+  } catch (error) {}
+});
+
+// 빠른 실행 모드로 북마크 저장 (popup 없이)
+async function quickSaveBookmark() {
+  try {
+    // 로그인 상태 확인
+    if (!currentUser) {
+      await restoreUserInfo();
+    }
+
+    if (!currentUser || !currentUser.uid) {
+      console.log("⚠️ 빠른 실행 모드: 로그인되지 않음");
+      return { success: false, error: "로그인이 필요합니다." };
+    }
+
+    // 현재 활성 탭 정보 가져오기
+    const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tabs || tabs.length === 0) {
+      return { success: false, error: "현재 탭 정보를 가져올 수 없습니다." };
+    }
+
+    const currentTab = tabs[0];
+
+    // 탭 정보 검증
+    if (!currentTab.url || !currentTab.title) {
+      return {
+        success: false,
+        error: "현재 페이지의 URL 또는 제목을 가져올 수 없습니다.",
+      };
+    }
+
+    // chrome:// 또는 edge:// 등 특수 URL 차단
+    if (
+      currentTab.url.startsWith("chrome://") ||
+      currentTab.url.startsWith("edge://") ||
+      currentTab.url.startsWith("about:")
+    ) {
+      return { success: false, error: "이 페이지는 북마크할 수 없습니다." };
+    }
+
+    // 북마크 데이터 준비
+    const favicon = getFaviconUrl(currentTab.url);
+    const now = new Date();
+    const bookmarkDataToSave = {
+      title: currentTab.title,
+      url: currentTab.url,
+      description: "",
+      favicon: favicon,
+      collection: null,
+      order: 0,
+      userId: currentUser.uid,
+      createdAt: now,
+      updatedAt: now,
+      tags: [],
+      isFavorite: false,
+    };
+
+    // idToken 확인 및 갱신
+    if (!currentIdToken) {
+      await restoreUserInfo();
+    }
+
+    if (!currentIdToken) {
+      let refreshedToken = await refreshIdTokenWithRefreshToken();
+      if (!refreshedToken) {
+        refreshedToken = await getRefreshIdTokenFromWeb();
+      }
+      if (refreshedToken) {
+        currentIdToken = refreshedToken;
+      }
+    }
+
+    if (!currentIdToken) {
+      return {
+        success: false,
+        error: "인증 토큰이 없습니다. 다시 로그인해주세요.",
+      };
+    }
+
+    // Firestore REST API로 북마크 저장
+    const response = await addFirestoreDocument(
+      "bookmarks",
+      bookmarkDataToSave,
+      currentIdToken
+    );
+
+    const bookmarkId = response.name?.split("/").pop();
+    console.log("✅ 빠른 실행 모드: 북마크 저장 완료, ID:", bookmarkId);
+
+    return { success: true, bookmarkId: bookmarkId };
+  } catch (error) {
+    console.error("❌ 빠른 실행 모드 북마크 저장 실패:", error);
+    return {
+      success: false,
+      error: error.message || "북마크 저장 중 오류가 발생했습니다.",
+    };
+  }
+}
+
 // ===== 초기화 =====
 
 (async () => {
   console.log("🚀 Background Service Worker 시작 - 사용자 정보 복원 중...");
   await restoreUserInfo();
+  // 컨텍스트 메뉴 생성
+  createContextMenus();
+  // 빠른 실행 모드 상태에 따라 popup 설정
+  await updateQuickModePopup();
 })();
+
+// 빠른 실행 모드 상태 변경 감지
+chrome.storage.onChanged.addListener(async (changes, areaName) => {
+  if (areaName === "local" && changes.quickMode) {
+    await updateQuickModePopup();
+    // 컨텍스트 메뉴도 업데이트
+    await createContextMenus();
+  }
+});
