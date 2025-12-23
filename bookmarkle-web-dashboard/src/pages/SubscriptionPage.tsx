@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Timestamp } from "firebase/firestore";
 import {
   useSubscriptionStore,
   useBookmarkStore,
@@ -15,6 +16,11 @@ import {
   checkCollectionLimit,
 } from "../utils/subscriptionLimits";
 import { isBetaPeriod } from "../utils/betaFlags";
+
+// Timestamp를 Date로 변환하는 헬퍼 함수
+const toDate = (date: Date | Timestamp): Date => {
+  return date instanceof Date ? date : date.toDate();
+};
 
 export const SubscriptionPage: React.FC = () => {
   const { t } = useTranslation();
@@ -53,12 +59,24 @@ export const SubscriptionPage: React.FC = () => {
       if (!bookmarkLimit.allowed) {
         warningMessage += `\n- ${t(
           "premium.bookmarks"
-        )}: ${currentBookmarkCount}${t("common.countUnit", { defaultValue: "개" })} (${t("premium.limit", { defaultValue: "제한" })}: ${freeBookmarkLimit}${t("common.countUnit", { defaultValue: "개" })})`;
+        )}: ${currentBookmarkCount}${t("common.countUnit", {
+          defaultValue: "개",
+        })} (${t("premium.limit", {
+          defaultValue: "제한",
+        })}: ${freeBookmarkLimit}${t("common.countUnit", {
+          defaultValue: "개",
+        })})`;
       }
       if (!collectionLimit.allowed) {
         warningMessage += `\n- ${t(
           "premium.collections"
-        )}: ${currentCollectionCount}${t("common.countUnit", { defaultValue: "개" })} (${t("premium.limit", { defaultValue: "제한" })}: ${freeCollectionLimit}${t("common.countUnit", { defaultValue: "개" })})`;
+        )}: ${currentCollectionCount}${t("common.countUnit", {
+          defaultValue: "개",
+        })} (${t("premium.limit", {
+          defaultValue: "제한",
+        })}: ${freeCollectionLimit}${t("common.countUnit", {
+          defaultValue: "개",
+        })})`;
       }
       warningMessage += `\n\n${t("premium.cancelWarningNote")}`;
     }
@@ -99,9 +117,9 @@ export const SubscriptionPage: React.FC = () => {
     navigate("/pricing");
   };
 
-  const formatDate = (date: Date | null | undefined) => {
+  const formatDate = (date: Date | Timestamp | null | undefined) => {
     if (!date) return "-";
-    const d = date instanceof Date ? date : new Date(date);
+    const d = toDate(date);
     return d.toLocaleDateString("ko-KR", {
       year: "numeric",
       month: "long",
@@ -203,7 +221,9 @@ export const SubscriptionPage: React.FC = () => {
                   </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {limits.maxBookmarks === Infinity
-                      ? `∞ (${rawBookmarks.length}${t("common.countUnit", { defaultValue: "개" })})`
+                      ? `∞ (${rawBookmarks.length}${t("common.countUnit", {
+                          defaultValue: "개",
+                        })})`
                       : `${rawBookmarks.length} / ${limits.maxBookmarks}`}
                   </span>
                 </div>
@@ -241,7 +261,9 @@ export const SubscriptionPage: React.FC = () => {
                   </span>
                   <span className="text-gray-900 dark:text-white font-medium">
                     {limits.maxCollections === Infinity
-                      ? `∞ (${collections.length}${t("common.countUnit", { defaultValue: "개" })})`
+                      ? `∞ (${collections.length}${t("common.countUnit", {
+                          defaultValue: "개",
+                        })})`
                       : `${collections.length} / ${limits.maxCollections}`}
                   </span>
                 </div>

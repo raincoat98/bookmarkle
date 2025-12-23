@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { Timestamp } from "firebase/firestore";
 import type { AdminUser } from "../../types";
 import {
   Search,
@@ -13,6 +14,11 @@ import {
   Gift,
 } from "lucide-react";
 import { isEarlyUser } from "../../utils/earlyUser";
+
+// Timestamp를 Date로 변환하는 헬퍼 함수
+const toDate = (date: Date | Timestamp): Date => {
+  return date instanceof Date ? date : date.toDate();
+};
 
 interface AdminUserListProps {
   users: AdminUser[];
@@ -297,7 +303,9 @@ export function AdminUserList({
                             : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
                         }`}
                       >
-                        {user.isActive ? t("admin.active") : t("admin.inactive")}
+                        {user.isActive
+                          ? t("admin.active")
+                          : t("admin.inactive")}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
@@ -317,7 +325,9 @@ export function AdminUserList({
                             : "text-green-600 hover:text-green-800 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300"
                         }`}
                         title={
-                          user.isActive ? t("admin.deactivateUser") : t("admin.activateUser")
+                          user.isActive
+                            ? t("admin.deactivateUser")
+                            : t("admin.activateUser")
                         }
                       >
                         {user.isActive ? (
@@ -439,9 +449,9 @@ export function AdminUserList({
                             ? t("admin.monthly")
                             : t("admin.yearly")}
                           {selectedUser.subscription.endDate &&
-                            ` · ${t("admin.expiryDate")}: ${selectedUser.subscription.endDate.toLocaleDateString(
-                              "ko-KR"
-                            )}`}
+                            ` · ${t("admin.expiryDate")}: ${toDate(
+                              selectedUser.subscription.endDate
+                            ).toLocaleDateString("ko-KR")}`}
                         </p>
                       </div>
                     </>

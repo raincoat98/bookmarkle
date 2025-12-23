@@ -22,6 +22,8 @@ import {
   getBackupStatus,
   deleteBackup,
   type BackupSettings,
+  type BackupStatus,
+  type BackupListItem,
 } from "../utils/backup";
 import {
   downloadChromeBookmarks,
@@ -255,7 +257,9 @@ export const useSettings = ({
   const [backupSettings, setBackupSettings] = useState<BackupSettings>(() =>
     loadBackupSettings()
   );
-  const [backupStatus, setBackupStatus] = useState(() => getBackupStatus());
+  const [backupStatus, setBackupStatus] = useState<BackupStatus>(() =>
+    getBackupStatus()
+  );
   const [defaultPage, setDefaultPage] = useState(
     () => localStorage.getItem("defaultPage") || "dashboard"
   );
@@ -269,7 +273,9 @@ export const useSettings = ({
     open: boolean;
     timestamp: string | null;
   }>({ open: false, timestamp: null });
-  const [backups, setBackups] = useState(() => getAllBackups());
+  const [backups, setBackups] = useState<BackupListItem[]>(() =>
+    getAllBackups()
+  );
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   // 백업 동기화 함수

@@ -1,8 +1,14 @@
 import { create } from "zustand";
-import { doc, getDoc, onSnapshot } from "firebase/firestore";
+import { doc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Subscription, SubscriptionPlan, UserLimits } from "../types";
 import { getUserLimits, getUserLimitsSync } from "../utils/subscriptionLimits";
+
+// Timestamp를 Date로 변환하는 헬퍼 함수
+const toDate = (date: Date | Timestamp | null): Date | null => {
+  if (!date) return null;
+  return date instanceof Date ? date : date.toDate();
+};
 
 interface SubscriptionState {
   subscription: Subscription | null;
@@ -193,11 +199,8 @@ export const useSubscriptionStore = create<
 
     // 종료일이 있고 지났는지 확인
     if (subscription.endDate) {
-      const endDate =
-        subscription.endDate instanceof Date
-          ? subscription.endDate
-          : new Date(subscription.endDate);
-      if (endDate < new Date()) {
+      const endDate = toDate(subscription.endDate);
+      if (endDate && endDate < new Date()) {
         return false;
       }
     }
