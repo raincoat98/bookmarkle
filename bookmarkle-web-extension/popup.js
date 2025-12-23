@@ -33,14 +33,9 @@ const userEmailSpan = document.getElementById("userEmail");
 const statusBadge = document.getElementById("statusBadge");
 const menuBtn = document.getElementById("menuBtn");
 const dropdownMenu = document.getElementById("dropdownMenu");
-const menuQuickMode = document.getElementById("menuQuickMode");
-const menuDashboard = document.getElementById("menuDashboard");
 const menuUserInfo = document.getElementById("menuUserInfo");
 const menuTheme = document.getElementById("menuTheme");
 const themeText = document.getElementById("themeText");
-const menuSettings = document.getElementById("menuSettings");
-const menuGitHub = document.getElementById("menuGitHub");
-const menuBugReport = document.getElementById("menuBugReport");
 const menuLogout = document.getElementById("menuLogout");
 const userInfoModal = document.getElementById("userInfoModal");
 const userDetailsDiv = document.getElementById("userDetails");
@@ -828,48 +823,12 @@ menuBtn?.addEventListener("click", (event) => {
       dropdownMenu.style.display === "block" ? "none" : "block";
   }
 });
-menuQuickMode?.addEventListener("click", () => {
-  // 빠른 실행 모드 토글 (향후 구현)
-  chrome.storage.local.get(["quickMode"], (result) => {
-    const newQuickMode = !result.quickMode;
-    chrome.storage.local.set({ quickMode: newQuickMode }, () => {
-      updateStatus(
-        newQuickMode
-          ? "빠른 실행 모드가 활성화되었습니다"
-          : "빠른 실행 모드가 비활성화되었습니다",
-        "success"
-      );
-    });
-  });
-  if (dropdownMenu) {
-    dropdownMenu.style.display = "none";
-  }
-});
-
-menuDashboard?.addEventListener("click", () => {
-  openExternalLink(DASHBOARD_URL);
-  if (dropdownMenu) {
-    dropdownMenu.style.display = "none";
-  }
-});
 
 menuUserInfo?.addEventListener("click", () => {
   showUserInfoModal();
 });
 menuTheme?.addEventListener("click", () => {
   toggleTheme();
-  if (dropdownMenu) {
-    dropdownMenu.style.display = "none";
-  }
-});
-menuGitHub?.addEventListener("click", () => {
-  openExternalLink(GITHUB_URL);
-  if (dropdownMenu) {
-    dropdownMenu.style.display = "none";
-  }
-});
-menuBugReport?.addEventListener("click", () => {
-  openExternalLink(BUG_REPORT_URL);
   if (dropdownMenu) {
     dropdownMenu.style.display = "none";
   }

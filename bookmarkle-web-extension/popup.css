@@ -546,13 +546,13 @@ body.light-theme .icon-btn:hover {
 }
 
 .tag-chip {
-  padding: 6px 12px;
+  padding: 6px 10px;
   border-radius: 999px;
   background: var(--tag-bg);
   font-size: 12px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }
