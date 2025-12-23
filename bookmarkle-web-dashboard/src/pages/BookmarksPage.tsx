@@ -67,7 +67,7 @@ export const BookmarksPage: React.FC = () => {
     updateCollection,
     deleteCollection,
     setPinned,
-    fetchCollections,
+    subscribeToCollections,
   } = useCollectionStore(
     useShallow((state) => ({
       collections: state.collections,
@@ -75,7 +75,7 @@ export const BookmarksPage: React.FC = () => {
       updateCollection: state.updateCollection,
       deleteCollection: state.deleteCollection,
       setPinned: state.setPinned,
-      fetchCollections: state.fetchCollections,
+      subscribeToCollections: state.subscribeToCollections,
     }))
   );
 
@@ -135,12 +135,14 @@ export const BookmarksPage: React.FC = () => {
     setBookmarkCollections,
   ]);
 
-  // 컬렉션 데이터 가져오기
+  // 컬렉션 데이터 실시간 구독
   React.useEffect(() => {
-    if (user?.uid) {
-      fetchCollections(user.uid);
-    }
-  }, [user?.uid, fetchCollections]);
+    if (!user?.uid) return;
+    
+    const unsubscribe = subscribeToCollections(user.uid);
+    
+    return () => unsubscribe();
+  }, [user?.uid, subscribeToCollections]);
 
   // 북마크 구독 설정
   React.useEffect(() => {

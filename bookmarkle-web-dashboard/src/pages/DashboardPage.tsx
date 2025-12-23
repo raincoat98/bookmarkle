@@ -50,13 +50,13 @@ export const DashboardPage: React.FC = () => {
   const {
     collections,
     addCollection,
-    fetchCollections,
+    subscribeToCollections,
     loading: collectionsLoading,
   } = useCollectionStore(
     useShallow((state) => ({
       collections: state.collections,
       addCollection: state.addCollection,
-      fetchCollections: state.fetchCollections,
+      subscribeToCollections: state.subscribeToCollections,
       loading: state.loading,
     }))
   );
@@ -82,11 +82,14 @@ export const DashboardPage: React.FC = () => {
     }
 
     // Start both operations in parallel
-    fetchCollections(user.uid);
-    const unsubscribe = subscribeToBookmarks(user.uid);
+    const unsubscribeCollections = subscribeToCollections(user.uid);
+    const unsubscribeBookmarks = subscribeToBookmarks(user.uid);
 
-    return () => unsubscribe();
-  }, [user?.uid, fetchCollections, subscribeToBookmarks]);
+    return () => {
+      unsubscribeCollections();
+      unsubscribeBookmarks();
+    };
+  }, [user?.uid, subscribeToCollections, subscribeToBookmarks]);
 
   // 정렬 상태 관리
   const [currentSort, setCurrentSort] = useState<SortOption>({
