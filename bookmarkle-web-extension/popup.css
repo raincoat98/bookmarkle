@@ -9,6 +9,17 @@
   --tag-bg: rgba(255, 255, 255, 0.08);
 }
 
+body.light-theme {
+  --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e40af 100%);
+  --card-bg: rgba(255, 255, 255, 0.12);
+  --field-bg: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --muted-text: rgba(255, 255, 255, 0.7);
+  --muted-strong: rgba(255, 255, 255, 0.9);
+  --accent: #c289ff;
+  --tag-bg: rgba(255, 255, 255, 0.12);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -24,6 +35,11 @@ body {
   justify-content: center;
   padding: 14px;
   color: #fff;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme {
+  color: #fff;
 }
 
 .popup-card {
@@ -34,6 +50,11 @@ body {
   border-radius: 24px;
   padding: 15px;
   border: 1px solid var(--border-color);
+  box-shadow: 0 25px 45px rgba(4, 5, 24, 0.6), 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.light-theme .popup-card {
   box-shadow: 0 25px 45px rgba(4, 5, 24, 0.6), 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
@@ -91,6 +112,12 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(255, 255, 255, 0.04);
   font-size: 12px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .user-header {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .user-email-badge {
@@ -131,10 +158,20 @@ body {
   display: grid;
   place-items: center;
   padding: 0;
+  transition: background 0.2s ease;
 }
 
 .menu-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+body.light-theme .menu-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+body.light-theme .menu-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
 .dropdown-menu {
@@ -149,6 +186,14 @@ body {
   width: max-content;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
   z-index: 10;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.light-theme .dropdown-menu {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
 }
 
 .menu-item {
@@ -162,10 +207,19 @@ body {
   color: #fff;
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .menu-item:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme .menu-item {
+  color: #fff;
+}
+
+body.light-theme .menu-item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .menu-icon {
@@ -182,9 +236,18 @@ svg {
   margin-left: auto;
   font-size: 10px;
   color: rgba(255, 255, 255, 0.65);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .menu-item .coming-soon {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .menu-item.danger {
+  color: #ff7a7a;
+}
+
+body.light-theme .menu-item.danger {
   color: #ff7a7a;
 }
 
@@ -245,6 +308,15 @@ textarea {
   color: #fff;
   font-size: 13px;
   font-family: inherit;
+  transition: color 0.3s ease;
+}
+
+body.light-theme #currentPageInput {
+  color: #fff;
+}
+
+body.light-theme #currentPageInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 #currentPageInput {
@@ -264,9 +336,19 @@ textarea {
   font-family: inherit;
   padding: 0;
   cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+body.light-theme #collectionInput {
+  color: #fff;
 }
 
 #collectionInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+}
+
+body.light-theme #collectionInput::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -285,6 +367,14 @@ textarea {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.light-theme .collection-dropdown {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
 }
 
 .collection-search-input {
@@ -297,9 +387,20 @@ textarea {
   font-size: 13px;
   font-family: inherit;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .collection-search-input {
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .collection-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .collection-search-input::placeholder {
   color: rgba(255, 255, 255, 0.5);
 }
 
@@ -315,10 +416,20 @@ textarea {
   font-size: 13px;
   color: #fff;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease, color 0.3s ease;
 }
 
 .collection-dropdown-item:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme .collection-dropdown-item {
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme .collection-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .collection-dropdown-item:last-child {
@@ -332,10 +443,20 @@ textarea {
   color: var(--accent);
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(194, 137, 255, 0.1);
+  transition: background 0.2s ease, border-color 0.3s ease;
 }
 
 .collection-create-option:hover {
   background: rgba(194, 137, 255, 0.15);
+}
+
+body.light-theme .collection-create-option {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(194, 137, 255, 0.15);
+}
+
+body.light-theme .collection-create-option:hover {
+  background: rgba(194, 137, 255, 0.2);
 }
 
 #tagInput {
@@ -348,6 +469,15 @@ textarea {
   color: #fff;
   font-size: 13px;
   font-family: inherit;
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme #tagInput {
+  color: #fff;
+}
+
+body.light-theme #tagInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 textarea {
@@ -358,6 +488,15 @@ textarea {
   border-radius: 14px;
   background: var(--field-bg);
   border: 1px solid var(--border-color);
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme textarea {
+  color: #fff;
+}
+
+body.light-theme textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .icon-btn {
@@ -372,16 +511,26 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.3s ease;
 }
 
 .icon-btn:hover {
   border-color: rgba(255, 255, 255, 0.3);
 }
 
+body.light-theme .icon-btn {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+body.light-theme .icon-btn:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
 .tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 5px;
   margin-top: 0;
 }
 
@@ -394,6 +543,11 @@ textarea {
   align-items: center;
   gap: 8px;
   border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme .tag-chip {
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .tag-chip button {
@@ -461,11 +615,22 @@ textarea {
   background: rgba(255, 255, 255, 0.02);
   font-size: 13px;
   color: var(--muted-strong);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme .data-info {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .data-info strong {
   color: #fff;
   font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .data-info strong {
+  color: #fff;
 }
 
 .login-controls {
@@ -483,11 +648,20 @@ textarea {
   padding: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, border-color 0.3s ease, color 0.3s ease;
 }
 
 .secondary-btn:hover {
   background: rgba(255, 255, 255, 0.1);
+}
+
+body.light-theme .secondary-btn {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+
+body.light-theme .secondary-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .ghost-btn {
@@ -499,6 +673,16 @@ textarea {
   border-radius: 10px;
   cursor: pointer;
   white-space: nowrap;
+  transition: border-color 0.3s ease, color 0.3s ease, background 0.2s ease;
+}
+
+body.light-theme .ghost-btn {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+
+body.light-theme .ghost-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .footer-row {
@@ -508,6 +692,11 @@ textarea {
   justify-content: center;
   gap: 10px;
   font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .footer-row {
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -522,6 +711,11 @@ textarea {
 }
 
 .divider {
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .divider {
   color: rgba(255, 255, 255, 0.4);
 }
 
@@ -553,6 +747,18 @@ textarea {
   width: min(90%, 420px);
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .user-info-modal-content {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(10px);
+}
+
+body.light-theme .user-info-modal-content strong {
+  color: #fff;
 }
 
 .user-info-modal-close {
@@ -564,6 +770,11 @@ textarea {
   font-size: 20px;
   color: #fff;
   cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .user-info-modal-close {
+  color: #fff;
 }
 
 .collection-modal {
@@ -587,6 +798,14 @@ textarea {
   width: min(90%, 420px);
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .collection-modal-content {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(10px);
 }
 
 .collection-modal-close {
@@ -598,6 +817,11 @@ textarea {
   font-size: 20px;
   color: #fff;
   cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .collection-modal-close {
+  color: #fff;
 }
 
 .collection-modal-title {
@@ -605,6 +829,15 @@ textarea {
   font-weight: 600;
   margin-bottom: 16px;
   color: #fff;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .collection-modal-title {
+  color: #fff;
+}
+
+body.light-theme .collection-modal-content label {
+  color: rgba(255, 255, 255, 0.85) !important;
 }
 
 .collection-modal-input {
@@ -618,6 +851,15 @@ textarea {
   font-size: 14px;
   font-family: inherit;
   margin-bottom: 16px;
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .collection-modal-input {
+  color: #fff;
+}
+
+body.light-theme .collection-modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .collection-modal-input:focus {

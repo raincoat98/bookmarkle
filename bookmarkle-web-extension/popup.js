@@ -30,6 +30,8 @@ const statusBadge = document.getElementById("statusBadge");
 const menuBtn = document.getElementById("menuBtn");
 const dropdownMenu = document.getElementById("dropdownMenu");
 const menuUserInfo = document.getElementById("menuUserInfo");
+const menuTheme = document.getElementById("menuTheme");
+const themeText = document.getElementById("themeText");
 const menuSettings = document.getElementById("menuSettings");
 const menuLogout = document.getElementById("menuLogout");
 const userInfoModal = document.getElementById("userInfoModal");
@@ -614,6 +616,56 @@ function requestUserFromBackground() {
   });
 }
 
+// 테마 관련 함수들
+function getTheme() {
+  try {
+    const theme = localStorage.getItem("theme") || "dark";
+    return theme;
+  } catch (error) {
+    console.error("테마 가져오기 오류:", error);
+    return "dark";
+  }
+}
+
+function setTheme(theme) {
+  try {
+    localStorage.setItem("theme", theme);
+    applyTheme(theme);
+    updateThemeButton(theme);
+  } catch (error) {
+    console.error("테마 저장 오류:", error);
+  }
+}
+
+function applyTheme(theme) {
+  const body = document.body;
+  if (theme === "light") {
+    body.classList.add("light-theme");
+  } else {
+    body.classList.remove("light-theme");
+  }
+  // 아이콘 재초기화 (테마 변경 시 필요)
+  reinitializeLucideIcons();
+}
+
+function updateThemeButton(theme) {
+  if (themeText) {
+    themeText.textContent = theme === "light" ? "다크 모드" : "라이트 모드";
+  }
+}
+
+function toggleTheme() {
+  const currentTheme = getTheme();
+  const newTheme = currentTheme === "dark" ? "light" : "dark";
+  setTheme(newTheme);
+}
+
+function loadTheme() {
+  const theme = getTheme();
+  applyTheme(theme);
+  updateThemeButton(theme);
+}
+
 function loadAuthState() {
   return new Promise((resolve) => {
     try {
@@ -717,6 +769,12 @@ menuBtn?.addEventListener("click", (event) => {
 });
 menuUserInfo?.addEventListener("click", () => {
   showUserInfoModal();
+});
+menuTheme?.addEventListener("click", () => {
+  toggleTheme();
+  if (dropdownMenu) {
+    dropdownMenu.style.display = "none";
+  }
 });
 menuLogout?.addEventListener("click", () => {
   chrome.runtime.sendMessage({ type: "LOGOUT" }, () => {
@@ -948,7 +1006,8 @@ if (document.readyState === "loading") {
   setTimeout(initializeIcons, 0);
 }
 
-// 팝업 초기화 - loadAuthState가 완료될 때까지 기다린 후 다른 초기화 수행
+// 팝업 초기화 - 테마와 인증 상태 로드
+loadTheme(); // 테마는 즉시 로드
 (async () => {
   await loadAuthState();
   loadCurrentTabInfo();
