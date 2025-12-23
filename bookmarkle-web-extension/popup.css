@@ -734,6 +734,11 @@ body.light-theme .divider {
   align-items: center;
   justify-content: center;
   z-index: 30;
+  transition: background 0.3s ease;
+}
+
+body.light-theme .user-info-modal {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .user-info-modal.show {
@@ -761,6 +766,10 @@ body.light-theme .user-info-modal-content strong {
   color: #fff;
 }
 
+body.light-theme .user-info-modal-content div {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .user-info-modal-close {
   position: absolute;
   top: 12px;
@@ -785,6 +794,11 @@ body.light-theme .user-info-modal-close {
   align-items: center;
   justify-content: center;
   z-index: 30;
+  transition: background 0.3s ease;
+}
+
+body.light-theme .collection-modal {
+  background: rgba(0, 0, 0, 0.65);
 }
 
 .collection-modal.show {
@@ -885,10 +899,20 @@ body.light-theme .collection-modal-input::placeholder {
 .collection-modal-btn-cancel {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
+  transition: background 0.2s ease, color 0.3s ease;
 }
 
 .collection-modal-btn-cancel:hover {
   background: rgba(255, 255, 255, 0.15);
+}
+
+body.light-theme .collection-modal-btn-cancel {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+body.light-theme .collection-modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 .collection-modal-btn-create {
