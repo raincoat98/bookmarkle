@@ -35,6 +35,13 @@
       "128": "icon128.png"
     }
   },
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
