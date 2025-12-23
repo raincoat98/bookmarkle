@@ -84,7 +84,13 @@ export default defineConfig({
         passes: 2,
         drop_console: false,
       },
-      mangle: true,
+      mangle: {
+        reserved: [
+          "FIREBASE_API_KEY",
+          "FIREBASE_PROJECT_ID",
+          "SIGNIN_POPUP_URL",
+        ],
+      },
       format: {
         comments: false,
       },

@@ -73,10 +73,29 @@ if (fs.existsSync(backgroundPath)) {
     /"FIREBASE_PROJECT_ID_PLACEHOLDER"/g,
     `"${firebaseProjectId}"`
   );
+  // FIREBASE_API_KEY 상수는 난독화에서 제외되므로 직접 교체 가능
+  const beforeReplace = content.includes("FIREBASE_API_KEY_PLACEHOLDER");
+  content = content.replace(
+    /"FIREBASE_API_KEY_PLACEHOLDER"/g,
+    `"${firebaseApiKey}"`
+  );
+  const afterReplace = content.includes("FIREBASE_API_KEY_PLACEHOLDER");
+
+  if (beforeReplace && afterReplace) {
+    console.warn("⚠️ FIREBASE_API_KEY_PLACEHOLDER가 교체되지 않았습니다!");
+  }
+
   fs.writeFileSync(backgroundPath, content, "utf8");
   console.log("✅ background.js 환경 변수 주입 완료");
   console.log(`   SIGNIN_POPUP_URL: ${signinPopupUrlWithParam}`);
   console.log(`   FIREBASE_PROJECT_ID: ${firebaseProjectId}`);
+  console.log(
+    `   FIREBASE_API_KEY: ${
+      firebaseApiKey
+        ? `설정됨 (${firebaseApiKey.substring(0, 10)}...)`
+        : "⚠️ 설정되지 않음"
+    }`
+  );
 }
 
 console.log("\n🎉 Vite 번들링 및 환경 변수 주입 완료!");
