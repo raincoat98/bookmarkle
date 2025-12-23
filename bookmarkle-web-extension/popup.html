@@ -45,7 +45,15 @@
                       id="themeIcon"
                       data-lucide="palette"
                     ></span>
-                    <span id="themeText">라이트 모드</span>
+                    <span id="themeText"></span>
+                  </button>
+                  <button class="menu-item" id="menuLanguage">
+                    <span
+                      class="menu-icon"
+                      id="languageIcon"
+                      data-lucide="languages"
+                    ></span>
+                    <span id="languageText">언어</span>
                   </button>
                   <div class="menu-divider"></div>
                   <button class="menu-item danger" id="menuLogout">
@@ -63,30 +71,24 @@
         </header>
 
         <section class="field-group">
-          <label class="field-label">현재 페이지</label>
+          <label class="field-label" for="currentPageInput"></label>
           <div class="current-page-card">
             <input id="currentPageInput" type="text" readonly />
-            <button id="copyUrlBtn" class="ghost-btn" type="button">
-              복사
-            </button>
+            <button id="copyUrlBtn" class="ghost-btn" type="button"></button>
           </div>
         </section>
 
         <section class="field-group">
-          <label class="field-label">메모 <span>(선택사항)</span></label>
-          <textarea
-            id="memoTextarea"
-            placeholder="이 페이지에 대한 메모를 작성하세요..."
-          ></textarea>
+          <label class="field-label" for="memoTextarea"></label>
+          <textarea id="memoTextarea"></textarea>
         </section>
 
         <section class="field-group">
-          <label class="field-label">컬렉션 <span>(선택사항)</span></label>
+          <label class="field-label" for="collectionInput"></label>
           <div class="collection-input-wrapper">
             <input
               id="collectionInput"
               type="text"
-              placeholder="선택 없음"
               readonly
               autocomplete="off"
             />
@@ -99,7 +101,6 @@
                 id="collectionSearchInput"
                 type="text"
                 class="collection-search-input"
-                placeholder="컬렉션 검색..."
                 autocomplete="off"
               />
               <div
@@ -116,24 +117,13 @@
                   style="display: inline-block; margin-right: 4px"
                   data-lucide="plus"
                 ></span
-                ><span>새로 만들기: "</span><span id="newCollectionName"></span
-                ><span>"</span>
+                ><span></span><span id="newCollectionName"></span><span>"</span>
               </div>
             </div>
-            <button
-              id="refreshCollectionsBtn"
-              class="icon-btn"
-              type="button"
-              title="새로고침"
-            >
+            <button id="refreshCollectionsBtn" class="icon-btn" type="button">
               <span id="refreshIcon" data-lucide="rotate-ccw"></span>
             </button>
-            <button
-              id="newCollectionBtn"
-              class="icon-btn"
-              type="button"
-              title="웹에서 컬렉션 관리"
-            >
+            <button id="newCollectionBtn" class="icon-btn" type="button">
               <span id="plusIcon" data-lucide="plus"></span>
             </button>
           </div>
@@ -141,16 +131,12 @@
         </section>
 
         <section class="field-group">
-          <label class="field-label">태그 <span>(선택사항)</span></label>
-          <input
-            id="tagInput"
-            type="text"
-            placeholder="엔터로 태그 추가 (쉼표로 구분)"
-          />
+          <label class="field-label" for="tagInput"></label>
+          <input id="tagInput" type="text" />
           <div id="tagList" class="tag-list"></div>
         </section>
 
-        <button id="saveBookmarkBtn" class="primary-btn">북마크 저장</button>
+        <button id="saveBookmarkBtn" class="primary-btn"></button>
 
         <div id="statusMessage" class="status-chip" style="display: none"></div>
 
@@ -209,17 +195,17 @@
         <button class="collection-modal-close" id="collectionModalCloseBtn">
           <span id="collectionModalCloseIcon" data-lucide="x"></span>
         </button>
-        <div class="collection-modal-title">새 컬렉션 만들기</div>
+        <div class="collection-modal-title" id="collectionModalTitle"></div>
         <div style="margin-bottom: 12px">
           <label
+            id="collectionModalIconLabel"
             style="
               display: block;
               margin-bottom: 6px;
               font-size: 13px;
               color: rgba(255, 255, 255, 0.8);
             "
-            >아이콘 (선택사항)</label
-          >
+          ></label>
           <div style="display: flex; gap: 8px; align-items: center">
             <input
               type="text"
@@ -230,12 +216,7 @@
               maxlength="2"
               style="margin-bottom: 0; flex: 1"
             />
-            <button
-              id="emojiPickerBtn"
-              type="button"
-              class="emoji-picker-btn"
-              title="이모지 선택"
-            >
+            <button id="emojiPickerBtn" type="button" class="emoji-picker-btn">
               😀
             </button>
           </div>
@@ -262,15 +243,11 @@
           <button
             id="collectionModalCancelBtn"
             class="collection-modal-btn collection-modal-btn-cancel"
-          >
-            취소
-          </button>
+          ></button>
           <button
             id="collectionModalCreateBtn"
             class="collection-modal-btn collection-modal-btn-create"
-          >
-            만들기
-          </button>
+          ></button>
         </div>
       </div>
     </div>

@@ -15,7 +15,12 @@
   "background": {
     "service_worker": "background.js"
   },
-  "web_accessible_resources": [],
+  "web_accessible_resources": [
+    {
+      "resources": ["locales/*.json"],
+      "matches": []
+    }
+  ],
   "content_scripts": [
     {
       "matches": [

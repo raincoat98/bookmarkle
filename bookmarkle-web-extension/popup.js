@@ -25,6 +25,355 @@ const BUG_REPORT_URL =
 const DASHBOARD_URL = "https://bookmarkle.app/dashboard";
 const GITHUB_URL = "https://github.com/raincoat98/bookmakle";
 
+// ===== i18n 설정 =====
+const DEFAULT_LANGUAGE = "ko"; // 기본값: 한글
+let i18nResources = {}; // 로드된 언어 리소스 캐시
+let currentLanguage = DEFAULT_LANGUAGE;
+
+// 언어 리소스 로드
+async function loadLanguageResources(lang) {
+  if (i18nResources[lang]) {
+    return i18nResources[lang];
+  }
+
+  try {
+    const response = await fetch(chrome.runtime.getURL(`locales/${lang}.json`));
+    if (!response.ok) {
+      throw new Error(`Failed to load ${lang}.json`);
+    }
+    const resources = await response.json();
+    i18nResources[lang] = resources;
+    return resources;
+  } catch (error) {
+    console.error(`Failed to load language resources for ${lang}:`, error);
+    // 기본 언어(한글) 로드 시도
+    if (lang !== DEFAULT_LANGUAGE) {
+      return loadLanguageResources(DEFAULT_LANGUAGE);
+    }
+    return {};
+  }
+}
+
+// 현재 언어 가져오기
+async function getCurrentLanguage() {
+  const result = await chrome.storage.local.get(["language"]);
+  return result.language || DEFAULT_LANGUAGE;
+}
+
+// 언어 변경
+async function setLanguage(lang) {
+  await chrome.storage.local.set({ language: lang });
+  currentLanguage = lang;
+  await updateUIWithLanguage(lang);
+}
+
+// i18n 번역 함수 (t 함수)
+async function t(key, lang = null) {
+  const langToUse = lang || currentLanguage || (await getCurrentLanguage());
+  const resources = await loadLanguageResources(langToUse);
+
+  // 키 경로 파싱 (예: "menu.userInfo" -> resources.menu.userInfo)
+  const keys = key.split(".");
+  let value = resources;
+
+  for (const k of keys) {
+    if (value && typeof value === "object" && k in value) {
+      value = value[k];
+    } else {
+      // 키를 찾을 수 없으면 기본 언어로 시도
+      if (langToUse !== DEFAULT_LANGUAGE) {
+        return t(key, DEFAULT_LANGUAGE);
+      }
+      return key; // 기본 언어에서도 없으면 키 반환
+    }
+  }
+
+  return value || key;
+}
+
+// UI 텍스트 업데이트
+async function updateUIWithLanguage(lang = null) {
+  const currentLang = lang || (await getCurrentLanguage());
+  currentLanguage = currentLang;
+
+  // 메뉴 항목
+  const menuUserInfoSpan = document.querySelector(
+    "#menuUserInfo span:last-child"
+  );
+  if (menuUserInfoSpan) menuUserInfoSpan.textContent = await t("menu.userInfo");
+
+  if (languageText) {
+    const langNames = { ko: "한국어", en: "English", ja: "日本語" };
+    languageText.textContent = `${await t("menu.language")} (${
+      langNames[currentLang] || currentLang
+    })`;
+  }
+
+  const menuLogoutSpan = document.querySelector("#menuLogout span:last-child");
+  if (menuLogoutSpan) menuLogoutSpan.textContent = await t("menu.logout");
+
+  // 테마 텍스트 업데이트
+  if (themeText) {
+    const currentTheme = getTheme();
+    const themeKey =
+      currentTheme === "light" ? "menu.darkMode" : "menu.lightMode";
+    themeText.textContent = await t(themeKey);
+  }
+
+  // 로그인 버튼
+  if (loginEmailBtn) loginEmailBtn.textContent = await t("login.login");
+
+  // 로그인 정보
+  const loginInfoItems = document.querySelectorAll(".login-info-list li");
+  if (loginInfoItems.length >= 3) {
+    loginInfoItems[0].textContent = await t("login.info1");
+    loginInfoItems[1].textContent = await t("login.info2");
+    loginInfoItems[2].textContent = await t("login.info3");
+  }
+
+  const privacyLink = document.querySelector(".privacy-info span:last-child");
+  if (privacyLink) privacyLink.textContent = await t("login.privacyInfo");
+
+  const contactLink = document.querySelector(".contact-info");
+  if (contactLink) {
+    const contactText = await t("login.contactInfo");
+    contactLink.innerHTML = `${contactText}: <a href="mailto:ww57403@gmail.com">ww57403@gmail.com</a>`;
+  }
+
+  // 북마크 저장 버튼
+  if (saveBookmarkBtn)
+    saveBookmarkBtn.textContent = await t("bookmark.saveBookmark");
+
+  // 현재 페이지 라벨
+  const currentPageLabel = document.querySelector(
+    'label[for="currentPageInput"]'
+  );
+  if (currentPageLabel)
+    currentPageLabel.textContent = await t("bookmark.currentPage");
+
+  // 컬렉션 라벨
+  const collectionLabel = document.querySelector(
+    'label[for="collectionInput"]'
+  );
+  if (collectionLabel) {
+    const labelText = await t("bookmark.collection");
+    const optionalText = await t("bookmark.optional");
+    collectionLabel.innerHTML = `${labelText} <span>${optionalText}</span>`;
+  }
+
+  // 메모 라벨
+  const memoLabel = document.querySelector('label[for="memoTextarea"]');
+  if (memoLabel) {
+    const memoText = await t("bookmark.memo");
+    const optionalText = await t("bookmark.optional");
+    memoLabel.innerHTML = `${memoText} <span>${optionalText}</span>`;
+  }
+
+  // 메모 placeholder
+  if (memoTextarea) {
+    memoTextarea.placeholder = await t("bookmark.memoPlaceholder");
+  }
+
+  // 태그 라벨
+  const tagLabel = document.querySelector('label[for="tagInput"]');
+  if (tagLabel) {
+    const tagText = await t("bookmark.tag");
+    const optionalText = await t("bookmark.optional");
+    tagLabel.innerHTML = `${tagText} <span>${optionalText}</span>`;
+  }
+
+  // 태그 placeholder
+  if (tagInput) {
+    tagInput.placeholder = await t("bookmark.tagPlaceholder");
+  }
+
+  // 컬렉션 입력 placeholder
+  if (collectionInput) {
+    collectionInput.placeholder = await t("collection.selectNone");
+  }
+
+  // 후원하기 버튼
+  if (supportLink) {
+    supportLink.textContent = await t("bookmark.support");
+  }
+
+  // 버그 등록하기 버튼
+  if (bugLink) {
+    bugLink.textContent = await t("bookmark.bugReport");
+  }
+
+  // 복사 버튼
+  if (copyUrlBtn) copyUrlBtn.textContent = await t("common.copy");
+
+  // 컬렉션 모달
+  const collectionModalTitle = document.getElementById("collectionModalTitle");
+  if (collectionModalTitle)
+    collectionModalTitle.textContent = await t("collection.createCollection");
+
+  const collectionNameLabel = document.querySelector(
+    'label[for="collectionModalNameInput"]'
+  );
+  if (collectionNameLabel)
+    collectionNameLabel.textContent = await t("collection.collectionName");
+
+  // 컬렉션 모달 아이콘 라벨 (id로 직접 찾기)
+  const collectionModalIconLabel = document.getElementById("collectionModalIconLabel");
+  if (collectionModalIconLabel)
+    collectionModalIconLabel.textContent = await t("collection.collectionIcon");
+
+  // 컬렉션 모달 이름 라벨 (HTML에서 label 태그 직접 찾기)
+  const labels = document.querySelectorAll("#collectionModal label");
+  const nameLabelText = await t("collection.name");
+  for (const label of labels) {
+    const labelText = label.textContent.trim();
+    if (labelText === "이름" || labelText === "Name" || labelText === "名前") {
+      label.textContent = nameLabelText;
+      break;
+    }
+  }
+
+  const createCollectionBtn = document.getElementById("collectionModalCreateBtn");
+  if (createCollectionBtn)
+    createCollectionBtn.textContent = await t("collection.create");
+
+  const cancelCollectionBtn = document.getElementById("collectionModalCancelBtn");
+  if (cancelCollectionBtn)
+    cancelCollectionBtn.textContent = await t("collection.cancel");
+
+  // 새로 만들기 텍스트
+  const collectionCreateOption = document.getElementById(
+    "collectionCreateOption"
+  );
+  if (collectionCreateOption) {
+    const createNewLabel = await t("collection.createNew");
+    // HTML 구조: <span data-lucide="plus"></span><span></span><span id="newCollectionName"></span><span>"</span>
+    const allSpans = collectionCreateOption.querySelectorAll("span:not([data-lucide]):not([id])");
+    if (allSpans.length > 0) {
+      // 첫 번째 빈 span에 "새로 만들기: " 텍스트 추가
+      allSpans[0].textContent = `${createNewLabel} "`;
+    }
+  }
+
+  // 새로고침 버튼 title
+  if (refreshCollectionsBtn) {
+    refreshCollectionsBtn.title = await t("collection.refresh");
+  }
+
+  // 새 컬렉션 버튼 title
+  if (newCollectionBtn) {
+    newCollectionBtn.title = await t("collection.manageOnWeb");
+  }
+
+  // 이모지 선택 버튼 title
+  if (emojiPickerBtn) {
+    emojiPickerBtn.title = await t("collection.selectEmoji");
+  }
+
+  // 컬렉션 검색 placeholder
+  if (collectionSearchInput) {
+    collectionSearchInput.placeholder = await t("collection.searchPlaceholder");
+  }
+
+  // 컬렉션 이름 placeholder
+  if (collectionModalInput) {
+    collectionModalInput.placeholder = await t("collection.namePlaceholder");
+  }
+
+  // 컬렉션 아이콘 placeholder
+  if (collectionModalIconInput) {
+    collectionModalIconInput.placeholder = await t(
+      "collection.iconPlaceholder"
+    );
+  }
+
+  // 로딩 텍스트
+  if (loadingDiv) loadingDiv.textContent = await t("common.loading");
+
+  // 사용자 정보 모달
+  const userInfoModalStrong = document.querySelector("#userInfoModal strong");
+  if (userInfoModalStrong)
+    userInfoModalStrong.textContent = await t("user.userInfo");
+}
+
+// 언어 선택 모달 표시
+async function showLanguageModal() {
+  const currentLang = await getCurrentLanguage();
+  const t = await (async () => {
+    const resources = await loadLanguageResources(currentLang);
+    return (key) => {
+      const keys = key.split(".");
+      let value = resources;
+      for (const k of keys) {
+        if (value && typeof value === "object" && k in value) {
+          value = value[k];
+        } else {
+          return key;
+        }
+      }
+      return value || key;
+    };
+  })();
+
+  const modal = document.createElement("div");
+  modal.id = "languageModal";
+  modal.className = "modal-overlay";
+  modal.innerHTML = `
+    <div class="modal-content language-modal-content">
+      <div class="modal-header">
+        <h2>${await t("menu.language")}</h2>
+        <button class="modal-close" id="closeLanguageModal">
+          <span data-lucide="x"></span>
+        </button>
+      </div>
+      <div class="modal-body language-options">
+        <button class="language-option ${
+          currentLang === "ko" ? "active" : ""
+        }" data-lang="ko">
+          <span>🇰🇷 한국어</span>
+        </button>
+        <button class="language-option ${
+          currentLang === "en" ? "active" : ""
+        }" data-lang="en">
+          <span>🇺🇸 English</span>
+        </button>
+        <button class="language-option ${
+          currentLang === "ja" ? "active" : ""
+        }" data-lang="ja">
+          <span>🇯🇵 日本語</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  reinitializeLucideIcons();
+
+  // 언어 선택 이벤트
+  modal.querySelectorAll(".language-option").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const lang = btn.dataset.lang;
+      await setLanguage(lang);
+      closeLanguageModal();
+    });
+  });
+
+  // 닫기 버튼
+  modal
+    .querySelector("#closeLanguageModal")
+    ?.addEventListener("click", closeLanguageModal);
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) closeLanguageModal();
+  });
+}
+
+// 언어 모달 닫기
+function closeLanguageModal() {
+  const modal = document.getElementById("languageModal");
+  if (modal) {
+    modal.remove();
+  }
+}
+
 const loginButtons = document.getElementById("loginButtons");
 const loginEmailBtn = document.getElementById("loginEmailBtn");
 const loggedInContent = document.getElementById("loggedInContent");
@@ -36,6 +385,8 @@ const dropdownMenu = document.getElementById("dropdownMenu");
 const menuUserInfo = document.getElementById("menuUserInfo");
 const menuTheme = document.getElementById("menuTheme");
 const themeText = document.getElementById("themeText");
+const menuLanguage = document.getElementById("menuLanguage");
+const languageText = document.getElementById("languageText");
 const menuLogout = document.getElementById("menuLogout");
 const userInfoModal = document.getElementById("userInfoModal");
 const userDetailsDiv = document.getElementById("userDetails");
@@ -90,14 +441,14 @@ let isComposing = false;
 let collections = [];
 let filteredCollections = [];
 
-function displayUserInfo(user) {
+async function displayUserInfo(user) {
   if (!userDetailsDiv) return;
   userDetailsDiv.innerHTML = "";
 
   const rows = [
-    { label: "이메일", value: user.email },
-    { label: "이름", value: user.displayName },
-    { label: "UID", value: user.uid },
+    { label: await t("user.email"), value: user.email },
+    { label: await t("user.name"), value: user.displayName },
+    { label: await t("user.uid"), value: user.uid },
   ];
 
   rows.forEach(({ label, value }) => {
@@ -180,12 +531,12 @@ async function loadCurrentTabInfo() {
   }
 }
 
-function updateCollectionsList(newCollections = []) {
+async function updateCollectionsList(newCollections = []) {
   collections = newCollections;
-  filterCollections("");
+  await filterCollections("");
 }
 
-function filterCollections(searchText = "") {
+async function filterCollections(searchText = "") {
   const search = searchText.trim().toLowerCase();
   filteredCollections = search
     ? collections.filter((col) => col.name.toLowerCase().includes(search))
@@ -199,7 +550,7 @@ function filterCollections(searchText = "") {
     if (!search) {
       const noneItem = document.createElement("div");
       noneItem.className = "collection-dropdown-item";
-      noneItem.textContent = "선택 없음";
+      noneItem.textContent = await t("collection.selectNone");
       noneItem.addEventListener("click", () => {
         clearCollection();
       });
@@ -227,7 +578,7 @@ function filterCollections(searchText = "") {
       noResult.className = "collection-dropdown-item";
       noResult.style.color = "rgba(255, 255, 255, 0.5)";
       noResult.style.cursor = "default";
-      noResult.textContent = "검색 결과가 없습니다";
+      noResult.textContent = await t("collection.noResults");
       collectionDropdownList.appendChild(noResult);
     }
   }
@@ -380,7 +731,7 @@ function closeCollectionModal() {
 async function createCollectionFromModal() {
   const name = collectionModalInput?.value?.trim();
   if (!name) {
-    updateStatus("컬렉션 이름을 입력해주세요.", "error");
+    updateStatus(await t("common.collectionNameRequired"), "error");
     return;
   }
 
@@ -393,7 +744,7 @@ async function createCollectionFromModal() {
   );
 
   if (existingCollection) {
-    updateStatus("이미 존재하는 컬렉션입니다.", "error");
+    updateStatus(await t("common.collectionExists"), "error");
     selectCollection(existingCollection);
     closeCollectionModal();
     return;
@@ -402,7 +753,7 @@ async function createCollectionFromModal() {
   // 컬렉션 생성
   if (collectionModalCreateBtn) {
     collectionModalCreateBtn.disabled = true;
-    collectionModalCreateBtn.textContent = "만드는 중...";
+    collectionModalCreateBtn.textContent = await t("collection.creating");
   }
 
   try {
@@ -434,21 +785,21 @@ async function createCollectionFromModal() {
         selectCollection(newCollection);
       }
 
-      updateStatus("컬렉션이 생성되었습니다! 🎉", "success");
+      updateStatus(await t("common.collectionCreated"), "success");
       closeCollectionModal();
     } else {
       updateStatus(
-        createResponse?.error || "컬렉션 생성에 실패했습니다.",
+        createResponse?.error || (await t("common.collectionCreateError")),
         "error"
       );
     }
   } catch (error) {
     console.error("컬렉션 생성 실패:", error);
-    updateStatus("컬렉션 생성 중 오류가 발생했습니다.", "error");
+    updateStatus(await t("common.collectionCreateError"), "error");
   } finally {
     if (collectionModalCreateBtn) {
       collectionModalCreateBtn.disabled = false;
-      collectionModalCreateBtn.textContent = "만들기";
+      collectionModalCreateBtn.textContent = await t("collection.create");
     }
   }
 }
@@ -461,22 +812,27 @@ function fetchCollectionsList() {
       return;
     }
 
-    chrome.runtime.sendMessage({ type: "FETCH_COLLECTIONS" }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("컬렉션 목록 로드 오류:", chrome.runtime.lastError);
-        updateStatus("컬렉션 목록을 가져올 수 없습니다.", "error");
-        resolve();
-        return;
-      }
+    chrome.runtime.sendMessage(
+      { type: "FETCH_COLLECTIONS" },
+      async (response) => {
+        if (chrome.runtime.lastError) {
+          console.error("컬렉션 목록 로드 오류:", chrome.runtime.lastError);
+          updateStatus(await t("common.collectionListError"), "error");
+          resolve();
+          return;
+        }
 
-      if (response?.success && Array.isArray(response.collections)) {
-        updateCollectionsList(response.collections);
-      } else {
-        updateStatus(response?.error || "컬렉션 로드에 실패했습니다.", "error");
-        updateCollectionsList([]);
+        if (response?.success && Array.isArray(response.collections)) {
+          await updateCollectionsList(response.collections);
+        } else {
+          const errorMsg =
+            response?.error || (await t("common.collectionLoadError"));
+          updateStatus(errorMsg, "error");
+          await updateCollectionsList([]);
+        }
+        resolve();
       }
-      resolve();
-    });
+    );
   });
 }
 
@@ -527,13 +883,13 @@ function renderTags() {
 async function saveCurrentPageBookmark() {
   if (isSaving) return;
   if (!userIsLoggedIn) {
-    updateStatus("로그인 후에 북마크를 저장할 수 있습니다.", "error");
+    updateStatus(await t("common.loginRequired"), "error");
     return;
   }
 
   await loadCurrentTabInfo();
   if (!currentTabInfo || !currentTabInfo.url || !currentTabInfo.title) {
-    updateStatus("저장할 페이지 정보를 가져오지 못했습니다.", "error");
+    updateStatus(await t("common.pageInfoError"), "error");
     return;
   }
 
@@ -561,7 +917,7 @@ async function saveCurrentPageBookmark() {
       collectionId = existingCollection.id;
     } else {
       // 컬렉션이 없으면 모달 열기
-      updateStatus("컬렉션을 먼저 생성해주세요.", "error");
+      updateStatus(await t("common.collectionRequired"), "error");
       showCollectionModal(collectionName);
       return;
     }
@@ -596,9 +952,10 @@ async function saveCurrentPageBookmark() {
     });
 
     if (response?.success) {
-      updateStatus("북마크가 저장되었습니다! 🎉", "success");
+      updateStatus(await t("common.bookmarkSaved"), "success");
     } else {
-      updateStatus(response?.error || "북마크 저장에 실패했습니다.", "error");
+      const errorMsg = response?.error || (await t("common.bookmarkSaveError"));
+      updateStatus(errorMsg, "error");
     }
   } catch (error) {
     console.error("북마크 저장 실패:", error);
@@ -615,18 +972,18 @@ async function saveCurrentPageBookmark() {
   }
 }
 
-function copyCurrentUrl() {
+async function copyCurrentUrl() {
   if (!currentPageInput || !currentPageInput.value) {
-    updateStatus("복사할 URL을 찾을 수 없습니다.", "error");
+    updateStatus(await t("common.urlCopyError"), "error");
     return;
   }
 
   navigator.clipboard
     .writeText(currentPageInput.value)
-    .then(() => updateStatus("URL이 복사되었습니다.", "success"))
-    .catch((error) => {
+    .then(async () => updateStatus(await t("common.urlCopied"), "success"))
+    .catch(async (error) => {
       console.error("URL 복사 실패:", error);
-      updateStatus("URL을 복사할 수 없습니다.", "error");
+      updateStatus(await t("common.urlCopyFailed"), "error");
     });
 }
 
@@ -634,19 +991,19 @@ function openExternalLink(url) {
   chrome.tabs.create({ url });
 }
 
-function handleLogin() {
+async function handleLogin() {
   if (!loginEmailBtn) return;
 
   loginEmailBtn.disabled = true;
   if (loadingDiv) {
     loadingDiv.style.display = "block";
   }
-  updateStatus("로그인 페이지를 여는 중...", "neutral");
+  updateStatus(await t("common.loginPageOpening"), "neutral");
 
-  chrome.runtime.sendMessage({ type: "LOGIN_EMAIL" }, () => {
+  chrome.runtime.sendMessage({ type: "LOGIN_EMAIL" }, async () => {
     if (chrome.runtime.lastError) {
       console.error("로그인 메시지 오류:", chrome.runtime.lastError);
-      updateStatus("로그인 요청 중 오류가 발생했습니다.", "error");
+      updateStatus(await t("common.loginRequestError"), "error");
       if (loadingDiv) {
         loadingDiv.style.display = "none";
       }
@@ -685,11 +1042,11 @@ function getTheme() {
   }
 }
 
-function setTheme(theme) {
+async function setTheme(theme) {
   try {
     localStorage.setItem("theme", theme);
     applyTheme(theme);
-    updateThemeButton(theme);
+    await updateThemeButton(theme);
   } catch (error) {
     console.error("테마 저장 오류:", error);
   }
@@ -706,22 +1063,23 @@ function applyTheme(theme) {
   reinitializeLucideIcons();
 }
 
-function updateThemeButton(theme) {
+async function updateThemeButton(theme) {
   if (themeText) {
-    themeText.textContent = theme === "light" ? "다크 모드" : "라이트 모드";
+    const themeKey = theme === "light" ? "menu.darkMode" : "menu.lightMode";
+    themeText.textContent = await t(themeKey);
   }
 }
 
-function toggleTheme() {
+async function toggleTheme() {
   const currentTheme = getTheme();
   const newTheme = currentTheme === "dark" ? "light" : "dark";
-  setTheme(newTheme);
+  await setTheme(newTheme);
 }
 
-function loadTheme() {
+async function loadTheme() {
   const theme = getTheme();
   applyTheme(theme);
-  updateThemeButton(theme);
+  await updateThemeButton(theme);
 }
 
 function loadAuthState() {
@@ -744,7 +1102,9 @@ function loadAuthState() {
       });
     } catch (error) {
       console.error("로그인 상태 확인 오류:", error);
-      updateStatus("로그인 상태를 확인할 수 없습니다.", "error");
+      t("common.authStateError").then((msg) => {
+        updateStatus(msg, "error");
+      });
       resolve();
     }
   });
@@ -827,8 +1187,14 @@ menuBtn?.addEventListener("click", (event) => {
 menuUserInfo?.addEventListener("click", () => {
   showUserInfoModal();
 });
-menuTheme?.addEventListener("click", () => {
-  toggleTheme();
+menuTheme?.addEventListener("click", async () => {
+  await toggleTheme();
+  if (dropdownMenu) {
+    dropdownMenu.style.display = "none";
+  }
+});
+menuLanguage?.addEventListener("click", () => {
+  showLanguageModal();
   if (dropdownMenu) {
     dropdownMenu.style.display = "none";
   }
@@ -953,9 +1319,9 @@ collectionInput?.addEventListener("focus", () => {
 });
 
 // 컬렉션 검색 인풋 이벤트
-collectionSearchInput?.addEventListener("input", (event) => {
+collectionSearchInput?.addEventListener("input", async (event) => {
   const value = event.target.value;
-  filterCollections(value);
+  await filterCollections(value);
 });
 
 collectionSearchInput?.addEventListener("keydown", (event) => {
@@ -1036,9 +1402,9 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
   }
 });
 
-chrome.runtime.onMessage.addListener((message) => {
+chrome.runtime.onMessage.addListener(async (message) => {
   if (message?.type === "AUTH_SUCCESS") {
-    updateStatus("로그인 성공!", "success");
+    updateStatus(await t("common.loginSuccess"), "success");
     updateLoginUI(true, message.user);
   }
 });
@@ -1046,12 +1412,18 @@ chrome.runtime.onMessage.addListener((message) => {
 setCollectionControlsState();
 setSaveButtonState();
 
-// DOM이 완전히 로드된 후 아이콘 초기화
+// DOM이 완전히 로드된 후 아이콘 초기화 및 언어 설정
 if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", initializeIcons);
+  document.addEventListener("DOMContentLoaded", async () => {
+    initializeIcons();
+    await updateUIWithLanguage();
+  });
 } else {
   // DOM이 이미 로드됨
-  setTimeout(initializeIcons, 0);
+  setTimeout(async () => {
+    initializeIcons();
+    await updateUIWithLanguage();
+  }, 0);
 }
 
 // 팝업 초기화 - 테마와 인증 상태 로드

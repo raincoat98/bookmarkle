@@ -79,6 +79,24 @@ const copyAssetsPlugin = {
       });
       console.log("✅ 아이콘 파일 복사 완료");
 
+      // locales 폴더 복사
+      const localesDir = resolve(__dirname, "locales");
+      const distLocalesDir = resolve(__dirname, "dist", "locales");
+      if (existsSync(localesDir)) {
+        if (!existsSync(distLocalesDir)) {
+          mkdirSync(distLocalesDir, { recursive: true });
+        }
+        const localeFiles = ["ko.json", "en.json", "ja.json"];
+        localeFiles.forEach((localeFile) => {
+          const localeSrc = resolve(localesDir, localeFile);
+          const localeDest = resolve(distLocalesDir, localeFile);
+          if (existsSync(localeSrc)) {
+            copyFileSync(localeSrc, localeDest);
+          }
+        });
+        console.log("✅ locales 파일 복사 완료");
+      }
+
       // lucide.js 파일 복사
       const lucideSrc = resolve(__dirname, "lucide.js");
       const lucideDest = resolve(__dirname, "dist", "lucide.js");
