@@ -30,7 +30,7 @@ const copyAssetsPlugin = {
       console.log("✅ manifest.json 복사 완료");
 
       // HTML 파일 복사 (Vite에서 자동 생성되지 않음)
-      ["popup.html"].forEach((htmlFile) => {
+      ["popup.html", "options.html", "newtab.html"].forEach((htmlFile) => {
         const htmlSrc = resolve(__dirname, htmlFile);
         const htmlDest = resolve(__dirname, "dist", htmlFile);
         if (existsSync(htmlSrc)) {
@@ -40,14 +40,28 @@ const copyAssetsPlugin = {
       console.log("✅ HTML 파일 복사 완료");
 
       // CSS 파일 복사
-      const cssSrc = resolve(__dirname, "popup.css");
-      const cssDest = resolve(__dirname, "dist", "popup.css");
-      if (existsSync(cssSrc)) {
-        copyFileSync(cssSrc, cssDest);
-        console.log("✅ popup.css 복사 완료");
-      } else {
-        console.warn("⚠️ popup.css 파일을 찾을 수 없습니다:", cssSrc);
-      }
+      ["popup.css", "options.css"].forEach((cssFile) => {
+        const cssSrc = resolve(__dirname, cssFile);
+        const cssDest = resolve(__dirname, "dist", cssFile);
+        if (existsSync(cssSrc)) {
+          copyFileSync(cssSrc, cssDest);
+        } else {
+          console.warn(`⚠️ ${cssFile} 파일을 찾을 수 없습니다:`, cssSrc);
+        }
+      });
+      console.log("✅ CSS 파일 복사 완료");
+
+      // 옵션 페이지 및 새 탭 페이지 JS 파일 복사
+      ["options.js", "newtab.js"].forEach((jsFile) => {
+        const jsSrc = resolve(__dirname, jsFile);
+        const jsDest = resolve(__dirname, "dist", jsFile);
+        if (existsSync(jsSrc)) {
+          copyFileSync(jsSrc, jsDest);
+          console.log(`✅ ${jsFile} 복사 완료`);
+        } else {
+          console.warn(`⚠️ ${jsFile} 파일을 찾을 수 없습니다:`, jsSrc);
+        }
+      });
 
       // 아이콘 파일 복사
       const iconFiles = ["icon16.png", "icon48.png", "icon128.png"];
