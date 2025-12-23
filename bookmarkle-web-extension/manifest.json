@@ -4,7 +4,13 @@
   "version": "1.0.0",
   "description": "북마크를 한곳에서 관리하는 생산성 앱",
   "homepage_url": "https://chromewebstore.google.com/detail/%EB%B6%81%EB%A7%88%ED%81%B4/lkkbdejelaagaipenlheijafnjggkdcm",
-  "permissions": ["tabs", "scripting", "storage", "contextMenus"],
+  "permissions": [
+    "tabs",
+    "scripting",
+    "storage",
+    "contextMenus",
+    "notifications"
+  ],
   "host_permissions": [
     "https://*.firebaseapp.com/*",
     "https://*.googleapis.com/*",
