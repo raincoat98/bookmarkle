@@ -65,9 +65,14 @@ const copyAssetsPlugin = {
 
       // 아이콘 파일 복사
       const iconFiles = ["icon16.png", "icon48.png", "icon128.png"];
+      const iconsDir = resolve(__dirname, "icons");
+      const distIconsDir = resolve(__dirname, "dist", "icons");
+      if (!existsSync(distIconsDir)) {
+        mkdirSync(distIconsDir, { recursive: true });
+      }
       iconFiles.forEach((iconFile) => {
-        const iconSrc = resolve(__dirname, iconFile);
-        const iconDest = resolve(__dirname, "dist", iconFile);
+        const iconSrc = resolve(iconsDir, iconFile);
+        const iconDest = resolve(distIconsDir, iconFile);
         if (existsSync(iconSrc)) {
           copyFileSync(iconSrc, iconDest);
         }

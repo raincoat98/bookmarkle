@@ -39,8 +39,9 @@ const manifestPath = path.join(distDir, "manifest.json");
 if (fs.existsSync(manifestPath)) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
   const iconFiles = ["icon16.png", "icon48.png", "icon128.png"];
+  const iconsDir = path.join(__dirname, "icons");
   const missingIcons = iconFiles.filter(
-    (icon) => !fs.existsSync(path.join(__dirname, icon))
+    (icon) => !fs.existsSync(path.join(iconsDir, icon))
   );
 
   if (missingIcons.length > 0) {
