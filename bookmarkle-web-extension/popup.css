@@ -251,6 +251,17 @@ body.light-theme .menu-item.danger {
   color: #ff7a7a;
 }
 
+.menu-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 8px 0;
+  border: none;
+}
+
+body.light-theme .menu-divider {
+  background: rgba(255, 255, 255, 0.12);
+}
+
 .field-group {
   margin-top: 10px;
   display: flex;

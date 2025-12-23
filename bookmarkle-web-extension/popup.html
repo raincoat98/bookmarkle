@@ -31,6 +31,15 @@
                   class="dropdown-menu"
                   style="display: none"
                 >
+                  <button class="menu-item" id="menuQuickMode">
+                    <span class="menu-icon">⚡</span>
+                    <span>빠른 실행 모드 활성화</span>
+                  </button>
+                  <button class="menu-item" id="menuDashboard">
+                    <span class="menu-icon">📊</span>
+                    <span>대시보드 열기</span>
+                  </button>
+                  <div class="menu-divider"></div>
                   <button class="menu-item" id="menuUserInfo">
                     <span
                       class="menu-icon"
@@ -55,6 +64,15 @@
                     ></span>
                     <span>설정</span>
                     <span class="coming-soon">(곧 제공)</span>
+                  </button>
+                  <div class="menu-divider"></div>
+                  <button class="menu-item" id="menuGitHub">
+                    <span class="menu-icon">🐙</span>
+                    <span>GitHub 저장소</span>
+                  </button>
+                  <button class="menu-item" id="menuBugReport">
+                    <span class="menu-icon">🐛</span>
+                    <span>버그 리포트</span>
                   </button>
                   <button class="menu-item danger" id="menuLogout">
                     <span
@@ -231,15 +249,15 @@
             >아이콘 (선택사항)</label
           >
           <div style="display: flex; gap: 8px; align-items: center">
-            <input
-              type="text"
-              id="collectionModalIconInput"
-              class="collection-modal-input"
-              placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
-              autocomplete="off"
-              maxlength="2"
+          <input
+            type="text"
+            id="collectionModalIconInput"
+            class="collection-modal-input"
+            placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
+            autocomplete="off"
+            maxlength="2"
               style="margin-bottom: 0; flex: 1"
-            />
+          />
             <button
               id="emojiPickerBtn"
               type="button"
