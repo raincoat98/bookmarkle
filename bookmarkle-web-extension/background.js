@@ -1,15 +1,17 @@
 // Background Service Worker
 
-// ===== 상수 =====
-const SIGNIN_POPUP_URL = "SIGNIN_POPUP_URL_PLACEHOLDER"; // build-config.js에서 주입됨
+// ===== 상수 및 전역 변수 =====
 
-// ===== 전역 변수 =====
-let authResponseHandler = null;
-let currentUser = null; // 메모리 캐시, storage에도 저장
-let currentIdToken = null; // Firebase idToken
-let currentRefreshToken = null; // Firebase refreshToken (토큰 갱신용)
-const FIREBASE_PROJECT_ID = "FIREBASE_PROJECT_ID_PLACEHOLDER"; // build-config.js에서 주입됨
-const FIREBASE_API_KEY = "FIREBASE_API_KEY_PLACEHOLDER"; // build-config.js에서 주입됨
+// 빌드 시 주입되는 상수 (build-config.js에서 주입됨)
+const SIGNIN_POPUP_URL = "SIGNIN_POPUP_URL_PLACEHOLDER";
+const FIREBASE_PROJECT_ID = "FIREBASE_PROJECT_ID_PLACEHOLDER";
+const FIREBASE_API_KEY = "FIREBASE_API_KEY_PLACEHOLDER";
+
+// 전역 상태 변수
+let authResponseHandler = null; // 인증 응답 핸들러
+let currentUser = null; // 현재 로그인한 사용자 정보 (메모리 캐시)
+let currentIdToken = null; // Firebase ID Token
+let currentRefreshToken = null; // Firebase Refresh Token (토큰 갱신용)
 
 // ===== 헬퍼 함수 =====
 
@@ -1049,13 +1051,6 @@ async function handleMessage(message, sender, sendResponse) {
       return true; // 비동기 응답 처리
     }
 
-    if (messageType === "QUICK_SAVE_BOOKMARK") {
-      console.log("⚡ 빠른 실행 모드: 북마크 저장 요청 수신");
-      const result = await quickSaveBookmark();
-      sendResponse(result);
-      return true; // 비동기 응답 처리
-    }
-
     if (messageType === "GET_CURRENT_USER") {
       if (!currentUser) {
         await restoreUserInfo();
@@ -1149,6 +1144,7 @@ async function handleMessage(message, sender, sendResponse) {
 
 // ===== 이벤트 리스너 =====
 
+// 메시지 수신 리스너
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   const result = handleMessage(message, sender, sendResponse);
   // handleMessage가 false를 반환하면 false 반환
@@ -1156,8 +1152,10 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   return result === false ? false : true;
 });
 
+// Storage 변경 감지 리스너
 chrome.storage.onChanged.addListener((changes, areaName) => {
   if (areaName === "local") {
+    // 사용자 정보 변경 감지
     if (changes.user) {
       if (changes.user.newValue) {
         currentUser = changes.user.newValue;
@@ -1170,6 +1168,7 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         console.log("✅ Storage 변경 감지 - 사용자 정보 삭제됨");
       }
     }
+    // idToken 변경 감지
     if (changes.idToken) {
       if (changes.idToken.newValue) {
         currentIdToken = changes.idToken.newValue;
@@ -1179,21 +1178,33 @@ chrome.storage.onChanged.addListener((changes, areaName) => {
         console.log("✅ Storage 변경 감지 - idToken 삭제됨");
       }
     }
+    // 빠른 실행 모드 상태 변경 감지
+    if (changes.quickMode) {
+      updateQuickModePopup();
+      createContextMenus(); // 컨텍스트 메뉴도 업데이트
+    }
   }
 });
 
+// Extension 시작 시 초기화
 chrome.runtime.onStartup?.addListener(async () => {
   console.log("🚀 Extension 시작됨 - 사용자 정보 복원 중...");
   await restoreUserInfo();
+  createContextMenus();
+  await updateQuickModePopup();
 });
 
+// Extension 설치/업데이트 시 초기화
 chrome.runtime.onInstalled?.addListener(async (details) => {
   console.log("✅ Extension 설치/업데이트 완료:", details.reason);
   await restoreUserInfo();
+  createContextMenus();
+  await updateQuickModePopup();
 });
 
 // ===== 컨텍스트 메뉴 =====
 
+// 외부 URL 상수
 const DASHBOARD_URL = "https://bookmarkhub-5ea6c.web.app";
 const GITHUB_URL = "https://github.com/raincoat98/bookmakle";
 const BUG_REPORT_URL =
@@ -1523,20 +1534,10 @@ async function quickSaveBookmark() {
 
 // ===== 초기화 =====
 
+// Service Worker 시작 시 초기화
 (async () => {
   console.log("🚀 Background Service Worker 시작 - 사용자 정보 복원 중...");
   await restoreUserInfo();
-  // 컨텍스트 메뉴 생성
   createContextMenus();
-  // 빠른 실행 모드 상태에 따라 popup 설정
   await updateQuickModePopup();
 })();
-
-// 빠른 실행 모드 상태 변경 감지
-chrome.storage.onChanged.addListener(async (changes, areaName) => {
-  if (areaName === "local" && changes.quickMode) {
-    await updateQuickModePopup();
-    // 컨텍스트 메뉴도 업데이트
-    await createContextMenus();
-  }
-});
