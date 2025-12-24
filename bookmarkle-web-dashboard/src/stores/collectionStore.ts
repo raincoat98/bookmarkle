@@ -280,22 +280,19 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
           where("collection", "==", collectionId)
         );
         const bookmarksSnapshot = await getDocs(bookmarksQuery);
-        console.log("Found bookmarks to update:", bookmarksSnapshot.size);
+        console.log("Found bookmarks to delete:", bookmarksSnapshot.size);
 
-        // 2. 연결된 북마크들의 collection 필드를 null로 업데이트 (개별 작업)
+        // 2. 연결된 북마크들을 모두 삭제
         if (bookmarksSnapshot.size > 0) {
-          const updatePromises = bookmarksSnapshot.docs.map(
+          const deletePromises = bookmarksSnapshot.docs.map(
             async (bookmarkDoc) => {
               const bookmarkRef = doc(db, "bookmarks", bookmarkDoc.id);
-              await updateDoc(bookmarkRef, {
-                collection: null,
-                updatedAt: serverTimestamp(),
-              });
+              await deleteDoc(bookmarkRef);
             }
           );
 
-          // 3. 모든 북마크 업데이트 완료 대기
-          await Promise.all(updatePromises);
+          // 3. 모든 북마크 삭제 완료 대기
+          await Promise.all(deletePromises);
         }
 
         // 4. 컬렉션 삭제

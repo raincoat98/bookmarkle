@@ -271,7 +271,7 @@
     "maxDepthExceeded": "2단계 이상 하위 컬렉션은 추가할 수 없습니다.",
     "selectedCollection": "선택된 컬렉션",
     "deleteConfirmation": "컬렉션을 삭제하시겠습니까?",
-    "deleteWarning": "이 컬렉션에 속한 북마크들은 컬렉션에서 제거됩니다.",
+    "deleteWarning": "이 컬렉션에 속한 모든 북마크들이 삭제됩니다.",
     "iconCategories": {
       "general": "일반",
       "work": "업무",

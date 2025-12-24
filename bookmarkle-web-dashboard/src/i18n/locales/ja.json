@@ -258,7 +258,7 @@
     "maxDepthExceeded": "2レベル以上のサブコレクションは追加できません。",
     "selectedCollection": "選択されたコレクション",
     "deleteConfirmation": "コレクションを削除しますか？",
-    "deleteWarning": "このコレクションに属するブックマークはコレクションから削除されます。",
+    "deleteWarning": "このコレクションに属するすべてのブックマークが削除されます。",
     "iconCategories": {
       "general": "一般",
       "work": "仕事",
