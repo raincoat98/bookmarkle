@@ -10,6 +10,7 @@ import {
   updateDoc,
   serverTimestamp,
   onSnapshot,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Collection, CollectionFormData } from "../types";
@@ -60,7 +61,7 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          
+
           // createdAt과 updatedAt이 Timestamp 객체인지 문자열인지 확인
           const parseDate = (dateValue: any): Date => {
             if (!dateValue) return new Date();
@@ -78,7 +79,7 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
             }
             return new Date();
           };
-          
+
           collectionList.push({
             id: doc.id,
             name: data.name,
@@ -282,17 +283,15 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
         const bookmarksSnapshot = await getDocs(bookmarksQuery);
         console.log("Found bookmarks to delete:", bookmarksSnapshot.size);
 
-        // 2. 연결된 북마크들을 모두 삭제
+        // 2. 배치를 사용하여 연결된 북마크들을 모두 삭제
         if (bookmarksSnapshot.size > 0) {
-          const deletePromises = bookmarksSnapshot.docs.map(
-            async (bookmarkDoc) => {
-              const bookmarkRef = doc(db, "bookmarks", bookmarkDoc.id);
-              await deleteDoc(bookmarkRef);
-            }
-          );
-
+          const batch = writeBatch(db);
+          bookmarksSnapshot.docs.forEach((bookmarkDoc) => {
+            const bookmarkRef = doc(db, "bookmarks", bookmarkDoc.id);
+            batch.delete(bookmarkRef);
+          });
           // 3. 모든 북마크 삭제 완료 대기
-          await Promise.all(deletePromises);
+          await batch.commit();
         }
 
         // 4. 컬렉션 삭제
