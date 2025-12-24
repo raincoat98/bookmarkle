@@ -920,12 +920,58 @@ export const BookmarksPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {t("collections.deleteCollection")}
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              <span className="font-bold">{targetCollectionName}</span>{" "}
-              {t("collections.deleteConfirmation")}
-              <br />
-              {t("collections.deleteWarning")}
-            </p>
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300 mb-3">
+                <span className="font-bold">{targetCollectionName}</span>{" "}
+                {(() => {
+                  const text = t("collections.deleteConfirmation");
+                  const deleteWords = ["삭제", "delete", "削除"];
+                  const deleteWord = deleteWords.find((word) =>
+                    text.toLowerCase().includes(word.toLowerCase())
+                  );
+                  if (deleteWord) {
+                    const parts = text.split(
+                      new RegExp(`(${deleteWord})`, "i")
+                    );
+                    return (
+                      <>
+                        {parts[0]}
+                        <span className="font-bold text-red-600 dark:text-red-400">
+                          {parts[1]}
+                        </span>
+                        {parts[2]}
+                      </>
+                    );
+                  }
+                  return text;
+                })()}
+              </p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <p className="text-red-700 dark:text-red-400 text-sm font-medium">
+                  <span className="font-bold">⚠️ {t("common.warning")}: </span>
+                  {(() => {
+                    const text = t("collections.deleteWarning");
+                    const deleteWords = ["삭제", "deleted", "削除"];
+                    const deleteWord = deleteWords.find((word) =>
+                      text.toLowerCase().includes(word.toLowerCase())
+                    );
+                    if (deleteWord) {
+                      const parts = text.split(
+                        new RegExp(`(${deleteWord})`, "i")
+                      );
+                      return (
+                        <>
+                          {parts[0]}
+                          <span className="font-bold">{parts[1]}</span>
+                          {parts[2]}
+                        </>
+                      );
+                    }
+                    return text;
+                  })()}
+                </p>
+              </div>
+            </div>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
