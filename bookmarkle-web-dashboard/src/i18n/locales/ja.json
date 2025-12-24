@@ -258,7 +258,7 @@
     "maxDepthExceeded": "2レベル以上のサブコレクションは追加できません。",
     "selectedCollection": "選択されたコレクション",
     "deleteConfirmation": "コレクションを削除しますか？",
-    "deleteWarning": "このコレクションに属するブックマークはコレクションから削除されます。",
+    "deleteWarning": "このコレクションに属するすべてのブックマークが削除されます。",
     "iconCategories": {
       "general": "一般",
       "work": "仕事",
@@ -295,6 +295,14 @@
     "deleteAccount": "アカウント削除",
     "confirmDeleteAccount": "アカウントを削除しますか？この操作は元に戻せません。",
     "accountDeleted": "アカウントが削除されました。",
+    "dangerZone": "危険ゾーン",
+    "dangerZoneDescription": "この操作は元に戻せません。慎重に進めてください。",
+    "deleteAccountDescription": "アカウントを削除すると、ブックマークルサービスにアクセスできなくなり、個人データが永続的に削除されます。14日以内に削除をキャンセルできます。",
+    "learnMore": "詳細を見る",
+    "accountDeletionScheduled": "アカウント削除が予約されました",
+    "accountDeletionScheduledDescription": "アカウント削除は{{date}}に予約されています。14日以内に削除をキャンセルできます。",
+    "cancelDeletion": "削除をキャンセル",
+    "deletionCancelled": "アカウント削除がキャンセルされました。",
     "backupCreated": "バックアップが作成されました。",
     "backupRestored": "バックアップが復元されました。",
     "dataExported": "データがエクスポートされました。",
@@ -369,6 +377,12 @@
     "deletedAt": "削除日時",
     "daysUntilPermanentDelete": "{{days}}日後に自動削除",
     "autoDeleteInfo": "ゴミ箱のブックマークは30日後に自動的に完全に削除されます"
+  },
+  "header": {
+    "themeToggle": "テーマ変更",
+    "currentTheme": "現在: {{theme}}モード",
+    "adminDashboard": "管理者ダッシュボード",
+    "premiumSubscription": "プレミアム購読"
   },
   "admin": {
     "title": "管理者",
