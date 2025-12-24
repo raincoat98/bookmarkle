@@ -159,8 +159,56 @@ export default defineConfig({
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "[name]-[hash].js",
+        // background.js는 모든 코드를 단일 파일로 번들링
+        manualChunks: (id) => {
+          // background 관련 코드는 모두 같은 청크로 묶어서 단일 파일로 생성
+          if (
+            id.includes("background.js") ||
+            id.includes("background/") ||
+            id === resolve(__dirname, "background.js")
+          ) {
+            return "background";
+          }
+          // popup과 content-script는 기본 분할 전략 사용
+          return null;
+        },
+        // background는 동적 import도 인라인화하여 단일 파일로
+        inlineDynamicImports: false, // 개별적으로 제어
       },
     },
   },
-  plugins: [copyAssetsPlugin],
+  plugins: [
+    copyAssetsPlugin,
+    // background.js를 위한 커스텀 플러그인
+    // preload-helper 청크를 제거하고 background.js에 인라인화
+    {
+      name: "remove-preload-helper",
+      generateBundle(options, bundle) {
+        const backgroundChunk = bundle["background.js"];
+        if (!backgroundChunk || !backgroundChunk.code) return;
+
+        // preload-helper 청크 찾기
+        const preloadHelperKey = Object.keys(bundle).find(
+          (key) => key.startsWith("preload-helper") && key.endsWith(".js")
+        );
+
+        if (preloadHelperKey && bundle[preloadHelperKey]) {
+          // preload-helper 청크 삭제
+          delete bundle[preloadHelperKey];
+          console.log(`✅ preload-helper 청크 제거: ${preloadHelperKey}`);
+        }
+
+        // background.js에서 preload-helper import 문 제거
+        const importPattern =
+          /import\s*{\s*_\s*as\s+\w+\s*}\s*from\s*["']\.\/preload-helper-[^"']+["'];?\s*/g;
+        if (importPattern.test(backgroundChunk.code)) {
+          backgroundChunk.code = backgroundChunk.code.replace(
+            importPattern,
+            ""
+          );
+          console.log("✅ background.js에서 preload-helper import 제거");
+        }
+      },
+    },
+  ],
 });

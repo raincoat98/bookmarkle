@@ -65,6 +65,36 @@ if (fs.existsSync(backgroundPath)) {
     "extension=true";
 
   let content = fs.readFileSync(backgroundPath, "utf8");
+
+  // preload-helper 관련 코드 제거
+  // Vite가 생성한 preload-helper import 문 제거 (만약 남아있다면)
+  const preloadHelperImportPattern =
+    /import\s*{\s*_\s*as\s+\w+\s*}\s*from\s*["']\.\/preload-helper-[^"']+["'];?\s*/g;
+  content = content.replace(preloadHelperImportPattern, "");
+
+  // export 문 제거 (preload-helper에서 남은 export 문들)
+  const exportPattern = /export\s*{\s*\w+\s*as\s+_\s*}\s*;?\s*/g;
+  content = content.replace(exportPattern, "");
+
+  // preload-helper 파일 삭제 (존재하는 경우)
+  try {
+    const helperFiles = fs
+      .readdirSync(distDir)
+      .filter(
+        (file) => file.startsWith("preload-helper") && file.endsWith(".js")
+      );
+    helperFiles.forEach((file) => {
+      try {
+        fs.unlinkSync(path.join(distDir, file));
+        console.log(`✅ preload-helper 파일 제거: ${file}`);
+      } catch (err) {
+        console.warn(`⚠️ preload-helper 파일 삭제 실패: ${file}`, err.message);
+      }
+    });
+  } catch (err) {
+    // distDir이 없거나 읽을 수 없으면 무시
+  }
+
   // 난독화 후에도 작동하도록 문자열만 찾아서 교체
   content = content.replace(
     /"SIGNIN_POPUP_URL_PLACEHOLDER"/g,

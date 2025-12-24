@@ -58,6 +58,8 @@ export async function t(key, lang = null) {
 export async function setLanguage(lang) {
   await chrome.storage.local.set({ language: lang });
   currentLanguage = lang;
+  // 언어 변경 시 리소스 캐시는 유지 (성능상 이점)
+  // 필요시 새로운 언어 리소스가 자동으로 로드됨
 }
 
 // 현재 언어 설정
