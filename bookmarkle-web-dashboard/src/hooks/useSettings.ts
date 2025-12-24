@@ -13,6 +13,9 @@ import {
   getUserNotificationSettings,
   setUserNotificationSettings,
   auth,
+  scheduleAccountDeletion,
+  cancelAccountDeletion,
+  getAccountDeletionStatus,
 } from "../firebase";
 import {
   loadBackupSettings,
@@ -65,7 +68,6 @@ interface UseSettingsProps {
   collections: Collection[];
   theme: string;
   setTheme: (theme: "light" | "dark" | "auto") => void;
-  logout: () => void;
   onImportData?: (importData: ImportPreviewData) => Promise<void>;
   onRestoreBackup?: (backupData: {
     bookmarks: Bookmark[];
@@ -79,7 +81,6 @@ export const useSettings = ({
   rawBookmarks,
   collections,
   setTheme,
-  logout,
   onImportData,
   onRestoreBackup,
   isRestoring = false,
@@ -277,6 +278,19 @@ export const useSettings = ({
     getAllBackups()
   );
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
+  const [deletionStatus, setDeletionStatus] = useState<{
+    isScheduled: boolean;
+    deletionDate: Date | null;
+  } | null>(null);
+
+  // 계정 삭제 상태 로드
+  useEffect(() => {
+    if (user?.uid) {
+      getAccountDeletionStatus(user.uid).then(setDeletionStatus);
+    } else {
+      setDeletionStatus(null);
+    }
+  }, [user?.uid]);
 
   // 백업 동기화 함수
   const syncBackups = useCallback(() => {
@@ -682,12 +696,40 @@ export const useSettings = ({
 
   const handleConfirmDeleteAccount = async () => {
     try {
-      toast.success("계정이 삭제되었습니다.");
+      if (!user?.uid) {
+        toast.error(t("common.error"));
+        return;
+      }
+
+      // 14일 후 삭제 예약
+      await scheduleAccountDeletion(user.uid);
+      toast.success(t("settings.accountDeletionScheduled"));
       setShowDeleteAccountModal(false);
-      await Promise.resolve(logout());
-      navigate("/", { replace: true });
+
+      // 삭제 상태 새로고침
+      const status = await getAccountDeletionStatus(user.uid);
+      setDeletionStatus(status);
     } catch (error) {
-      console.error("Account deletion or logout failed:", error);
+      console.error("Account deletion scheduling failed:", error);
+      toast.error(t("common.error"));
+    }
+  };
+
+  const handleCancelDeletion = async () => {
+    try {
+      if (!user?.uid) {
+        toast.error(t("common.error"));
+        return;
+      }
+
+      await cancelAccountDeletion(user.uid);
+      toast.success(t("settings.deletionCancelled"));
+
+      // 삭제 상태 새로고침
+      const status = await getAccountDeletionStatus(user.uid);
+      setDeletionStatus(status);
+    } catch (error) {
+      console.error("Account deletion cancellation failed:", error);
       toast.error(t("common.error"));
     }
   };
@@ -715,6 +757,7 @@ export const useSettings = ({
     deleteConfirm,
     showDeleteAccountModal,
     setShowDeleteAccountModal,
+    deletionStatus,
     fileInputRef,
     chromeBookmarkFileInputRef,
 
@@ -743,6 +786,7 @@ export const useSettings = ({
     handleCancelImport,
     handleDeleteAccount,
     handleConfirmDeleteAccount,
+    handleCancelDeletion,
     handleNavigateToNotifications,
 
     // 기타
