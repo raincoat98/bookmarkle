@@ -1,6 +1,6 @@
 import { elements } from "./dom.js";
 import { SUPPORT_URL, BUG_REPORT_URL } from "./constants.js";
-import { showLanguageModal } from "./ui.js";
+import { showLanguageModal, updateUIWithLanguage } from "./ui.js";
 import { toggleTheme, loadTheme } from "./theme.js";
 import {
   showUserInfoModal,
@@ -91,6 +91,8 @@ export function initializeEventListeners() {
 
   menuTheme?.addEventListener("click", async () => {
     await toggleTheme();
+    // 테마 변경 후 UI 텍스트 업데이트
+    await updateUIWithLanguage();
     if (dropdownMenu) {
       dropdownMenu.style.display = "none";
     }
