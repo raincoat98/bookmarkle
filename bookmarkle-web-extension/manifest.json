@@ -14,6 +14,7 @@
   "host_permissions": [
     "https://*.firebaseapp.com/*",
     "https://*.googleapis.com/*",
+    "https://*.bookmarkle.app/*",
     "https://*.web.app/*",
     "http://localhost/*",
     "http://127.0.0.1/*"
@@ -32,6 +33,7 @@
       "matches": [
         "https://*.firebaseapp.com/*",
         "https://*.web.app/*",
+        "https://*.bookmarkle.app/*",
         "http://localhost/*",
         "http://127.0.0.1/*"
       ],
