@@ -378,6 +378,12 @@
     "daysUntilPermanentDelete": "Auto delete in {{days}} days",
     "autoDeleteInfo": "Bookmarks in the trash will be permanently deleted automatically after 30 days"
   },
+  "header": {
+    "themeToggle": "Toggle theme",
+    "currentTheme": "Current: {{theme}} mode",
+    "adminDashboard": "Admin Dashboard",
+    "premiumSubscription": "Premium Subscription"
+  },
   "admin": {
     "title": "Admin",
     "users": "Users",

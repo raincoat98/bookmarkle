@@ -378,6 +378,12 @@
     "daysUntilPermanentDelete": "{{days}}日後に自動削除",
     "autoDeleteInfo": "ゴミ箱のブックマークは30日後に自動的に完全に削除されます"
   },
+  "header": {
+    "themeToggle": "テーマ変更",
+    "currentTheme": "現在: {{theme}}モード",
+    "adminDashboard": "管理者ダッシュボード",
+    "premiumSubscription": "プレミアム購読"
+  },
   "admin": {
     "title": "管理者",
     "users": "ユーザー",

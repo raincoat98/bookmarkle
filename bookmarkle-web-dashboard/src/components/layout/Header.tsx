@@ -109,7 +109,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.4 }}
             >
-            <Link to="/about" className="flex items-center space-x-3">
+              <Link to="/about" className="flex items-center space-x-3">
                 <motion.div
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   whileTap={{ scale: 0.95 }}
@@ -123,9 +123,9 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                   transition={{ delay: 0.2, duration: 0.4 }}
                   className="text-xl font-bold gradient-text"
                 >
-                  북마클
+                  {t("common.appName")}
                 </motion.h1>
-            </Link>
+              </Link>
             </motion.div>
           </div>
 
@@ -140,17 +140,18 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
               whileTap={{ scale: 0.95 }}
               onClick={toggleTheme}
               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
-              aria-label="테마 변경"
-              title={`현재: ${
-                theme === "light"
-                  ? "라이트"
-                  : theme === "dark"
-                  ? "다크"
-                  : "자동"
-              } 모드`}
+              aria-label={t("header.themeToggle")}
+              title={t("header.currentTheme", {
+                theme:
+                  theme === "light"
+                    ? t("settings.themeLight")
+                    : theme === "dark"
+                    ? t("settings.themeDark")
+                    : t("settings.themeSystem"),
+              })}
             >
               <AnimatePresence mode="wait">
-              {theme === "light" ? (
+                {theme === "light" ? (
                   <motion.div
                     key="moon"
                     initial={{ rotate: -90, opacity: 0 }}
@@ -158,9 +159,9 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                <Moon className="w-5 h-5" />
+                    <Moon className="w-5 h-5" />
                   </motion.div>
-              ) : theme === "dark" ? (
+                ) : theme === "dark" ? (
                   <motion.div
                     key="globe"
                     initial={{ rotate: -90, opacity: 0 }}
@@ -168,9 +169,9 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                <Globe className="w-5 h-5" />
+                    <Globe className="w-5 h-5" />
                   </motion.div>
-              ) : (
+                ) : (
                   <motion.div
                     key="sun"
                     initial={{ rotate: -90, opacity: 0 }}
@@ -178,9 +179,9 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                     exit={{ rotate: 90, opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                <Sun className="w-5 h-5" />
+                    <Sun className="w-5 h-5" />
                   </motion.div>
-              )}
+                )}
               </AnimatePresence>
             </motion.button>
 
@@ -204,7 +205,7 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
 
                 {/* 드롭다운 메뉴 */}
                 <AnimatePresence>
-                {isUserMenuOpen && (
+                  {isUserMenuOpen && (
                     <motion.div
                       initial={{ opacity: 0, y: -10, scale: 0.95 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -212,68 +213,76 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       transition={{ duration: 0.2 }}
                       className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[100]"
                     >
-                    {/* 사용자 정보 */}
-                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {user.displayName || "사용자"}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                        {user.email}
-                      </p>
-                    </div>
+                      {/* 사용자 정보 */}
+                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user.displayName || t("settings.user")}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                          {user.email}
+                        </p>
+                      </div>
 
-                    {/* 구독 관리 - 베타 기간 중 숨김 */}
-                    {!isBetaPeriod() && (
+                      {/* 구독 관리 - 베타 기간 중 숨김 */}
+                      {!isBetaPeriod() && (
+                        <Link
+                          to="/subscription"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className={`flex items-center space-x-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                            isPremium
+                              ? "text-yellow-600 dark:text-yellow-400"
+                              : "text-gray-700 dark:text-gray-300"
+                          }`}
+                        >
+                          <Crown className="w-4 h-4" />
+                          <span>
+                            {isPremium
+                              ? t("header.premiumSubscription")
+                              : t("premium.subscriptionManagement")}
+                          </span>
+                        </Link>
+                      )}
+
+                      {/* 관리자 페이지 */}
+                      {isAdmin && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Shield className="w-4 h-4" />
+                          <span>{t("header.adminDashboard")}</span>
+                        </Link>
+                      )}
+
+                      {/* 설정 */}
                       <Link
-                        to="/subscription"
+                        to="/settings"
                         onClick={() => setIsUserMenuOpen(false)}
-                        className={`flex items-center space-x-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                          isPremium
-                            ? "text-yellow-600 dark:text-yellow-400"
-                            : "text-gray-700 dark:text-gray-300"
-                        }`}
+                        className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        <Crown className="w-4 h-4" />
-                        <span>{isPremium ? "프리미엄 구독" : "구독 관리"}</span>
+                        <Settings className="w-4 h-4" />
+                        <span>{t("settings.title")}</span>
                       </Link>
-                    )}
 
-                    {/* 관리자 페이지 */}
-                    {isAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      {/* 로그아웃 */}
+                      <button
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          handleLogout();
+                        }}
+                        disabled={isLoggingOut}
+                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        <Shield className="w-4 h-4" />
-                        <span>관리자 대시보드</span>
-                      </Link>
-                    )}
-
-                    {/* 설정 */}
-                    <Link
-                      to="/settings"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                    >
-                      <Settings className="w-4 h-4" />
-                      <span>설정</span>
-                    </Link>
-
-                    {/* 로그아웃 */}
-                    <button
-                      onClick={() => {
-                        setIsUserMenuOpen(false);
-                        handleLogout();
-                      }}
-                      disabled={isLoggingOut}
-                      className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>{isLoggingOut ? t("auth.loggingOut") : t("auth.logout")}</span>
-                    </button>
+                        <LogOut className="w-4 h-4" />
+                        <span>
+                          {isLoggingOut
+                            ? t("auth.loggingOut")
+                            : t("auth.logout")}
+                        </span>
+                      </button>
                     </motion.div>
-                )}
+                  )}
                 </AnimatePresence>
               </div>
             )}

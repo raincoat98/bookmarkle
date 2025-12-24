@@ -391,6 +391,12 @@
     "daysUntilPermanentDelete": "{{days}}일 후 자동 삭제",
     "autoDeleteInfo": "휴지통의 북마크는 30일 후 자동으로 완전 삭제됩니다"
   },
+  "header": {
+    "themeToggle": "테마 변경",
+    "currentTheme": "현재: {{theme}} 모드",
+    "adminDashboard": "관리자 대시보드",
+    "premiumSubscription": "프리미엄 구독"
+  },
   "admin": {
     "title": "관리자",
     "users": "사용자",
