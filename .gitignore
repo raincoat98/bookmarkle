@@ -1,58 +1,79 @@
+# ============================================================================
 # Dependencies
+# ============================================================================
 node_modules/
-*/node_modules/
+package-lock.json
+yarn.lock
 
+# ============================================================================
 # Build outputs
+# ============================================================================
 dist/
 build/
-*/dist/
-*/build/
+bookmarkle-web-dashboard/dist/
+bookmarkle-browser-extension/dist/
 
-# Environment variables
+# ============================================================================
+# Environment variables & sensitive configuration
+# ============================================================================
 .env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
-*/.env
-*/.env.local
-
-# Firebase
-.firebase/
-*/.firebase/
-firebase-debug.log
-firebase-debug.*.log
+.env.*.local
+.env.development
+.env.production
+.env.test
+bookmarkle-web-dashboard/.env*
+bookmarkle-browser-extension/.env*
+bookmarkle-browser-extension/firebase-config.js
 serviceAccountKey.json
 
-# Configuration files (contains sensitive data)
-my-app/.env*
-bookmarkle-signin-popup/config.js
-bookmarkle-browser-extension/firebase-config.js
+# ============================================================================
+# Firebase
+# ============================================================================
+.firebase/
+.firebaserc
+firebase-debug.log
+firebase-debug.*.log
 
-# IDE
+# ============================================================================
+# IDE & Editor
+# ============================================================================
 .vscode/
 .idea/
 *.swp
 *.swo
+*.sublime-workspace
+*.sublime-project
 
-# OS
+# ============================================================================
+# OS & Temporary files
+# ============================================================================
 .DS_Store
 Thumbs.db
+.env.local.example
+*.tmp
+*.temp
 
+# ============================================================================
 # Logs
+# ============================================================================
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Chrome Extension builds
+# ============================================================================
+# Chrome Extension specific
+# ============================================================================
 *.zip
+build/
 
-# Temporary files
-*.tmp
-*.temp
-REVENUE_MODEL.md
+# ============================================================================
+# PEM files for Chrome Extension
+# ============================================================================
 
-# Chrome Extension PEM files
+
 dev-extension.pem
 prod-extension.pem

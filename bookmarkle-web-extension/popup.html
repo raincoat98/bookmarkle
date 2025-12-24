@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>북마클</title>
+    <link rel="stylesheet" href="popup/styles/variables.css" />
+    <link rel="stylesheet" href="popup/styles/base.css" />
+    <link rel="stylesheet" href="popup/styles/layout.css" />
+    <link rel="stylesheet" href="popup/styles/header.css" />
+    <link rel="stylesheet" href="popup/styles/forms.css" />
+    <link rel="stylesheet" href="popup/styles/buttons.css" />
+    <link rel="stylesheet" href="popup/styles/components.css" />
+    <link rel="stylesheet" href="popup/styles/modals.css" />
+    <link rel="stylesheet" href="popup/styles/login.css" />
+  </head>
+  <body>
+    <div class="popup-card">
+      <div id="loggedInContent" style="display: none">
+        <header class="popup-header">
+          <div class="brand-block">
+            <div class="brand-icon" id="brandIcon" data-lucide="bookmark"></div>
+            <div>
+              <p class="brand-title">북마클</p>
+            </div>
+          </div>
+          <div class="user-wrapper">
+            <div id="userHeader" class="user-header" style="display: none">
+              <div class="user-email-badge">
+                <span id="userEmail"></span>
+              </div>
+              <div class="header-actions">
+                <span id="statusBadge" class="status-badge"></span>
+                <button id="menuBtn" class="menu-btn" title="메뉴">
+                  <span id="menuIcon" data-lucide="more-vertical"></span>
+                </button>
+                <div
+                  id="dropdownMenu"
+                  class="dropdown-menu"
+                  style="display: none"
+                >
+                  <button class="menu-item" id="menuUserInfo">
+                    <span
+                      class="menu-icon"
+                      id="userIcon"
+                      data-lucide="user"
+                    ></span>
+                    <span>사용자 정보</span>
+                  </button>
+                  <button class="menu-item" id="menuTheme">
+                    <span
+                      class="menu-icon"
+                      id="themeIcon"
+                      data-lucide="palette"
+                    ></span>
+                    <span id="themeText"></span>
+                  </button>
+                  <button class="menu-item" id="menuLanguage">
+                    <span
+                      class="menu-icon"
+                      id="languageIcon"
+                      data-lucide="languages"
+                    ></span>
+                    <span id="languageText">언어</span>
+                  </button>
+                  <div class="menu-divider"></div>
+                  <button class="menu-item danger" id="menuLogout">
+                    <span
+                      class="menu-icon"
+                      id="logoutIcon"
+                      data-lucide="log-out"
+                    ></span>
+                    <span>로그아웃</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section class="field-group">
+          <label class="field-label" for="currentPageInput"></label>
+          <div class="current-page-card">
+            <input id="currentPageInput" type="text" readonly />
+            <button id="copyUrlBtn" class="ghost-btn" type="button"></button>
+          </div>
+        </section>
+
+        <section class="field-group">
+          <label class="field-label" for="memoTextarea"></label>
+          <textarea id="memoTextarea"></textarea>
+        </section>
+
+        <section class="field-group">
+          <label class="field-label" for="collectionInput"></label>
+          <div class="collection-input-wrapper">
+            <input
+              id="collectionInput"
+              type="text"
+              readonly
+              autocomplete="off"
+            />
+            <div
+              id="collectionDropdown"
+              class="collection-dropdown"
+              style="display: none"
+            >
+              <input
+                id="collectionSearchInput"
+                type="text"
+                class="collection-search-input"
+                autocomplete="off"
+              />
+              <div
+                id="collectionDropdownList"
+                class="collection-dropdown-list"
+              ></div>
+              <div
+                id="collectionCreateOption"
+                class="collection-create-option"
+                style="display: none"
+              >
+                <span
+                  id="createIcon"
+                  style="display: inline-block; margin-right: 4px"
+                  data-lucide="plus"
+                ></span
+                ><span></span><span id="newCollectionName"></span><span>"</span>
+              </div>
+            </div>
+            <button id="refreshCollectionsBtn" class="icon-btn" type="button">
+              <span id="refreshIcon" data-lucide="rotate-ccw"></span>
+            </button>
+            <button id="newCollectionBtn" class="icon-btn" type="button">
+              <span id="plusIcon" data-lucide="plus"></span>
+            </button>
+          </div>
+          <input type="hidden" id="selectedCollectionId" value="" />
+        </section>
+
+        <section class="field-group">
+          <label class="field-label" for="tagInput"></label>
+          <input id="tagInput" type="text" />
+          <div id="tagList" class="tag-list"></div>
+        </section>
+
+        <button id="saveBookmarkBtn" class="primary-btn"></button>
+
+        <div id="statusMessage" class="status-chip" style="display: none"></div>
+
+        <footer class="footer-row">
+          <button
+            id="supportLink"
+            class="text-link"
+            type="button"
+            disabled
+            style="opacity: 0.5; cursor: not-allowed"
+          >
+            ★ 후원하기
+          </button>
+          <span class="divider">|</span>
+          <button id="bugLink" class="text-link" type="button">
+            버그 등록하기
+          </button>
+        </footer>
+      </div>
+
+      <div id="loginButtons" class="login-controls" style="display: none">
+        <button id="loginEmailBtn" class="login-btn">로그인</button>
+        <div class="login-info">
+          <ul class="login-info-list">
+            <li>북마크는 Firebase에 안전하게 저장됩니다</li>
+            <li>여러 기기에서 동기화됩니다</li>
+            <li>개인정보는 보호됩니다</li>
+          </ul>
+          <div class="login-footer">
+            <div class="privacy-info">
+              <span style="margin-right: 4px">🔒</span>
+              <span>개인정보처리방침</span>
+            </div>
+            <div class="contact-info">
+              문의: <a href="mailto:ww57403@gmail.com">ww57403@gmail.com</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="loading" class="loading" style="display: none">로그인 중...</div>
+    </div>
+
+    <div id="userInfoModal" class="user-info-modal">
+      <div class="user-info-modal-content">
+        <button class="user-info-modal-close" id="modalCloseBtn">
+          <span id="modalCloseIcon" data-lucide="x"></span>
+        </button>
+        <strong>사용자 정보:</strong>
+        <div id="userDetails" style="margin-top: 15px"></div>
+      </div>
+    </div>
+
+    <div id="collectionModal" class="collection-modal">
+      <div class="collection-modal-content">
+        <button class="collection-modal-close" id="collectionModalCloseBtn">
+          <span id="collectionModalCloseIcon" data-lucide="x"></span>
+        </button>
+        <div class="collection-modal-title" id="collectionModalTitle"></div>
+        <div style="margin-bottom: 12px">
+          <label
+            id="collectionModalIconLabel"
+            style="
+              display: block;
+              margin-bottom: 6px;
+              font-size: 13px;
+              color: rgba(255, 255, 255, 0.8);
+            "
+          ></label>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <input
+              type="text"
+              id="collectionModalIconInput"
+              class="collection-modal-input"
+              placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
+              autocomplete="off"
+              maxlength="2"
+              style="margin-bottom: 0; flex: 1"
+            />
+            <button id="emojiPickerBtn" type="button" class="emoji-picker-btn">
+              😀
+            </button>
+          </div>
+        </div>
+        <div>
+          <label
+            style="
+              display: block;
+              margin-bottom: 6px;
+              font-size: 13px;
+              color: rgba(255, 255, 255, 0.8);
+            "
+            >이름</label
+          >
+          <input
+            type="text"
+            id="collectionModalInput"
+            class="collection-modal-input"
+            placeholder="컬렉션 이름을 입력하세요..."
+            autocomplete="off"
+          />
+        </div>
+        <div class="collection-modal-actions">
+          <button
+            id="collectionModalCancelBtn"
+            class="collection-modal-btn collection-modal-btn-cancel"
+          ></button>
+          <button
+            id="collectionModalCreateBtn"
+            class="collection-modal-btn collection-modal-btn-create"
+          ></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 이모지 Picker 모달 -->
+    <div id="emojiPickerModal" class="emoji-picker-modal">
+      <div id="emojiPickerContainer" class="emoji-picker-container"></div>
+    </div>
+
+    <script src="lucide.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>

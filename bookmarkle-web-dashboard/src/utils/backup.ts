@@ -15,6 +15,20 @@ export interface BackupSettings {
   maxBackups: number;
 }
 
+export interface BackupStatus {
+  enabled: boolean;
+  frequency: "daily" | "weekly" | "monthly";
+  lastBackup?: string;
+  backupCount: number;
+  totalSize: string;
+  nextBackup: string | null;
+}
+
+export interface BackupListItem {
+  timestamp: string;
+  data: BackupData;
+}
+
 const BACKUP_SETTINGS_KEY = "bookmarkhub_backup_settings";
 const BACKUP_DATA_PREFIX = "bookmarkhub_backup_";
 
@@ -54,8 +68,8 @@ export const loadBackupData = (timestamp: string): BackupData | null => {
 };
 
 // 모든 백업 목록 가져오기
-export const getAllBackups = (): { timestamp: string; data: BackupData }[] => {
-  const backups: { timestamp: string; data: BackupData }[] = [];
+export const getAllBackups = (): BackupListItem[] => {
+  const backups: BackupListItem[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
@@ -188,7 +202,7 @@ export const getBackupSize = (): number => {
 };
 
 // 백업 상태 정보
-export const getBackupStatus = () => {
+export const getBackupStatus = (): BackupStatus => {
   const settings = loadBackupSettings();
   const backups = getAllBackups();
   const totalSize = getBackupSize();

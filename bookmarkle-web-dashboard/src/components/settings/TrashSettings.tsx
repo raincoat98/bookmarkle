@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useAuthStore, useBookmarkStore } from "../../stores";
 import { toast } from "react-hot-toast";
 import { Trash2, RotateCcw, X, AlertTriangle } from "lucide-react";
+import { auth } from "../../firebase";
 
 export const TrashSettings: React.FC = () => {
   const { t } = useTranslation();
@@ -29,10 +30,16 @@ export const TrashSettings: React.FC = () => {
 
   // 휴지통 구독
   useEffect(() => {
-    if (user?.uid) {
-      const unsubscribe = subscribeToTrash(user.uid);
-      return unsubscribe;
+    if (!user?.uid) return;
+
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== user.uid) {
+      return;
     }
+
+    const unsubscribe = subscribeToTrash(user.uid);
+    return unsubscribe;
   }, [user?.uid, subscribeToTrash]);
 
   // 북마크 복원

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>북마클 - 옵션</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>시작 / 새 탭 페이지 설정</h1>
+        <p class="description">
+          새 탭을 열 때 표시할 URL을 설정하세요.<br />
+          허용 가능한 주소는 http:// 또는 https://로 시작하는 공개 웹 주소이며,
+          비워두면 기본 북마클 화면이 사용됩니다.
+        </p>
+      </header>
+
+      <main class="main-content">
+        <section class="option-section">
+          <div class="url-section">
+            <div class="url-header">
+              <label for="customUrl" class="url-label">사용할 URL</label>
+              <div class="default-url-info">
+                <span class="default-text"
+                  >기본:
+                  <span id="defaultUrl">https://www.bookmarkle.app</span></span
+                >
+                <button class="copy-btn" id="copyDefaultBtn">복사</button>
+              </div>
+            </div>
+            <input
+              type="text"
+              id="customUrl"
+              class="url-input"
+              placeholder="https://www.bookmarkle.app"
+            />
+            <ul class="helper-text">
+              <li>프로토콜을 포함해 정확한 주소를 입력하세요.</li>
+              <li>새 탭을 열면 이 주소가 표시됩니다.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="action-section">
+          <button class="btn btn-primary" id="saveBtn">저장</button>
+          <button class="btn btn-secondary" id="resetBtn">기본값 사용</button>
+        </section>
+
+        <div class="current-url">
+          현재 적용 URL:
+          <span id="currentUrl">https://www.bookmarkle.app</span>
+        </div>
+      </main>
+    </div>
+    <script src="options.js"></script>
+  </body>
+</html>

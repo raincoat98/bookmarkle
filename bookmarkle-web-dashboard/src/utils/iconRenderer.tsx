@@ -28,7 +28,12 @@ export const renderCollectionIcon = (iconName: string, className?: string) => {
     return (
       <span
         className={`flex items-center justify-center ${className || "w-5 h-5"}`}
-        style={{ fontSize: "1.25em" }}
+        style={{
+          fontSize: "1.5em",
+          fontFamily: "'Apple Color Emoji','Segoe UI Emoji','Noto Color Emoji',sans-serif",
+          lineHeight: 1,
+          verticalAlign: "middle",
+        }}
       >
         {trimmedIcon}
       </span>

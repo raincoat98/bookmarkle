@@ -15,8 +15,12 @@ export const SettingsPage: React.FC = () => {
     setSelectedCollection: setBookmarkSelectedCollection,
     setCollections: setBookmarkCollections,
   } = useBookmarkStore();
-  const { collections, addCollection, deleteCollection, fetchCollections } =
-    useCollectionStore();
+  const {
+    collections,
+    addCollection,
+    deleteCollection,
+    subscribeToCollections,
+  } = useCollectionStore();
   const [isRestoring, setIsRestoring] = useState(false);
 
   // 북마크 스토어 상태 동기화 (설정 페이지는 "all" 컬렉션 사용)
@@ -25,12 +29,14 @@ export const SettingsPage: React.FC = () => {
     setBookmarkCollections(collections);
   }, [collections, setBookmarkSelectedCollection, setBookmarkCollections]);
 
-  // 컬렉션 데이터 가져오기
+  // 컬렉션 데이터 실시간 구독
   useEffect(() => {
-    if (user?.uid) {
-      fetchCollections(user.uid);
-    }
-  }, [user?.uid, fetchCollections]);
+    if (!user?.uid) return;
+    
+    const unsubscribe = subscribeToCollections(user.uid);
+    
+    return () => unsubscribe();
+  }, [user?.uid, subscribeToCollections]);
 
   // 북마크 구독 설정
   useEffect(() => {

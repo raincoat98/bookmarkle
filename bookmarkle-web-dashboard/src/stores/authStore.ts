@@ -1,8 +1,7 @@
 import { create } from "zustand";
-import { watchAuth } from "../firebase";
+import { auth } from "../firebase";
 import type { User } from "firebase/auth";
-import type { FirestoreUser } from "../types";
-import { doc, setDoc, serverTimestamp, getDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import {
   db,
   loginWithGoogle,
@@ -11,20 +10,16 @@ import {
   logout as fbLogout,
 } from "../firebase";
 
+import { onAuthStateChanged } from "firebase/auth";
+
 interface AuthState {
   user: User | null;
+  idToken: string | null;
   loading: boolean;
   isActive: boolean | null;
-  isActiveLoading: boolean;
 }
 
 interface AuthActions {
-  setUser: (user: User | null) => void;
-  setLoading: (loading: boolean) => void;
-  setIsActive: (isActive: boolean | null) => void;
-  setIsActiveLoading: (isActiveLoading: boolean) => void;
-  checkUserStatus: (uid: string) => Promise<boolean>;
-  saveUserToFirestore: (firebaseUser: User) => Promise<void>;
   login: () => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
   signup: (
@@ -39,71 +34,17 @@ interface AuthActions {
 export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // State
   user: null,
+  idToken: null,
   loading: true,
   isActive: null,
-  isActiveLoading: false,
 
-  // Actions
-  setUser: (user) => set({ user }),
-  setLoading: (loading) => set({ loading }),
-  setIsActive: (isActive) => set({ isActive }),
-  setIsActiveLoading: (isActiveLoading) => set({ isActiveLoading }),
-
-  // 사용자 활성화 상태 확인
-  checkUserStatus: async (uid: string) => {
-    try {
-      set({ isActiveLoading: true });
-      const userDoc = await getDoc(doc(db, "users", uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const active = userData.isActive !== false; // 기본값은 true
-        set({ isActive: active });
-        return active;
-      }
-      return true; // 문서가 없으면 기본적으로 활성화
-    } catch (error) {
-      console.error("사용자 상태 확인 실패:", error);
-      return true; // 에러 시 기본적으로 활성화
-    } finally {
-      set({ isActiveLoading: false });
-    }
-  },
-
-  // Firestore에 사용자 데이터 저장
-  saveUserToFirestore: async (firebaseUser: User) => {
-    try {
-      const userData: FirestoreUser = {
-        uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName,
-        email: firebaseUser.email,
-        photoURL: firebaseUser.photoURL,
-        emailVerified: firebaseUser.emailVerified,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        provider: firebaseUser.providerData[0]?.providerId || "email",
-      };
-
-      await setDoc(doc(db, "users", firebaseUser.uid), userData, {
-        merge: true,
-      });
-      console.log(
-        "사용자 데이터가 Firestore에 저장되었습니다:",
-        firebaseUser.uid
-      );
-    } catch (error) {
-      console.error("Firestore에 사용자 데이터 저장 실패:", error);
-    }
-  },
-
-  // Google 로그인
+  // Google 로그인 (firebase.ts에서 처리)
   login: async () => {
     try {
-      const result = await loginWithGoogle();
-      if (result.user) {
-        await get().saveUserToFirestore(result.user);
-      }
+      console.log("🔄 Google 로그인 시작...");
+      await loginWithGoogle();
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("로그인 실패:", error);
       throw error;
     }
   },
@@ -111,12 +52,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // 이메일 로그인
   loginWithEmail: async (email: string, password: string) => {
     try {
-      const result = await fbLoginWithEmail(email, password);
-      if (result.user) {
-        await get().saveUserToFirestore(result.user);
-      }
+      await fbLoginWithEmail(email, password);
     } catch (error) {
-      console.error("Email login error:", error);
+      console.error("이메일 로그인 실패:", error);
       throw error;
     }
   },
@@ -124,16 +62,9 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // 회원가입
   signup: async (email: string, password: string, displayName: string) => {
     try {
-      const userCredential = await signupWithEmail(
-        email,
-        password,
-        displayName
-      );
-      if (userCredential.user) {
-        await get().saveUserToFirestore(userCredential.user);
-      }
+      await signupWithEmail(email, password, displayName);
     } catch (error) {
-      console.error("Signup error:", error);
+      console.error("회원가입 실패:", error);
       throw error;
     }
   },
@@ -141,26 +72,142 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   // 로그아웃
   logout: async () => {
     try {
+      const currentState = get();
+      if (currentState.user === null) {
+        return;
+      }
+
+      // Firestore 리스너 정리
+      try {
+        const bookmarkStore = await import("./bookmarkStore");
+        bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
+      } catch (error) {
+        console.warn("북마크 리스너 정리 중 오류:", error);
+      }
+
+      try {
+        const subscriptionStore = await import("./subscriptionStore");
+        subscriptionStore.useSubscriptionStore.getState().cleanupAllListeners();
+      } catch (error) {
+        console.warn("구독 리스너 정리 중 오류:", error);
+      }
+
       await fbLogout();
     } catch (error) {
-      console.error("Logout error:", error);
+      console.error("로그아웃 실패:", error);
       throw error;
     }
   },
 
   // 인증 상태 초기화 및 감시
   initializeAuth: () => {
-    const unsubscribe = watchAuth((user) => {
-      set({ user, loading: false });
-
-      // 사용자 변경 시 상태 확인
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        get().checkUserStatus(user.uid);
+        // idToken 가져오기
+        const idToken = await user.getIdToken().catch(() => null);
+
+        // 사용자 상태 확인
+        let isActive = true;
+        try {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            isActive = userDoc.data().isActive !== false;
+          }
+        } catch (error) {
+          console.error("사용자 상태 확인 실패:", error);
+        }
+
+        set({
+          user,
+          idToken,
+          loading: false,
+          isActive,
+        });
       } else {
-        set({ isActive: null });
+        // Firestore 리스너 정리
+        try {
+          const bookmarkStore = await import("./bookmarkStore");
+          bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
+        } catch (error) {
+          console.warn("북마크 리스너 정리 중 오류:", error);
+        }
+
+        try {
+          const subscriptionStore = await import("./subscriptionStore");
+          subscriptionStore.useSubscriptionStore
+            .getState()
+            .cleanupAllListeners();
+        } catch (error) {
+          console.warn("구독 리스너 정리 중 오류:", error);
+        }
+
+        set({
+          user: null,
+          idToken: null,
+          loading: false,
+          isActive: null,
+        });
       }
     });
 
-    return unsubscribe;
+    // Extension으로부터 토큰 요청 처리
+    const handleExtensionTokenRequest = (event: MessageEvent) => {
+      if (
+        event.data &&
+        event.data.type === "TOKEN_REQUEST" &&
+        event.origin === window.location.origin
+      ) {
+        console.log("🔐 Extension으로부터 토큰 요청 수신");
+        const currentState = get();
+
+        if (currentState.user && currentState.idToken) {
+          // 최신 토큰 가져오기
+          currentState.user.getIdToken(true).then((freshToken) => {
+            console.log("🔐 Extension에 갱신된 토큰 전송");
+            window.postMessage(
+              {
+                type: "TOKEN_RESPONSE",
+                idToken: freshToken,
+                user: {
+                  uid: currentState.user!.uid,
+                  email: currentState.user!.email,
+                  displayName: currentState.user!.displayName,
+                },
+              },
+              window.location.origin
+            );
+          }).catch((error) => {
+            console.error("🔐 토큰 갱신 실패:", error);
+            window.postMessage(
+              {
+                type: "TOKEN_RESPONSE",
+                idToken: null,
+                error: "토큰을 가져올 수 없습니다.",
+              },
+              window.location.origin
+            );
+          });
+        } else {
+          console.warn("🔐 사용자 정보 없음, 토큰 요청 거부");
+          window.postMessage(
+            {
+              type: "TOKEN_RESPONSE",
+              idToken: null,
+              error: "로그인되지 않음",
+            },
+            window.location.origin
+          );
+        }
+      }
+    };
+
+    // postMessage 리스너 추가
+    window.addEventListener("message", handleExtensionTokenRequest);
+
+    // 정리 함수 반환 (unsubscribe와 eventListener 제거)
+    return () => {
+      unsubscribeAuth();
+      window.removeEventListener("message", handleExtensionTokenRequest);
+    };
   },
 }));

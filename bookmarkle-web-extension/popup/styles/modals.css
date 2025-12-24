@@ -1,0 +1,349 @@
+/* 언어 모달 스타일 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  transition: background 0.3s ease;
+}
+
+.language-modal-content {
+  background: #0f1228;
+  border-radius: 16px;
+  padding: 24px;
+  width: min(90%, 320px);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .language-modal-content {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.modal-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.2s ease;
+}
+
+.modal-close:hover {
+  opacity: 0.7;
+}
+
+.language-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.language-option {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.language-option:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.language-option.active {
+  background: rgba(194, 137, 255, 0.2);
+  border-color: var(--accent);
+}
+
+body.light-theme .language-option {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+body.light-theme .language-option:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.light-theme .language-option.active {
+  background: rgba(194, 137, 255, 0.25);
+  border-color: var(--accent);
+}
+
+.user-info-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  transition: background 0.3s ease;
+}
+
+body.light-theme .user-info-modal {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.user-info-modal.show {
+  display: flex;
+}
+
+.user-info-modal-content {
+  background: #0f1228;
+  border-radius: 16px;
+  padding: 24px;
+  width: min(90%, 420px);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .user-info-modal-content {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(10px);
+}
+
+body.light-theme .user-info-modal-content strong {
+  color: #fff;
+}
+
+body.light-theme .user-info-modal-content div {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.user-info-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .user-info-modal-close {
+  color: #fff;
+}
+
+.collection-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+  transition: background 0.3s ease;
+}
+
+body.light-theme .collection-modal {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+.collection-modal.show {
+  display: flex;
+}
+
+.collection-modal-content {
+  background: #0f1228;
+  border-radius: 16px;
+  padding: 24px;
+  width: min(90%, 420px);
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .collection-modal-content {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  backdrop-filter: blur(10px);
+}
+
+.collection-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  color: #fff;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .collection-modal-close {
+  color: #fff;
+}
+
+.collection-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #fff;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .collection-modal-title {
+  color: #fff;
+}
+
+body.light-theme .collection-modal-content label {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.collection-modal-input {
+  width: 100%;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--field-bg);
+  border: 1px solid var(--border-color);
+  outline: none;
+  color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 16px;
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .collection-modal-input {
+  color: #fff;
+}
+
+body.light-theme .collection-modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.collection-modal-input:focus {
+  border-color: var(--accent);
+}
+
+.collection-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.collection-modal-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.collection-modal-btn-cancel {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transition: background 0.2s ease, color 0.3s ease;
+}
+
+.collection-modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.light-theme .collection-modal-btn-cancel {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+body.light-theme .collection-modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.collection-modal-btn-create {
+  background: linear-gradient(135deg, #b075ff, #7d5dff);
+  color: #fff;
+}
+
+.collection-modal-btn-create:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(118, 92, 255, 0.3);
+}
+
+.collection-modal-btn-create:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 이모지 Picker 모달 */
+.emoji-picker-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+}
+
+.emoji-picker-modal.show {
+  display: flex;
+}
+
+.emoji-picker-container {
+  position: relative;
+  z-index: 10001;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: auto;
+}
+
+.emoji-picker-container em-emoji-picker {
+  --rgb-background: 13, 21, 50;
+  --rgb-color: 255, 255, 255;
+  --rgb-accent: 194, 137, 255;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  max-height: 500px;
+  overflow: hidden;
+}
+
+body.light-theme .emoji-picker-container em-emoji-picker {
+  --rgb-background: 255, 255, 255;
+  --rgb-color: 0, 0, 0;
+  --rgb-accent: 194, 137, 255;
+}
