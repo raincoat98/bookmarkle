@@ -14,30 +14,63 @@
 
 ```
 📚 bookmarkle/
-├── 🧩 bookmarkle-browser-extension/  # Chrome Extension (Manifest V3)
-│   ├── _locales/                    # 다국어 지원 파일 (i18n)
+├── 🧩 bookmarkle-web-extension/     # Chrome Extension (Manifest V3)
 │   ├── background/                  # Service Worker 모듈
-│   ├── firebase/                    # Firebase 설정 및 유틸
-│   ├── offscreen/                   # Offscreen Document
+│   │   ├── auth.js                  # 인증 처리
+│   │   ├── bookmark.js              # 북마크 관리
+│   │   ├── collection.js            # 컬렉션 관리
+│   │   ├── context-menu.js          # 컨텍스트 메뉴
+│   │   ├── events.js                # 이벤트 리스너
+│   │   ├── firestore.js             # Firestore 연동
+│   │   ├── messages.js              # 메시지 핸들러
+│   │   ├── notifications.js         # 알림 처리
+│   │   ├── quick-mode.js            # 빠른 저장 모드
+│   │   ├── state.js                 # 상태 관리
+│   │   └── utils.js                 # 유틸리티
 │   ├── popup/                       # Extension Popup UI
-│   │   ├── popup.html
-│   │   ├── scripts/                 # Popup 스크립트
-│   │   └── styles/                  # Popup 스타일
-│   ├── public/                      # 정적 리소스
+│   │   ├── styles/                  # Popup 스타일
+│   │   ├── auth.js                  # Popup 인증 로직
+│   │   ├── bookmark.js              # Popup 북마크 로직
+│   │   ├── collection.js            # Popup 컬렉션 로직
+│   │   └── ...                      # 기타 Popup 스크립트
+│   ├── locales/                     # 다국어 지원 파일 (i18n)
+│   │   ├── ko.json                  # 한국어
+│   │   ├── en.json                  # 영어
+│   │   └── ja.json                  # 일본어
+│   ├── libs/                        # Firebase 라이브러리
+│   ├── icons/                       # 아이콘 파일
 │   ├── dist/                        # 빌드 결과물
-│   ├── manifest.json                # Extension Configuration
-│   ├── content-bridge.js            # Content Script
+│   ├── background.js                # Background Service Worker 진입점
+│   ├── popup.html/js                # Popup HTML/JS
+│   ├── content-script.js            # Content Script
 │   ├── newtab.html/js               # 새 탭 페이지
-│   ├── options.html/js              # 설정 페이지
+│   ├── options.html/js/css          # 설정 페이지
+│   ├── manifest.json                # Extension Configuration
+│   ├── vite.config.js               # Vite 빌드 설정
+│   ├── build-config.js              # 빌드 후 설정 처리
 │   └── .env                         # Firebase 환경변수 (⚠️ .gitignore)
 │
 ├── 📊 bookmarkle-web-dashboard/     # React + Vite 웹 대시보드
 │   ├── src/
 │   │   ├── components/              # UI Components
+│   │   │   ├── admin/               # 관리자 컴포넌트
+│   │   │   ├── auth/                # 인증 컴포넌트
+│   │   │   ├── bookmarks/           # 북마크 컴포넌트
+│   │   │   ├── collections/         # 컬렉션 컴포넌트
+│   │   │   ├── common/              # 공통 컴포넌트
+│   │   │   ├── dashboard/           # 대시보드 컴포넌트
+│   │   │   ├── layout/              # 레이아웃 컴포넌트
+│   │   │   ├── settings/            # 설정 컴포넌트
+│   │   │   ├── subscription/        # 구독 컴포넌트
+│   │   │   └── widgets/             # 위젯 컴포넌트
 │   │   ├── hooks/                   # Custom Hooks
 │   │   ├── pages/                   # 페이지 컴포넌트
 │   │   ├── stores/                  # Zustand 상태 관리
 │   │   ├── utils/                   # 유틸리티 함수
+│   │   ├── i18n/                    # 다국어 설정
+│   │   │   └── locales/             # 번역 파일 (ko, en, ja)
+│   │   ├── types/                   # TypeScript 타입 정의
+│   │   ├── data/                    # 정적 데이터
 │   │   ├── firebase.ts              # Firebase 설정
 │   │   └── App.tsx                  # 메인 App
 │   ├── dist/                        # Build Output
@@ -55,7 +88,8 @@
 │   └── setup-env.sh                 # 환경변수 설정 스크립트
 │
 ├── 📦 build/                        # 빌드 결과물 (⚠️ .gitignore)
-│   └── bookmarkle-browser-extension-*.zip # 패키징된 Extension
+│   ├── bookmarkle-web-extension/    # Extension 빌드 결과
+│   └── bookmarkle-web-extension-*.zip # 패키징된 Extension
 │
 ├── 📝 프로젝트 설정
 │   ├── .gitignore                   # Git 무시 목록
@@ -72,10 +106,10 @@
 
 ## 🆕 최근 업데이트
 
-- **새 컬렉션 추가 옵션 상단 고정** - 드롭다운에서 더 쉽게 접근
-- **Firebase 인증 통합** - Extension과 Dashboard 간 완벽한 동기화
+- **Header 컴포넌트 다국어 지원** - 모든 텍스트를 i18n으로 관리
+- **React 19 업그레이드** - 최신 React 기능 활용
 - **Background 모듈화** - 유지보수성 향상을 위한 코드 분리
-- **Offscreen Document 최적화** - 통신 속도 개선 및 타임아웃 단축
+- **Firebase 직접 연동** - Extension에서 Firebase SDK 직접 사용
 - **컬렉션 실시간 동기화** - Extension ↔ Web 양방향 동기화
 
 ## ✨ 주요 기능
@@ -103,7 +137,7 @@
 - **원클릭 북마크 추가** - 현재 페이지를 바로 북마크
 - **빠른 북마크 접근** - 팝업에서 북마크 검색 및 접근
 - **Firebase 실시간 동기화** - Firestore를 통한 데이터 실시간 동기화
-- **Offscreen Document** - 확장 프로그램의 DOM 작업 처리
+- **Firebase SDK 직접 연동** - Extension에서 Firebase SDK 직접 사용
 
 ### 📊 **웹 대시보드**
 
@@ -154,7 +188,7 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-##### Chrome Extension 설정 (`bookmarkle-browser-extension/.env`)
+##### Chrome Extension 설정 (`bookmarkle-web-extension/.env`)
 
 ```bash
 FIREBASE_API_KEY=your_api_key_here
@@ -208,7 +242,7 @@ npm run deploy:dashboard
 ./deploy.sh dashboard "배포 메시지"
 ```
 
-#### 🧩 Chrome Extension (bookmarkle-browser-extension)
+#### 🧩 Chrome Extension (bookmarkle-web-extension)
 
 ```bash
 # 빌드 & 패키징
@@ -273,7 +307,7 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
 ```
 
-**Chrome Extension** (`bookmarkle-browser-extension/.env`):
+**Chrome Extension** (`bookmarkle-web-extension/.env`):
 
 ```bash
 FIREBASE_API_KEY=your_api_key
@@ -292,13 +326,14 @@ FIREBASE_APP_ID=your_app_id
 
 ### 🧩 Chrome Extension
 
-- **언어**: JavaScript/TypeScript
+- **언어**: JavaScript
 - **아키텍처**: Manifest V3
 - **특징**:
   - Service Worker 기반 백그라운드 작업
-  - Offscreen Document를 통한 DOM 조작
+  - Firebase SDK 직접 연동 (Firebase compat 버전)
   - Firebase 실시간 데이터 동기화
-  - 다국어 지원 (\_locales)
+  - 다국어 지원 (locales/)
+  - Vite 빌드 시스템
 
 ### 📊 웹 대시보드
 
@@ -320,6 +355,8 @@ FIREBASE_APP_ID=your_app_id
 - **Admin SDK**: Node.js 기반 관리 도구
 
 ## 📡 통신 구조 (Communication Architecture)
+
+> **참고**: 아래 문서는 이전 아키텍처(Offscreen Document)를 기반으로 작성되었습니다. 현재는 Firebase SDK를 직접 사용하는 구조로 변경되었을 수 있습니다. 실제 구현은 코드를 참조하세요.
 
 ### 🏗️ 전체 아키텍처
 
@@ -419,7 +456,7 @@ sequenceDiagram
 
     Pop->>BG: 3️⃣ SAVE_BOOKMARK
     Note over BG: performance.now() 시작
-    
+
     alt isOffscreenReady === true
         BG->>Off: 4️⃣ 즉시 전송 (캐시 히트)
     else
@@ -537,15 +574,16 @@ graph TD
 
 **타임아웃 설정** (최적화됨):
 
-| 작업 | 시간 | 재시도 | 비고 |
-|------|------|--------|------|
-| AUTH 팝업 | 60초 | - | 사용자 입력 대기 |
-| 컬렉션 조회 | 30초 | 1회 | 재시도 감소 |
-| 북마크 저장 | 10초 | 1회 | 재시도 감소 |
-| 설정 조회 | 15초 | 1회 | 재시도 감소 |
-| iframe 준비 | 5초 | - | 10초→5초 단축 |
+| 작업        | 시간 | 재시도 | 비고             |
+| ----------- | ---- | ------ | ---------------- |
+| AUTH 팝업   | 60초 | -      | 사용자 입력 대기 |
+| 컬렉션 조회 | 30초 | 1회    | 재시도 감소      |
+| 북마크 저장 | 10초 | 1회    | 재시도 감소      |
+| 설정 조회   | 15초 | 1회    | 재시도 감소      |
+| iframe 준비 | 5초  | -      | 10초→5초 단축    |
 
 **최적화 포인트**:
+
 - ✅ Offscreen 상태 캐싱 (`isOffscreenReady`)
 - ✅ PING 메시지 제거 (불필요한 통신 감소)
 - ✅ 재시도 횟수 감소 (2회→1회)
@@ -555,30 +593,35 @@ graph TD
 ### 🔑 핵심 통신 파일
 
 **Extension 측**:
+
 ```
 background/
-  ├── index.js         ← 메인 엔트리, 모듈 통합
-  ├── messaging.js     ← 메시지 라우팅, offscreen 상태 캐싱
-  ├── auth.js          ← 인증 관련 로직
-  ├── offscreen.js     ← Offscreen document 관리
-  ├── state.js         ← 상태 관리
-  └── quick-save.js    ← 빠른 저장 기능
-
-offscreen/
-  ├── main.js          ← Firebase 브릿지, iframe 관리
   ├── auth.js          ← 인증 처리
-  ├── firestore.js     ← Firestore 작업
-  └── config.js        ← 설정 관리
+  ├── bookmark.js      ← 북마크 관리
+  ├── collection.js    ← 컬렉션 관리
+  ├── context-menu.js  ← 컨텍스트 메뉴
+  ├── events.js        ← 이벤트 리스너
+  ├── firestore.js     ← Firestore 연동
+  ├── messages.js      ← 메시지 핸들러
+  ├── notifications.js ← 알림 처리
+  ├── quick-mode.js    ← 빠른 저장 모드
+  ├── state.js         ← 상태 관리
+  └── utils.js         ← 유틸리티
 
-popup/scripts/
-  ├── entry.js         ← 팝업 초기화
-  ├── main.js          ← 메인 로직
-  ├── collections.js   ← 컬렉션 관리
-  ├── events.js        ← 이벤트 핸들러
-  └── ui.js            ← UI 렌더링
+popup/
+  ├── auth.js          ← Popup 인증 로직
+  ├── bookmark.js      ← Popup 북마크 로직
+  ├── collection.js    ← Popup 컬렉션 로직
+  ├── styles/          ← Popup 스타일
+  └── ...              ← 기타 Popup 스크립트
+
+background.js           ← Background Service Worker 진입점
+popup.js                ← Popup 진입점
+content-script.js       ← Content Script
 ```
 
 **Dashboard 측**:
+
 ```
 src/hooks/
   ├── useExtensionAuth.ts      ← 로그인 데이터 전송
@@ -593,11 +636,12 @@ src/
 ```
 
 **주요 최적화 사항**:
-- `background/messaging.js`: `isOffscreenReady` 플래그로 불필요한 PING 제거
-- `offscreen/main.js`: `ensureIframeReady` 타임아웃 10초→5초 단축, 로그아웃 시 iframe 캐시 버스팅
-- `useExtensionMessage.ts`: 성공 로그 제거로 콘솔 노이즈 감소
-- `firebase.ts`: 중복 코드 제거, 타입 안전성 개선, 에러 처리 통합
-- `popup/scripts/collections.js`: 새 컬렉션 추가 옵션 상단 고정
+
+- Background 모듈화: 기능별로 파일 분리하여 유지보수성 향상
+- Firebase SDK 직접 연동: Extension에서 Firebase SDK 직접 사용
+- 메시지 기반 통신: Background와 Popup 간 효율적인 메시지 전달
+- 상태 관리 최적화: chrome.storage를 활용한 상태 캐싱
+- 다국어 지원: locales 폴더를 통한 i18n 지원
 
 ## 🔍 문제 해결
 
@@ -689,7 +733,7 @@ chrome://extensions
 # 3. "개발자 모드" 활성화
 
 # 4. "압축해제된 확장 프로그램 로드" 클릭
-# bookmarkle-browser-extension 폴더 선택
+# bookmarkle-web-extension 폴더 선택
 
 # 5. 개발 중 변경사항 적용
 # - 코드 수정 후 다시 빌드
@@ -697,11 +741,13 @@ chrome://extensions
 ```
 
 **주요 개발 파일**:
+
 - `manifest.json` - Extension 설정 및 권한
-- `background/` - Service Worker 로직
+- `background.js` - Background Service Worker 진입점
+- `background/` - Service Worker 모듈 (인증, 북마크, 컬렉션 등)
 - `popup/` - 팝업 UI 및 스크립트
-- `offscreen/` - Firebase 연동 레이어
-- `content-bridge.js` - 웹페이지와의 통신
+- `content-script.js` - Content Script (웹페이지와의 통신)
+- `libs/` - Firebase SDK (compat 버전)
 
 ### 주요 기여 지침
 
