@@ -39,8 +39,8 @@ const copyAssetsPlugin = {
       });
       console.log("✅ HTML 파일 복사 완료");
 
-      // CSS 파일 복사
-      ["popup.css", "options.css"].forEach((cssFile) => {
+      // CSS 파일 복사 (옵션 페이지용)
+      ["options.css"].forEach((cssFile) => {
         const cssSrc = resolve(__dirname, cssFile);
         const cssDest = resolve(__dirname, "dist", cssFile);
         if (existsSync(cssSrc)) {
@@ -50,6 +50,24 @@ const copyAssetsPlugin = {
         }
       });
       console.log("✅ CSS 파일 복사 완료");
+
+      // popup/styles 폴더 복사
+      const popupStylesDir = resolve(__dirname, "popup", "styles");
+      const distPopupStylesDir = resolve(__dirname, "dist", "popup", "styles");
+      if (existsSync(popupStylesDir)) {
+        if (!existsSync(distPopupStylesDir)) {
+          mkdirSync(distPopupStylesDir, { recursive: true });
+        }
+        const styleFiles = readdirSync(popupStylesDir);
+        styleFiles.forEach((styleFile) => {
+          if (styleFile.endsWith(".css")) {
+            const styleSrc = resolve(popupStylesDir, styleFile);
+            const styleDest = resolve(distPopupStylesDir, styleFile);
+            copyFileSync(styleSrc, styleDest);
+          }
+        });
+        console.log("✅ popup/styles 파일 복사 완료");
+      }
 
       // 옵션 페이지 및 새 탭 페이지 JS 파일 복사
       ["options.js", "newtab.js"].forEach((jsFile) => {

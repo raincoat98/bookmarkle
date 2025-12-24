@@ -1,0 +1,212 @@
+.current-page-card,
+.collection-input-wrapper {
+  background: var(--field-bg);
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  position: relative;
+}
+
+#currentPageInput,
+textarea {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  transition: color 0.3s ease;
+}
+
+body.light-theme #currentPageInput {
+  color: #fff;
+}
+
+body.light-theme #currentPageInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+#currentPageInput {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+}
+
+#collectionInput {
+  flex: 1;
+  border: 0;
+  margin-left: 4px;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  padding: 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+body.light-theme #collectionInput {
+  color: #fff;
+}
+
+#collectionInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+}
+
+body.light-theme #collectionInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.collection-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: rgba(7, 10, 28, 0.95);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  z-index: 20;
+  max-height: 300px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.light-theme .collection-dropdown {
+  background: rgba(13, 21, 50, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(10px);
+}
+
+.collection-search-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme .collection-search-input {
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.collection-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .collection-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.collection-dropdown-list {
+  max-height: 200px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.collection-dropdown-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  transition: background 0.2s ease, color 0.3s ease;
+}
+
+.collection-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme .collection-dropdown-item {
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme .collection-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.collection-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.collection-create-option {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--accent);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(194, 137, 255, 0.1);
+  transition: background 0.2s ease, border-color 0.3s ease;
+}
+
+.collection-create-option:hover {
+  background: rgba(194, 137, 255, 0.15);
+}
+
+body.light-theme .collection-create-option {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(194, 137, 255, 0.15);
+}
+
+body.light-theme .collection-create-option:hover {
+  background: rgba(194, 137, 255, 0.2);
+}
+
+#tagInput {
+  width: 100%;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--field-bg);
+  border: 1px solid var(--border-color);
+  outline: none;
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme #tagInput {
+  color: #fff;
+}
+
+body.light-theme #tagInput::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+textarea {
+  min-height: 60px;
+  resize: vertical;
+  padding: 12px;
+  line-height: 1.5;
+  border-radius: 14px;
+  background: var(--field-bg);
+  border: 1px solid var(--border-color);
+  transition: color 0.3s ease, background 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-theme textarea {
+  color: #fff;
+}
+
+body.light-theme textarea::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
