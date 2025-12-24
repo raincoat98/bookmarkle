@@ -68,7 +68,6 @@ interface UseSettingsProps {
   collections: Collection[];
   theme: string;
   setTheme: (theme: "light" | "dark" | "auto") => void;
-  logout: () => void;
   onImportData?: (importData: ImportPreviewData) => Promise<void>;
   onRestoreBackup?: (backupData: {
     bookmarks: Bookmark[];
@@ -82,7 +81,6 @@ export const useSettings = ({
   rawBookmarks,
   collections,
   setTheme,
-  logout,
   onImportData,
   onRestoreBackup,
   isRestoring = false,
@@ -707,7 +705,7 @@ export const useSettings = ({
       await scheduleAccountDeletion(user.uid);
       toast.success(t("settings.accountDeletionScheduled"));
       setShowDeleteAccountModal(false);
-      
+
       // 삭제 상태 새로고침
       const status = await getAccountDeletionStatus(user.uid);
       setDeletionStatus(status);
@@ -726,7 +724,7 @@ export const useSettings = ({
 
       await cancelAccountDeletion(user.uid);
       toast.success(t("settings.deletionCancelled"));
-      
+
       // 삭제 상태 새로고침
       const status = await getAccountDeletionStatus(user.uid);
       setDeletionStatus(status);

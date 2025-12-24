@@ -36,12 +36,10 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
     }
   }, [user]);
 
-  
-
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      
+
       await onLogout();
       navigate("/", { replace: true });
     } catch (error) {
@@ -118,7 +116,11 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
               <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
                 {t("settings.accountDeletionScheduledDescription", {
                   date: deletionStatus.deletionDate.toLocaleDateString(
-                    i18n.language === "ko" ? "ko-KR" : i18n.language === "ja" ? "ja-JP" : "en-US",
+                    i18n.language === "ko"
+                      ? "ko-KR"
+                      : i18n.language === "ja"
+                      ? "ja-JP"
+                      : "en-US",
                     {
                       year: "numeric",
                       month: "long",

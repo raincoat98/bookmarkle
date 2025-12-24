@@ -114,7 +114,6 @@ export const Settings: React.FC<SettingsProps> = ({
     collections,
     theme,
     setTheme,
-    logout,
     onImportData,
     onRestoreBackup,
     isRestoring,
@@ -499,8 +498,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* 계정 삭제 모달 */}
       {showDeleteAccountModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
+          onClick={() => setShowDeleteAccountModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {t("settings.deleteAccount")}
             </h3>
