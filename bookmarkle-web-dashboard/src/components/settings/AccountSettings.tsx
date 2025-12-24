@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { Key, Trash2, Shield } from "lucide-react";
+import { Key, Trash2, Shield, X } from "lucide-react";
 import { isAdminUser } from "../../firebase";
 import type { User } from "firebase/auth";
 
@@ -9,14 +9,21 @@ interface AccountSettingsProps {
   user: User | null;
   onLogout: () => Promise<void>;
   onDeleteAccount: () => void;
+  deletionStatus: {
+    isScheduled: boolean;
+    deletionDate: Date | null;
+  } | null;
+  onCancelDeletion: () => Promise<void>;
 }
 
 export const AccountSettings: React.FC<AccountSettingsProps> = ({
   user,
   onLogout,
   onDeleteAccount,
+  deletionStatus,
+  onCancelDeletion,
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -29,12 +36,10 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
     }
   }, [user]);
 
-  
-
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      
+
       await onLogout();
       navigate("/", { replace: true });
     } catch (error) {
@@ -92,13 +97,55 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
             <Key className="w-4 h-4 mr-2" />
             {isLoggingOut ? "로그아웃 중..." : t("auth.logout")}
           </button>
-          <button
-            onClick={onDeleteAccount}
-            className="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            {t("settings.deleteAccount")}
-          </button>
+        </div>
+      </div>
+
+      {/* 위험 영역 - 계정 삭제 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-red-200 dark:border-red-900/50 p-6 mt-8">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+            {t("settings.dangerZone")}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t("settings.dangerZoneDescription")}
+          </p>
+        </div>
+        <div className="pt-4 border-t border-red-200 dark:border-red-900/30 space-y-4">
+          {deletionStatus?.isScheduled && deletionStatus.deletionDate ? (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+              <p className="text-sm text-yellow-800 dark:text-yellow-200 mb-3">
+                {t("settings.accountDeletionScheduledDescription", {
+                  date: deletionStatus.deletionDate.toLocaleDateString(
+                    i18n.language === "ko"
+                      ? "ko-KR"
+                      : i18n.language === "ja"
+                      ? "ja-JP"
+                      : "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  ),
+                })}
+              </p>
+              <button
+                onClick={onCancelDeletion}
+                className="w-full flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+              >
+                <X className="w-4 h-4 mr-2" />
+                {t("settings.cancelDeletion")}
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onDeleteAccount}
+              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              {t("settings.deleteAccount")}
+            </button>
+          )}
         </div>
       </div>
     </div>

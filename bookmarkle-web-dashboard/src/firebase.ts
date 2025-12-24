@@ -18,7 +18,9 @@ import {
   doc,
   getDoc,
   setDoc,
+  updateDoc,
   serverTimestamp,
+  Timestamp,
 } from "firebase/firestore";
 
 const firebaseConfig = {
@@ -497,6 +499,70 @@ export function getRefreshToken(): string | null {
     return null;
   } catch (error) {
     console.error("🔐 Refresh Token 추출 오류:", error);
+    return null;
+  }
+}
+
+/**
+ * 계정 삭제 예약 (14일 후 삭제)
+ */
+export async function scheduleAccountDeletion(uid: string): Promise<void> {
+  const deletionDate = new Date();
+  deletionDate.setDate(deletionDate.getDate() + 14); // 14일 후
+
+  const userRef = doc(db, "users", uid);
+  await updateDoc(userRef, {
+    deletionScheduledAt: Timestamp.fromDate(deletionDate),
+    deletionRequestedAt: serverTimestamp(),
+  });
+}
+
+/**
+ * 계정 삭제 취소
+ */
+export async function cancelAccountDeletion(uid: string): Promise<void> {
+  const userRef = doc(db, "users", uid);
+  await updateDoc(userRef, {
+    deletionScheduledAt: null,
+    deletionRequestedAt: null,
+  });
+}
+
+/**
+ * 계정 삭제 예약 상태 확인
+ */
+export async function getAccountDeletionStatus(uid: string): Promise<{
+  isScheduled: boolean;
+  deletionDate: Date | null;
+} | null> {
+  try {
+    const userRef = doc(db, "users", uid);
+    const userDoc = await getDoc(userRef);
+    
+    if (!userDoc.exists()) {
+      return null;
+    }
+
+    const data = userDoc.data();
+    const deletionScheduledAt = data.deletionScheduledAt;
+
+    if (deletionScheduledAt && deletionScheduledAt instanceof Timestamp) {
+      return {
+        isScheduled: true,
+        deletionDate: deletionScheduledAt.toDate(),
+      };
+    }
+
+    return {
+      isScheduled: false,
+      deletionDate: null,
+    };
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      return null;
+    }
+    console.error("❌ getAccountDeletionStatus error:", error);
     return null;
   }
 }

@@ -19,11 +19,14 @@ export function isUserLoggedIn() {
   return userIsLoggedIn;
 }
 
-async function displayUserInfo(user) {
+export async function displayUserInfo(user) {
   const { userDetailsDiv } = elements;
   if (!userDetailsDiv) return;
 
-  userDetailsDiv.innerHTML = "";
+  // 기존 내용 완전 제거
+  while (userDetailsDiv.firstChild) {
+    userDetailsDiv.removeChild(userDetailsDiv.firstChild);
+  }
 
   const rows = [
     { label: await t("user.email"), value: user.email },

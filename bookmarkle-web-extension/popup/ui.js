@@ -7,6 +7,8 @@ import {
 } from "./i18n.js";
 import { getTheme } from "./theme.js";
 import { reinitializeLucideIcons } from "./icons.js";
+import { isUserLoggedIn } from "./auth.js";
+import { displayUserInfo } from "./auth.js";
 
 export async function updateUIWithLanguage(lang = null) {
   const currentLang = lang || (await getCurrentLanguage());
@@ -232,6 +234,15 @@ export async function updateUIWithLanguage(lang = null) {
   const userInfoModalStrong = document.querySelector("#userInfoModal strong");
   if (userInfoModalStrong) {
     userInfoModalStrong.textContent = await t("user.userInfo");
+  }
+
+  // 사용자 정보가 로그인되어 있으면 사용자 정보를 다시 표시
+  if (isUserLoggedIn()) {
+    chrome.storage.local.get(["user"], async (result) => {
+      if (result?.user) {
+        await displayUserInfo(result.user);
+      }
+    });
   }
 }
 

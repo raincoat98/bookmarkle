@@ -258,7 +258,7 @@
     "maxDepthExceeded": "Cannot add sub-collections beyond 2 levels deep.",
     "selectedCollection": "Selected Collection",
     "deleteConfirmation": "collection?",
-    "deleteWarning": "Bookmarks in this collection will be removed from the collection.",
+    "deleteWarning": "All bookmarks in this collection will be deleted.",
     "iconCategories": {
       "general": "General",
       "work": "Work",
@@ -295,6 +295,14 @@
     "deleteAccount": "Delete Account",
     "confirmDeleteAccount": "Are you sure you want to delete your account? This action cannot be undone.",
     "accountDeleted": "Account deleted successfully.",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDescription": "This action cannot be undone. Please proceed with caution.",
+    "deleteAccountDescription": "If you delete your account, you will not be able to access Bookmarkle services, and your personal data will be permanently deleted. You can cancel the deletion within 14 days.",
+    "learnMore": "Learn More",
+    "accountDeletionScheduled": "Account deletion scheduled",
+    "accountDeletionScheduledDescription": "Account deletion is scheduled for {{date}}. You can cancel the deletion within 14 days.",
+    "cancelDeletion": "Cancel Deletion",
+    "deletionCancelled": "Account deletion has been cancelled.",
     "backupCreated": "Backup created successfully.",
     "backupRestored": "Backup restored successfully.",
     "dataExported": "Data exported successfully.",
@@ -369,6 +377,12 @@
     "deletedAt": "Deleted at",
     "daysUntilPermanentDelete": "Auto delete in {{days}} days",
     "autoDeleteInfo": "Bookmarks in the trash will be permanently deleted automatically after 30 days"
+  },
+  "header": {
+    "themeToggle": "Toggle theme",
+    "currentTheme": "Current: {{theme}} mode",
+    "adminDashboard": "Admin Dashboard",
+    "premiumSubscription": "Premium Subscription"
   },
   "admin": {
     "title": "Admin",
