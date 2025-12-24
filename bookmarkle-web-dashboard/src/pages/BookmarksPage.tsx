@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { BookmarkList } from "../components/bookmarks/BookmarkList";
 import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
 import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
@@ -138,9 +138,9 @@ export const BookmarksPage: React.FC = () => {
   // 컬렉션 데이터 실시간 구독
   React.useEffect(() => {
     if (!user?.uid) return;
-    
+
     const unsubscribe = subscribeToCollections(user.uid);
-    
+
     return () => unsubscribe();
   }, [user?.uid, subscribeToCollections]);
 
@@ -513,19 +513,50 @@ export const BookmarksPage: React.FC = () => {
     }
   };
 
-  const handleDeleteCollection = async (collectionId: string) => {
-    setDeletingCollectionId(collectionId);
-    try {
-      await deleteCollection(collectionId, user?.uid || "");
-      toast.success(t("collections.collectionDeleted"));
-      setDeletingCollectionId(null);
-      setShowDeleteModal(false);
-    } catch (error) {
-      console.error("Error deleting collection:", error);
-      toast.error(t("collections.collectionDeleteError"));
-      setDeletingCollectionId(null);
-    }
-  };
+  const handleDeleteCollection = useCallback(
+    async (collectionId: string) => {
+      setDeletingCollectionId(collectionId);
+      try {
+        await deleteCollection(collectionId, user?.uid || "");
+        toast.success(t("collections.collectionDeleted"));
+        setDeletingCollectionId(null);
+        setShowDeleteModal(false);
+      } catch (error) {
+        console.error("Error deleting collection:", error);
+        toast.error(t("collections.collectionDeleteError"));
+        setDeletingCollectionId(null);
+      }
+    },
+    [deleteCollection, user?.uid, t]
+  );
+
+  // 컬렉션 삭제 모달 키보드 이벤트 처리
+  useEffect(() => {
+    if (!showDeleteModal || !targetCollectionId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        // 삭제 중이 아닐 때만 삭제 실행
+        if (deletingCollectionId !== targetCollectionId) {
+          handleDeleteCollection(targetCollectionId);
+        }
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        setShowDeleteModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    showDeleteModal,
+    targetCollectionId,
+    deletingCollectionId,
+    handleDeleteCollection,
+  ]);
 
   const handleUpdateCollection = async (
     collectionId: string,
@@ -889,18 +920,65 @@ export const BookmarksPage: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {t("collections.deleteCollection")}
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              <span className="font-bold">{targetCollectionName}</span>{" "}
-              {t("collections.deleteConfirmation")}
-              <br />
-              {t("collections.deleteWarning")}
-            </p>
+            <div className="mb-6">
+              <p className="text-gray-700 dark:text-gray-300 mb-3">
+                <span className="font-bold">{targetCollectionName}</span>{" "}
+                {(() => {
+                  const text = t("collections.deleteConfirmation");
+                  const deleteWords = ["삭제", "delete", "削除"];
+                  const deleteWord = deleteWords.find((word) =>
+                    text.toLowerCase().includes(word.toLowerCase())
+                  );
+                  if (deleteWord) {
+                    const parts = text.split(
+                      new RegExp(`(${deleteWord})`, "i")
+                    );
+                    return (
+                      <>
+                        {parts[0]}
+                        <span className="font-bold text-red-600 dark:text-red-400">
+                          {parts[1]}
+                        </span>
+                        {parts[2]}
+                      </>
+                    );
+                  }
+                  return text;
+                })()}
+              </p>
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                <p className="text-red-700 dark:text-red-400 text-sm font-medium">
+                  <span className="font-bold">⚠️ {t("common.warning")}: </span>
+                  {(() => {
+                    const text = t("collections.deleteWarning");
+                    const deleteWords = ["삭제", "deleted", "削除"];
+                    const deleteWord = deleteWords.find((word) =>
+                      text.toLowerCase().includes(word.toLowerCase())
+                    );
+                    if (deleteWord) {
+                      const parts = text.split(
+                        new RegExp(`(${deleteWord})`, "i")
+                      );
+                      return (
+                        <>
+                          {parts[0]}
+                          <span className="font-bold">{parts[1]}</span>
+                          {parts[2]}
+                        </>
+                      );
+                    }
+                    return text;
+                  })()}
+                </p>
+              </div>
+            </div>
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
               >
-                {t("common.cancel")}
+                {t("common.cancel")}{" "}
+                <span className="text-xs opacity-70">(ESC)</span>
               </button>
               <button
                 onClick={() =>
@@ -910,7 +988,8 @@ export const BookmarksPage: React.FC = () => {
                 className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
                 disabled={deletingCollectionId === targetCollectionId}
               >
-                {t("common.delete")}
+                {t("common.delete")}{" "}
+                <span className="text-xs opacity-70">(Enter)</span>
               </button>
             </div>
           </div>
