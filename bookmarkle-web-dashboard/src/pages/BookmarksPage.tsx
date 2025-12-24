@@ -138,9 +138,9 @@ export const BookmarksPage: React.FC = () => {
   // 컬렉션 데이터 실시간 구독
   React.useEffect(() => {
     if (!user?.uid) return;
-    
+
     const unsubscribe = subscribeToCollections(user.uid);
-    
+
     return () => unsubscribe();
   }, [user?.uid, subscribeToCollections]);
 
@@ -931,7 +931,8 @@ export const BookmarksPage: React.FC = () => {
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
               >
-                {t("common.cancel")}
+                {t("common.cancel")}{" "}
+                <span className="text-xs opacity-70">(ESC)</span>
               </button>
               <button
                 onClick={() =>
@@ -941,7 +942,8 @@ export const BookmarksPage: React.FC = () => {
                 className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
                 disabled={deletingCollectionId === targetCollectionId}
               >
-                {t("common.delete")}
+                {t("common.delete")}{" "}
+                <span className="text-xs opacity-70">(Enter)</span>
               </button>
             </div>
           </div>
