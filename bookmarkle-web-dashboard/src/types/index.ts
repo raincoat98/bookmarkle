@@ -1,5 +1,5 @@
-// Firebase User는 firebase/auth에서 import하여 사용
-// 이 인터페이스는 더 이상 사용하지 않음 (호환성을 위해 유지)
+import type { Timestamp } from "firebase/firestore";
+
 export interface AppUser {
   uid: string;
   displayName: string | null;
@@ -25,12 +25,12 @@ export interface Subscription {
   plan: SubscriptionPlan;
   status: SubscriptionStatus;
   billingCycle: SubscriptionBillingCycle;
-  startDate: Date | any; // serverTimestamp
-  endDate: Date | any; // serverTimestamp (연간 구독의 경우)
+  startDate: Date | Timestamp; // serverTimestamp
+  endDate: Date | Timestamp | null; // serverTimestamp (연간 구독의 경우)
   cancelAtPeriodEnd?: boolean; // 기간 종료 시 취소 예정
   subscriptionId?: string; // Stripe subscription ID
   customerId?: string; // Stripe customer ID
-  trialEndDate?: Date | any; // 무료 체험 종료일
+  trialEndDate?: Date | Timestamp | null; // 무료 체험 종료일
 }
 
 // 사용자 제한 설정
@@ -53,8 +53,8 @@ export interface FirestoreUser {
   email: string | null;
   photoURL: string | null;
   emailVerified: boolean;
-  createdAt: any; // serverTimestamp
-  updatedAt: any; // serverTimestamp
+  createdAt: Timestamp; // serverTimestamp
+  updatedAt: Timestamp; // serverTimestamp
   provider: string;
   isActive?: boolean; // 사용자 활성화 상태
   subscription?: Subscription; // 구독 정보

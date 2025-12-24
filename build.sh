@@ -2,7 +2,7 @@
 
 # 통합 빌드 스크립트
 # 사용법: ./build.sh [프로젝트]
-# 프로젝트: signin-popup, dashboard, my-extension, all (기본값)
+# 프로젝트: dashboard, my-extension, all (기본값)
 
 set -e  # 에러 발생 시 스크립트 중단
 
@@ -39,58 +39,20 @@ echo -e "${NC}"
 # 프로젝트 파라미터 처리
 PROJECT="${1:-all}"
 
+# 사용 가능한 프로젝트 목록
+AVAILABLE_PROJECTS=("dashboard" "my-extension" "all")
+
+# 프로젝트명 검증
+if [[ ! " ${AVAILABLE_PROJECTS[@]} " =~ " ${PROJECT} " ]]; then
+    log_error "알 수 없는 프로젝트: $PROJECT"
+    log_info "사용 가능한 프로젝트: ${AVAILABLE_PROJECTS[*]}"
+    exit 1
+fi
+
 log_info "빌드 대상: $PROJECT"
 
 # 루트 디렉토리 저장
 ROOT_DIR=$(pwd)
-
-# SignIn Popup 빌드 함수 (정적 파일이므로 검증만)
-build_signin_popup() {
-    log_info "📱 SignIn Popup 빌드 확인..."
-    
-    if [ ! -d "bookmarkle-signin-popup" ]; then
-        log_error "bookmarkle-signin-popup 디렉토리가 없습니다!"
-        return 1
-    fi
-    
-    cd bookmarkle-signin-popup
-    
-    # 필수 파일 확인
-    REQUIRED_FILES=("index.html" "signInWithPopup.js")
-    for file in "${REQUIRED_FILES[@]}"; do
-        if [ ! -f "$file" ]; then
-            log_error "필수 파일이 없습니다: $file"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    done
-    
-    # JavaScript 파일 문법 검증 (Node.js가 있는 경우)
-    if command -v node &> /dev/null; then
-        log_info "JavaScript 파일 문법 검증 중..."
-        if node -c signInWithPopup.js; then
-            log_success "JavaScript 파일 문법 검증 완료"
-        else
-            log_error "JavaScript 파일에 문법 오류가 있습니다"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    fi
-    
-    # HTML 파일 기본 검증
-    if grep -q "<!doctype html>" index.html && grep -q "<html>" index.html; then
-        log_success "HTML 파일 기본 구조 확인 완료"
-    else
-        log_warning "HTML 파일 구조를 확인하세요"
-    fi
-    
-    log_success "SignIn Popup 빌드 확인 완료! (정적 파일)"
-    echo -e "${GREEN}📁 빌드된 파일들:${NC}"
-    ls -la *.html *.js 2>/dev/null || true
-    
-    cd "$ROOT_DIR"
-    return 0
-}
 
 # 북마클 웹 대시보드 빌드 함수
 build_dashboard() {
@@ -167,12 +129,12 @@ build_dashboard() {
 build_my_extension() {
     log_info "🧩 북마클 브라우저 확장 빌드 및 패키징..."
     
-    if [ ! -d "bookmarkle-browser-extension" ]; then
-        log_error "bookmarkle-browser-extension 디렉토리가 없습니다!"
+    if [ ! -d "bookmarkle-web-extension" ]; then
+        log_error "bookmarkle-web-extension 디렉토리가 없습니다!"
         return 1
     fi
     
-    cd bookmarkle-browser-extension
+    cd bookmarkle-web-extension
     
     # manifest.json 확인
     if [ ! -f "manifest.json" ]; then
@@ -194,10 +156,10 @@ build_my_extension() {
     fi
     
     # 필수 파일들 확인
-    REQUIRED_FILES=("background.js" "popup.html" "popup.js")
+    REQUIRED_FILES=("background.js" "popup.html" "popup.js" "content-script.js" "manifest.json")
     for file in "${REQUIRED_FILES[@]}"; do
         if [ ! -f "$file" ]; then
-            log_warning "권장 파일이 없습니다: $file"
+            log_warning "필수 파일이 없습니다: $file"
         else
             # JavaScript 파일 문법 검증
             if [[ "$file" == *.js ]] && command -v node &> /dev/null; then
@@ -211,16 +173,47 @@ build_my_extension() {
             fi
         fi
     done
-    
+
+    # Vite 빌드 실행
+    log_info "Vite 빌드 실행 중..."
+    if npm run build; then
+        log_success "Vite 빌드 완료"
+    else
+        log_error "Vite 빌드 실패"
+        cd "$ROOT_DIR"
+        return 1
+    fi
+
     # 빌드 디렉토리 생성
-    BUILD_DIR="../build/bookmarkle-browser-extension"
+    BUILD_DIR="../build/bookmarkle-web-extension"
     rm -rf "$BUILD_DIR"
     mkdir -p "$BUILD_DIR"
     
-    # 파일들 복사 (불필요한 파일 제외)
-    log_info "Extension 파일들을 빌드 디렉토리로 복사 중..."
-    rsync -av --exclude='*.DS_Store' --exclude='*.git*' --exclude='node_modules' --exclude='*.log' --exclude='.env' --exclude='.env.*' --exclude='*.env' . "$BUILD_DIR/"
-    
+    # Vite 빌드 결과(dist)를 빌드 디렉토리로 복사
+    log_info "Extension 빌드 파일들을 빌드 디렉토리로 복사 중..."
+    if [ -d "dist" ]; then
+        cp -r dist/* "$BUILD_DIR/"
+        log_success "빌드 파일 복사 완료"
+    else
+        log_error "dist 디렉토리를 찾을 수 없습니다"
+        cd "$ROOT_DIR"
+        return 1
+    fi
+
+    # 환경 변수 치환 스크립트 실행 (build-config.js)
+    if [ -f "build-config.js" ]; then
+        log_info "환경 변수 치환(build-config.js) 실행 중..."
+        if node build-config.js; then
+            log_success "환경 변수 치환 완료"
+        else
+            log_error "환경 변수 치환 실패"
+            cd "$ROOT_DIR"
+            return 1
+        fi
+    else
+        log_warning "build-config.js 스크립트를 찾을 수 없습니다."
+    fi
+
     # .env 파일이 복사되었는지 확인하고 삭제
     if [ -f "$BUILD_DIR/.env" ] || [ -f "$BUILD_DIR/.env.local" ] || [ -f "$BUILD_DIR/.env.production" ]; then
         log_warning ".env 파일이 발견되었습니다. 삭제 중..."
@@ -228,44 +221,19 @@ build_my_extension() {
         log_success ".env 파일 제거 완료"
     fi
     
-    # 환경 변수로 빌드 디렉토리의 config.js 주입 (소스는 그대로 유지)
-    if [ -f "inject-config.sh" ] && [ -f "$BUILD_DIR/config.js" ]; then
-        log_info "빌드 디렉토리의 config.js에 환경 변수 주입 중..."
-        if ./inject-config.sh "$BUILD_DIR"; then
-            log_success "빌드 디렉토리의 config.js 환경 변수 주입 완료"
-        else
-            log_error "config.js 환경 변수 주입 실패"
-            cd "$ROOT_DIR"
-            return 1
-        fi
-    else
-        log_warning "inject-config.sh 스크립트 또는 config.js를 찾을 수 없습니다."
-    fi
-    
-    # _locales 폴더가 제대로 복사되었는지 확인
-    if [ -d "$BUILD_DIR/_locales" ]; then
-        log_success "_locales 폴더 복사 확인 완료"
-    elif [ -d "_locales" ]; then
-        log_info "_locales 폴더를 별도로 복사 중..."
-        cp -r _locales "$BUILD_DIR/"
-        log_success "_locales 폴더 복사 완료"
-    else
-        log_warning "_locales 폴더를 찾을 수 없습니다"
-    fi
-    
     # zip 파일로 패키징
     cd ../build
-    EXTENSION_ZIP="bookmarkle-browser-extension-$(date '+%Y%m%d-%H%M%S').zip"
+    EXTENSION_ZIP="bookmarkle-web-extension-$(date '+%Y%m%d-%H%M%S').zip"
     log_info "확장 프로그램을 패키징 중: $EXTENSION_ZIP"
     
-    zip -r "$EXTENSION_ZIP" bookmarkle-browser-extension/ > /dev/null
+    zip -r "$EXTENSION_ZIP" bookmarkle-web-extension/ > /dev/null
     
     if [ -f "$EXTENSION_ZIP" ]; then
         PACKAGE_SIZE=$(du -sh "$EXTENSION_ZIP" | cut -f1)
         log_success "북마클 브라우저 확장 빌드 완료!"
         echo -e "${GREEN}📦 패키지 파일: ${BLUE}$(pwd)/$EXTENSION_ZIP${NC}"
         echo -e "${GREEN}📏 패키지 크기: ${BLUE}$PACKAGE_SIZE${NC}"
-        echo -e "${GREEN}📁 빌드 디렉토리: ${BLUE}$(pwd)/bookmarkle-browser-extension${NC}"
+        echo -e "${GREEN}📁 빌드 디렉토리: ${BLUE}$(pwd)/bookmarkle-web-extension${NC}"
         
         log_info "Chrome 웹 스토어 개발자 대시보드에서 업로드하세요"
     else
@@ -280,9 +248,6 @@ build_my_extension() {
 
 # 메인 빌드 로직
 case $PROJECT in
-    "signin-popup")
-        build_signin_popup
-        ;;
     "dashboard")
         build_dashboard
         ;;
@@ -291,22 +256,21 @@ case $PROJECT in
         ;;
     "all")
         log_info "모든 프로젝트 빌드 시작..."
-        
+
         SUCCESS_COUNT=0
-        TOTAL_COUNT=3
-        
-        if build_signin_popup; then
-            SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
-        fi
-        
-        echo ""
+        TOTAL_COUNT=2
+
         if build_dashboard; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            log_warning "대시보드 빌드 실패 또는 건너뜀"
         fi
-        
+
         echo ""
         if build_my_extension; then
             SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
+        else
+            log_warning "Extension 빌드 실패 또는 건너뜀"
         fi
         
         echo ""
@@ -319,15 +283,14 @@ case $PROJECT in
         # 빌드 결과 요약
         echo ""
         echo -e "${BLUE}📋 빌드 결과 요약:${NC}"
-        [ -d "bookmarkle-signin-popup" ] && echo "• 북마클 로그인 팝업: 정적 파일 (배포 준비됨)"
         [ -d "bookmarkle-web-dashboard/dist" ] && echo "• 북마클 웹 대시보드: bookmarkle-web-dashboard/dist/ (호스팅 준비됨)"
-        if compgen -G "build/bookmarkle-browser-extension-*.zip" > /dev/null; then
-            echo "• 북마클 브라우저 확장: build/bookmarkle-browser-extension-*.zip (스토어 업로드 준비됨)"
+        if compgen -G "build/bookmarkle-web-extension-*.zip" > /dev/null; then
+            echo "• 북마클 브라우저 확장: build/bookmarkle-web-extension-*.zip (스토어 업로드 준비됨)"
         fi
         ;;
     *)
         log_error "알 수 없는 프로젝트: $PROJECT"
-        log_info "사용 가능한 프로젝트: signin-popup, dashboard, my-extension, all"
+        log_info "사용 가능한 프로젝트: dashboard, my-extension, all"
         exit 1
         ;;
 esac

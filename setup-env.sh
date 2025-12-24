@@ -60,20 +60,6 @@ EOF
 
 log_success "북마클 대시보드 환경변수 파일 생성됨: bookmarkle-web-dashboard/.env.local"
 
-# SignIn Popup 설정 파일 생성
-cat > bookmarkle-signin-popup/config.js << EOF
-// Firebase Configuration
-export const firebaseConfig = {
-  apiKey: "$API_KEY",
-  authDomain: "$AUTH_DOMAIN",
-  projectId: "$PROJECT_ID",
-  appId: "$APP_ID",
-  messagingSenderId: "$SENDER_ID",
-};
-EOF
-
-log_success "SignIn Popup 설정 파일 생성됨: bookmarkle-signin-popup/config.js"
-
 # Chrome Extension 설정 파일 생성
 cat > bookmarkle-browser-extension/firebase-config.js << EOF
 // 확장 내부에서만 쓰는 Config (민감 정보 아님 - 공개키 성격)
@@ -100,22 +86,6 @@ cat > bookmarkle-web-dashboard/.firebaserc << EOF
 }
 EOF
 
-# bookmarkle-signin-popup/.firebaserc 업데이트
-cat > bookmarkle-signin-popup/.firebaserc << EOF
-{
-  "projects": {
-    "default": "$PROJECT_ID"
-  },
-  "targets": {
-    "$PROJECT_ID": {
-      "hosting": {
-        "signin": ["$PROJECT_ID-sign"]
-      }
-    }
-  }
-}
-EOF
-
 log_success "Firebase 프로젝트 설정 파일 업데이트 완료"
 
 echo ""
@@ -126,7 +96,6 @@ echo "1. Firebase 콘솔에서 Authentication을 활성화하세요"
 echo "2. Google Sign-in 방법을 활성화하세요"
 echo "3. Firebase Hosting 사이트를 생성하세요:"
 echo "   - firebase hosting:sites:create $PROJECT_ID"
-echo "   - firebase hosting:sites:create $PROJECT_ID-sign"
 echo "4. 개발 서버를 시작하세요: ./dev.sh"
 echo ""
 log_warning "주의: 생성된 설정 파일들은 .gitignore에 의해 Git에서 제외됩니다"

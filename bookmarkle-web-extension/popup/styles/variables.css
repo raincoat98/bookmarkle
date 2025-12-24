@@ -1,0 +1,21 @@
+:root {
+  --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e40af 100%);
+  --card-bg: rgba(13, 21, 50, 0.95);
+  --field-bg: rgba(20, 26, 58, 0.9);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --muted-text: rgba(255, 255, 255, 0.65);
+  --muted-strong: rgba(255, 255, 255, 0.85);
+  --accent: #c289ff;
+  --tag-bg: rgba(255, 255, 255, 0.08);
+}
+
+body.light-theme {
+  --bg-gradient: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e40af 100%);
+  --card-bg: rgba(255, 255, 255, 0.12);
+  --field-bg: rgba(255, 255, 255, 0.08);
+  --border-color: rgba(255, 255, 255, 0.15);
+  --muted-text: rgba(255, 255, 255, 0.7);
+  --muted-strong: rgba(255, 255, 255, 0.9);
+  --accent: #c289ff;
+  --tag-bg: rgba(255, 255, 255, 0.12);
+}

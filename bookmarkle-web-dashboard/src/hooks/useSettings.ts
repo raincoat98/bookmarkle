@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import {
   setUserDefaultPage,
   getUserNotificationSettings,
   setUserNotificationSettings,
+  auth,
 } from "../firebase";
 import {
   loadBackupSettings,
@@ -21,6 +22,8 @@ import {
   getBackupStatus,
   deleteBackup,
   type BackupSettings,
+  type BackupStatus,
+  type BackupListItem,
 } from "../utils/backup";
 import {
   downloadChromeBookmarks,
@@ -118,7 +121,9 @@ export const useSettings = ({
 
   // Firestore에서 알림 설정 로드
   useEffect(() => {
-    if (user?.uid) {
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (user?.uid && currentUser?.uid === user.uid) {
       getUserNotificationSettings(user.uid)
         .then((settings) => {
           const firestoreValue =
@@ -153,7 +158,16 @@ export const useSettings = ({
           }
         })
         .catch((error) => {
-          console.error("알림 설정 로드 실패:", error);
+          const err = error as { code?: string; message?: string };
+          // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+          if (
+            err?.code === "permission-denied" ||
+            err?.code === "unauthenticated"
+          ) {
+            // 권한 오류는 조용히 무시
+          } else {
+            console.error("알림 설정 로드 실패:", error);
+          }
         });
     }
   }, [user?.uid]);
@@ -243,7 +257,9 @@ export const useSettings = ({
   const [backupSettings, setBackupSettings] = useState<BackupSettings>(() =>
     loadBackupSettings()
   );
-  const [backupStatus, setBackupStatus] = useState(() => getBackupStatus());
+  const [backupStatus, setBackupStatus] = useState<BackupStatus>(() =>
+    getBackupStatus()
+  );
   const [defaultPage, setDefaultPage] = useState(
     () => localStorage.getItem("defaultPage") || "dashboard"
   );
@@ -257,14 +273,16 @@ export const useSettings = ({
     open: boolean;
     timestamp: string | null;
   }>({ open: false, timestamp: null });
-  const [backups, setBackups] = useState(() => getAllBackups());
+  const [backups, setBackups] = useState<BackupListItem[]>(() =>
+    getAllBackups()
+  );
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
 
   // 백업 동기화 함수
-  const syncBackups = () => {
+  const syncBackups = useCallback(() => {
     setBackups(getAllBackups());
     setBackupStatus(getBackupStatus());
-  };
+  }, []);
 
   // 테마 변경 핸들러
   const handleThemeChange = (newTheme: "light" | "dark" | "auto") => {
@@ -662,10 +680,16 @@ export const useSettings = ({
     setShowDeleteAccountModal(true);
   };
 
-  const handleConfirmDeleteAccount = () => {
-    toast.success("계정이 삭제되었습니다.");
-    setShowDeleteAccountModal(false);
-    logout();
+  const handleConfirmDeleteAccount = async () => {
+    try {
+      toast.success("계정이 삭제되었습니다.");
+      setShowDeleteAccountModal(false);
+      await Promise.resolve(logout());
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Account deletion or logout failed:", error);
+      toast.error(t("common.error"));
+    }
   };
 
   // 알림 센터로 이동 핸들러

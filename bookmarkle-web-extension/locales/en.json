@@ -1,0 +1,80 @@
+{
+  "menu": {
+    "userInfo": "User Information",
+    "lightMode": "Light Mode",
+    "darkMode": "Dark Mode",
+    "language": "Language",
+    "logout": "Logout"
+  },
+  "login": {
+    "login": "Login",
+    "info1": "Bookmarks are securely stored in Firebase",
+    "info2": "We do not collect personal information",
+    "info3": "Free to use",
+    "privacyInfo": "Privacy Policy",
+    "contactInfo": "Contact"
+  },
+  "bookmark": {
+    "saveBookmark": "Save Bookmark",
+    "currentPage": "Current Page",
+    "collection": "Collection",
+    "memo": "Memo",
+    "tag": "Tag",
+    "optional": "(Optional)",
+    "memoPlaceholder": "Write a memo about this page...",
+    "tagPlaceholder": "Add tags with Enter (comma separated)",
+    "support": "★ Support",
+    "bugReport": "Report Bug"
+  },
+  "collection": {
+    "createCollection": "Create Collection",
+    "collectionName": "Collection Name",
+    "collectionIcon": "Icon (Optional)",
+    "name": "Name",
+    "create": "Create",
+    "creating": "Creating...",
+    "cancel": "Cancel",
+    "selectNone": "None",
+    "noResults": "No search results",
+    "searchPlaceholder": "Search collections...",
+    "namePlaceholder": "Enter collection name...",
+    "iconPlaceholder": "Enter emoji icon (e.g.: 📁)",
+    "createNew": "Create new:",
+    "refresh": "Refresh",
+    "manageOnWeb": "Manage collections on web",
+    "selectEmoji": "Select emoji"
+  },
+  "user": {
+    "email": "Email",
+    "name": "Name",
+    "uid": "UID",
+    "userInfo": "User Information:"
+  },
+  "common": {
+    "copy": "Copy",
+    "close": "Close",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "loginInProgress": "Logging in...",
+    "loginSuccess": "Login successful!",
+    "currentTabInfoError": "Failed to get current tab information.",
+    "collectionNameRequired": "Please enter a collection name.",
+    "collectionExists": "Collection already exists.",
+    "collectionCreated": "Collection created! 🎉",
+    "collectionCreateError": "An error occurred while creating the collection.",
+    "collectionListError": "Unable to fetch collection list.",
+    "collectionLoadError": "Failed to load collections.",
+    "collectionRequired": "Please create a collection first.",
+    "bookmarkSaved": "Bookmark saved! 🎉",
+    "bookmarkSaveError": "Failed to save bookmark.",
+    "urlCopyError": "Unable to find URL to copy.",
+    "urlCopied": "URL copied.",
+    "urlCopyFailed": "Unable to copy URL.",
+    "loginPageOpening": "Opening login page...",
+    "loginRequestError": "An error occurred while requesting login.",
+    "loginRequired": "You must log in to save bookmarks.",
+    "pageInfoError": "Failed to get page information to save.",
+    "authStateError": "Unable to check login status."
+  }
+}

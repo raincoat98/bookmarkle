@@ -4,11 +4,11 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   GoogleAuthProvider,
-  onAuthStateChanged,
   sendPasswordResetEmail,
   setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   updateProfile,
   type User,
@@ -37,6 +37,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();
+
+// 관리자 이메일 목록
+const ADMIN_EMAILS = [
+  import.meta.env.VITE_ADMIN_EMAIL || "admin@bookmarkle.com",
+  "ww57403@gmail.com",
+];
 
 // 사용자 정보를 Firestore에 저장
 async function saveUserToFirestore(user: User, isNewUser: boolean = false) {
@@ -79,37 +85,57 @@ async function saveUserToFirestore(user: User, isNewUser: boolean = false) {
   }
 }
 
-// 팝업 차단/사파리 이슈 시 redirect로 대체 가능
+/**
+ * Google 계정으로 로그인 (팝업 → 리다이렉트 폴백)
+ */
 export async function loginWithGoogle() {
-  await setPersistence(auth, browserLocalPersistence);
-  const result = await signInWithPopup(auth, googleProvider);
+  try {
+    console.log("🔄 Attempting signInWithPopup...");
+    const result = await signInWithPopup(auth, googleProvider);
 
-  // 사용자 정보를 Firestore에 저장 (오류가 발생해도 로그인은 성공)
-  if (result.user) {
-    try {
-      await saveUserToFirestore(result.user, false);
-    } catch (error) {
-      console.error("Firestore 저장 실패 (로그인은 성공):", error);
+    console.log("✅ Login successful:", result.user.email);
+    await saveUserToFirestore(result.user, false);
+
+    return result;
+  } catch (error: unknown) {
+    const err = error as { code?: string; message?: string; name?: string };
+
+    // 팝업 차단 관련 에러 체크
+    const isPopupBlockedError =
+      err?.code === "auth/popup-blocked" ||
+      err?.code === "auth/popup-closed-by-user" ||
+      err?.message?.includes("Cross-Origin-Opener-Policy") ||
+      err?.message?.includes("blocked by browser") ||
+      err?.message?.includes("popup blocked") ||
+      err?.message?.includes("cross-origin") ||
+      err?.message?.includes("Pending promise was never set");
+
+    if (isPopupBlockedError) {
+      console.log("⚠️ Popup blocked, falling back to redirect...");
+      await signInWithRedirect(auth, googleProvider);
+      return; // 리다이렉트는 페이지 이동으로 여기 도달 안 함
     }
-  }
 
-  return result;
+    console.error("❌ Google login failed:", err?.code, err?.message);
+    throw error;
+  }
 }
 
-// 이메일/패스워드 로그인
+/**
+ * 이메일/패스워드 로그인
+ */
 export async function loginWithEmail(email: string, password: string) {
   await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
 
-  // 사용자 정보를 Firestore에 저장
-  if (result.user) {
-    await saveUserToFirestore(result.user, false);
-  }
+  await saveUserToFirestore(result.user, false);
 
   return result;
 }
 
-// 회원가입
+/**
+ * 이메일/패스워드 회원가입
+ */
 export async function signupWithEmail(
   email: string,
   password: string,
@@ -122,47 +148,114 @@ export async function signupWithEmail(
     password
   );
 
-  // 사용자 프로필 업데이트 (표시 이름)
-  if (displayName && userCredential.user) {
+  // 표시 이름 설정
+  if (displayName) {
     await updateProfile(userCredential.user, { displayName });
   }
 
-  // 사용자 정보를 Firestore에 저장 (신규 사용자)
-  if (userCredential.user) {
-    await saveUserToFirestore(userCredential.user, true);
-  }
+  // 신규 사용자 정보 저장
+  await saveUserToFirestore(userCredential.user, true);
 
   return userCredential;
 }
 
-// 비밀번호 재설정
+/**
+ * 비밀번호 재설정 이메일 발송
+ */
 export function resetPassword(email: string) {
   return sendPasswordResetEmail(auth, email);
 }
 
-export function logout() {
-  return signOut(auth);
+/**
+ * 로그아웃 (Extension 컨텍스트 감지 및 세션 클리어)
+ */
+export async function logout() {
+  if (process.env.NODE_ENV === "development") {
+    console.log("🧹 Clearing Firebase storage");
+  }
+  await clearFirebaseStorage();
+
+  // Firebase Auth 로그아웃
+  await signOut(auth);
+  if (process.env.NODE_ENV === "development") {
+    console.log("✅ Logout completed");
+  }
 }
 
-export function watchAuth(cb: (user: User | null) => void) {
-  return onAuthStateChanged(auth, cb);
+/**
+ * Firebase 로컬 저장소 완전 클리어
+ */
+export async function clearFirebaseStorage() {
+  try {
+    if (process.env.NODE_ENV === "development") {
+      console.log("🧹 Starting Firebase storage cleanup...");
+    }
+
+    const isFirebaseKey = (key: string) =>
+      key.startsWith("firebase:") ||
+      key.startsWith("firebaseui:") ||
+      key.includes("firebase-session") ||
+      key.includes("__firebase");
+
+    // localStorage 클리어
+    const localKeys = Array.from({ length: localStorage.length }, (_, i) =>
+      localStorage.key(i)
+    ).filter((key): key is string => !!key && isFirebaseKey(key));
+
+    localKeys.forEach((key) => localStorage.removeItem(key));
+    if (process.env.NODE_ENV === "development") {
+      console.log(`✅ localStorage cleared: ${localKeys.length} keys`);
+    }
+
+    // sessionStorage 클리어
+    const sessionKeys = Array.from({ length: sessionStorage.length }, (_, i) =>
+      sessionStorage.key(i)
+    ).filter((key): key is string => !!key && isFirebaseKey(key));
+
+    sessionKeys.forEach((key) => sessionStorage.removeItem(key));
+    if (process.env.NODE_ENV === "development") {
+      console.log(`✅ sessionStorage cleared: ${sessionKeys.length} keys`);
+    }
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("✅ Firebase storage cleanup completed");
+    }
+  } catch (error) {
+    console.error("❌ Error clearing Firebase storage:", error);
+  }
 }
 
 export async function getUserDefaultPage(uid: string): Promise<string> {
-  const db = getFirestore();
-  const settingsRef = doc(db, "users", uid, "settings", "main");
-  const snap = await getDoc(settingsRef);
-  if (snap.exists() && snap.data().defaultPage) {
-    return snap.data().defaultPage;
+  // Firebase Auth가 동기화되지 않았으면 기본값 반환
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    return "dashboard";
   }
-  return "dashboard";
+
+  try {
+    const settingsRef = doc(db, "users", uid, "settings", "main");
+    const snap = await getDoc(settingsRef);
+    if (snap.exists() && snap.data().defaultPage) {
+      return snap.data().defaultPage;
+    }
+    return "dashboard";
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      console.warn(
+        "⚠️ getUserDefaultPage: Permission denied, returning default"
+      );
+      return "dashboard";
+    }
+    console.error("❌ getUserDefaultPage error:", error);
+    return "dashboard";
+  }
 }
 
 export async function setUserDefaultPage(
   uid: string,
   value: string
 ): Promise<void> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   await setDoc(settingsRef, { defaultPage: value }, { merge: true });
 }
@@ -173,31 +266,61 @@ export async function getUserNotificationSettings(uid: string): Promise<{
   bookmarkNotifications?: boolean;
   systemNotifications?: boolean;
 }> {
-  const db = getFirestore();
-  const settingsRef = doc(db, "users", uid, "settings", "main");
-  const snap = await getDoc(settingsRef);
-  if (snap.exists()) {
-    const data = snap.data();
+  // Firebase Auth가 동기화되지 않았으면 기본값 반환
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
     return {
-      notifications:
-        data.notifications !== undefined ? data.notifications : true,
-      bookmarkNotifications:
-        data.bookmarkNotifications !== undefined
-          ? data.bookmarkNotifications
-          : true,
-      systemNotifications:
-        data.systemNotifications !== undefined
-          ? data.systemNotifications
-          : data.notifications !== undefined
-          ? data.notifications
-          : true,
+      notifications: true,
+      bookmarkNotifications: true,
+      systemNotifications: true,
     };
   }
-  return {
-    notifications: true,
-    bookmarkNotifications: true,
-    systemNotifications: true,
-  };
+
+  try {
+    const settingsRef = doc(db, "users", uid, "settings", "main");
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      return {
+        notifications:
+          data.notifications !== undefined ? data.notifications : true,
+        bookmarkNotifications:
+          data.bookmarkNotifications !== undefined
+            ? data.bookmarkNotifications
+            : true,
+        systemNotifications:
+          data.systemNotifications !== undefined
+            ? data.systemNotifications
+            : data.notifications !== undefined
+            ? data.notifications
+            : true,
+      };
+    }
+    return {
+      notifications: true,
+      bookmarkNotifications: true,
+      systemNotifications: true,
+    };
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시하고 기본값 반환 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      console.warn(
+        "⚠️ getUserNotificationSettings: Permission denied, returning defaults"
+      );
+      return {
+        notifications: true,
+        bookmarkNotifications: true,
+        systemNotifications: true,
+      };
+    }
+    console.error("❌ getUserNotificationSettings error:", error);
+    // 에러 발생 시 기본값 반환
+    return {
+      notifications: true,
+      bookmarkNotifications: true,
+      systemNotifications: true,
+    };
+  }
 }
 
 // 알림 설정 저장
@@ -209,7 +332,6 @@ export async function setUserNotificationSettings(
     systemNotifications?: boolean;
   }
 ): Promise<void> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   await setDoc(settingsRef, settings, { merge: true });
 }
@@ -220,24 +342,41 @@ export async function getUserWeatherLocation(uid: string): Promise<{
   lon: number;
   city: string;
 } | null> {
-  const db = getFirestore();
-  const settingsRef = doc(db, "users", uid, "settings", "main");
-  const snap = await getDoc(settingsRef);
-  if (snap.exists()) {
-    const data = snap.data();
-    if (
-      data.weatherLocation &&
-      data.weatherLocation.lat &&
-      data.weatherLocation.lon
-    ) {
-      return {
-        lat: data.weatherLocation.lat,
-        lon: data.weatherLocation.lon,
-        city: data.weatherLocation.city || "",
-      };
-    }
+  // Firebase Auth가 동기화되지 않았으면 null 반환
+  if (!auth.currentUser || auth.currentUser.uid !== uid) {
+    return null;
   }
-  return null;
+
+  try {
+    const settingsRef = doc(db, "users", uid, "settings", "main");
+    const snap = await getDoc(settingsRef);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (
+        data.weatherLocation &&
+        data.weatherLocation.lat &&
+        data.weatherLocation.lon
+      ) {
+        return {
+          lat: data.weatherLocation.lat,
+          lon: data.weatherLocation.lon,
+          city: data.weatherLocation.city || "",
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      console.warn(
+        "⚠️ getUserWeatherLocation: Permission denied, returning null"
+      );
+      return null;
+    }
+    console.error("❌ getUserWeatherLocation error:", error);
+    return null;
+  }
 }
 
 // 날씨 위치 정보 저장
@@ -249,7 +388,6 @@ export async function setUserWeatherLocation(
     city: string;
   }
 ): Promise<void> {
-  const db = getFirestore();
   const settingsRef = doc(db, "users", uid, "settings", "main");
   await setDoc(
     settingsRef,
@@ -264,76 +402,102 @@ export async function setUserWeatherLocation(
   );
 }
 
-// 관리자 ID 목록 (환경 변수 또는 하드코딩)
-const ADMIN_EMAILS = [
-  import.meta.env.VITE_ADMIN_EMAIL || "admin@bookmarkle.com",
-  "ww57403@gmail.com", // 임시 하드코딩 추가
-];
-
-// 관리자 확인 함수
+/**
+ * 이메일 기반 관리자 확인 (동기)
+ */
 export function isAdmin(user: User | null): boolean {
-  if (!user || !user.email) {
-    console.log("isAdmin: 사용자가 없거나 이메일이 없음", {
-      user: user?.email,
-    });
-    return false;
-  }
-
-  const isAdminUser = ADMIN_EMAILS.includes(user.email);
-  console.log("isAdmin 체크:", {
-    userEmail: user.email,
-    adminEmails: ADMIN_EMAILS,
-    isAdmin: isAdminUser,
-  });
-
-  return isAdminUser;
+  return !!user?.email && ADMIN_EMAILS.includes(user.email);
 }
 
-// 관리자 권한 확인 (비동기 - Firestore에서 확인)
+/**
+ * Firestore에서 관리자 권한 확인 (비동기)
+ */
+export async function isAdminUser(user: User | null): Promise<boolean> {
+  if (!user) return false;
+
+  // 이메일 기반 우선 체크
+  if (ADMIN_EMAILS.includes(user.email || "")) {
+    return true;
+  }
+
+  // Firestore users 컬렉션의 isAdmin 필드 체크
+  try {
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    return userDoc.exists() && userDoc.data()?.isAdmin === true;
+  } catch (error) {
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      // 권한 오류는 조용히 무시
+      return false;
+    }
+    console.error("관리자 권한 확인 오류:", error);
+    return false;
+  }
+}
+
+/**
+ * UID로 admins 컬렉션에서 관리자 권한 확인
+ */
 export async function checkAdminStatus(uid: string): Promise<boolean> {
   try {
     const adminDoc = await getDoc(doc(db, "admins", uid));
     return adminDoc.exists();
   } catch (error) {
-    console.error("관리자 권한 확인 오류:", error);
-    return false;
-  }
-}
-
-// Firestore에서 사용자 데이터를 가져와서 isAdmin 필드 체크
-export async function isAdminFromFirestore(
-  user: User | null
-): Promise<boolean> {
-  if (!user) return false;
-
-  try {
-    const userDoc = await getDoc(doc(db, "users", user.uid));
-    if (userDoc.exists()) {
-      const userData = userDoc.data();
-      return userData.isAdmin === true;
+    const err = error as { code?: string; message?: string };
+    // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+    if (err?.code === "permission-denied" || err?.code === "unauthenticated") {
+      // 권한 오류는 조용히 무시
+      return false;
     }
-    return false;
-  } catch (error) {
-    console.error("Firestore에서 관리자 권한 확인 오류:", error);
+    console.error("관리자 권한 확인 오류:", error);
     return false;
   }
 }
 
-// 관리자 권한 확인 (사용자 객체로)
-export async function isAdminUser(user: User | null): Promise<boolean> {
-  if (!user) return false;
-
-  // 이메일 기반 체크 (기본)
-  if (ADMIN_EMAILS.includes(user.email || "")) {
-    return true;
-  }
-
-  // Firestore isAdmin 필드 체크
+/**
+ * Firebase Refresh Token 추출
+ * Extension에서 토큰 갱신 시 사용
+ */
+export function getRefreshToken(): string | null {
   try {
-    return await isAdminFromFirestore(user);
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn("🔐 현재 로그인된 사용자 없음");
+      return null;
+    }
+
+    // 방법 1: stsTokenManager에서 직접 접근 (비공개 API이지만 실제로 작동)
+    if (
+      (user as any).stsTokenManager &&
+      (user as any).stsTokenManager.refreshToken
+    ) {
+      const refreshToken = (user as any).stsTokenManager.refreshToken;
+      console.log("✅ Refresh Token 추출 완료 (stsTokenManager)");
+      return refreshToken;
+    }
+
+    // 방법 2: localStorage에서 Firebase 세션 정보 읽기
+    const firebaseKey = `firebase:authUser:${firebaseConfig.apiKey}:[DEFAULT]`;
+    const authUserData = localStorage.getItem(firebaseKey);
+
+    if (authUserData) {
+      try {
+        const parsed = JSON.parse(authUserData);
+        if (parsed.stsTokenManager?.refreshToken) {
+          console.log("✅ Refresh Token 추출 완료 (localStorage)");
+          return parsed.stsTokenManager.refreshToken;
+        }
+      } catch (parseError) {
+        console.warn("🔐 localStorage 파싱 실패:", parseError);
+      }
+    }
+
+    console.warn("🔐 Refresh Token을 찾을 수 없음");
+    return null;
   } catch (error) {
-    console.error("관리자 권한 확인 오류:", error);
-    return false;
+    console.error("🔐 Refresh Token 추출 오류:", error);
+    return null;
   }
 }
 

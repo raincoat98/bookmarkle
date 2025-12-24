@@ -1,4 +1,5 @@
 import { Navigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../stores";
 import { isAdminUser } from "../../firebase";
 import { useState, useEffect } from "react";
@@ -8,6 +9,7 @@ interface AdminProtectedProps {
 }
 
 export function AdminProtected({ children }: AdminProtectedProps) {
+  const { t } = useTranslation();
   const { user, loading } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminLoading, setAdminLoading] = useState(true);
@@ -29,7 +31,7 @@ export function AdminProtected({ children }: AdminProtectedProps) {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">로딩 중...</p>
+          <p className="text-gray-600 dark:text-gray-400">{t("common.loading")}</p>
         </div>
       </div>
     );

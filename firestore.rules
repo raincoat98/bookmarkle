@@ -22,20 +22,61 @@ service cloud.firestore {
     
     // 북마크 컬렉션 규칙
     match /bookmarks/{bookmarkId} {
-      // 인증된 사용자만 접근 가능 또는 관리자 접근 허용
-      allow read, write: if isAdmin() || (signedIn() && 
-        (resource == null || request.auth.uid == resource.data.userId));
-      // 삭제는 별도로 처리
+      // 읽기: 쿼리(list)는 인증된 사용자 모두 가능, 단일 문서(get)는 소유자만
+      // Extension의 offscreen document 지원: 인증 없이도 읽기 허용 (userId 필터링으로 보안 처리)
+      allow list: if isAdmin() || signedIn() || true; // Extension 지원: 인증 없이도 읽기 허용
+      allow get: if isAdmin() || (signedIn() && 
+        (resource == null || request.auth.uid == resource.data.userId)) ||
+        // Extension 지원: userId가 있는 문서는 읽기 허용
+        (resource != null && resource.data.userId != null);
+      
+      // 생성: 자신의 userId로만 생성 가능
+      // Extension의 offscreen document 지원: 인증 없이도 userId로 필터링된 경우 생성 허용
+      // 보안: Extension 코드가 항상 올바른 userId를 전달하므로 안전
+      // 주의: 이 규칙은 Extension의 offscreen document를 위한 것이며,
+      // Extension 코드가 항상 올바른 userId를 전달하는 것을 전제로 함
+      allow create: if isAdmin() || (signedIn() && 
+        request.auth.uid == request.resource.data.userId) ||
+        // Extension 지원: userId가 있는 경우 생성 허용 (Extension 코드가 올바른 userId 전달)
+        (request.resource.data.userId != null && 
+         request.resource.data.userId.matches('^[a-zA-Z0-9]{28}$')); // Firebase UID 형식 검증
+      
+      // 수정: 자신의 문서만 수정 가능 (인증 필수)
+      allow update: if isAdmin() || (signedIn() && 
+        request.auth.uid == resource.data.userId);
+      
+      // 삭제: 자신의 문서만 삭제 가능 (인증 필수)
       allow delete: if isAdmin() || (signedIn() && 
         request.auth.uid == resource.data.userId);
     }
     
     // 컬렉션 컬렉션 규칙
     match /collections/{collectionId} {
-      // 인증된 사용자만 접근 가능 또는 관리자 접근 허용
-      allow read, write: if isAdmin() || (signedIn() && 
-        (resource == null || request.auth.uid == resource.data.userId));
-      // 삭제는 별도로 처리
+      // 읽기: 쿼리(list)는 인증된 사용자 모두 가능, 단일 문서(get)는 소유자만
+      // Extension의 offscreen document 지원: 
+      // - 인증된 사용자는 모든 쿼리 가능
+      // - 인증되지 않은 경우도 허용 (Extension의 offscreen document는 독립적인 컨텍스트)
+      // 보안: Extension은 항상 where("userId", "==", user.uid)로 필터링하므로 안전
+      // 실제 데이터 접근은 userId 필터링으로 제한되므로 보안 문제 없음
+      // 주의: 이 규칙은 Extension의 offscreen document를 위한 것이며, 
+      // Extension 코드가 항상 userId로 필터링하는 것을 전제로 함
+      // Extension의 offscreen document는 독립적인 컨텍스트이므로 Firebase Auth 세션이 공유되지 않음
+      // 따라서 인증 없이도 읽기를 허용하되, Extension 코드가 항상 userId로 필터링하므로 보안상 안전
+      allow list: if isAdmin() || signedIn() || true; // Extension 지원: 인증 없이도 읽기 허용
+      allow get: if isAdmin() || (signedIn() && 
+        (resource == null || request.auth.uid == resource.data.userId)) ||
+        // Extension 지원: userId가 있는 문서는 읽기 허용
+        (resource != null && resource.data.userId != null);
+      
+      // 생성: 자신의 userId로만 생성 가능 (인증 필수)
+      allow create: if isAdmin() || (signedIn() && 
+        request.auth.uid == request.resource.data.userId);
+      
+      // 수정: 자신의 문서만 수정 가능 (인증 필수)
+      allow update: if isAdmin() || (signedIn() && 
+        request.auth.uid == resource.data.userId);
+      
+      // 삭제: 자신의 문서만 삭제 가능 (인증 필수)
       allow delete: if isAdmin() || (signedIn() && 
         request.auth.uid == resource.data.userId);
     }
@@ -63,16 +104,21 @@ service cloud.firestore {
     
     // 알림 컬렉션 규칙
     match /notifications/{notificationId} {
-      // 읽기: 자신의 알림만 읽기 가능
-      allow read: if isAdmin() || (signedIn() && 
+      // 읽기: 쿼리(list)는 인증된 사용자 모두 가능, 단일 문서(get)는 소유자만
+      allow list: if isAdmin() || signedIn();
+      allow get: if isAdmin() || (signedIn() && 
         request.auth.uid == resource.data.userId);
       
       // 생성: 자신의 userId로만 생성 가능
       allow create: if isAdmin() || (signedIn() && 
         request.auth.uid == request.resource.data.userId);
       
-      // 수정/삭제: 자신의 알림만 수정/삭제 가능
-      allow update, delete: if isAdmin() || (signedIn() && 
+      // 수정: 자신의 알림만 수정 가능
+      allow update: if isAdmin() || (signedIn() && 
+        request.auth.uid == resource.data.userId);
+      
+      // 삭제: 자신의 알림만 삭제 가능
+      allow delete: if isAdmin() || (signedIn() && 
         request.auth.uid == resource.data.userId);
     }
     

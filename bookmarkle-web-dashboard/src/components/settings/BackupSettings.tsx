@@ -1,11 +1,15 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import type { BackupSettings } from "../../utils/backup";
+import type {
+  BackupSettings,
+  BackupStatus,
+  BackupListItem,
+} from "../../utils/backup";
 
 interface BackupSettingsProps {
   backupSettings: BackupSettings;
-  backupStatus: any;
-  backups: any[];
+  backupStatus: BackupStatus;
+  backups: BackupListItem[];
   onAutoBackupToggle: () => void;
   onBackupFrequencyChange: (frequency: "daily" | "weekly" | "monthly") => void;
   onManualBackup: () => void;

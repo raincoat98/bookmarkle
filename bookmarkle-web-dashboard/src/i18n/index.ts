@@ -24,8 +24,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: "ko", // 기본 언어를 한국어로 강제 설정
-    fallbackLng: "ko",
+    fallbackLng: "ko", // 언어를 찾지 못했을 때만 한국어로 fallback
     debug: false,
 
     interpolation: {
@@ -35,6 +34,7 @@ i18n
     detection: {
       order: ["localStorage", "navigator", "htmlTag"],
       caches: ["localStorage"],
+      lookupLocalStorage: "i18nextLng",
     },
   });
 

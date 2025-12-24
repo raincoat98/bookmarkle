@@ -24,19 +24,6 @@ export const BETA_FLAGS = {
     import.meta.env.VITE_SHOW_EARLY_USER_BENEFITS === "true",
 } as const;
 
-// 디버깅: 환경 변수 값 확인
-if (typeof window !== "undefined") {
-  console.log("[BetaFlags] 환경 변수:", {
-    VITE_IS_BETA: import.meta.env.VITE_IS_BETA,
-    VITE_SHOW_SUBSCRIPTION_BANNER: import.meta.env
-      .VITE_SHOW_SUBSCRIPTION_BANNER,
-    VITE_SHOW_SUBSCRIPTION_MODAL: import.meta.env.VITE_SHOW_SUBSCRIPTION_MODAL,
-    VITE_SHOW_EARLY_USER_BENEFITS: import.meta.env
-      .VITE_SHOW_EARLY_USER_BENEFITS,
-  });
-  console.log("[BetaFlags] 플래그 값:", BETA_FLAGS);
-}
-
 // 로컬 스토리지 키들
 export const BETA_STORAGE_KEYS = {
   SUBSCRIPTION_BANNER_DISMISSED: "subscriptionBannerDismissed",
@@ -55,15 +42,11 @@ export const betaUtils = {
   shouldShowBanner(): boolean {
     // 베타 모드면 구독 배너 숨김 (베타일 때는 이 플래그 무시)
     if (BETA_FLAGS.IS_BETA) {
-      console.log("[BetaFlags] 배너 숨김: 베타 모드 활성화됨");
       return false;
     }
 
     // 베타가 아닐 때만 플래그 체크
     if (!BETA_FLAGS.SHOW_SUBSCRIPTION_BANNER) {
-      console.log(
-        "[BetaFlags] 배너 숨김: VITE_SHOW_SUBSCRIPTION_BANNER가 false"
-      );
       return false;
     }
 
@@ -75,13 +58,6 @@ export const betaUtils = {
     ); // 하위 호환성
 
     const shouldShow = dismissed !== "true" && oldDismissed !== "true";
-    console.log("[BetaFlags] 배너 표시 여부:", {
-      IS_BETA: BETA_FLAGS.IS_BETA,
-      SHOW_SUBSCRIPTION_BANNER: BETA_FLAGS.SHOW_SUBSCRIPTION_BANNER,
-      dismissed,
-      oldDismissed,
-      shouldShow,
-    });
 
     return shouldShow;
   },
@@ -94,15 +70,11 @@ export const betaUtils = {
   shouldShowModal(): boolean {
     // 베타 모드면 구독 모달 숨김 (베타일 때는 이 플래그 무시)
     if (BETA_FLAGS.IS_BETA) {
-      console.log("[BetaFlags] 모달 숨김: 베타 모드 활성화됨");
       return false;
     }
 
     // 베타가 아닐 때만 플래그 체크
     if (!BETA_FLAGS.SHOW_SUBSCRIPTION_MODAL) {
-      console.log(
-        "[BetaFlags] 모달 숨김: VITE_SHOW_SUBSCRIPTION_MODAL이 false"
-      );
       return false;
     }
 
@@ -112,13 +84,6 @@ export const betaUtils = {
     const oldShown = localStorage.getItem(BETA_STORAGE_KEYS.MODAL_SHOWN); // 하위 호환성
 
     const shouldShow = shown !== "true" && oldShown !== "true";
-    console.log("[BetaFlags] 모달 표시 여부:", {
-      IS_BETA: BETA_FLAGS.IS_BETA,
-      SHOW_SUBSCRIPTION_MODAL: BETA_FLAGS.SHOW_SUBSCRIPTION_MODAL,
-      shown,
-      oldShown,
-      shouldShow,
-    });
 
     return shouldShow;
   },

@@ -1,22 +1,17 @@
 {
-  "name": "bookmark-hub",
-  "version": "1.0.8",
-  "description": "📚 북마클 - 통합 북마크 관리 시스템",
+  "name": "bookmarkle",
+  "version": "1.0.9",
+  "description": "📚 북마클 - 통합 북마크 관리 시스템 (Chrome Extension + Web Dashboard)",
   "scripts": {
     "setup": "./setup-env.sh",
-    "admin:set": "node set-admin.js",
-    "admin:check": "node -e \"console.log('VITE_ADMIN_EMAIL:', process.env.VITE_ADMIN_EMAIL || '설정되지 않음')\"",
-    "deploy": "./deploy.sh all",
-    "deploy:signin": "./deploy.sh signin-popup",
-    "deploy:dashboard": "./deploy.sh dashboard",
-    "deploy:extension": "./deploy.sh my-extension",
+    "deploy": "./deploy.sh all \"\"",
+    "deploy:dashboard": "./deploy.sh dashboard \"웹 대시보드 배포\"",
+    "deploy:extension": "./deploy.sh my-extension \"브라우저 확장 배포\"",
     "build": "./build.sh all",
-    "build:signin": "./build.sh signin-popup",
     "build:dashboard": "./build.sh dashboard",
     "build:extension": "./build.sh my-extension",
-    "dev": "./dev.sh signin-popup",
+    "dev": "./dev.sh",
     "dev:all": "./dev.sh all",
-    "dev:signin": "./dev.sh signin-popup",
     "dev:dashboard": "./dev.sh dashboard",
     "dev:extension": "./dev.sh my-extension",
     "start": "./dev.sh dashboard"
@@ -35,16 +30,17 @@
   ],
   "author": "북마클 개발팀",
   "license": "MIT",
-  "homepage": "https://github.com/bookmark-hub/bookmark-hub",
+  "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "repository": {
     "type": "git",
-    "url": "https://github.com/bookmark-hub/bookmark-hub.git"
-  },
-  "bugs": {
-    "url": "https://github.com/bookmark-hub/bookmark-hub/issues"
+    "url": "https://github.com/raincoat98/bookmarkle.git"
   },
   "devDependencies": {
-    "firebase-tools": "^13.0.0"
+    "firebase-tools": "^13.5.0"
   },
   "dependencies": {
     "firebase-admin": "^13.5.0",

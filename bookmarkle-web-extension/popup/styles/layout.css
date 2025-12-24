@@ -1,0 +1,119 @@
+.popup-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--card-bg);
+  border-radius: 24px;
+  padding: 15px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 25px 45px rgba(4, 5, 24, 0.6), 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+body.light-theme .popup-card {
+  box-shadow: 0 25px 45px rgba(4, 5, 24, 0.6), 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.field-group {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label {
+  margin-top: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 600;
+  color: var(--muted-text);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.field-label span {
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: none;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.field-caption {
+  font-size: 11px;
+  color: var(--muted-text);
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.footer-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .footer-row {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.text-link {
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+  text-decoration: underline;
+}
+
+.divider {
+  color: rgba(255, 255, 255, 0.4);
+  transition: color 0.3s ease;
+}
+
+body.light-theme .divider {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.loading {
+  font-size: 13px;
+  color: var(--muted-text);
+  text-align: center;
+  padding: 6px 0;
+}
+
+.data-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 13px;
+  color: var(--muted-strong);
+  transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme .data-info {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.data-info strong {
+  color: #fff;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+body.light-theme .data-info strong {
+  color: #fff;
+}

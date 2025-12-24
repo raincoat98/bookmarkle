@@ -30,13 +30,13 @@ import {
 } from "../utils/subscriptionLimits";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
+import { auth } from "../firebase";
 
 export const BookmarksPage: React.FC = () => {
-  const { user, isActive, isActiveLoading } = useAuthStore(
+  const { user, isActive } = useAuthStore(
     useShallow((state) => ({
       user: state.user,
       isActive: state.isActive,
-      isActiveLoading: state.isActiveLoading,
     }))
   );
   const { plan, limits } = useSubscriptionStore(
@@ -67,7 +67,7 @@ export const BookmarksPage: React.FC = () => {
     updateCollection,
     deleteCollection,
     setPinned,
-    fetchCollections,
+    subscribeToCollections,
   } = useCollectionStore(
     useShallow((state) => ({
       collections: state.collections,
@@ -75,7 +75,7 @@ export const BookmarksPage: React.FC = () => {
       updateCollection: state.updateCollection,
       deleteCollection: state.deleteCollection,
       setPinned: state.setPinned,
-      fetchCollections: state.fetchCollections,
+      subscribeToCollections: state.subscribeToCollections,
     }))
   );
 
@@ -135,19 +135,27 @@ export const BookmarksPage: React.FC = () => {
     setBookmarkCollections,
   ]);
 
-  // 컬렉션 데이터 가져오기
+  // 컬렉션 데이터 실시간 구독
   React.useEffect(() => {
-    if (user?.uid) {
-      fetchCollections(user.uid);
-    }
-  }, [user?.uid, fetchCollections]);
+    if (!user?.uid) return;
+    
+    const unsubscribe = subscribeToCollections(user.uid);
+    
+    return () => unsubscribe();
+  }, [user?.uid, subscribeToCollections]);
 
   // 북마크 구독 설정
   React.useEffect(() => {
-    if (user?.uid) {
-      const unsubscribe = subscribeToBookmarks(user.uid);
-      return unsubscribe;
+    if (!user?.uid) return;
+
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== user.uid) {
+      return;
     }
+
+    const unsubscribe = subscribeToBookmarks(user.uid);
+    return unsubscribe;
   }, [user?.uid, subscribeToBookmarks]);
 
   // 나머지 상태 관리
@@ -587,7 +595,7 @@ export const BookmarksPage: React.FC = () => {
   }
 
   // 비활성화된 사용자 체크
-  if (!isActiveLoading && isActive === false) {
+  if (isActive === false) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <DisabledUserMessage />

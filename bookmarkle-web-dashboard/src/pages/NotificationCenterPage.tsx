@@ -118,9 +118,20 @@ export const NotificationCenterPage: React.FC = () => {
         }
       },
       (error) => {
-        console.error("알림 설정 실시간 동기화 실패:", error);
+        const err = error as { code?: string; message?: string };
+        // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          return;
+        }
+        if (process.env.NODE_ENV === "development") {
+          console.error("알림 설정 실시간 동기화 실패:", error);
+        }
         // 에러 발생 시 초기 로드 시도
-        getUserNotificationSettings(user.uid)
+        if (user?.uid) {
+          getUserNotificationSettings(user.uid)
           .then((settings) => {
             const fallback =
               settings.notifications !== undefined
@@ -151,8 +162,11 @@ export const NotificationCenterPage: React.FC = () => {
             }
           })
           .catch((err) => {
-            console.error("알림 설정 로드 실패:", err);
+            if (process.env.NODE_ENV === "development") {
+              console.error("알림 설정 로드 실패:", err);
+            }
           });
+        }
       }
     );
 

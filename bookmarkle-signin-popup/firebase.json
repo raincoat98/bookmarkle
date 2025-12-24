@@ -1,9 +1,0 @@
-{
-  "hosting": [
-    {
-      "target": "signin",
-      "public": ".",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
-    }
-  ]
-}

@@ -14,13 +14,13 @@ import { UpgradeBanner } from "../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
 import { usePasteBookmark } from "../hooks/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
+import { auth } from "../firebase";
 
 export const DashboardPage: React.FC = () => {
-  const { user, isActive, isActiveLoading } = useAuthStore(
+  const { user, isActive } = useAuthStore(
     useShallow((state) => ({
       user: state.user,
       isActive: state.isActive,
-      isActiveLoading: state.isActiveLoading,
     }))
   );
   const { t } = useTranslation();
@@ -50,13 +50,13 @@ export const DashboardPage: React.FC = () => {
   const {
     collections,
     addCollection,
-    fetchCollections,
+    subscribeToCollections,
     loading: collectionsLoading,
   } = useCollectionStore(
     useShallow((state) => ({
       collections: state.collections,
       addCollection: state.addCollection,
-      fetchCollections: state.fetchCollections,
+      subscribeToCollections: state.subscribeToCollections,
       loading: state.loading,
     }))
   );
@@ -71,20 +71,25 @@ export const DashboardPage: React.FC = () => {
     setBookmarkCollections(collections);
   }, [collections, setBookmarkSelectedCollection, setBookmarkCollections]);
 
-  // 컬렉션 데이터 가져오기
+  // 컬렉션 및 북마크 데이터 병렬 로드
   useEffect(() => {
-    if (user?.uid) {
-      fetchCollections(user.uid);
-    }
-  }, [user?.uid, fetchCollections]);
+    if (!user?.uid) return;
 
-  // 북마크 구독 설정
-  useEffect(() => {
-    if (user?.uid) {
-      const unsubscribe = subscribeToBookmarks(user.uid);
-      return unsubscribe;
+    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
+    const currentUser = auth.currentUser;
+    if (!currentUser || currentUser.uid !== user.uid) {
+      return;
     }
-  }, [user?.uid, subscribeToBookmarks]);
+
+    // Start both operations in parallel
+    const unsubscribeCollections = subscribeToCollections(user.uid);
+    const unsubscribeBookmarks = subscribeToBookmarks(user.uid);
+
+    return () => {
+      unsubscribeCollections();
+      unsubscribeBookmarks();
+    };
+  }, [user?.uid, subscribeToCollections, subscribeToBookmarks]);
 
   // 정렬 상태 관리
   const [currentSort, setCurrentSort] = useState<SortOption>({
@@ -275,7 +280,7 @@ export const DashboardPage: React.FC = () => {
   }
 
   // 비활성화된 사용자 체크
-  if (!isActiveLoading && isActive === false) {
+  if (isActive === false) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <DisabledUserMessage />

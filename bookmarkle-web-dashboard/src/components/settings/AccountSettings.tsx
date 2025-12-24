@@ -7,7 +7,7 @@ import type { User } from "firebase/auth";
 
 interface AccountSettingsProps {
   user: User | null;
-  onLogout: () => void;
+  onLogout: () => Promise<void>;
   onDeleteAccount: () => void;
 }
 
@@ -19,6 +19,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -27,6 +28,20 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
       setIsAdmin(false);
     }
   }, [user]);
+
+  
+
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      
+      await onLogout();
+      navigate("/", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -70,11 +85,12 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
             </button>
           )}
           <button
-            onClick={onLogout}
-            className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Key className="w-4 h-4 mr-2" />
-            {t("auth.logout")}
+            {isLoggingOut ? "로그아웃 중..." : t("auth.logout")}
           </button>
           <button
             onClick={onDeleteAccount}
