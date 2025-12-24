@@ -18,8 +18,6 @@ export const SubscriptionBanner = ({
   const [isDismissed, setIsDismissed] = useState(false);
   const [isEarlyUser, setIsEarlyUser] = useState(false);
 
-  console.log("[SubscriptionBanner] 컴포넌트 렌더링:", { user: !!user });
-
   useEffect(() => {
     if (user) {
       checkEarlyUser();
@@ -39,14 +37,23 @@ export const SubscriptionBanner = ({
         }
       }
     } catch (error) {
-      console.error("얼리유저 확인 실패:", error);
+      const err = error as { code?: string; message?: string };
+      // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+      if (
+        err?.code === "permission-denied" ||
+        err?.code === "unauthenticated"
+      ) {
+        return;
+      }
+      if (process.env.NODE_ENV === "development") {
+        console.error("얼리유저 확인 실패:", error);
+      }
     }
   };
 
   // 구독 알림 배너 표시 상태 확인
   useEffect(() => {
     const shouldShow = betaUtils.shouldShowBanner();
-    console.log("[SubscriptionBanner] shouldShowBanner:", shouldShow);
     if (!shouldShow) {
       setIsDismissed(true);
     } else {
@@ -68,12 +75,6 @@ export const SubscriptionBanner = ({
 
   // 구독 알림 배너를 표시하지 않는 경우 체크
   const shouldShow = betaUtils.shouldShowBanner();
-  console.log("[SubscriptionBanner] 렌더링 체크:", {
-    isDismissed,
-    user: !!user,
-    shouldShow,
-    최종결과: !(isDismissed || !user || !shouldShow),
-  });
 
   if (isDismissed || !user || !shouldShow) {
     return null;

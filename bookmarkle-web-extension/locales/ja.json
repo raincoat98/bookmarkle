@@ -1,0 +1,80 @@
+{
+  "menu": {
+    "userInfo": "ユーザー情報",
+    "lightMode": "ライトモード",
+    "darkMode": "ダークモード",
+    "language": "言語",
+    "logout": "ログアウト"
+  },
+  "login": {
+    "login": "ログイン",
+    "info1": "ブックマークはFirebaseに安全に保存されます",
+    "info2": "個人情報は収集しません",
+    "info3": "無料で使用できます",
+    "privacyInfo": "プライバシーポリシー",
+    "contactInfo": "お問い合わせ"
+  },
+  "bookmark": {
+    "saveBookmark": "ブックマークを保存",
+    "currentPage": "現在のページ",
+    "collection": "コレクション",
+    "memo": "メモ",
+    "tag": "タグ",
+    "optional": "（オプション）",
+    "memoPlaceholder": "このページについてのメモを書いてください...",
+    "tagPlaceholder": "Enterキーでタグを追加（カンマ区切り）",
+    "support": "★ 支援する",
+    "bugReport": "バグを報告"
+  },
+  "collection": {
+    "createCollection": "コレクションを作成",
+    "collectionName": "コレクション名",
+    "collectionIcon": "アイコン（オプション）",
+    "name": "名前",
+    "create": "作成",
+    "creating": "作成中...",
+    "cancel": "キャンセル",
+    "selectNone": "なし",
+    "noResults": "検索結果がありません",
+    "searchPlaceholder": "コレクションを検索...",
+    "namePlaceholder": "コレクション名を入力...",
+    "iconPlaceholder": "絵文字アイコンを入力（例：📁）",
+    "createNew": "新規作成:",
+    "refresh": "更新",
+    "manageOnWeb": "ウェブでコレクションを管理",
+    "selectEmoji": "絵文字を選択"
+  },
+  "user": {
+    "email": "メール",
+    "name": "名前",
+    "uid": "UID",
+    "userInfo": "ユーザー情報:"
+  },
+  "common": {
+    "copy": "コピー",
+    "close": "閉じる",
+    "loading": "読み込み中...",
+    "success": "成功",
+    "error": "エラー",
+    "loginInProgress": "ログイン中...",
+    "loginSuccess": "ログイン成功！",
+    "currentTabInfoError": "現在のタブ情報を取得できませんでした。",
+    "collectionNameRequired": "コレクション名を入力してください。",
+    "collectionExists": "コレクションは既に存在します。",
+    "collectionCreated": "コレクションが作成されました！🎉",
+    "collectionCreateError": "コレクション作成中にエラーが発生しました。",
+    "collectionListError": "コレクションリストを取得できません。",
+    "collectionLoadError": "コレクションの読み込みに失敗しました。",
+    "collectionRequired": "まずコレクションを作成してください。",
+    "bookmarkSaved": "ブックマークが保存されました！🎉",
+    "bookmarkSaveError": "ブックマークの保存に失敗しました。",
+    "urlCopyError": "コピーするURLが見つかりません。",
+    "urlCopied": "URLがコピーされました。",
+    "urlCopyFailed": "URLをコピーできません。",
+    "loginPageOpening": "ログインページを開いています...",
+    "loginRequestError": "ログインリクエスト中にエラーが発生しました。",
+    "loginRequired": "ブックマークを保存するにはログインが必要です。",
+    "pageInfoError": "保存するページ情報を取得できませんでした。",
+    "authStateError": "ログイン状態を確認できません。"
+  }
+}

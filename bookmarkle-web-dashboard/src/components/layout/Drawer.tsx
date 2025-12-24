@@ -89,34 +89,26 @@ export const Drawer: React.FC<DrawerProps> = ({
   useEffect(() => {
     let resizeTimer: NodeJS.Timeout;
 
-    // 초기 체크는 즉시 실행
-    const desktop = window.innerWidth >= 1024;
-    setIsDesktop(desktop);
-    if (desktop) {
-      setIsDrawerOpen(true);
-    } else {
-      setIsDrawerOpen(false);
-    }
-
     const handleResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
         const desktop = window.innerWidth >= 1024;
+        const prevDesktop = isDesktop;
 
-        setIsDesktop((prevDesktop) => {
-          // 상태가 변경된 경우에만 Drawer 상태 업데이트
-          if (desktop !== prevDesktop) {
-            // 데스크톱으로 전환되면 Drawer를 항상 열어둠
-            if (desktop && !prevDesktop) {
-              setIsDrawerOpen(true);
-            }
-            // 모바일로 전환되면 Drawer를 닫음
-            if (!desktop && prevDesktop) {
-              setIsDrawerOpen(false);
-            }
+        // 데스크톱 상태 업데이트
+        setIsDesktop(desktop);
+
+        // 상태가 변경된 경우에만 Drawer 상태 업데이트 (별도로)
+        if (desktop !== prevDesktop) {
+          // 데스크톱으로 전환되면 Drawer를 항상 열어둠
+          if (desktop && !prevDesktop) {
+            setIsDrawerOpen(true);
           }
-          return desktop;
-        });
+          // 모바일로 전환되면 Drawer를 닫음
+          if (!desktop && prevDesktop) {
+            setIsDrawerOpen(false);
+          }
+        }
       }, 100); // 디바운스
     };
 
@@ -126,7 +118,7 @@ export const Drawer: React.FC<DrawerProps> = ({
       window.removeEventListener("resize", handleResize);
       clearTimeout(resizeTimer);
     };
-  }, [setIsDrawerOpen]);
+  }, [isDesktop, setIsDrawerOpen]);
 
   const navigation = [
     {

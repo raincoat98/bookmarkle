@@ -28,7 +28,7 @@ import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
 import { TrashSettings } from "./settings/TrashSettings";
-import { getUserDefaultPage } from "../firebase";
+import { getUserDefaultPage, auth } from "../firebase";
 import { isBetaPeriod } from "../utils/betaFlags";
 import { performBackup, shouldBackup } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
@@ -167,12 +167,17 @@ export const Settings: React.FC<SettingsProps> = ({
 
   // 사용자 기본 페이지 로드
   useEffect(() => {
-    if (user?.uid) {
-      getUserDefaultPage(user.uid).then((page: string | null) => {
-        if (page) {
-          setDefaultPage(page);
-        }
-      });
+    if (user?.uid && auth.currentUser?.uid === user.uid) {
+      getUserDefaultPage(user.uid)
+        .then((page: string | null) => {
+          if (page) {
+            setDefaultPage(page);
+          }
+        })
+        .catch((error) => {
+          // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+          console.warn("⚠️ Failed to get user default page:", error);
+        });
     }
   }, [user?.uid, setDefaultPage]);
 

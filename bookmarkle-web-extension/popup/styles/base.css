@@ -1,0 +1,25 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 390px;
+  margin: 0;
+  background: var(--bg-gradient);
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  color: #fff;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+body.light-theme {
+  color: #fff;
+}
+
+svg {
+  color: inherit;
+}

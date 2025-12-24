@@ -9,6 +9,7 @@ import {
   getDocs,
   updateDoc,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "../firebase";
 import type { Collection, CollectionFormData } from "../types";
@@ -22,6 +23,7 @@ interface CollectionActions {
   setCollections: (collections: Collection[]) => void;
   setLoading: (loading: boolean) => void;
   fetchCollections: (userId: string) => Promise<void>;
+  subscribeToCollections: (userId: string) => () => void;
   addCollection: (
     collectionData: CollectionFormData,
     userId: string
@@ -58,14 +60,33 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
+          
+          // createdAt과 updatedAt이 Timestamp 객체인지 문자열인지 확인
+          const parseDate = (dateValue: any): Date => {
+            if (!dateValue) return new Date();
+            // Firestore Timestamp 객체인 경우
+            if (dateValue.toDate && typeof dateValue.toDate === "function") {
+              return dateValue.toDate();
+            }
+            // ISO 문자열인 경우
+            if (typeof dateValue === "string") {
+              return new Date(dateValue);
+            }
+            // 이미 Date 객체인 경우
+            if (dateValue instanceof Date) {
+              return dateValue;
+            }
+            return new Date();
+          };
+          
           collectionList.push({
             id: doc.id,
             name: data.name,
             icon: data.icon,
             description: data.description || "",
             userId: data.userId,
-            createdAt: data.createdAt.toDate(),
-            updatedAt: data.updatedAt.toDate(),
+            createdAt: parseDate(data.createdAt),
+            updatedAt: parseDate(data.updatedAt),
             parentId: data.parentId ?? null,
             isPinned: data.isPinned ?? false,
           });
@@ -82,10 +103,100 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
 
         set({ collections: collectionList });
       } catch (error) {
-        console.error("Error fetching collections:", error);
+        const err = error as { code?: string; message?: string };
+        // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+        if (
+          err?.code === "permission-denied" ||
+          err?.code === "unauthenticated"
+        ) {
+          // 권한 오류는 조용히 무시
+          set({ collections: [] });
+        } else {
+          console.error("Error fetching collections:", error);
+        }
       } finally {
         set({ loading: false });
       }
+    },
+
+    // 컬렉션 실시간 구독
+    subscribeToCollections: (userId: string) => {
+      const q = query(
+        collection(db, "collections"),
+        where("userId", "==", userId)
+      );
+
+      // createdAt과 updatedAt이 Timestamp 객체인지 문자열인지 확인하는 헬퍼 함수
+      const parseDate = (dateValue: any): Date => {
+        if (!dateValue) return new Date();
+        // Firestore Timestamp 객체인 경우
+        if (dateValue.toDate && typeof dateValue.toDate === "function") {
+          return dateValue.toDate();
+        }
+        // ISO 문자열인 경우
+        if (typeof dateValue === "string") {
+          return new Date(dateValue);
+        }
+        // 이미 Date 객체인 경우
+        if (dateValue instanceof Date) {
+          return dateValue;
+        }
+        return new Date();
+      };
+
+      const unsubscribe = onSnapshot(
+        q,
+        (querySnapshot) => {
+          const collectionList: Collection[] = [];
+
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            collectionList.push({
+              id: doc.id,
+              name: data.name,
+              icon: data.icon,
+              description: data.description || "",
+              userId: data.userId,
+              createdAt: parseDate(data.createdAt),
+              updatedAt: parseDate(data.updatedAt),
+              parentId: data.parentId ?? null,
+              isPinned: data.isPinned ?? false,
+            });
+          });
+
+          // 클라이언트 측에서 핀된 컬렉션을 먼저, 그 다음 이름순으로 정렬
+          collectionList.sort((a, b) => {
+            // 핀된 컬렉션이 먼저 오도록 정렬
+            if (a.isPinned && !b.isPinned) return -1;
+            if (!a.isPinned && b.isPinned) return 1;
+            // 같은 핀 상태라면 이름순으로 정렬
+            return a.name.localeCompare(b.name);
+          });
+
+          set({ collections: collectionList, loading: false });
+        },
+        (error) => {
+          const err = error as { code?: string; message?: string };
+          // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
+          if (
+            err?.code === "permission-denied" ||
+            err?.code === "unauthenticated"
+          ) {
+            // 권한 오류는 조용히 처리
+            try {
+              unsubscribe();
+            } catch {
+              // 리스너 정리 중 발생하는 에러는 무시
+            }
+            set({ collections: [] });
+          } else {
+            console.error("컬렉션 로딩 오류:", error);
+          }
+          set({ loading: false });
+        }
+      );
+
+      return unsubscribe;
     },
 
     // 컬렉션 추가

@@ -1,0 +1,80 @@
+{
+  "menu": {
+    "userInfo": "사용자 정보",
+    "lightMode": "라이트 모드",
+    "darkMode": "다크 모드",
+    "language": "언어",
+    "logout": "로그아웃"
+  },
+  "login": {
+    "login": "로그인",
+    "info1": "북마크는 Firebase에 안전하게 저장됩니다",
+    "info2": "개인정보는 수집하지 않습니다",
+    "info3": "무료로 사용할 수 있습니다",
+    "privacyInfo": "개인정보 보호 정책",
+    "contactInfo": "문의하기"
+  },
+  "bookmark": {
+    "saveBookmark": "북마크 저장",
+    "currentPage": "현재 페이지",
+    "collection": "컬렉션",
+    "memo": "메모",
+    "tag": "태그",
+    "optional": "(선택사항)",
+    "memoPlaceholder": "이 페이지에 대한 메모를 작성하세요...",
+    "tagPlaceholder": "엔터로 태그 추가 (쉼표로 구분)",
+    "support": "★ 후원하기",
+    "bugReport": "버그 등록하기"
+  },
+  "collection": {
+    "createCollection": "컬렉션 만들기",
+    "collectionName": "컬렉션 이름",
+    "collectionIcon": "아이콘 (선택사항)",
+    "name": "이름",
+    "create": "만들기",
+    "creating": "만드는 중...",
+    "cancel": "취소",
+    "selectNone": "선택 없음",
+    "noResults": "검색 결과가 없습니다",
+    "searchPlaceholder": "컬렉션 검색...",
+    "namePlaceholder": "컬렉션 이름을 입력하세요...",
+    "iconPlaceholder": "이모지 아이콘을 입력하세요 (예: 📁)",
+    "createNew": "새로 만들기:",
+    "refresh": "새로고침",
+    "manageOnWeb": "웹에서 컬렉션 관리",
+    "selectEmoji": "이모지 선택"
+  },
+  "user": {
+    "email": "이메일",
+    "name": "이름",
+    "uid": "UID",
+    "userInfo": "사용자 정보:"
+  },
+  "common": {
+    "copy": "복사",
+    "close": "닫기",
+    "loading": "로딩 중...",
+    "success": "성공",
+    "error": "오류",
+    "loginInProgress": "로그인 중...",
+    "loginSuccess": "로그인 성공!",
+    "currentTabInfoError": "현재 탭 정보를 가져오지 못했습니다.",
+    "collectionNameRequired": "컬렉션 이름을 입력해주세요.",
+    "collectionExists": "이미 존재하는 컬렉션입니다.",
+    "collectionCreated": "컬렉션이 생성되었습니다! 🎉",
+    "collectionCreateError": "컬렉션 생성 중 오류가 발생했습니다.",
+    "collectionListError": "컬렉션 목록을 가져올 수 없습니다.",
+    "collectionLoadError": "컬렉션 로드에 실패했습니다.",
+    "collectionRequired": "컬렉션을 먼저 생성해주세요.",
+    "bookmarkSaved": "북마크가 저장되었습니다! 🎉",
+    "bookmarkSaveError": "북마크 저장에 실패했습니다.",
+    "urlCopyError": "복사할 URL을 찾을 수 없습니다.",
+    "urlCopied": "URL이 복사되었습니다.",
+    "urlCopyFailed": "URL을 복사할 수 없습니다.",
+    "loginPageOpening": "로그인 페이지를 여는 중...",
+    "loginRequestError": "로그인 요청 중 오류가 발생했습니다.",
+    "loginRequired": "로그인 후에 북마크를 저장할 수 있습니다.",
+    "pageInfoError": "저장할 페이지 정보를 가져오지 못했습니다.",
+    "authStateError": "로그인 상태를 확인할 수 없습니다."
+  }
+}
