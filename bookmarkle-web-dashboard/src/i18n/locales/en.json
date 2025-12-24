@@ -258,7 +258,7 @@
     "maxDepthExceeded": "Cannot add sub-collections beyond 2 levels deep.",
     "selectedCollection": "Selected Collection",
     "deleteConfirmation": "collection?",
-    "deleteWarning": "Bookmarks in this collection will be removed from the collection.",
+    "deleteWarning": "All bookmarks in this collection will be deleted.",
     "iconCategories": {
       "general": "General",
       "work": "Work",
