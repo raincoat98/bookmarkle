@@ -92,9 +92,23 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
             <Key className="w-4 h-4 mr-2" />
             {isLoggingOut ? "로그아웃 중..." : t("auth.logout")}
           </button>
+        </div>
+      </div>
+
+      {/* 위험 영역 - 계정 삭제 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border-2 border-red-200 dark:border-red-900/50 p-6 mt-8">
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">
+            {t("settings.dangerZone")}
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t("settings.dangerZoneDescription")}
+          </p>
+        </div>
+        <div className="pt-4 border-t border-red-200 dark:border-red-900/30">
           <button
             onClick={onDeleteAccount}
-            className="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            className="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             {t("settings.deleteAccount")}

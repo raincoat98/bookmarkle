@@ -295,6 +295,8 @@
     "deleteAccount": "アカウント削除",
     "confirmDeleteAccount": "アカウントを削除しますか？この操作は元に戻せません。",
     "accountDeleted": "アカウントが削除されました。",
+    "dangerZone": "危険ゾーン",
+    "dangerZoneDescription": "この操作は元に戻せません。慎重に進めてください。",
     "backupCreated": "バックアップが作成されました。",
     "backupRestored": "バックアップが復元されました。",
     "dataExported": "データがエクスポートされました。",

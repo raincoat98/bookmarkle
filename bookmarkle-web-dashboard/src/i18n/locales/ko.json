@@ -308,6 +308,8 @@
     "deleteAccount": "계정 삭제",
     "confirmDeleteAccount": "계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
     "accountDeleted": "계정이 삭제되었습니다.",
+    "dangerZone": "위험 영역",
+    "dangerZoneDescription": "이 작업은 되돌릴 수 없습니다. 신중하게 진행해주세요.",
     "backupCreated": "백업이 생성되었습니다.",
     "backupRestored": "백업이 복원되었습니다.",
     "dataExported": "데이터가 내보내기되었습니다.",
