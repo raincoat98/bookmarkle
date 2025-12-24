@@ -97,7 +97,7 @@ deploy_dashboard() {
             log_success "북마클 웹 대시보드 배포 완료!"
             
             # 배포 URL 출력
-            HOSTING_URL="https://bookmarkhub-5ea6c.web.app"
+            HOSTING_URL="https://www.bookmarkle.app"
             echo -e "${GREEN}🌐 배포된 사이트: ${BLUE}$HOSTING_URL${NC}"
         else
             log_error "북마클 웹 대시보드 배포 실패!"

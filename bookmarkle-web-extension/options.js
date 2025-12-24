@@ -1,4 +1,4 @@
-const DEFAULT_URL = "https://bookmarkhub-5ea6c.web.app";
+const DEFAULT_URL = "https://www.bookmarkle.app";
 
 const customUrlInput = document.getElementById("customUrl");
 const copyDefaultBtn = document.getElementById("copyDefaultBtn");

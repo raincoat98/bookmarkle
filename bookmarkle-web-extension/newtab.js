@@ -1,4 +1,4 @@
-const DEFAULT_URL = "https://bookmarkhub-5ea6c.web.app";
+const DEFAULT_URL = "https://www.bookmarkle.app";
 
 // 저장된 설정 로드 및 리다이렉트
 chrome.storage.local.get(["customNewTabUrl"], (result) => {
