@@ -140,7 +140,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
           ) : (
             <button
               onClick={onDeleteAccount}
-              className="w-full flex items-center justify-center px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-800 transition-colors focus:outline-none focus:ring-2 focus:ring-red-600 focus:ring-offset-2"
+              className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
             >
               <Trash2 className="w-4 h-4 mr-2" />
               {t("settings.deleteAccount")}
