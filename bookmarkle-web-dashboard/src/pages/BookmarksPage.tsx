@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { BookmarkList } from "../components/bookmarks/BookmarkList";
 import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
 import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
@@ -513,19 +513,50 @@ export const BookmarksPage: React.FC = () => {
     }
   };
 
-  const handleDeleteCollection = async (collectionId: string) => {
-    setDeletingCollectionId(collectionId);
-    try {
-      await deleteCollection(collectionId, user?.uid || "");
-      toast.success(t("collections.collectionDeleted"));
-      setDeletingCollectionId(null);
-      setShowDeleteModal(false);
-    } catch (error) {
-      console.error("Error deleting collection:", error);
-      toast.error(t("collections.collectionDeleteError"));
-      setDeletingCollectionId(null);
-    }
-  };
+  const handleDeleteCollection = useCallback(
+    async (collectionId: string) => {
+      setDeletingCollectionId(collectionId);
+      try {
+        await deleteCollection(collectionId, user?.uid || "");
+        toast.success(t("collections.collectionDeleted"));
+        setDeletingCollectionId(null);
+        setShowDeleteModal(false);
+      } catch (error) {
+        console.error("Error deleting collection:", error);
+        toast.error(t("collections.collectionDeleteError"));
+        setDeletingCollectionId(null);
+      }
+    },
+    [deleteCollection, user?.uid, t]
+  );
+
+  // 컬렉션 삭제 모달 키보드 이벤트 처리
+  useEffect(() => {
+    if (!showDeleteModal || !targetCollectionId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        // 삭제 중이 아닐 때만 삭제 실행
+        if (deletingCollectionId !== targetCollectionId) {
+          handleDeleteCollection(targetCollectionId);
+        }
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        setShowDeleteModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    showDeleteModal,
+    targetCollectionId,
+    deletingCollectionId,
+    handleDeleteCollection,
+  ]);
 
   const handleUpdateCollection = async (
     collectionId: string,
