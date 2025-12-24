@@ -291,6 +291,8 @@ export async function showLanguageModal() {
     btn.addEventListener("click", async () => {
       const lang = btn.dataset.lang;
       await setLanguage(lang);
+      // 언어 변경 후 UI 전체 업데이트
+      await updateUIWithLanguage(lang);
       closeLanguageModal();
     });
   });

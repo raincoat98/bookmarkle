@@ -15,6 +15,7 @@ import {
   closeCollectionModal,
   createCollectionFromModal,
   fetchCollectionsList,
+  filterCollections,
 } from "./collection.js";
 import { showEmojiPicker, hideEmojiPicker } from "./emoji.js";
 import { saveCurrentPageBookmark, copyCurrentUrl } from "./bookmark.js";
