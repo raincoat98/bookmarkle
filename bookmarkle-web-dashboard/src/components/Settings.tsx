@@ -17,6 +17,7 @@ import {
   Shield,
   Crown,
   Trash2,
+  ExternalLink,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -73,6 +74,7 @@ export const Settings: React.FC<SettingsProps> = ({
     deleteConfirm,
     showDeleteAccountModal,
     setShowDeleteAccountModal,
+    deletionStatus,
     fileInputRef,
 
     // 핸들러
@@ -99,6 +101,7 @@ export const Settings: React.FC<SettingsProps> = ({
     handleCancelImport,
     handleDeleteAccount,
     handleConfirmDeleteAccount,
+    handleCancelDeletion,
     handleNavigateToNotifications,
 
     // 기타
@@ -240,6 +243,8 @@ export const Settings: React.FC<SettingsProps> = ({
             user={user}
             onLogout={logout}
             onDeleteAccount={handleDeleteAccount}
+            deletionStatus={deletionStatus}
+            onCancelDeletion={handleCancelDeletion}
           />
         );
       case "appearance":
@@ -495,26 +500,31 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* 계정 삭제 모달 */}
       {showDeleteAccountModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xs">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              계정 삭제
+              {t("settings.deleteAccount")}
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-6">
-              정말로 계정을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+            <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm leading-relaxed">
+              {t("settings.deleteAccountDescription")}
             </p>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowDeleteAccountModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                취소
-              </button>
+            <div className="flex items-center justify-between">
               <button
                 onClick={handleConfirmDeleteAccount}
-                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
               >
-                삭제
+                {t("settings.deleteAccount")}
               </button>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // TODO: 자세히 알아보기 링크 (정책 페이지 등)
+                }}
+                className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors"
+              >
+                <span className="text-sm">{t("settings.learnMore")}</span>
+                <ExternalLink className="w-4 h-4" />
+              </a>
             </div>
           </div>
         </div>
