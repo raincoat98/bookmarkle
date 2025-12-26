@@ -10,19 +10,6 @@ const copyAssetsPlugin = {
   name: "copy-assets",
   writeBundle() {
     try {
-      // libs 폴더 복사 및 source map 제거
-      const libsSrc = resolve(__dirname, "libs");
-      const libsDest = resolve(__dirname, "dist", "libs");
-
-      mkdirSync(libsDest, { recursive: true });
-      const files = readdirSync(libsSrc);
-      files.forEach((file) => {
-        if (file.endsWith(".js") && !file.endsWith(".map.js")) {
-          copyFileSync(resolve(libsSrc, file), resolve(libsDest, file));
-        }
-      });
-      console.log("✅ libs 폴더 복사 완료 (source map 제외)");
-
       // manifest.json 복사
       const manifestSrc = resolve(__dirname, "manifest.json");
       const manifestDest = resolve(__dirname, "dist", "manifest.json");
