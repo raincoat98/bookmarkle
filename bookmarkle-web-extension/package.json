@@ -1,6 +1,6 @@
 {
   "name": "bookmarkle-web-extension",
-  "version": "1.0.9",
+  "version": "1.1.0",
   "type": "module",
   "description": "북마클 Chrome Extension",
   "scripts": {
