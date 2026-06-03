@@ -72,7 +72,7 @@ export async function saveCurrentPageBookmark() {
   const { saveBookmarkBtn } = elements;
   const previousButtonText = saveBookmarkBtn?.textContent;
   if (saveBookmarkBtn) {
-    saveBookmarkBtn.textContent = "저장 중...";
+    saveBookmarkBtn.textContent = await t("bookmark.saving");
   }
 
   try {

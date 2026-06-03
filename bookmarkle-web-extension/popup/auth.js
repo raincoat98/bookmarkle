@@ -23,10 +23,7 @@ export async function displayUserInfo(user) {
   const { userDetailsDiv } = elements;
   if (!userDetailsDiv) return;
 
-  // 기존 내용 완전 제거
-  while (userDetailsDiv.firstChild) {
-    userDetailsDiv.removeChild(userDetailsDiv.firstChild);
-  }
+  userDetailsDiv.replaceChildren();
 
   const rows = [
     { label: await t("user.email"), value: user.email },
@@ -141,38 +138,20 @@ export function updateLoginUI(isLoggedIn, user = null) {
   if (isLoggedIn && user) {
     if (userEmailSpan) userEmailSpan.textContent = user.displayName || user.email || "사용자";
     statusBadge?.classList.remove("logged-out");
-    if (loggedInContent) {
-      loggedInContent.style.display = "block";
-    }
-    if (userHeaderDiv) {
-      userHeaderDiv.style.display = "flex";
-    }
-    if (loginButtons) {
-      loginButtons.style.display = "none";
-    }
-    if (loadingDiv) {
-      loadingDiv.style.display = "none";
-    }
+    if (loggedInContent) loggedInContent.style.display = "block";
+    if (userHeaderDiv) userHeaderDiv.style.display = "flex";
+    if (loginButtons) loginButtons.style.display = "none";
+    if (loadingDiv) loadingDiv.style.display = "none";
     displayUserInfo(user);
-    setTimeout(() => {
-      fetchCollectionsList();
-    }, 0);
-    setCollectionControlsState();
-    setSaveButtonState();
+    setTimeout(() => fetchCollectionsList(), 0);
   } else {
     statusBadge?.classList.add("logged-out");
-    if (loggedInContent) {
-      loggedInContent.style.display = "none";
-    }
-    if (userHeaderDiv) {
-      userHeaderDiv.style.display = "none";
-    }
-    if (loginButtons) {
-      loginButtons.style.display = "flex";
-    }
+    if (loggedInContent) loggedInContent.style.display = "none";
+    if (userHeaderDiv) userHeaderDiv.style.display = "none";
+    if (loginButtons) loginButtons.style.display = "flex";
     clearTags();
-    setCollectionControlsState();
-    setSaveButtonState();
   }
+  setCollectionControlsState();
+  setSaveButtonState();
   reinitializeLucideIcons();
 }
