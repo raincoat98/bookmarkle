@@ -1,6 +1,7 @@
 import { FIREBASE_API_KEY, SIGNIN_POPUP_URL } from "./constants.js";
 import {
   currentRefreshToken,
+  currentIdToken,
   setCurrentIdToken,
   setCurrentRefreshToken,
   setCurrentUser,
@@ -9,10 +10,23 @@ import {
   setAuthResponseHandler,
   clearAuthResponseHandler,
 } from "./state.js";
-import { addQueryParam } from "./utils.js";
+import { addQueryParam, isTokenExpired } from "./utils.js";
+
+// 동시 갱신 방지: 진행 중인 갱신이 있으면 같은 Promise를 공유
+let _refreshPromise = null;
 
 // Refresh Token으로 새로운 ID Token 발급 (웹 탭 없이도 작동)
 export async function refreshIdTokenWithRefreshToken() {
+  if (_refreshPromise) {
+    return _refreshPromise;
+  }
+  _refreshPromise = _doRefreshIdToken().finally(() => {
+    _refreshPromise = null;
+  });
+  return _refreshPromise;
+}
+
+async function _doRefreshIdToken() {
   if (!currentRefreshToken) {
     console.warn("🔐 Refresh Token 없음");
     return null;
@@ -21,28 +35,6 @@ export async function refreshIdTokenWithRefreshToken() {
   try {
     console.log("🔐 Refresh Token으로 ID Token 갱신 시도");
 
-    // API 키 상태 확인 (디버깅용)
-    const apiKeyStatus = {
-      exists: !!FIREBASE_API_KEY,
-      type: typeof FIREBASE_API_KEY,
-      length: FIREBASE_API_KEY?.length || 0,
-      isEmpty:
-        !FIREBASE_API_KEY ||
-        (typeof FIREBASE_API_KEY === "string" &&
-          FIREBASE_API_KEY.trim() === ""),
-      isPlaceholder: FIREBASE_API_KEY === "FIREBASE_API_KEY_PLACEHOLDER",
-      preview:
-        FIREBASE_API_KEY && typeof FIREBASE_API_KEY === "string"
-          ? `${FIREBASE_API_KEY.substring(0, 15)}...`
-          : "없음",
-    };
-    console.log(
-      "🔐 FIREBASE_API_KEY 상태:",
-      JSON.stringify(apiKeyStatus, null, 2)
-    );
-
-    // Firebase securetoken API는 API 키가 필요합니다
-    // API 키 유효성 검사: 길이가 20자 이상이고 "AIza"로 시작하는지 확인
     const isValidApiKey =
       FIREBASE_API_KEY &&
       typeof FIREBASE_API_KEY === "string" &&
@@ -50,12 +42,7 @@ export async function refreshIdTokenWithRefreshToken() {
       FIREBASE_API_KEY.startsWith("AIza");
 
     if (!isValidApiKey) {
-      console.error("🔐 Firebase API 키가 유효하지 않음", {
-        hasKey: !!FIREBASE_API_KEY,
-        type: typeof FIREBASE_API_KEY,
-        length: FIREBASE_API_KEY?.length || 0,
-        startsWithAIza: FIREBASE_API_KEY?.startsWith?.("AIza") || false,
-      });
+      console.error("🔐 Firebase API 키가 유효하지 않음");
       return null;
     }
 
@@ -79,12 +66,8 @@ export async function refreshIdTokenWithRefreshToken() {
         errorMessage =
           error.error?.message || error.error_description || errorMessage;
       } catch (e) {
-        console.error(
-          "🔐 토큰 갱신 실패 (응답 파싱 불가):",
-          response.status,
-          response.statusText
-        );
-        errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+        console.error("🔐 토큰 갱신 실패 (응답 파싱 불가):", response.status);
+        errorMessage = `HTTP ${response.status}`;
       }
       throw new Error(errorMessage);
     }
@@ -161,7 +144,7 @@ export async function getRefreshIdTokenFromWeb() {
           chrome.tabs.sendMessage(
             tab.id,
             { type: "TOKEN_REQUEST" },
-            (response) => {
+            () => {
               if (chrome.runtime.lastError) {
                 console.warn(
                   `🔐 탭 ${tab.id}에서 토큰 요청 실패:`,
@@ -177,16 +160,17 @@ export async function getRefreshIdTokenFromWeb() {
         // 토큰 응답 대기 (3초)
         const timeoutId = setTimeout(() => {
           console.warn("🔐 웹 앱으로부터 토큰 응답 타임아웃");
+          delete self.tokenResponseHandler;
           resolve(null);
         }, 3000);
 
         // 토큰 응답 핸들러 (일시적)
-        window.tokenResponseHandler = (token, user) => {
+        self.tokenResponseHandler = (token) => {
           if (!tokenReceived) {
             tokenReceived = true;
             clearTimeout(timeoutId);
             console.log("🔐 웹 앱으로부터 토큰 갱신 완료");
-            delete window.tokenResponseHandler;
+            delete self.tokenResponseHandler;
             resolve(token);
           }
         };
@@ -259,6 +243,40 @@ export async function restoreUserInfo() {
   }
 }
 
+// 토큰 상태를 보장: 없거나 만료됐으면 갱신, storage 복원 포함
+// 반환값: true = 유효한 토큰 있음, false = 갱신 실패 (재로그인 필요)
+export async function ensureFreshToken() {
+  // 메모리에 없으면 storage에서 복원
+  if (!currentIdToken) {
+    await restoreUserInfo();
+  }
+
+  // 없거나 만료됐으면 갱신 시도
+  if (!currentIdToken || isTokenExpired(currentIdToken)) {
+    if (currentIdToken) {
+      console.log("⚠️ idToken 만료됨, 갱신 시도");
+    }
+
+    let refreshedToken = await refreshIdTokenWithRefreshToken();
+
+    if (!refreshedToken) {
+      console.log("⚠️ Refresh Token 갱신 실패, 웹 탭에서 요청 시도");
+      refreshedToken = await getRefreshIdTokenFromWeb();
+    }
+
+    if (refreshedToken) {
+      setCurrentIdToken(refreshedToken);
+      console.log("✅ 토큰 갱신 완료");
+    } else {
+      // 갱신 실패 시 만료된 토큰을 null로 — Firestore 호출 방지
+      setCurrentIdToken(null);
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // 로그인 처리 공통 함수
 export async function handleLogin(sendResponse, mode = "google") {
   setAuthResponseHandler(sendResponse);
@@ -274,12 +292,23 @@ export async function handleLogin(sendResponse, mode = "google") {
     });
     console.log(`✅ ${mode} 로그인 페이지 탭 생성:`, tab.id, url);
 
-    // 최대 2분 후 타임아웃
-    setTimeout(() => {
+    // 최대 2분 후 타임아웃 (성공 시 clearAuthResponseHandler로 핸들러가 제거되므로 sendAuthError는 no-op)
+    const timeoutId = setTimeout(() => {
       sendAuthError({
         message: "인증 결과를 받지 못했습니다. 시간이 초과되었습니다.",
       });
     }, 120000);
+
+    // 로그인 탭이 닫히면 타임아웃 취소 + 미완료 인증 에러 전송
+    const tabRemovedListener = (removedTabId) => {
+      if (removedTabId === tab.id) {
+        clearTimeout(timeoutId);
+        chrome.tabs.onRemoved.removeListener(tabRemovedListener);
+        // 인증 성공 시 clearAuthResponseHandler가 이미 호출됐으므로 no-op
+        sendAuthError({ message: "로그인 페이지가 닫혔습니다." });
+      }
+    };
+    chrome.tabs.onRemoved.addListener(tabRemovedListener);
   } catch (error) {
     console.error(`❌ ${mode} 로그인 페이지 열기 오류:`, error);
     sendAuthError(error);

@@ -1,9 +1,5 @@
-import {
-  restoreUserInfo,
-  refreshIdTokenWithRefreshToken,
-  getRefreshIdTokenFromWeb,
-} from "./auth.js";
-import { currentUser, currentIdToken, setCurrentIdToken } from "./state.js";
+import { ensureFreshToken } from "./auth.js";
+import { currentUser, currentIdToken } from "./state.js";
 import { addFirestoreDocument } from "./firestore.js";
 import { sendBookmarkSavedNotification } from "./notifications.js";
 import { getFaviconUrl } from "./utils.js";
@@ -13,20 +9,12 @@ export async function handleSaveBookmark(request, sendResponse) {
   try {
     console.log("📚 북마크 저장 요청 처리 시작");
 
-    // 1. 사용자 정보 확인
-    if (!currentUser) {
-      console.log("⚠️ currentUser가 메모리에 없음, storage에서 복원 시도");
-      await restoreUserInfo();
-    }
+    const tokenReady = await ensureFreshToken();
 
-    if (!currentUser || !currentUser.uid) {
-      console.error("❌ 사용자 정보 없음, uid 확인:", {
-        hasCurrentUser: !!currentUser,
-        hasUid: !!currentUser?.uid,
-      });
+    if (!tokenReady || !currentUser || !currentUser.uid) {
       sendResponse({
         success: false,
-        error: "확장 프로그램에서 먼저 로그인해주세요.",
+        error: !currentUser ? "확장 프로그램에서 먼저 로그인해주세요." : "인증이 만료되었습니다. 다시 로그인해주세요.",
       });
       return;
     }
@@ -92,31 +80,6 @@ export async function handleSaveBookmark(request, sendResponse) {
     };
 
     console.log("✅ 북마크 데이터 준비 완료, Firestore REST API 호출");
-
-    // idToken이 메모리에 없으면 storage에서 복원 시도
-    if (!currentIdToken) {
-      console.log("⚠️ idToken이 메모리에 없음, storage에서 복원 시도");
-      await restoreUserInfo();
-    }
-
-    // 토큰이 없거나 만료되었을 가능성이 있으면 갱신 시도
-    if (!currentIdToken) {
-      console.log("⚠️ idToken이 없음, 토큰 갱신 시도");
-
-      // 1단계: Refresh Token으로 갱신
-      let refreshedToken = await refreshIdTokenWithRefreshToken();
-
-      // 2단계: 실패하면 웹 탭에서 요청
-      if (!refreshedToken) {
-        console.log("⚠️ Refresh Token 갱신 실패, 웹 탭에서 요청 시도");
-        refreshedToken = await getRefreshIdTokenFromWeb();
-      }
-
-      if (refreshedToken) {
-        setCurrentIdToken(refreshedToken);
-        console.log("✅ 토큰 갱신 완료");
-      }
-    }
 
     if (!currentIdToken) {
       sendResponse({
@@ -185,14 +148,11 @@ export async function handleSaveBookmark(request, sendResponse) {
 // 빠른 실행 모드로 북마크 저장 (popup 없이)
 export async function quickSaveBookmark() {
   try {
-    // 로그인 상태 확인
-    if (!currentUser) {
-      await restoreUserInfo();
-    }
+    const tokenReady = await ensureFreshToken();
 
-    if (!currentUser || !currentUser.uid) {
-      console.log("⚠️ 빠른 실행 모드: 로그인되지 않음");
-      return { success: false, error: "로그인이 필요합니다." };
+    if (!tokenReady || !currentUser || !currentUser.uid) {
+      console.log("⚠️ 빠른 실행 모드: 로그인되지 않음 또는 토큰 만료");
+      return { success: false, error: !currentUser ? "로그인이 필요합니다." : "인증이 만료되었습니다. 다시 로그인해주세요." };
     }
 
     // 현재 활성 탭 정보 가져오기
@@ -236,21 +196,6 @@ export async function quickSaveBookmark() {
       tags: [],
       isFavorite: false,
     };
-
-    // idToken 확인 및 갱신
-    if (!currentIdToken) {
-      await restoreUserInfo();
-    }
-
-    if (!currentIdToken) {
-      let refreshedToken = await refreshIdTokenWithRefreshToken();
-      if (!refreshedToken) {
-        refreshedToken = await getRefreshIdTokenFromWeb();
-      }
-      if (refreshedToken) {
-        setCurrentIdToken(refreshedToken);
-      }
-    }
 
     if (!currentIdToken) {
       return {

@@ -27,7 +27,7 @@ export async function getNotificationSettings(uid, idToken) {
           systemNotifications: true,
         };
       }
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(`HTTP ${response.status}`);
     }
 
     const data = await response.json();
@@ -81,10 +81,18 @@ export async function sendSystemNotification(
       priority: 1,
     };
 
-    // 북마크 URL이 있으면 URL을 매핑에 저장
     if (bookmarkUrl) {
       notificationUrlMap.set(notificationId, bookmarkUrl);
       notificationOptions.buttons = [{ title: "북마크 보기" }];
+      // storage에도 저장 (서비스 워커 재시작 후 복원용)
+      try {
+        const stored = await chrome.storage.local.get(["notificationUrls"]);
+        const notificationUrls = stored.notificationUrls || {};
+        notificationUrls[notificationId] = bookmarkUrl;
+        await chrome.storage.local.set({ notificationUrls });
+      } catch (e) {
+        console.warn("⚠️ 알림 URL storage 저장 실패:", e);
+      }
     }
 
     await chrome.notifications.create(notificationId, notificationOptions);
@@ -133,12 +141,15 @@ export async function createBookmarkNotification(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Firestore 알림 저장 오류: ${
-          errorData.error?.message || response.statusText
-        }`
-      );
+      const errorText = await response.text().catch(() => "");
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error?.message || errorData.error?.status || errorMessage;
+      } catch {
+        if (errorText) errorMessage += `: ${errorText}`;
+      }
+      throw new Error(`Firestore 알림 저장 오류: ${errorMessage}`);
     }
 
     const data = await response.json();

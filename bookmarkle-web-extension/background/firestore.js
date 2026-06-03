@@ -70,10 +70,15 @@ export async function runFirestoreQuery(
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Firestore API 오류: ${errorData.error?.message || response.statusText}`
-      );
+      const errorText = await response.text().catch(() => "");
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error?.message || errorData.error?.status || errorMessage;
+      } catch {
+        if (errorText) errorMessage += `: ${errorText}`;
+      }
+      throw new Error(`Firestore API 오류: ${errorMessage}`);
     }
 
     const data = await response.json();
@@ -114,7 +119,9 @@ export async function addFirestoreDocument(
         // Firestore는 빈 문자열을 저장할 수 있음
         firestoreData[key] = { stringValue: value };
       } else if (typeof value === "number") {
-        firestoreData[key] = { integerValue: value.toString() };
+        firestoreData[key] = Number.isInteger(value)
+          ? { integerValue: value.toString() }
+          : { doubleValue: value };
       } else if (typeof value === "boolean") {
         firestoreData[key] = { booleanValue: value };
       } else if (value instanceof Array) {
@@ -129,19 +136,6 @@ export async function addFirestoreDocument(
           timestampValue: new Date(value.seconds * 1000).toISOString(),
         };
       }
-    }
-
-    // 디버깅: description 필드가 포함되었는지 확인
-    if (
-      collectionId === "collections" &&
-      documentData.description !== undefined
-    ) {
-      console.log("📝 description 필드 포함 여부:", {
-        inDocumentData: "description" in documentData,
-        value: documentData.description,
-        inFirestoreData: "description" in firestoreData,
-        firestoreValue: firestoreData.description,
-      });
     }
 
     const response = await fetch(url, {
@@ -184,10 +178,15 @@ export async function addFirestoreDocument(
     }
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        `Firestore API 오류: ${errorData.error?.message || response.statusText}`
-      );
+      const errorText = await response.text().catch(() => "");
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.error?.message || errorData.error?.status || errorMessage;
+      } catch {
+        if (errorText) errorMessage += `: ${errorText}`;
+      }
+      throw new Error(`Firestore API 오류: ${errorMessage}`);
     }
 
     const data = await response.json();

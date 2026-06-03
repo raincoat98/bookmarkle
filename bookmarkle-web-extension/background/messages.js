@@ -12,12 +12,11 @@ import {
 import { handleSaveBookmark, quickSaveBookmark } from "./bookmark.js";
 import {
   currentUser,
-  currentIdToken,
   setCurrentUser,
   setCurrentIdToken,
   clearAuthState,
+  notificationUrlMap,
 } from "./state.js";
-import { notificationUrlMap } from "./state.js";
 
 // 메시지 핸들러
 export async function handleMessage(message, sender, sendResponse) {
@@ -100,17 +99,9 @@ export async function handleMessage(message, sender, sendResponse) {
     }
 
     if (messageType === "AUTH_RESULT_FROM_WEB") {
-      console.log("📥 인증 결과 수신:", message);
+      console.log("📥 인증 결과 수신:", { hasUser: !!message.user, hasIdToken: !!message.idToken });
       const tabId = sender.tab?.id || message.tabId || null;
-      console.log(
-        "📋 사용할 탭 ID:",
-        tabId,
-        "(sender.tab:",
-        sender.tab?.id,
-        ", message.tabId:",
-        message.tabId,
-        ")"
-      );
+      console.log("📋 사용할 탭 ID:", tabId);
       await handleAuthResultFromWeb(message, tabId);
       sendResponse({ success: true });
       return;
@@ -141,8 +132,8 @@ export async function handleMessage(message, sender, sendResponse) {
         console.warn("⚠️ 토큰 응답에 토큰 없음:", message.error);
       }
       // 대기 중인 토큰 응답 핸들러 호출
-      if (window.tokenResponseHandler) {
-        window.tokenResponseHandler(message.idToken, message.user);
+      if (self.tokenResponseHandler) {
+        self.tokenResponseHandler(message.idToken, message.user);
       }
       sendResponse({ success: true });
       return;
@@ -153,30 +144,63 @@ export async function handleMessage(message, sender, sendResponse) {
   }
 }
 
+// 알림 URL을 storage에 저장 (서비스 워커 재시작 후에도 복원 가능)
+async function persistNotificationUrl(notificationId, url) {
+  notificationUrlMap.set(notificationId, url);
+  try {
+    const stored = await chrome.storage.local.get(["notificationUrls"]);
+    const notificationUrls = stored.notificationUrls || {};
+    notificationUrls[notificationId] = url;
+    await chrome.storage.local.set({ notificationUrls });
+  } catch (e) {
+    console.warn("⚠️ 알림 URL 저장 실패:", e);
+  }
+}
+
+// 알림 URL 조회: 메모리 → storage 순으로 fallback
+async function getNotificationUrl(notificationId) {
+  const memUrl = notificationUrlMap.get(notificationId);
+  if (memUrl) return memUrl;
+  try {
+    const stored = await chrome.storage.local.get(["notificationUrls"]);
+    return stored.notificationUrls?.[notificationId] || null;
+  } catch {
+    return null;
+  }
+}
+
+// 알림 URL 삭제
+async function deleteNotificationUrl(notificationId) {
+  notificationUrlMap.delete(notificationId);
+  try {
+    const stored = await chrome.storage.local.get(["notificationUrls"]);
+    const notificationUrls = stored.notificationUrls || {};
+    delete notificationUrls[notificationId];
+    await chrome.storage.local.set({ notificationUrls });
+  } catch (e) {
+    console.warn("⚠️ 알림 URL 삭제 실패:", e);
+  }
+}
+
 // 알림 이벤트 리스너 초기화
 export function setupNotificationHandlers() {
-  // 알림 클릭 이벤트 처리 (전역 리스너)
-  chrome.notifications.onClicked.addListener((notificationId) => {
-    const bookmarkUrl = notificationUrlMap.get(notificationId);
+  chrome.notifications.onClicked.addListener(async (notificationId) => {
+    const bookmarkUrl = await getNotificationUrl(notificationId);
     if (bookmarkUrl) {
       chrome.tabs.create({ url: bookmarkUrl });
-      notificationUrlMap.delete(notificationId); // 사용 후 삭제
+      deleteNotificationUrl(notificationId);
     }
   });
 
-  // 알림 버튼 클릭 이벤트 처리 (전역 리스너)
-  chrome.notifications.onButtonClicked.addListener(
-    (notificationId, buttonIndex) => {
-      const bookmarkUrl = notificationUrlMap.get(notificationId);
-      if (bookmarkUrl) {
-        chrome.tabs.create({ url: bookmarkUrl });
-        notificationUrlMap.delete(notificationId); // 사용 후 삭제
-      }
+  chrome.notifications.onButtonClicked.addListener(async (notificationId) => {
+    const bookmarkUrl = await getNotificationUrl(notificationId);
+    if (bookmarkUrl) {
+      chrome.tabs.create({ url: bookmarkUrl });
+      deleteNotificationUrl(notificationId);
     }
-  );
+  });
 
-  // 알림 닫기 이벤트 처리 (메모리 정리)
   chrome.notifications.onClosed.addListener((notificationId) => {
-    notificationUrlMap.delete(notificationId);
+    deleteNotificationUrl(notificationId);
   });
 }

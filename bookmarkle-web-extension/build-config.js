@@ -12,25 +12,14 @@ config({ path: path.join(__dirname, ".env") });
 const distDir = path.join(__dirname, "dist");
 
 // 환경 변수에서 값 가져오기
-const signinPopupUrl = process.env.SIGNIN_POPUP_URL || " ";
+const signinPopupUrl = process.env.SIGNIN_POPUP_URL || "";
+if (!signinPopupUrl) {
+  console.warn("⚠️ SIGNIN_POPUP_URL 환경 변수가 설정되지 않았습니다!");
+}
 const firebaseApiKey =
   process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || "";
-const firebaseAuthDomain =
-  process.env.FIREBASE_AUTH_DOMAIN ||
-  process.env.VITE_FIREBASE_AUTH_DOMAIN ||
-  "";
 const firebaseProjectId =
   process.env.FIREBASE_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID || "";
-const firebaseStorageBucket =
-  process.env.FIREBASE_STORAGE_BUCKET ||
-  process.env.VITE_FIREBASE_STORAGE_BUCKET ||
-  "";
-const firebaseMessagingSenderId =
-  process.env.FIREBASE_MESSAGING_SENDER_ID ||
-  process.env.VITE_FIREBASE_MESSAGING_SENDER_ID ||
-  "";
-const firebaseAppId =
-  process.env.FIREBASE_APP_ID || process.env.VITE_FIREBASE_APP_ID || "";
 
 console.log("📝 환경 변수 주입 중...\n");
 
@@ -59,10 +48,9 @@ if (fs.existsSync(manifestPath)) {
 // background.js에 SIGNIN_POPUP_URL 및 FIREBASE_PROJECT_ID 주입
 const backgroundPath = path.join(distDir, "background.js");
 if (fs.existsSync(backgroundPath)) {
-  const signinPopupUrlWithParam =
-    signinPopupUrl +
-    (signinPopupUrl.includes("?") ? "&" : "?") +
-    "extension=true";
+  const signinPopupUrlWithParam = signinPopupUrl
+    ? signinPopupUrl + (signinPopupUrl.includes("?") ? "&" : "?") + "extension=true"
+    : "";
 
   let content = fs.readFileSync(backgroundPath, "utf8");
 

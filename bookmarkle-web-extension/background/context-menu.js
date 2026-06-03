@@ -171,21 +171,16 @@ export function setupContextMenuHandlers() {
       lastClickTime[menuItemId] = now;
 
       switch (menuItemId) {
-        case "quick-mode":
+        case "quick-mode": {
           // 빠른 실행 모드 토글
-          chrome.storage.local.get(["quickMode"], async (result) => {
-            const newQuickMode = !result.quickMode;
-            await chrome.storage.local.set({ quickMode: newQuickMode });
-            console.log(
-              "빠른 실행 모드:",
-              newQuickMode ? "활성화" : "비활성화"
-            );
-            // 컨텍스트 메뉴 다시 생성하여 텍스트 업데이트
-            await createContextMenus();
-            // popup 상태도 업데이트
-            await updateQuickModePopup();
-          });
+          const stored = await chrome.storage.local.get(["quickMode"]);
+          const newQuickMode = !stored.quickMode;
+          await chrome.storage.local.set({ quickMode: newQuickMode });
+          console.log("빠른 실행 모드:", newQuickMode ? "활성화" : "비활성화");
+          await createContextMenus();
+          await updateQuickModePopup();
           break;
+        }
 
         case "open-dashboard":
           // 대시보드 열기
