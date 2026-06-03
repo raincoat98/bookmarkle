@@ -15,8 +15,12 @@ import {
   setCurrentUser,
   setCurrentIdToken,
   clearAuthState,
-  notificationUrlMap,
 } from "./state.js";
+import {
+  persistNotificationUrl,
+  getNotificationUrl,
+  deleteNotificationUrl,
+} from "./notifications.js";
 
 // 메시지 핸들러
 export async function handleMessage(message, sender, sendResponse) {
@@ -144,62 +148,18 @@ export async function handleMessage(message, sender, sendResponse) {
   }
 }
 
-// 알림 URL을 storage에 저장 (서비스 워커 재시작 후에도 복원 가능)
-async function persistNotificationUrl(notificationId, url) {
-  notificationUrlMap.set(notificationId, url);
-  try {
-    const stored = await chrome.storage.local.get(["notificationUrls"]);
-    const notificationUrls = stored.notificationUrls || {};
-    notificationUrls[notificationId] = url;
-    await chrome.storage.local.set({ notificationUrls });
-  } catch (e) {
-    console.warn("⚠️ 알림 URL 저장 실패:", e);
-  }
-}
-
-// 알림 URL 조회: 메모리 → storage 순으로 fallback
-async function getNotificationUrl(notificationId) {
-  const memUrl = notificationUrlMap.get(notificationId);
-  if (memUrl) return memUrl;
-  try {
-    const stored = await chrome.storage.local.get(["notificationUrls"]);
-    return stored.notificationUrls?.[notificationId] || null;
-  } catch {
-    return null;
-  }
-}
-
-// 알림 URL 삭제
-async function deleteNotificationUrl(notificationId) {
-  notificationUrlMap.delete(notificationId);
-  try {
-    const stored = await chrome.storage.local.get(["notificationUrls"]);
-    const notificationUrls = stored.notificationUrls || {};
-    delete notificationUrls[notificationId];
-    await chrome.storage.local.set({ notificationUrls });
-  } catch (e) {
-    console.warn("⚠️ 알림 URL 삭제 실패:", e);
-  }
-}
-
 // 알림 이벤트 리스너 초기화
 export function setupNotificationHandlers() {
-  chrome.notifications.onClicked.addListener(async (notificationId) => {
+  const openBookmarkUrl = async (notificationId) => {
     const bookmarkUrl = await getNotificationUrl(notificationId);
     if (bookmarkUrl) {
       chrome.tabs.create({ url: bookmarkUrl });
       deleteNotificationUrl(notificationId);
     }
-  });
+  };
 
-  chrome.notifications.onButtonClicked.addListener(async (notificationId) => {
-    const bookmarkUrl = await getNotificationUrl(notificationId);
-    if (bookmarkUrl) {
-      chrome.tabs.create({ url: bookmarkUrl });
-      deleteNotificationUrl(notificationId);
-    }
-  });
-
+  chrome.notifications.onClicked.addListener(openBookmarkUrl);
+  chrome.notifications.onButtonClicked.addListener(openBookmarkUrl);
   chrome.notifications.onClosed.addListener((notificationId) => {
     deleteNotificationUrl(notificationId);
   });

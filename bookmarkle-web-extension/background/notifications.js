@@ -4,6 +4,57 @@ import {
   getCurrentUser,
   getCurrentIdToken,
 } from "./state.js";
+import { parseErrorResponse } from "./utils.js";
+
+const DEFAULT_NOTIFICATION_SETTINGS = {
+  bookmarkNotifications: true,
+  systemNotifications: true,
+};
+
+// 알림 URL을 메모리 + storage에 저장 (서비스 워커 재시작 후 복원용)
+export async function persistNotificationUrl(notificationId, url) {
+  notificationUrlMap.set(notificationId, url);
+  try {
+    const stored = await chrome.storage.local.get(["notificationUrls"]);
+    const notificationUrls = stored.notificationUrls || {};
+    notificationUrls[notificationId] = url;
+    await chrome.storage.local.set({ notificationUrls });
+  } catch (e) {
+    console.warn("⚠️ 알림 URL 저장 실패:", e);
+  }
+}
+
+// 알림 URL 조회: 메모리 → storage 순으로 fallback
+export async function getNotificationUrl(notificationId) {
+  const memUrl = notificationUrlMap.get(notificationId);
+  if (memUrl) return memUrl;
+  try {
+    const stored = await chrome.storage.local.get(["notificationUrls"]);
+    return stored.notificationUrls?.[notificationId] || null;
+  } catch {
+    return null;
+  }
+}
+
+// 알림 URL 삭제
+export async function deleteNotificationUrl(notificationId) {
+  notificationUrlMap.delete(notificationId);
+  try {
+    const stored = await chrome.storage.local.get(["notificationUrls"]);
+    const notificationUrls = stored.notificationUrls || {};
+    delete notificationUrls[notificationId];
+    await chrome.storage.local.set({ notificationUrls });
+  } catch (e) {
+    console.warn("⚠️ 알림 URL 삭제 실패:", e);
+  }
+}
+
+// Firestore 알림 설정 필드 추출 (booleanValue, notifications 필드 fallback)
+function getNotificationField(fields, primaryKey) {
+  if (fields[primaryKey]?.booleanValue !== undefined) return fields[primaryKey].booleanValue;
+  if (fields.notifications?.booleanValue !== undefined) return fields.notifications.booleanValue;
+  return true;
+}
 
 // Firestore에서 알림 설정 가져오기
 export async function getNotificationSettings(uid, idToken) {
@@ -19,13 +70,9 @@ export async function getNotificationSettings(uid, idToken) {
     });
 
     if (!response.ok) {
-      // 문서가 없거나 권한 오류인 경우 기본값 반환
       if (response.status === 404 || response.status === 403) {
         console.log("⚠️ 알림 설정 문서를 찾을 수 없음, 기본값 사용");
-        return {
-          bookmarkNotifications: true,
-          systemNotifications: true,
-        };
+        return DEFAULT_NOTIFICATION_SETTINGS;
       }
       throw new Error(`HTTP ${response.status}`);
     }
@@ -33,35 +80,13 @@ export async function getNotificationSettings(uid, idToken) {
     const data = await response.json();
     const fields = data.fields || {};
 
-    // bookmarkNotifications 필드 확인
-    let bookmarkNotifications = true; // 기본값
-    if (fields.bookmarkNotifications?.booleanValue !== undefined) {
-      bookmarkNotifications = fields.bookmarkNotifications.booleanValue;
-    } else if (fields.notifications?.booleanValue !== undefined) {
-      // bookmarkNotifications가 없으면 notifications 필드 확인
-      bookmarkNotifications = fields.notifications.booleanValue;
-    }
-
-    // systemNotifications 필드 확인
-    let systemNotifications = true; // 기본값
-    if (fields.systemNotifications?.booleanValue !== undefined) {
-      systemNotifications = fields.systemNotifications.booleanValue;
-    } else if (fields.notifications?.booleanValue !== undefined) {
-      // systemNotifications가 없으면 notifications 필드 확인
-      systemNotifications = fields.notifications.booleanValue;
-    }
-
     return {
-      bookmarkNotifications,
-      systemNotifications,
+      bookmarkNotifications: getNotificationField(fields, "bookmarkNotifications"),
+      systemNotifications: getNotificationField(fields, "systemNotifications"),
     };
   } catch (error) {
     console.error("❌ 알림 설정 가져오기 실패:", error);
-    // 에러 발생 시 기본값 반환 (알림 활성화)
-    return {
-      bookmarkNotifications: true,
-      systemNotifications: true,
-    };
+    return DEFAULT_NOTIFICATION_SETTINGS;
   }
 }
 
@@ -82,21 +107,11 @@ export async function sendSystemNotification(
     };
 
     if (bookmarkUrl) {
-      notificationUrlMap.set(notificationId, bookmarkUrl);
+      await persistNotificationUrl(notificationId, bookmarkUrl);
       notificationOptions.buttons = [{ title: "북마크 보기" }];
-      // storage에도 저장 (서비스 워커 재시작 후 복원용)
-      try {
-        const stored = await chrome.storage.local.get(["notificationUrls"]);
-        const notificationUrls = stored.notificationUrls || {};
-        notificationUrls[notificationId] = bookmarkUrl;
-        await chrome.storage.local.set({ notificationUrls });
-      } catch (e) {
-        console.warn("⚠️ 알림 URL storage 저장 실패:", e);
-      }
     }
 
     await chrome.notifications.create(notificationId, notificationOptions);
-
     console.log("✅ 시스템 알림 전송 완료:", notificationId);
   } catch (error) {
     console.error("❌ 시스템 알림 전송 실패:", error);
@@ -135,21 +150,11 @@ export async function createBookmarkNotification(
         "Content-Type": "application/json",
         Authorization: `Bearer ${idToken}`,
       },
-      body: JSON.stringify({
-        fields: notificationData,
-      }),
+      body: JSON.stringify({ fields: notificationData }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const errorData = JSON.parse(errorText);
-        errorMessage = errorData.error?.message || errorData.error?.status || errorMessage;
-      } catch {
-        if (errorText) errorMessage += `: ${errorText}`;
-      }
-      throw new Error(`Firestore 알림 저장 오류: ${errorMessage}`);
+      throw new Error(`Firestore 알림 저장 오류: ${await parseErrorResponse(response)}`);
     }
 
     const data = await response.json();
@@ -177,13 +182,11 @@ export async function sendBookmarkSavedNotification(
       return;
     }
 
-    // 알림 설정 확인
     const notificationSettings = await getNotificationSettings(
       currentUser.uid,
       currentIdToken
     );
 
-    // 북마크 알림이 켜져있으면 Firestore에 알림 저장
     if (notificationSettings.bookmarkNotifications) {
       try {
         await createBookmarkNotification(
@@ -195,13 +198,11 @@ export async function sendBookmarkSavedNotification(
         console.log("✅ 북마크 알림 저장 완료");
       } catch (error) {
         console.error("❌ 북마크 알림 저장 실패 (계속 진행):", error);
-        // 알림 저장 실패해도 시스템 알림은 보내도록 계속 진행
       }
     } else {
       console.log("ℹ️ 북마크 알림이 비활성화되어 있음, Firestore 알림 건너뜀");
     }
 
-    // 시스템 알림이 켜져있으면 시스템 알림으로 전송
     if (notificationSettings.systemNotifications) {
       await sendSystemNotification(
         "북마크 저장 완료",
