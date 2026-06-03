@@ -204,30 +204,21 @@
           <span id="collectionModalCloseIcon" data-lucide="x"></span>
         </button>
         <div class="collection-modal-title" id="collectionModalTitle"></div>
-        <div style="margin-bottom: 12px">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px">
           <label
             id="collectionModalIconLabel"
-            style="
-              display: block;
-              margin-bottom: 6px;
-              font-size: 13px;
-              color: rgba(255, 255, 255, 0.8);
-            "
+            style="font-size: 13px; color: rgba(255, 255, 255, 0.8); white-space: nowrap; flex-shrink: 0;"
           ></label>
-          <div style="display: flex; gap: 8px; align-items: center">
-            <input
-              type="text"
-              id="collectionModalIconInput"
-              class="collection-modal-input"
-              placeholder="이모지 아이콘을 입력하세요 (예: 📁)"
-              autocomplete="off"
-              maxlength="2"
-              style="margin-bottom: 0; flex: 1"
-            />
-            <button id="emojiPickerBtn" type="button" class="emoji-picker-btn">
-              😀
-            </button>
-          </div>
+          <input
+            type="text"
+            id="collectionModalIconInput"
+            class="emoji-icon-input"
+            autocomplete="off"
+            maxlength="2"
+          />
+          <button id="emojiPickerBtn" type="button" class="emoji-picker-btn" style="display: none;">
+            😀
+          </button>
         </div>
         <div>
           <label

@@ -133,7 +133,7 @@ export function initializeEventListeners() {
   collectionModalCancelBtn?.addEventListener("click", () =>
     closeCollectionModal()
   );
-  collectionModal?.addEventListener("click", (event) => {
+  elements.collectionModal?.addEventListener("click", (event) => {
     if (event.target === elements.collectionModal) {
       closeCollectionModal();
     }
@@ -167,26 +167,19 @@ export function initializeEventListeners() {
 
   collectionModalIconInput?.addEventListener("keydown", (event) => {
     if (event.key.length === 1 && !event.ctrlKey && !event.metaKey) {
-      const keyCode = event.key.charCodeAt(0);
       const isASCII = /[\x00-\x7F]/.test(event.key);
       if (isASCII) {
-        if (
-          ![
-            "Backspace",
-            "Delete",
-            "ArrowLeft",
-            "ArrowRight",
-            "ArrowUp",
-            "ArrowDown",
-          ].includes(event.key)
-        ) {
-          event.preventDefault();
-        }
+        event.preventDefault();
       }
     }
   });
 
-  // 이모지 picker
+  // 이모지 picker — 아이콘 인풋 클릭 시 피커 열기
+  collectionModalIconInput?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    showEmojiPicker();
+  });
+
   emojiPickerBtn?.addEventListener("click", (event) => {
     event.stopPropagation();
     showEmojiPicker();
@@ -220,9 +213,11 @@ export function initializeEventListeners() {
   });
 
   // 컬렉션 검색 인풋 이벤트
-  collectionSearchInput?.addEventListener("input", async (event) => {
+  let filterDebounceId = null;
+  collectionSearchInput?.addEventListener("input", (event) => {
     const value = event.target.value;
-    await filterCollections(value);
+    clearTimeout(filterDebounceId);
+    filterDebounceId = setTimeout(() => filterCollections(value), 120);
   });
 
   collectionSearchInput?.addEventListener("keydown", (event) => {
