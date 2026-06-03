@@ -16,6 +16,7 @@
   },
   "bookmark": {
     "saveBookmark": "ブックマークを保存",
+    "saving": "保存中...",
     "currentPage": "現在のページ",
     "collection": "コレクション",
     "memo": "メモ",

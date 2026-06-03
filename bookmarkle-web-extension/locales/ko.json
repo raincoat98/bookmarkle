@@ -16,6 +16,7 @@
   },
   "bookmark": {
     "saveBookmark": "북마크 저장",
+    "saving": "저장 중...",
     "currentPage": "현재 페이지",
     "collection": "컬렉션",
     "memo": "메모",

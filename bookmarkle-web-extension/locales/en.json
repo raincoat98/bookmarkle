@@ -16,6 +16,7 @@
   },
   "bookmark": {
     "saveBookmark": "Save Bookmark",
+    "saving": "Saving...",
     "currentPage": "Current Page",
     "collection": "Collection",
     "memo": "Memo",
