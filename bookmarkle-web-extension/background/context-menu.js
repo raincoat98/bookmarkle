@@ -6,144 +6,60 @@ import {
 } from "./constants.js";
 import { updateQuickModePopup } from "./quick-mode.js";
 
-// 컨텍스트 메뉴 클릭 이벤트 처리 (중복 방지)
 let lastClickTime = {};
+
+function onMenuCreated(label) {
+  return () => {
+    if (chrome.runtime.lastError) {
+      if (!chrome.runtime.lastError.message?.includes("duplicate id")) {
+        console.error(
+          "컨텍스트 메뉴 생성 오류:",
+          chrome.runtime.lastError.message || chrome.runtime.lastError
+        );
+      }
+    } else if (label) {
+      console.log(`✅ 컨텍스트 메뉴 생성: ${label}`);
+    }
+  };
+}
 
 // 컨텍스트 메뉴 생성
 export async function createContextMenus() {
   try {
-    // 빠른 실행 모드 상태 확인
     const quickModeResult = await chrome.storage.local.get(["quickMode"]);
     const isQuickModeEnabled = quickModeResult.quickMode || false;
-    const quickModeTitle = isQuickModeEnabled
-      ? "⚡ 빠른 실행 모드 비활성화"
-      : "⚡ 빠른 실행 모드 활성화";
 
-    // 기존 메뉴 제거 (중복 방지) - Promise로 감싸서 완료 대기
-    await new Promise((resolve) => {
-      chrome.contextMenus.removeAll(() => {
-        // removeAll 완료 후 메뉴 생성
-        resolve();
-      });
-    });
+    await new Promise((resolve) => chrome.contextMenus.removeAll(resolve));
 
-    // 빠른 실행 모드 활성화/비활성화
     chrome.contextMenus.create(
       {
         id: "quick-mode",
-        title: quickModeTitle,
+        title: isQuickModeEnabled
+          ? "⚡ 빠른 실행 모드 비활성화"
+          : "⚡ 빠른 실행 모드 활성화",
         contexts: ["all"],
       },
-      () => {
-        if (chrome.runtime.lastError) {
-          // 중복 ID 오류는 무시 (이미 존재하는 경우)
-          if (
-            chrome.runtime.lastError.message &&
-            !chrome.runtime.lastError.message.includes("duplicate id")
-          ) {
-            console.error(
-              "컨텍스트 메뉴 생성 오류:",
-              chrome.runtime.lastError.message || chrome.runtime.lastError
-            );
-          }
-        } else {
-          console.log("✅ 컨텍스트 메뉴 생성: 빠른 실행 모드");
-        }
-      }
+      onMenuCreated("빠른 실행 모드")
     );
 
-    // 대시보드 열기
     chrome.contextMenus.create(
-      {
-        id: "open-dashboard",
-        title: "📊 대시보드 열기",
-        contexts: ["all"],
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-          if (
-            chrome.runtime.lastError.message &&
-            !chrome.runtime.lastError.message.includes("duplicate id")
-          ) {
-            console.error(
-              "컨텍스트 메뉴 생성 오류:",
-              chrome.runtime.lastError.message || chrome.runtime.lastError
-            );
-          }
-        } else {
-          console.log("✅ 컨텍스트 메뉴 생성: 대시보드");
-        }
-      }
+      { id: "open-dashboard", title: "📊 대시보드 열기", contexts: ["all"] },
+      onMenuCreated("대시보드")
     );
 
-    // 구분선
     chrome.contextMenus.create(
-      {
-        id: "separator-1",
-        type: "separator",
-        contexts: ["all"],
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-          if (
-            chrome.runtime.lastError.message &&
-            !chrome.runtime.lastError.message.includes("duplicate id")
-          ) {
-            console.error(
-              "컨텍스트 메뉴 생성 오류:",
-              chrome.runtime.lastError.message || chrome.runtime.lastError
-            );
-          }
-        }
-      }
+      { id: "separator-1", type: "separator", contexts: ["all"] },
+      onMenuCreated(null)
     );
 
-    // GitHub 저장소
     chrome.contextMenus.create(
-      {
-        id: "open-github",
-        title: "🐙 GitHub 저장소",
-        contexts: ["all"],
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-          if (
-            chrome.runtime.lastError.message &&
-            !chrome.runtime.lastError.message.includes("duplicate id")
-          ) {
-            console.error(
-              "컨텍스트 메뉴 생성 오류:",
-              chrome.runtime.lastError.message || chrome.runtime.lastError
-            );
-          }
-        } else {
-          console.log("✅ 컨텍스트 메뉴 생성: GitHub");
-        }
-      }
+      { id: "open-github", title: "🐙 GitHub 저장소", contexts: ["all"] },
+      onMenuCreated("GitHub")
     );
 
-    // 버그 리포트
     chrome.contextMenus.create(
-      {
-        id: "open-bug-report",
-        title: "🐛 버그 리포트",
-        contexts: ["all"],
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-          if (
-            chrome.runtime.lastError.message &&
-            !chrome.runtime.lastError.message.includes("duplicate id")
-          ) {
-            console.error(
-              "컨텍스트 메뉴 생성 오류:",
-              chrome.runtime.lastError.message || chrome.runtime.lastError
-            );
-          }
-        } else {
-          console.log("✅ 컨텍스트 메뉴 생성: 버그 리포트");
-        }
-      }
+      { id: "open-bug-report", title: "🐛 버그 리포트", contexts: ["all"] },
+      onMenuCreated("버그 리포트")
     );
 
     console.log("✅ 컨텍스트 메뉴 생성 완료");
@@ -154,7 +70,7 @@ export async function createContextMenus() {
 
 // 컨텍스트 메뉴 클릭 핸들러 초기화
 export function setupContextMenuHandlers() {
-  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  chrome.contextMenus.onClicked.addListener(async (info) => {
     try {
       const now = Date.now();
       const menuItemId = info.menuItemId;
