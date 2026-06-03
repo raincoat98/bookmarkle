@@ -23,10 +23,7 @@ export async function displayUserInfo(user) {
   const { userDetailsDiv } = elements;
   if (!userDetailsDiv) return;
 
-  // 기존 내용 완전 제거
-  while (userDetailsDiv.firstChild) {
-    userDetailsDiv.removeChild(userDetailsDiv.firstChild);
-  }
+  userDetailsDiv.replaceChildren();
 
   const rows = [
     { label: await t("user.email"), value: user.email },
@@ -67,19 +64,17 @@ export async function handleLogin() {
   }
   updateStatus(await t("common.loginPageOpening"), "neutral");
 
-  chrome.runtime.sendMessage({ type: "LOGIN_EMAIL" }, async () => {
-    if (chrome.runtime.lastError) {
-      console.error("로그인 메시지 오류:", chrome.runtime.lastError);
-      updateStatus(await t("common.loginRequestError"), "error");
+  chrome.runtime.sendMessage({ type: "LOGIN_EMAIL" }, async (response) => {
+    if (chrome.runtime.lastError || response?.success === false) {
+      const errorMsg = response?.error || null;
+      console.error("로그인 메시지 오류:", chrome.runtime.lastError || errorMsg);
+      updateStatus(errorMsg || await t("common.loginRequestError"), "error");
       if (loadingDiv) {
         loadingDiv.style.display = "none";
       }
       loginEmailBtn.disabled = false;
     } else {
-      updateStatus(
-        "로그인 페이지가 열렸습니다. 새 탭에서 진행해주세요.",
-        "neutral"
-      );
+      updateStatus(await t("common.loginPageOpened"), "neutral");
     }
   });
 }
@@ -138,44 +133,25 @@ export function updateLoginUI(isLoggedIn, user = null) {
     userHeaderDiv,
     loginButtons,
     loadingDiv,
-    userDetailsDiv,
   } = elements;
 
   if (isLoggedIn && user) {
-    userEmailSpan.textContent = user.displayName || user.email || "사용자";
+    if (userEmailSpan) userEmailSpan.textContent = user.displayName || user.email || "사용자";
     statusBadge?.classList.remove("logged-out");
-    if (loggedInContent) {
-      loggedInContent.style.display = "block";
-    }
-    if (userHeaderDiv) {
-      userHeaderDiv.style.display = "flex";
-    }
-    if (loginButtons) {
-      loginButtons.style.display = "none";
-    }
-    if (loadingDiv) {
-      loadingDiv.style.display = "none";
-    }
+    if (loggedInContent) loggedInContent.style.display = "block";
+    if (userHeaderDiv) userHeaderDiv.style.display = "flex";
+    if (loginButtons) loginButtons.style.display = "none";
+    if (loadingDiv) loadingDiv.style.display = "none";
     displayUserInfo(user);
-    setTimeout(() => {
-      fetchCollectionsList();
-    }, 0);
-    setCollectionControlsState();
-    setSaveButtonState();
+    setTimeout(() => fetchCollectionsList(), 0);
   } else {
     statusBadge?.classList.add("logged-out");
-    if (loggedInContent) {
-      loggedInContent.style.display = "none";
-    }
-    if (userHeaderDiv) {
-      userHeaderDiv.style.display = "none";
-    }
-    if (loginButtons) {
-      loginButtons.style.display = "flex";
-    }
+    if (loggedInContent) loggedInContent.style.display = "none";
+    if (userHeaderDiv) userHeaderDiv.style.display = "none";
+    if (loginButtons) loginButtons.style.display = "flex";
     clearTags();
-    setCollectionControlsState();
-    setSaveButtonState();
   }
+  setCollectionControlsState();
+  setSaveButtonState();
   reinitializeLucideIcons();
 }

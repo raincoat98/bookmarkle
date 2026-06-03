@@ -153,7 +153,11 @@ body.light-theme .user-info-modal-content div {
   font-size: 20px;
   color: #fff;
   cursor: pointer;
-  transition: color 0.3s ease;
+  transition: opacity 0.2s ease;
+}
+
+.user-info-modal-close:hover {
+  opacity: 0.7;
 }
 
 body.light-theme .user-info-modal-close {

@@ -1,15 +1,12 @@
 // Background Service Worker - 메인 진입점
-import { handleMessage } from "./background/messages.js";
-import { setupNotificationHandlers } from "./background/messages.js";
+import { handleMessage, setupNotificationHandlers } from "./background/messages.js";
 import {
   setupStorageListener,
   setupRuntimeListeners,
 } from "./background/events.js";
-import { setupContextMenuHandlers } from "./background/context-menu.js";
-import { setupQuickModeHandler } from "./background/quick-mode.js";
+import { setupContextMenuHandlers, createContextMenus } from "./background/context-menu.js";
+import { setupQuickModeHandler, updateQuickModePopup } from "./background/quick-mode.js";
 import { restoreUserInfo } from "./background/auth.js";
-import { createContextMenus } from "./background/context-menu.js";
-import { updateQuickModePopup } from "./background/quick-mode.js";
 
 // 메시지 수신 리스너
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {

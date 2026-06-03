@@ -16,6 +16,7 @@
   },
   "bookmark": {
     "saveBookmark": "Save Bookmark",
+    "saving": "Saving...",
     "currentPage": "Current Page",
     "collection": "Collection",
     "memo": "Memo",
@@ -29,7 +30,7 @@
   "collection": {
     "createCollection": "Create Collection",
     "collectionName": "Collection Name",
-    "collectionIcon": "Icon (Optional)",
+    "collectionIcon": "Icon",
     "name": "Name",
     "create": "Create",
     "creating": "Creating...",
@@ -38,7 +39,7 @@
     "noResults": "No search results",
     "searchPlaceholder": "Search collections...",
     "namePlaceholder": "Enter collection name...",
-    "iconPlaceholder": "Enter emoji icon (e.g.: 📁)",
+    "iconPlaceholder": "📁",
     "createNew": "Create new:",
     "refresh": "Refresh",
     "manageOnWeb": "Manage collections on web",
@@ -72,6 +73,7 @@
     "urlCopied": "URL copied.",
     "urlCopyFailed": "Unable to copy URL.",
     "loginPageOpening": "Opening login page...",
+    "loginPageOpened": "Login page opened. Please proceed in the new tab.",
     "loginRequestError": "An error occurred while requesting login.",
     "loginRequired": "You must log in to save bookmarks.",
     "pageInfoError": "Failed to get page information to save.",

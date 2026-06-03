@@ -1,9 +1,5 @@
-import {
-  restoreUserInfo,
-  refreshIdTokenWithRefreshToken,
-  getRefreshIdTokenFromWeb,
-} from "./auth.js";
-import { currentUser, currentIdToken, setCurrentIdToken } from "./state.js";
+import { ensureFreshToken } from "./auth.js";
+import { currentUser, currentIdToken } from "./state.js";
 import { runFirestoreQuery, addFirestoreDocument } from "./firestore.js";
 
 // 컬렉션 목록 요청 처리
@@ -11,32 +7,9 @@ export async function handleFetchCollections(sendResponse) {
   try {
     console.log("📂 컬렉션 목록 요청 처리 시작");
 
-    // idToken이 메모리에 없으면 storage에서 복원 시도
-    if (!currentIdToken) {
-      console.log("⚠️ idToken이 메모리에 없음, storage에서 복원 시도");
-      await restoreUserInfo();
-    }
+    const tokenReady = await ensureFreshToken();
 
-    // 토큰이 없거나 만료되었을 가능성이 있으면 갱신 시도
-    if (!currentIdToken) {
-      console.log("⚠️ idToken이 없음, 토큰 갱신 시도");
-
-      // 1단계: Refresh Token으로 갱신
-      let refreshedToken = await refreshIdTokenWithRefreshToken();
-
-      // 2단계: 실패하면 웹 탭에서 요청
-      if (!refreshedToken) {
-        console.log("⚠️ Refresh Token 갱신 실패, 웹 탭에서 요청 시도");
-        refreshedToken = await getRefreshIdTokenFromWeb();
-      }
-
-      if (refreshedToken) {
-        setCurrentIdToken(refreshedToken);
-        console.log("✅ 토큰 갱신 완료");
-      }
-    }
-
-    if (!currentUser || !currentUser.uid || !currentIdToken) {
+    if (!tokenReady || !currentUser || !currentUser.uid || !currentIdToken) {
       console.error("❌ 사용자 정보 또는 인증 토큰 없음:", {
         hasUser: !!currentUser,
         hasUid: !!currentUser?.uid,
@@ -44,7 +17,7 @@ export async function handleFetchCollections(sendResponse) {
       });
       sendResponse({
         success: false,
-        error: "확장 프로그램에서 먼저 로그인해주세요.",
+        error: !currentUser ? "확장 프로그램에서 먼저 로그인해주세요." : "인증이 만료되었습니다. 다시 로그인해주세요.",
       });
       return;
     }
@@ -108,36 +81,13 @@ export async function handleCreateCollection(request, sendResponse) {
   try {
     console.log("➕ 컬렉션 생성 요청 처리 시작");
 
-    // idToken이 메모리에 없으면 storage에서 복원 시도
-    if (!currentIdToken) {
-      console.log("⚠️ idToken이 메모리에 없음, storage에서 복원 시도");
-      await restoreUserInfo();
-    }
+    const tokenReady = await ensureFreshToken();
 
-    // 토큰이 없거나 만료되었을 가능성이 있으면 갱신 시도
-    if (!currentIdToken) {
-      console.log("⚠️ idToken이 없음, 토큰 갱신 시도");
-
-      // 1단계: Refresh Token으로 갱신
-      let refreshedToken = await refreshIdTokenWithRefreshToken();
-
-      // 2단계: 실패하면 웹 탭에서 요청
-      if (!refreshedToken) {
-        console.log("⚠️ Refresh Token 갱신 실패, 웹 탭에서 요청 시도");
-        refreshedToken = await getRefreshIdTokenFromWeb();
-      }
-
-      if (refreshedToken) {
-        setCurrentIdToken(refreshedToken);
-        console.log("✅ 토큰 갱신 완료");
-      }
-    }
-
-    if (!currentUser || !currentUser.uid || !currentIdToken) {
+    if (!tokenReady || !currentUser || !currentUser.uid || !currentIdToken) {
       console.error("❌ 사용자 정보 또는 인증 토큰 없음");
       sendResponse({
         success: false,
-        error: "확장 프로그램에서 먼저 로그인해주세요.",
+        error: !currentUser ? "확장 프로그램에서 먼저 로그인해주세요." : "인증이 만료되었습니다. 다시 로그인해주세요.",
       });
       return;
     }
@@ -163,7 +113,7 @@ export async function handleCreateCollection(request, sendResponse) {
       const collectionDocument = {
         name: collectionData.name.trim(),
         userId: currentUser.uid,
-        icon: collectionData.icon || "Folder",
+        icon: collectionData.icon || "",
         description: "",
         parentId: collectionData.parentId || null,
         isPinned: false,

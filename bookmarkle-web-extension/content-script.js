@@ -34,6 +34,7 @@ function handleGetDataCount(sendResponse) {
       event.origin === window.location.origin
     ) {
       window.removeEventListener("message", responseHandler);
+      clearTimeout(timeoutId);
       console.log("📥 컬렉션 개수 응답 수신 (content script):", event.data);
 
       chrome.runtime.sendMessage({
@@ -46,7 +47,7 @@ function handleGetDataCount(sendResponse) {
   window.addEventListener("message", responseHandler);
 
   // 타임아웃 (10초)
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     window.removeEventListener("message", responseHandler);
     chrome.runtime.sendMessage({
       type: "DATA_COUNT_RESPONSE",
@@ -62,7 +63,7 @@ function handleGetDataCount(sendResponse) {
 
 // 인증 결과 전달
 function handleAuthResult(event) {
-  console.log("📥 인증 결과 메시지 수신 (content script):", event.data);
+  console.log("📥 인증 결과 메시지 수신 (content script):", { hasUser: !!event.data.user, hasIdToken: !!event.data.idToken });
 
   // Background에 메시지 전송 (tabId는 background에서 sender.tab.id로 가져올 수 있음)
   chrome.runtime.sendMessage(
@@ -159,8 +160,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         url: window.location.href,
       }
     );
-    // 웹 앱에 로그아웃 메시지 전송
-    // targetOrigin을 '*'로 설정하여 모든 origin에서 받을 수 있도록 함 (보안상 일반적으로는 권장하지 않지만, 같은 origin이므로 안전)
     window.postMessage(
       {
         type: "EXTENSION_LOGOUT",

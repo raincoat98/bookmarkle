@@ -12,12 +12,15 @@ import {
 import { handleSaveBookmark, quickSaveBookmark } from "./bookmark.js";
 import {
   currentUser,
-  currentIdToken,
   setCurrentUser,
   setCurrentIdToken,
   clearAuthState,
 } from "./state.js";
-import { notificationUrlMap } from "./state.js";
+import {
+  persistNotificationUrl,
+  getNotificationUrl,
+  deleteNotificationUrl,
+} from "./notifications.js";
 
 // 메시지 핸들러
 export async function handleMessage(message, sender, sendResponse) {
@@ -100,17 +103,9 @@ export async function handleMessage(message, sender, sendResponse) {
     }
 
     if (messageType === "AUTH_RESULT_FROM_WEB") {
-      console.log("📥 인증 결과 수신:", message);
+      console.log("📥 인증 결과 수신:", { hasUser: !!message.user, hasIdToken: !!message.idToken });
       const tabId = sender.tab?.id || message.tabId || null;
-      console.log(
-        "📋 사용할 탭 ID:",
-        tabId,
-        "(sender.tab:",
-        sender.tab?.id,
-        ", message.tabId:",
-        message.tabId,
-        ")"
-      );
+      console.log("📋 사용할 탭 ID:", tabId);
       await handleAuthResultFromWeb(message, tabId);
       sendResponse({ success: true });
       return;
@@ -141,8 +136,8 @@ export async function handleMessage(message, sender, sendResponse) {
         console.warn("⚠️ 토큰 응답에 토큰 없음:", message.error);
       }
       // 대기 중인 토큰 응답 핸들러 호출
-      if (window.tokenResponseHandler) {
-        window.tokenResponseHandler(message.idToken, message.user);
+      if (self.tokenResponseHandler) {
+        self.tokenResponseHandler(message.idToken, message.user);
       }
       sendResponse({ success: true });
       return;
@@ -155,28 +150,17 @@ export async function handleMessage(message, sender, sendResponse) {
 
 // 알림 이벤트 리스너 초기화
 export function setupNotificationHandlers() {
-  // 알림 클릭 이벤트 처리 (전역 리스너)
-  chrome.notifications.onClicked.addListener((notificationId) => {
-    const bookmarkUrl = notificationUrlMap.get(notificationId);
+  const openBookmarkUrl = async (notificationId) => {
+    const bookmarkUrl = await getNotificationUrl(notificationId);
     if (bookmarkUrl) {
       chrome.tabs.create({ url: bookmarkUrl });
-      notificationUrlMap.delete(notificationId); // 사용 후 삭제
+      deleteNotificationUrl(notificationId);
     }
-  });
+  };
 
-  // 알림 버튼 클릭 이벤트 처리 (전역 리스너)
-  chrome.notifications.onButtonClicked.addListener(
-    (notificationId, buttonIndex) => {
-      const bookmarkUrl = notificationUrlMap.get(notificationId);
-      if (bookmarkUrl) {
-        chrome.tabs.create({ url: bookmarkUrl });
-        notificationUrlMap.delete(notificationId); // 사용 후 삭제
-      }
-    }
-  );
-
-  // 알림 닫기 이벤트 처리 (메모리 정리)
+  chrome.notifications.onClicked.addListener(openBookmarkUrl);
+  chrome.notifications.onButtonClicked.addListener(openBookmarkUrl);
   chrome.notifications.onClosed.addListener((notificationId) => {
-    notificationUrlMap.delete(notificationId);
+    deleteNotificationUrl(notificationId);
   });
 }

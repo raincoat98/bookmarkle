@@ -55,6 +55,12 @@ body.light-theme .tag-chip {
   color: #fff;
   font-size: 12px;
   cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s ease;
+}
+
+.tag-chip button:hover {
+  opacity: 1;
 }
 
 .status-chip {
@@ -106,6 +112,43 @@ body.light-theme .emoji-picker-btn {
 }
 
 body.light-theme .emoji-picker-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--accent);
+}
+
+.emoji-icon-input {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-color);
+  background: var(--field-bg);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 20px;
+  color: #fff;
+  padding: 0;
+  outline: none;
+  font-family: inherit;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emoji-icon-input:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+}
+
+.emoji-icon-input:focus {
+  border-color: var(--accent);
+}
+
+body.light-theme .emoji-icon-input {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+body.light-theme .emoji-icon-input:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: var(--accent);
 }

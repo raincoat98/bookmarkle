@@ -7,8 +7,7 @@ import {
 } from "./i18n.js";
 import { getTheme } from "./theme.js";
 import { reinitializeLucideIcons } from "./icons.js";
-import { isUserLoggedIn } from "./auth.js";
-import { displayUserInfo } from "./auth.js";
+import { isUserLoggedIn, displayUserInfo } from "./auth.js";
 
 export async function updateUIWithLanguage(lang = null) {
   const currentLang = lang || (await getCurrentLanguage());
@@ -152,13 +151,6 @@ export async function updateUIWithLanguage(lang = null) {
     collectionModalTitle.textContent = await t("collection.createCollection");
   }
 
-  const collectionNameLabel = document.querySelector(
-    'label[for="collectionModalNameInput"]'
-  );
-  if (collectionNameLabel) {
-    collectionNameLabel.textContent = await t("collection.collectionName");
-  }
-
   const collectionModalIconLabel = document.getElementById(
     "collectionModalIconLabel"
   );
@@ -239,6 +231,7 @@ export async function updateUIWithLanguage(lang = null) {
   // 사용자 정보가 로그인되어 있으면 사용자 정보를 다시 표시
   if (isUserLoggedIn()) {
     chrome.storage.local.get(["user"], async (result) => {
+      if (chrome.runtime.lastError) return;
       if (result?.user) {
         await displayUserInfo(result.user);
       }
@@ -247,22 +240,8 @@ export async function updateUIWithLanguage(lang = null) {
 }
 
 export async function showLanguageModal() {
+  if (document.getElementById("languageModal")) return;
   const currentLang = await getCurrentLanguage();
-  const resources = await (
-    await import("./i18n.js")
-  ).loadLanguageResources(currentLang);
-  const tLocal = (key) => {
-    const keys = key.split(".");
-    let value = resources;
-    for (const k of keys) {
-      if (value && typeof value === "object" && k in value) {
-        value = value[k];
-      } else {
-        return key;
-      }
-    }
-    return value || key;
-  };
 
   const modal = document.createElement("div");
   modal.id = "languageModal";

@@ -42,14 +42,7 @@ export async function showEmojiPicker() {
     await initializeEmojiPicker();
   }
 
-  if (emojiPickerModal) {
-    const isVisible = emojiPickerModal.classList.contains("show");
-    if (isVisible) {
-      emojiPickerModal.classList.remove("show");
-    } else {
-      emojiPickerModal.classList.add("show");
-    }
-  }
+  emojiPickerModal?.classList.toggle("show");
 }
 
 export function hideEmojiPicker() {
