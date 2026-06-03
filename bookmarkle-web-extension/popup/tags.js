@@ -78,19 +78,7 @@ export function initializeTagInput() {
   tagInput.addEventListener("keydown", (event) => {
     if (isComposing) return;
 
-    if (event.key === "Enter") {
-      event.preventDefault();
-      if (isProcessingTag) return;
-      isProcessingTag = true;
-      const value = tagInput.value.trim();
-      if (value) {
-        addTagsFromInput(value);
-        tagInput.value = "";
-      }
-      setTimeout(() => {
-        isProcessingTag = false;
-      }, 100);
-    } else if (event.key === ",") {
+    if (event.key === "Enter" || event.key === ",") {
       event.preventDefault();
       if (isProcessingTag) return;
       isProcessingTag = true;

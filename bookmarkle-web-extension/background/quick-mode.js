@@ -2,6 +2,12 @@ import { restoreUserInfo } from "./auth.js";
 import { currentUser } from "./state.js";
 import { quickSaveBookmark } from "./bookmark.js";
 
+function showBadge(text, color) {
+  chrome.action.setBadgeText({ text });
+  chrome.action.setBadgeBackgroundColor({ color });
+  setTimeout(() => chrome.action.setBadgeText({ text: "" }), 2000);
+}
+
 // 빠른 실행 모드 상태에 따라 popup 활성/비활성화
 export async function updateQuickModePopup() {
   try {
@@ -56,19 +62,9 @@ export function setupQuickModeHandler() {
 
       if (saveResult.success) {
         console.log("✅ 빠른 실행 모드: 북마크 저장 완료");
-        // 성공 알림
-        chrome.action.setBadgeText({ text: "✓" });
-        chrome.action.setBadgeBackgroundColor({ color: "#4CAF50" });
-        setTimeout(() => {
-          chrome.action.setBadgeText({ text: "" });
-        }, 2000);
+        showBadge("✓", "#4CAF50");
       } else {
-        // 실패 알림 (X 표시)
-        chrome.action.setBadgeText({ text: "✕" });
-        chrome.action.setBadgeBackgroundColor({ color: "#F44336" });
-        setTimeout(() => {
-          chrome.action.setBadgeText({ text: "" });
-        }, 2000);
+        showBadge("✕", "#F44336");
       }
     } catch (error) {
       console.error("❌ 빠른 실행 모드 클릭 처리 오류:", error);

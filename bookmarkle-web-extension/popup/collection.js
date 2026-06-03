@@ -46,7 +46,11 @@ export async function filterCollections(searchText = "") {
         const item = document.createElement("div");
         item.className = "collection-dropdown-item";
         if (collection.icon) {
-          item.innerHTML = `<span style="margin-right: 6px;">${collection.icon}</span>${collection.name}`;
+          const iconSpan = document.createElement("span");
+          iconSpan.style.marginRight = "6px";
+          iconSpan.textContent = collection.icon;
+          item.appendChild(iconSpan);
+          item.appendChild(document.createTextNode(collection.name));
         } else {
           item.textContent = collection.name;
         }
@@ -79,14 +83,14 @@ export async function filterCollections(searchText = "") {
   }
 }
 
-export function showCollectionDropdown() {
+export async function showCollectionDropdown() {
   const { collectionDropdown, collectionSearchInput } = elements;
   if (collectionDropdown) {
     collectionDropdown.style.display = "flex";
     if (collectionSearchInput) {
       collectionSearchInput.value = "";
       collectionSearchInput.focus();
-      filterCollections("");
+      await filterCollections("");
     }
   }
 }
@@ -175,7 +179,7 @@ export async function createCollectionFromModal() {
     return;
   }
 
-  const icon = collectionModalIconInput?.value?.trim() || "Folder";
+  const icon = collectionModalIconInput?.value?.trim() || "";
 
   const existingCollection = collections.find(
     (col) => col.name.toLowerCase() === name.toLowerCase()

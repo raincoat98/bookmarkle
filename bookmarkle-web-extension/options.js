@@ -22,16 +22,12 @@ function loadSettings() {
   });
 }
 
-// 현재 적용 URL 업데이트
+// 현재 적용 URL 업데이트 (입력 필드 기준)
 function updateCurrentUrl() {
-  chrome.storage.local.get(["customNewTabUrl"], (result) => {
-    const customUrl = result.customNewTabUrl || "";
-    const appliedUrl = customUrl.trim() || DEFAULT_URL;
-
-    if (currentUrlSpan) {
-      currentUrlSpan.textContent = appliedUrl;
-    }
-  });
+  const customUrl = customUrlInput?.value?.trim() || "";
+  if (currentUrlSpan) {
+    currentUrlSpan.textContent = customUrl || DEFAULT_URL;
+  }
 }
 
 // URL 유효성 검사

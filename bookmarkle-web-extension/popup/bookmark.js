@@ -38,7 +38,8 @@ export async function saveCurrentPageBookmark() {
 
   if (collectionName) {
     const parts = collectionName.split(/\s+/);
-    if (parts.length > 1 && parts[0].length === 1) {
+    // 첫 번째 부분이 단일 emoji/기호인 경우(surrogate pair 포함) 아이콘으로 간주
+    if (parts.length > 1 && Array.from(parts[0]).length === 1) {
       collectionName = parts.slice(1).join(" ");
     }
   }
@@ -71,7 +72,7 @@ export async function saveCurrentPageBookmark() {
   const { saveBookmarkBtn } = elements;
   const previousButtonText = saveBookmarkBtn?.textContent;
   if (saveBookmarkBtn) {
-    saveBookmarkBtn.textContent = "저장 중...";
+    saveBookmarkBtn.textContent = await t("bookmark.saving");
   }
 
   try {
