@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { Timestamp } from "firebase/firestore";
 import type { AdminUser } from "../../types";
 import {
   Search,
@@ -19,6 +20,12 @@ interface AdminUserListProps {
   loading: boolean;
   onToggleUserStatus: (uid: string, isActive: boolean) => void;
 }
+
+const formatDate = (date: Date | Timestamp): string => {
+  const resolvedDate = date instanceof Date ? date : date.toDate();
+
+  return resolvedDate.toLocaleDateString("ko-KR");
+};
 
 export function AdminUserList({
   users,
@@ -332,7 +339,7 @@ export function AdminUserList({
                             ? t("admin.monthly")
                             : t("admin.yearly")}
                           {selectedUser.subscription.endDate &&
-                            ` · ${t("admin.expiryDate")}: ${selectedUser.subscription.endDate.toLocaleDateString("ko-KR")}`}
+                            ` · ${t("admin.expiryDate")}: ${formatDate(selectedUser.subscription.endDate)}`}
                         </p>
                       </div>
                     </>

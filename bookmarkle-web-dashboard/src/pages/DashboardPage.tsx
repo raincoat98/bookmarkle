@@ -3,7 +3,7 @@ import { DashboardOverview } from "../components/dashboard/DashboardOverview";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
 import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
 import { useNotifications } from "../hooks/useNotifications";
-import type { Bookmark, BookmarkFormData, SortOption } from "../types";
+import type { Bookmark, BookmarkFormData } from "../types";
 import toast from "react-hot-toast";
 import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
 import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
@@ -90,13 +90,6 @@ export const DashboardPage: React.FC = () => {
       unsubscribeBookmarks();
     };
   }, [user?.uid, subscribeToCollections, subscribeToBookmarks]);
-
-  // 정렬 상태 관리
-  const [currentSort, setCurrentSort] = useState<SortOption>({
-    field: "isFavorite",
-    direction: "desc",
-    label: t("dashboard.sortByFavorite"),
-  });
 
   // 모달 상태
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
