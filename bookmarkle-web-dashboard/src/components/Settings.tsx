@@ -17,7 +17,6 @@ import {
   Shield,
   Crown,
   Trash2,
-  ExternalLink,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -514,24 +513,19 @@ export const Settings: React.FC<SettingsProps> = ({
             <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm leading-relaxed">
               {t("settings.deleteAccountDescription")}
             </p>
-            <div className="flex items-center justify-between">
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteAccountModal(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+              >
+                {t("common.cancel")}
+              </button>
               <button
                 onClick={handleConfirmDeleteAccount}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm"
               >
                 {t("settings.deleteAccount")}
               </button>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  // TODO: 자세히 알아보기 링크 (정책 페이지 등)
-                }}
-                className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors"
-              >
-                <span className="text-sm">{t("settings.learnMore")}</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
             </div>
           </div>
         </div>
