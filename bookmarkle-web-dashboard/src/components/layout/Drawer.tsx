@@ -141,7 +141,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           <div className="flex h-full flex-col bg-white dark:bg-[#111113] border-r border-gray-200/70 dark:border-white/[0.06]">
             {/* 헤더 */}
             <div
-              className={`flex items-center justify-between border-b border-gray-100 dark:border-white/[0.06] h-[64px] ${
+              className={`flex items-center justify-between border-b border-gray-100 dark:border-white/[0.06] h-[80px] ${
                 isDrawerCollapsed ? "px-3" : "px-4"
               }`}
             >
