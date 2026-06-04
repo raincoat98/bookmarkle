@@ -1,6 +1,5 @@
 import { isValidSender } from "./utils.js";
 import {
-  handleGoogleLogin,
   handleEmailLogin,
   handleAuthResultFromWeb,
   restoreUserInfo,
@@ -31,11 +30,6 @@ export async function handleMessage(message, sender, sendResponse) {
     }
 
     const messageType = typeof message === "string" ? message : message?.type;
-
-    if (messageType === "LOGIN_GOOGLE") {
-      handleGoogleLogin(sendResponse);
-      return;
-    }
 
     if (messageType === "LOGIN_EMAIL") {
       handleEmailLogin(sendResponse);

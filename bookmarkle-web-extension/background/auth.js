@@ -183,7 +183,7 @@ export async function getRefreshIdTokenFromWeb() {
 }
 
 // 인증 에러 응답
-export function sendAuthError(error) {
+function sendAuthError(error) {
   const handler = getAuthResponseHandler();
   if (handler) {
     handler({ success: false, error: error.message || error });
@@ -313,11 +313,6 @@ export async function handleLogin(sendResponse, mode = "google") {
     console.error(`❌ ${mode} 로그인 페이지 열기 오류:`, error);
     sendAuthError(error);
   }
-}
-
-// Google 로그인 처리
-export async function handleGoogleLogin(sendResponse) {
-  await handleLogin(sendResponse, "google");
 }
 
 // 이메일 로그인 처리

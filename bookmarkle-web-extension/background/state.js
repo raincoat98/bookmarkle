@@ -36,11 +36,3 @@ export function clearAuthState() {
   currentRefreshToken = null;
 }
 
-// 상태 조회 함수들 (getter)
-export function getCurrentUser() {
-  return currentUser;
-}
-
-export function getCurrentIdToken() {
-  return currentIdToken;
-}
