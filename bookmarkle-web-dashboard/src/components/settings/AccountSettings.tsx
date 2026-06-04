@@ -3,9 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import {
   Key,
-  Trash2,
   Shield,
-  X,
   ChevronRight,
   ChevronLeft,
   Pencil,
@@ -112,29 +110,25 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
               </div>
             </div>
 
-            {/* 액션 버튼 */}
-            <div className="border-t border-gray-200 dark:border-gray-700 px-6 py-4 space-y-3">
+            {/* 액션 행 목록 */}
+            <div className="border-t border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700/60">
               {isAdmin && (
                 <button
                   onClick={() => navigate("/admin")}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="w-full flex items-center gap-3 px-6 py-4 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors"
                 >
-                  <Shield className="w-4 h-4 mr-2" />
+                  <Shield className="w-4 h-4 shrink-0" />
                   {t("admin.title")}
                 </button>
               )}
               <button
                 onClick={handleLogout}
                 disabled={isLoggingOut}
-                className="w-full flex items-center justify-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex items-center gap-3 px-6 py-4 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Key className="w-4 h-4 mr-2" />
+                <Key className="w-4 h-4 shrink-0" />
                 {isLoggingOut ? "로그아웃 중..." : t("auth.logout")}
               </button>
-            </div>
-
-            {/* 상세 → 네비게이션 행 */}
-            <div className="border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => setShowDetail(true)}
                 className="w-full flex items-center justify-between px-6 py-4 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
@@ -161,7 +155,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
               </span>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-6 flex flex-col gap-6">
               {/* 이름 수정 */}
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-3">
@@ -177,23 +171,23 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
                       className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
                       autoFocus
                     />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveName}
-                        disabled={isSaving}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-                      >
-                        <Check className="w-4 h-4" />
-                        저장
-                      </button>
+                    <div className="flex gap-2 justify-end">
                       <button
                         onClick={() => {
                           setIsEditing(false);
                           setEditName(user?.displayName || "");
                         }}
-                        className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                        className="px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                       >
                         취소
+                      </button>
+                      <button
+                        onClick={handleSaveName}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-xs rounded-md hover:bg-purple-700 transition-colors disabled:opacity-50"
+                      >
+                        <Check className="w-3 h-3" />
+                        저장
                       </button>
                     </div>
                   </div>
@@ -213,17 +207,11 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
                 )}
               </div>
 
-              {/* 위험 영역 */}
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-red-500 mb-3">
-                  {t("settings.dangerZone")}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
-                  {t("settings.dangerZoneDescription")}
-                </p>
+              {/* 계정 삭제 — 하단 오른쪽 텍스트 */}
+              <div className="flex justify-end pt-4 border-t border-gray-100 dark:border-gray-700">
                 {deletionStatus?.isScheduled && deletionStatus.deletionDate ? (
-                  <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
-                    <p className="text-xs text-yellow-800 dark:text-yellow-200 mb-2">
+                  <div className="text-right">
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400 mb-1">
                       {t("settings.accountDeletionScheduledDescription", {
                         date: deletionStatus.deletionDate.toLocaleDateString(
                           i18n.language === "ko"
@@ -237,18 +225,16 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
                     </p>
                     <button
                       onClick={onCancelDeletion}
-                      className="w-full flex items-center justify-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors text-sm"
+                      className="text-xs text-yellow-600 dark:text-yellow-400 hover:underline"
                     >
-                      <X className="w-4 h-4 mr-2" />
                       {t("settings.cancelDeletion")}
                     </button>
                   </div>
                 ) : (
                   <button
                     onClick={onDeleteAccount}
-                    className="w-full flex items-center justify-center px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors text-sm"
+                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
                     {t("settings.deleteAccount")}
                   </button>
                 )}
