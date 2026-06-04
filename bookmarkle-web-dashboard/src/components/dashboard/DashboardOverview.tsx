@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { motion } from "framer-motion";
 import {
   DndContext,
   KeyboardSensor,
@@ -36,7 +35,7 @@ import { BookmarksWidget } from "./BookmarksWidget";
 import { ClockWidget } from "./ClockWidget";
 import { BibleVerseWidget } from "./BibleVerseWidget";
 import { useWidgetOrder, type WidgetConfig } from "../../hooks/useWidgetOrder";
-import type { Bookmark, Collection, SortOption } from "../../types";
+import type { Bookmark, Collection } from "../../types";
 import { useAuthStore } from "../../stores";
 import { useNotifications } from "../../hooks/useNotifications";
 import {
@@ -53,8 +52,6 @@ interface DashboardOverviewProps {
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onAddBookmark: () => void;
   onAddCollection: () => void;
-  currentSort?: SortOption;
-  onSortChange?: (sort: SortOption) => void;
   userId: string;
   bookmarksLoading?: boolean;
   collectionsLoading?: boolean;
@@ -68,8 +65,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
   onToggleFavorite,
   onAddBookmark,
   onAddCollection,
-  currentSort,
-  onSortChange,
   userId,
   bookmarksLoading = false,
   collectionsLoading = false,
@@ -325,8 +320,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       onToggleFavorite,
       onAddBookmark,
       onAddCollection,
-      currentSort,
-      onSortChange,
       bookmarksLoading,
       collectionsLoading,
     ]
@@ -619,49 +612,30 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           items={enabledWidgets.map((widget) => widget.id)}
           strategy={verticalListSortingStrategy}
         >
-          <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              visible: {
-                transition: {
-                  staggerChildren: 0.1,
-                },
-              },
-            }}
-            className="space-y-4 sm:space-y-6 lg:space-y-8"
-          >
-            {widgets
-              .filter((widget) => widget.enabled || isEditMode)
-              .map((widget, index) => {
-                const canMoveUp = index > 0;
-                const canMoveDown = index < widgets.length - 1;
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+            {enabledWidgets.map((widget, index) => {
+              const canMoveUp = index > 0;
+              const canMoveDown = index < enabledWidgets.length - 1;
 
-                return (
-                  <motion.div
-                    key={widget.id}
-                    variants={{
-                      hidden: { opacity: 0, y: 20 },
-                      visible: { opacity: 1, y: 0 },
-                    }}
-                    transition={{ duration: 0.4, ease: "easeOut" }}
-                  >
-                    <SortableWidget
-                      id={widget.id}
-                      enabled={widget.enabled}
-                      isEditMode={isEditMode}
-                      onToggle={() => toggleWidget(widget.id)}
-                      onMoveUp={() => moveWidgetUp(widget.id)}
-                      onMoveDown={() => moveWidgetDown(widget.id)}
-                      canMoveUp={canMoveUp}
-                      canMoveDown={canMoveDown}
-                    >
-                      {renderWidget(widget)}
-                    </SortableWidget>
-                  </motion.div>
-                );
-              })}
-          </motion.div>
+              return (
+                <SortableWidget
+                  key={widget.id}
+                  id={widget.id}
+                  enabled={widget.enabled}
+                  isEditMode={isEditMode}
+                  isMobile={isMobile}
+                  onToggle={() => toggleWidget(widget.id)}
+                  onMoveUp={() => moveWidgetUp(widget.id)}
+                  onMoveDown={() => moveWidgetDown(widget.id)}
+                  canMoveUp={canMoveUp}
+                  canMoveDown={canMoveDown}
+                  animationDelay={index * 0.05}
+                >
+                  {renderWidget(widget)}
+                </SortableWidget>
+              );
+            })}
+          </div>
         </SortableContext>
       </DndContext>
 

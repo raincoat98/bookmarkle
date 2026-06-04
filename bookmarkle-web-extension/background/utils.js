@@ -20,7 +20,7 @@ export function isTokenExpired(idToken) {
 }
 
 // 도메인 추출 함수
-export function getDomainFromUrl(url) {
+function getDomainFromUrl(url) {
   try {
     const urlObj = new URL(url);
     return urlObj.hostname;

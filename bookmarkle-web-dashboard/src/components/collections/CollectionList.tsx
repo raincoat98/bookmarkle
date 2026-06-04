@@ -345,9 +345,9 @@ export const CollectionList = ({
   }
 
   return (
-    <div className="w-full h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <div className="w-full h-full flex flex-col">
       {/* 헤더 */}
-      <div className="p-3 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      <div className="p-3 border-b border-gray-100 dark:border-white/[0.06] flex items-center justify-between">
         <h2 className="text-base font-semibold text-gray-900 dark:text-white">
           {t("collections.title")}
         </h2>
@@ -436,7 +436,7 @@ export const CollectionList = ({
       </div>
 
       {/* 새 컬렉션 추가 버튼 */}
-      <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-3 border-t border-gray-100 dark:border-white/[0.06]">
         <button
           onClick={onOpenAddCollectionModal}
           className="w-full flex items-center justify-center space-x-2 btn-primary py-2 font-medium"

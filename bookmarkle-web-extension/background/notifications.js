@@ -1,8 +1,8 @@
 import { FIREBASE_PROJECT_ID } from "./constants.js";
 import {
   notificationUrlMap,
-  getCurrentUser,
-  getCurrentIdToken,
+  currentUser,
+  currentIdToken,
 } from "./state.js";
 import { parseErrorResponse } from "./utils.js";
 
@@ -174,9 +174,6 @@ export async function sendBookmarkSavedNotification(
   bookmarkUrl
 ) {
   try {
-    const currentUser = getCurrentUser();
-    const currentIdToken = getCurrentIdToken();
-
     if (!currentUser || !currentUser.uid || !currentIdToken) {
       console.log("⚠️ 사용자 정보 또는 토큰 없음, 알림 건너뜀");
       return;

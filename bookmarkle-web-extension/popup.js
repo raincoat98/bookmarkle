@@ -1,5 +1,5 @@
 // 메인 진입점
-import { initializeIcons, reinitializeLucideIcons } from "./popup/icons.js";
+import { initializeIcons } from "./popup/icons.js";
 import { updateUIWithLanguage } from "./popup/ui.js";
 import { loadTheme } from "./popup/theme.js";
 import { loadAuthState } from "./popup/auth.js";

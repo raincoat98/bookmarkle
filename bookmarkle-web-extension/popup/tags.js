@@ -1,16 +1,9 @@
 import { elements } from "./dom.js";
 
 let tags = [];
-let isProcessingTag = false;
-let isComposing = false;
 
 export function getTags() {
   return [...tags];
-}
-
-export function setTags(newTags) {
-  tags = [...newTags];
-  renderTags();
 }
 
 export function clearTags() {
@@ -41,7 +34,7 @@ function renderTags() {
   });
 }
 
-export function addTagsFromInput(value) {
+function addTagsFromInput(value) {
   if (!value) return;
   const trimmedValue = value.trim();
   if (!trimmedValue) return;
@@ -66,6 +59,9 @@ export function addTagsFromInput(value) {
 export function initializeTagInput() {
   const { tagInput } = elements;
   if (!tagInput) return;
+
+  let isProcessingTag = false;
+  let isComposing = false;
 
   tagInput.addEventListener("compositionstart", () => {
     isComposing = true;

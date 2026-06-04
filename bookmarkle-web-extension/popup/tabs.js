@@ -1,5 +1,5 @@
 // 탭 관련 유틸리티
-export function queryActiveTab() {
+function queryActiveTab() {
   return new Promise((resolve, reject) => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (chrome.runtime.lastError) {

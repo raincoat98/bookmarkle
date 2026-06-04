@@ -8,6 +8,7 @@ import {
   requestNotificationPermission,
   showTestNotification,
 } from "../utils/browserNotifications";
+import { updateProfile } from "firebase/auth";
 import {
   setUserDefaultPage,
   getUserNotificationSettings,
@@ -689,6 +690,17 @@ export const useSettings = ({
     setImportData(null);
   };
 
+  // 프로필 수정 핸들러
+  const handleUpdateProfile = async (displayName: string) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      toast.error(t("common.error"));
+      return;
+    }
+    await updateProfile(currentUser, { displayName });
+    toast.success("이름이 변경되었습니다.");
+  };
+
   // 계정 삭제 핸들러
   const handleDeleteAccount = () => {
     setShowDeleteAccountModal(true);
@@ -784,6 +796,7 @@ export const useSettings = ({
     handleChromeBookmarkFileUpload,
     handleConfirmImport,
     handleCancelImport,
+    handleUpdateProfile,
     handleDeleteAccount,
     handleConfirmDeleteAccount,
     handleCancelDeletion,

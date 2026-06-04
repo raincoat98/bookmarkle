@@ -4,63 +4,6 @@ console.log("📥 Content script 로드됨", window.location.href);
 
 // ===== 헬퍼 함수 =====
 
-// 컬렉션 개수 요청 처리
-function handleGetDataCount(sendResponse) {
-  console.log("📥 컬렉션 개수 요청 수신 (content script)");
-  sendResponse({ received: true });
-
-  // 사용자 정보 가져오기
-  chrome.storage.local.get(["user"], (result) => {
-    if (chrome.runtime.lastError || !result.user) {
-      console.warn("사용자 정보 없음");
-      return;
-    }
-
-    // 웹 앱에 메시지 전송 (컬렉션 개수 요청)
-    window.postMessage(
-      {
-        type: "GET_COLLECTIONS_COUNT_FROM_EXTENSION",
-        user: result.user,
-      },
-      window.location.origin
-    );
-  });
-
-  // 응답 핸들러 설정
-  const responseHandler = (event) => {
-    if (
-      event.data &&
-      event.data.type === "COLLECTIONS_COUNT_RESPONSE" &&
-      event.origin === window.location.origin
-    ) {
-      window.removeEventListener("message", responseHandler);
-      clearTimeout(timeoutId);
-      console.log("📥 컬렉션 개수 응답 수신 (content script):", event.data);
-
-      chrome.runtime.sendMessage({
-        type: "DATA_COUNT_RESPONSE",
-        response: event.data,
-      });
-    }
-  };
-
-  window.addEventListener("message", responseHandler);
-
-  // 타임아웃 (10초)
-  const timeoutId = setTimeout(() => {
-    window.removeEventListener("message", responseHandler);
-    chrome.runtime.sendMessage({
-      type: "DATA_COUNT_RESPONSE",
-      response: {
-        success: false,
-        error: "타임아웃: 웹 앱으로부터 응답을 받지 못했습니다.",
-      },
-    });
-  }, 10000);
-
-  return false;
-}
-
 // 인증 결과 전달
 function handleAuthResult(event) {
   console.log("📥 인증 결과 메시지 수신 (content script):", { hasUser: !!event.data.user, hasIdToken: !!event.data.idToken });
@@ -139,15 +82,6 @@ function handleTokenRequest(sendResponse) {
 
 // Background로부터 메시지 수신
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "PING") {
-    sendResponse({ ready: true });
-    return true;
-  }
-
-  if (message.type === "GET_DATA_COUNT") {
-    return handleGetDataCount(sendResponse);
-  }
-
   if (message.type === "TOKEN_REQUEST") {
     return handleTokenRequest(sendResponse);
   }
