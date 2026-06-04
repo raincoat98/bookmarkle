@@ -9,7 +9,7 @@ export function getTheme() {
   }
 }
 
-export async function setTheme(theme) {
+async function setTheme(theme) {
   try {
     localStorage.setItem("theme", theme);
     applyTheme(theme);
@@ -18,7 +18,7 @@ export async function setTheme(theme) {
   }
 }
 
-export function applyTheme(theme) {
+function applyTheme(theme) {
   const body = document.body;
   if (theme === "light") {
     body.classList.add("light-theme");

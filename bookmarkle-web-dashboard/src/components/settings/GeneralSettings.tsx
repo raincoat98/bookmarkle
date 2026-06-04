@@ -11,6 +11,22 @@ interface GeneralSettingsProps {
   onImportChromeBookmarks: () => void;
 }
 
+const PAGES = [
+  { value: "dashboard", icon: Briefcase, labelKey: "settings.dashboard" },
+  { value: "bookmarks", icon: List,      labelKey: "settings.bookmarkList" },
+] as const;
+
+const DATA_ACTIONS = [
+  [
+    { labelKey: "settings.exportData",    descKey: "settings.exportDataDescription",    icon: Download, action: "export",        variant: "default" as const },
+    { labelKey: "settings.importData",    descKey: "settings.importDataDescription",    icon: Upload,   action: "import",        variant: "default" as const },
+  ],
+  [
+    { labelKey: "settings.exportChromeBookmarks", descKey: "settings.exportChromeBookmarksDescription", icon: Download, action: "exportChrome", variant: "blue" as const },
+    { labelKey: "settings.importChromeBookmarks", descKey: "settings.importChromeBookmarksDescription", icon: Upload,   action: "importChrome", variant: "blue" as const },
+  ],
+] as const;
+
 export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
   defaultPage,
   onDefaultPageChange,
@@ -21,151 +37,91 @@ export const GeneralSettings: React.FC<GeneralSettingsProps> = ({
 }) => {
   const { t } = useTranslation();
 
+  const handlers: Record<string, () => void> = {
+    export: onExportData,
+    import: onImportData,
+    exportChrome: onExportChromeBookmarks,
+    importChrome: onImportChromeBookmarks,
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {t("settings.basicSettings")}
-        </h3>
-        <div className="space-y-6">
-          <div>
-            <p className="font-medium text-gray-900 dark:text-white mb-3">
-              {t("settings.mainPage")}
-            </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              {t("settings.mainPageDescription")}
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                onClick={() => onDefaultPageChange("dashboard")}
-                className={`p-4 rounded-lg border-2 transition-colors text-left ${
-                  defaultPage === "dashboard"
-                    ? "border-brand-500 bg-brand-50 dark:bg-brand-900"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-brand-100 dark:bg-brand-800 rounded-lg flex items-center justify-center">
-                    <Briefcase className="w-5 h-5 text-brand-600 dark:text-brand-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {t("settings.dashboard")}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t("settings.dashboardDescription")}
-                    </p>
-                  </div>
-                </div>
-              </button>
-              <button
-                onClick={() => onDefaultPageChange("bookmarks")}
-                className={`p-4 rounded-lg border-2 transition-colors text-left ${
-                  defaultPage === "bookmarks"
-                    ? "border-brand-500 bg-brand-50 dark:bg-brand-900"
-                    : "border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600"
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800 rounded-lg flex items-center justify-center">
-                    <List className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-gray-900 dark:text-white">
-                      {t("settings.bookmarkList")}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {t("settings.bookmarkListDescription")}
-                    </p>
-                  </div>
-                </div>
-              </button>
-            </div>
+    <div className="space-y-4">
+      {/* 메인 페이지 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            {t("settings.mainPage")}
+          </h3>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+            {t("settings.mainPageDescription")}
+          </p>
+        </div>
+        <div className="p-4">
+          <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-900/60 rounded-lg">
+            {PAGES.map(({ value, icon: Icon, labelKey }) => {
+              const active = defaultPage === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => onDefaultPageChange(value)}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all duration-150 ${
+                    active
+                      ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span>{t(labelKey)}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          {t("settings.dataManagement")}
-        </h3>
-        <div className="space-y-4">
-          {/* 데이터 내보내기 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {t("settings.exportData")}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("settings.exportDataDescription")}
-              </p>
-            </div>
-            <button
-              onClick={onExportData}
-              className="inline-flex items-center px-3 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {t("settings.export")}
-            </button>
-          </div>
-          {/* 데이터 가져오기 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {t("settings.importData")}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("settings.importDataDescription")}
-              </p>
-            </div>
-            <button
-              onClick={onImportData}
-              className="inline-flex items-center px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {t("settings.import")}
-            </button>
-          </div>
-
-          {/* 구분선 */}
-          <div className="border-t border-gray-200 dark:border-gray-700 my-4"></div>
-
-          {/* HTML 내보내기 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {t("settings.exportChromeBookmarks")}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("settings.exportChromeBookmarksDescription")}
-              </p>
-            </div>
-            <button
-              onClick={onExportChromeBookmarks}
-              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              {t("settings.exportChrome")}
-            </button>
-          </div>
-          {/* HTML 가져오기 */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-gray-900 dark:text-white">
-                {t("settings.importChromeBookmarks")}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {t("settings.importChromeBookmarksDescription")}
-              </p>
-            </div>
-            <button
-              onClick={onImportChromeBookmarks}
-              className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              {t("settings.importChrome")}
-            </button>
-          </div>
+      {/* 데이터 관리 */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            {t("settings.dataManagement")}
+          </h3>
+        </div>
+        <div>
+          {DATA_ACTIONS.map((group, gi) => (
+            <React.Fragment key={gi}>
+              {gi > 0 && (
+                <div className="mx-5 border-t border-gray-100 dark:border-gray-700/60" />
+              )}
+              <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
+                {group.map(({ labelKey, descKey, icon: Icon, action, variant }) => (
+                  <div
+                    key={action}
+                    className="flex items-center justify-between px-5 py-3.5"
+                  >
+                    <div className="min-w-0 mr-4">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                        {t(labelKey)}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
+                        {t(descKey)}
+                      </p>
+                    </div>
+                    <button
+                      onClick={handlers[action]}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium shrink-0 transition-colors ${
+                        variant === "blue"
+                          ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      }`}
+                    >
+                      <Icon className="w-3.5 h-3.5" />
+                      {t(action.startsWith("export") ? "settings.export" : "settings.import")}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </React.Fragment>
+          ))}
         </div>
       </div>
     </div>

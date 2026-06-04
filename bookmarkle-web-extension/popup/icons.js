@@ -10,7 +10,3 @@ export function initializeIcons() {
     console.warn("Lucide library not fully loaded");
   }
 }
-
-export function reinitializeLucideIcons() {
-  initializeIcons();
-}

@@ -4,7 +4,6 @@ import { updateStatus } from "./status.js";
 import { hideEmojiPicker } from "./emoji.js";
 
 let collections = [];
-let filteredCollections = [];
 let userIsLoggedIn = false;
 
 export function setUserLoggedIn(isLoggedIn) {
@@ -15,7 +14,7 @@ export function getCollections() {
   return collections;
 }
 
-export async function updateCollectionsList(newCollections = []) {
+async function updateCollectionsList(newCollections = []) {
   collections = newCollections;
   await filterCollections("");
 }
@@ -24,7 +23,7 @@ export async function filterCollections(searchText = "") {
   const { collectionDropdownList, collectionCreateOption, newCollectionName } =
     elements;
   const search = searchText.trim().toLowerCase();
-  filteredCollections = search
+  const filteredCollections = search
     ? collections.filter((col) => col.name.toLowerCase().includes(search))
     : collections;
 

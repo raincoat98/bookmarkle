@@ -18,29 +18,26 @@
     -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background-color: #f3f4f6;
   }
 
   .dark body {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    background-color: #0d0d10;
   }
 }
 
 @layer components {
   /* 현대적인 버튼 스타일 */
   .btn-primary {
-    @apply bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 
-           text-white font-medium py-3 px-6 rounded-2xl transition-all duration-300 
-           shadow-soft hover:shadow-soft-lg transform hover:scale-105 
-           backdrop-blur-sm border border-white/20;
+    @apply bg-violet-600 hover:bg-violet-700
+           text-white font-medium py-2.5 px-5 rounded-lg transition-colors duration-150
+           shadow-sm;
   }
 
   .btn-secondary {
-    @apply bg-white/80 dark:bg-gray-800/80 hover:bg-white dark:hover:bg-gray-800 
-           text-gray-800 dark:text-gray-200 font-medium py-3 px-6 rounded-2xl 
-           transition-all duration-300 shadow-soft hover:shadow-soft-lg 
-           transform hover:scale-105 backdrop-blur-sm border border-gray-200/50 
-           dark:border-gray-700/50;
+    @apply bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700
+           text-gray-800 dark:text-gray-200 font-medium py-2.5 px-5 rounded-lg
+           transition-colors duration-150 border border-gray-200 dark:border-gray-700;
   }
 
   .btn-ghost {
@@ -51,15 +48,14 @@
 
   /* 글래스모피즘 카드 */
   .card {
-    @apply bg-white/80 dark:bg-gray-800/80 backdrop-blur-md rounded-2xl 
-           shadow-soft border border-white/20 dark:border-gray-700/20 
-           transition-all duration-300 hover:shadow-soft-lg;
+    @apply bg-white dark:bg-gray-800/90 rounded-xl
+           shadow-sm border border-gray-200/80 dark:border-white/[0.06]
+           transition-shadow duration-150 hover:shadow-md;
   }
 
   .card-glass {
-    @apply bg-white/60 dark:bg-gray-800/60 backdrop-blur-lg rounded-3xl 
-           shadow-glass border border-white/30 dark:border-gray-700/30 
-           transition-all duration-300 hover:shadow-glass-sm;
+    @apply bg-white dark:bg-gray-800/90 rounded-xl
+           shadow-sm border border-gray-200/80 dark:border-white/[0.06];
   }
 
   /* 모바일 터치 최적화 */
@@ -159,14 +155,13 @@
 
   /* 네비게이션 */
   .nav-item {
-    @apply flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 
-           text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-800/50 
-           backdrop-blur-sm;
+    @apply flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-150
+           text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5
+           hover:text-gray-900 dark:hover:text-gray-100;
   }
 
   .nav-item.active {
-    @apply bg-gradient-to-r from-brand-500/10 to-accent-500/10 
-           text-brand-700 dark:text-brand-300 font-medium;
+    @apply bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300;
   }
 
   /* 애니메이션 */
@@ -233,11 +228,11 @@
 
   /* 호버 효과 */
   .hover-lift {
-    @apply transition-all duration-300 hover:transform hover:scale-105 hover:shadow-soft-lg;
+    @apply transition-shadow duration-150 hover:shadow-md;
   }
 
   .hover-glow {
-    @apply transition-all duration-300 hover:shadow-lg hover:shadow-brand-500/25;
+    @apply transition-shadow duration-150 hover:shadow-lg hover:shadow-violet-500/15;
   }
 
   /* 로딩 스피너 */

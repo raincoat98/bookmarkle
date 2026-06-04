@@ -4,7 +4,7 @@ let i18nResources = {};
 let currentLanguage = DEFAULT_LANGUAGE;
 
 // 언어 리소스 로드
-export async function loadLanguageResources(lang) {
+async function loadLanguageResources(lang) {
   if (i18nResources[lang]) {
     return i18nResources[lang];
   }

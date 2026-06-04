@@ -306,8 +306,6 @@ export const DashboardPage: React.FC = () => {
             onAddBookmark={() => setIsAddModalOpen(true)}
             onAddCollection={() => setIsAddCollectionModalOpen(true)}
             onToggleFavorite={handleToggleFavorite}
-            currentSort={currentSort}
-            onSortChange={setCurrentSort}
             userId={user?.uid || ""}
             bookmarksLoading={bookmarksLoading}
             collectionsLoading={collectionsLoading}

@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ChevronDown, ChevronUp, Eye, EyeOff, Move } from "lucide-react";
+import { ChevronDown, ChevronUp, EyeOff, Eye, Move } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { WidgetId } from "../../hooks/useWidgetOrder";
 
@@ -11,11 +11,13 @@ interface SortableWidgetProps {
   children: React.ReactNode;
   isEditMode: boolean;
   enabled: boolean;
+  isMobile: boolean;
   onToggle: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
+  animationDelay?: number;
 }
 
 export const SortableWidget: React.FC<SortableWidgetProps> = ({
@@ -23,24 +25,15 @@ export const SortableWidget: React.FC<SortableWidgetProps> = ({
   children,
   isEditMode,
   enabled,
+  isMobile,
   onToggle,
   onMoveUp,
   onMoveDown,
   canMoveUp,
   canMoveDown,
+  animationDelay = 0,
 }) => {
   const { t } = useTranslation();
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   const {
     attributes,
@@ -74,8 +67,7 @@ export const SortableWidget: React.FC<SortableWidgetProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: enabled ? 1 : 0.5, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.3 }}
-      whileHover={undefined}
+      transition={{ duration: 0.3, delay: animationDelay }}
       className={`relative group ${isDragging ? "opacity-50 z-50" : ""} ${
         isEditMode && !isMobile ? "cursor-move" : ""
       } ${!enabled && isEditMode ? "opacity-50" : ""}`}
@@ -89,9 +81,7 @@ export const SortableWidget: React.FC<SortableWidgetProps> = ({
               onToggle();
             }}
             className="p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-            title={
-              enabled ? t("dashboard.hideWidget") : t("dashboard.showWidget")
-            }
+            title={enabled ? t("dashboard.hideWidget") : t("dashboard.showWidget")}
           >
             {enabled ? (
               <EyeOff className="w-4 h-4 text-gray-600 dark:text-gray-400" />
@@ -100,44 +90,48 @@ export const SortableWidget: React.FC<SortableWidgetProps> = ({
             )}
           </button>
 
-          <div className="md:hidden flex flex-col space-y-1">
-            {canMoveUp && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveUp?.();
-                }}
-                className="p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                title={t("common.moveUp")}
-              >
-                <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-            )}
-            {canMoveDown && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMoveDown?.();
-                }}
-                className="p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                title={t("common.moveDown")}
-              >
-                <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-              </button>
-            )}
-          </div>
+          {isMobile && (
+            <div className="flex flex-col space-y-1">
+              {canMoveUp && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveUp?.();
+                  }}
+                  className="p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  title={t("common.moveUp")}
+                >
+                  <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </button>
+              )}
+              {canMoveDown && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMoveDown?.();
+                  }}
+                  className="p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  title={t("common.moveDown")}
+                >
+                  <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                </button>
+              )}
+            </div>
+          )}
 
-          <div className="hidden md:block p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-            <Move className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-          </div>
+          {!isMobile && (
+            <div className="p-1 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+              <Move className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+            </div>
+          )}
         </div>
       )}
       <div
-        className={`${
+        className={
           isEditMode
             ? "border-2 border-dashed border-blue-300 dark:border-blue-600 rounded-lg p-2"
             : ""
-        }`}
+        }
       >
         {children}
       </div>

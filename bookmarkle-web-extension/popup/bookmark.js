@@ -7,7 +7,6 @@ import { getCollections, showCollectionModal } from "./collection.js";
 
 let isSaving = false;
 let userIsLoggedIn = false;
-let currentTabInfo = null;
 
 export function setUserLoggedIn(isLoggedIn) {
   userIsLoggedIn = isLoggedIn;
@@ -26,7 +25,7 @@ export async function saveCurrentPageBookmark() {
     return;
   }
 
-  currentTabInfo = await loadCurrentTabInfo();
+  const currentTabInfo = await loadCurrentTabInfo();
   if (!currentTabInfo || !currentTabInfo.url || !currentTabInfo.title) {
     updateStatus(await t("common.pageInfoError"), "error");
     return;
@@ -128,7 +127,7 @@ export async function copyCurrentUrl() {
 
 export async function loadCurrentTabInfoToInput() {
   try {
-    currentTabInfo = await loadCurrentTabInfo();
+    const currentTabInfo = await loadCurrentTabInfo();
     if (currentTabInfo && elements.currentPageInput) {
       elements.currentPageInput.value = currentTabInfo.url || "";
     }

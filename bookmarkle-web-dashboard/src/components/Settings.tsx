@@ -17,7 +17,6 @@ import {
   Shield,
   Crown,
   Trash2,
-  ExternalLink,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
 import { GeneralSettings } from "./settings/GeneralSettings";
@@ -99,6 +98,7 @@ export const Settings: React.FC<SettingsProps> = ({
     handleChromeBookmarkFileUpload,
     handleConfirmImport,
     handleCancelImport,
+    handleUpdateProfile,
     handleDeleteAccount,
     handleConfirmDeleteAccount,
     handleCancelDeletion,
@@ -241,6 +241,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <AccountSettings
             user={user}
             onLogout={logout}
+            onUpdateProfile={handleUpdateProfile}
             onDeleteAccount={handleDeleteAccount}
             deletionStatus={deletionStatus}
             onCancelDeletion={handleCancelDeletion}
@@ -312,22 +313,23 @@ export const Settings: React.FC<SettingsProps> = ({
           {/* 사이드바 */}
           <div className="lg:w-72 flex-shrink-0">
             {/* 모바일: 가로 스크롤 */}
-            <nav className="block lg:hidden overflow-x-auto -mx-4 px-4 scrollbar-hide bg-white dark:bg-gray-800 rounded-lg py-2">
-              <div className="flex gap-2">
+            <nav className="block lg:hidden overflow-x-auto -mx-4 px-4 scrollbar-hide">
+              <div className="flex gap-1.5 pb-1">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
+                  const active = activeTab === tab.id;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center space-x-3 px-4 py-3 whitespace-nowrap rounded-lg transition-colors flex-shrink-0 ${
-                        activeTab === tab.id
-                          ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      className={`flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl transition-colors flex-shrink-0 min-w-[56px] ${
+                        active
+                          ? "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300"
+                          : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
                       }`}
                     >
-                      <Icon className="w-5 h-5" />
-                      <span className="font-medium">{tab.label}</span>
+                      <Icon className={`w-4.5 h-4.5 ${active ? "" : ""}`} style={{ width: "18px", height: "18px" }} />
+                      <span className="text-[10px] font-medium leading-none whitespace-nowrap">{tab.label}</span>
                     </button>
                   );
                 })}
@@ -512,24 +514,19 @@ export const Settings: React.FC<SettingsProps> = ({
             <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm leading-relaxed">
               {t("settings.deleteAccountDescription")}
             </p>
-            <div className="flex items-center justify-between">
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDeleteAccountModal(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
+              >
+                {t("common.cancel")}
+              </button>
               <button
                 onClick={handleConfirmDeleteAccount}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm"
               >
                 {t("settings.deleteAccount")}
               </button>
-              <a
-                href="#"
-                onClick={(e) => {
-                  e.preventDefault();
-                  // TODO: 자세히 알아보기 링크 (정책 페이지 등)
-                }}
-                className="flex items-center space-x-1 text-white hover:text-gray-200 transition-colors"
-              >
-                <span className="text-sm">{t("settings.learnMore")}</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
             </div>
           </div>
         </div>

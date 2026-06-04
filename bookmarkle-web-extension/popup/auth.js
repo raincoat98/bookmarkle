@@ -1,7 +1,7 @@
 import { elements } from "./dom.js";
 import { t } from "./i18n.js";
 import { updateStatus } from "./status.js";
-import { reinitializeLucideIcons } from "./icons.js";
+import { initializeIcons } from "./icons.js";
 import { setCollectionControlsState } from "./collection-state.js";
 import { clearTags } from "./tags.js";
 import {
@@ -153,5 +153,5 @@ export function updateLoginUI(isLoggedIn, user = null) {
   }
   setCollectionControlsState();
   setSaveButtonState();
-  reinitializeLucideIcons();
+  initializeIcons();
 }
