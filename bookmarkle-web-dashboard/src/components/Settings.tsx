@@ -99,6 +99,7 @@ export const Settings: React.FC<SettingsProps> = ({
     handleChromeBookmarkFileUpload,
     handleConfirmImport,
     handleCancelImport,
+    handleUpdateProfile,
     handleDeleteAccount,
     handleConfirmDeleteAccount,
     handleCancelDeletion,
@@ -241,6 +242,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <AccountSettings
             user={user}
             onLogout={logout}
+            onUpdateProfile={handleUpdateProfile}
             onDeleteAccount={handleDeleteAccount}
             deletionStatus={deletionStatus}
             onCancelDeletion={handleCancelDeletion}
