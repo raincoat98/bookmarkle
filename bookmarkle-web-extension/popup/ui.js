@@ -6,7 +6,7 @@ import {
   setCurrentLanguage,
 } from "./i18n.js";
 import { getTheme } from "./theme.js";
-import { reinitializeLucideIcons } from "./icons.js";
+import { initializeIcons } from "./icons.js";
 import { isUserLoggedIn, displayUserInfo } from "./auth.js";
 
 export async function updateUIWithLanguage(lang = null) {
@@ -275,7 +275,7 @@ export async function showLanguageModal() {
   `;
 
   document.body.appendChild(modal);
-  reinitializeLucideIcons();
+  initializeIcons();
 
   modal.querySelectorAll(".language-option").forEach((btn) => {
     btn.addEventListener("click", async () => {

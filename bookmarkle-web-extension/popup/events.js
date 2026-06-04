@@ -1,7 +1,7 @@
 import { elements } from "./dom.js";
 import { SUPPORT_URL, BUG_REPORT_URL } from "./constants.js";
 import { showLanguageModal, updateUIWithLanguage } from "./ui.js";
-import { toggleTheme, loadTheme } from "./theme.js";
+import { toggleTheme } from "./theme.js";
 import {
   showUserInfoModal,
   closeUserInfoModal,
