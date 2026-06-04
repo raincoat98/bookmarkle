@@ -4,7 +4,7 @@ import { elements } from "./dom.js";
 
 let emojiPickerInstance = null;
 
-async function initializeEmojiPicker() {
+function initializeEmojiPicker() {
   const { emojiPickerContainer } = elements;
   if (!emojiPickerContainer || emojiPickerInstance) return;
 
