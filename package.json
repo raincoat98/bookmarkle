@@ -1,6 +1,6 @@
 {
   "name": "bookmarkle",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "📚 북마클 - 통합 북마크 관리 시스템 (Chrome Extension + Web Dashboard)",
   "scripts": {
     "setup": "./setup-env.sh",
