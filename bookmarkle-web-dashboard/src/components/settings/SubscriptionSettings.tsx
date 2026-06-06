@@ -1,13 +1,22 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import {
   useSubscriptionStore,
   useBookmarkStore,
   useCollectionStore,
   useAuthStore,
 } from "../../stores";
-import { Crown, Check, AlertCircle, ArrowRight, Gift } from "lucide-react";
+import {
+  Crown,
+  Check,
+  AlertCircle,
+  ArrowRight,
+  Gift,
+  Bookmark,
+  FolderTree,
+  Infinity as InfinityIcon,
+  TrendingUp,
+} from "lucide-react";
 import {
   checkBookmarkLimit,
   checkCollectionLimit,
@@ -15,8 +24,95 @@ import {
 import { isBetaPeriod } from "../../utils/betaFlags";
 import { isEarlyUser } from "../../utils/earlyUser";
 
+// ─── 사용량 막대 ────────────────────────────────────────────────────────────────
+
+interface UsageBarProps {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  current: number;
+  limit: number;
+  exceeded: boolean;
+  iconBg: string;
+  iconColor: string;
+}
+
+const UsageBar: React.FC<UsageBarProps> = ({
+  label,
+  icon: Icon,
+  current,
+  limit,
+  exceeded,
+  iconBg,
+  iconColor,
+}) => {
+  const isUnlimited = limit === Infinity;
+  const pct = isUnlimited ? 0 : Math.min((current / limit) * 100, 100);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconBg}`}>
+            <Icon className={`w-3.5 h-3.5 ${iconColor}`} />
+          </div>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+        </div>
+        <div className="flex items-baseline gap-1">
+          {isUnlimited ? (
+            <span className="flex items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+              <InfinityIcon className="w-4 h-4" />
+              <span className="text-xs">({current.toLocaleString()})</span>
+            </span>
+          ) : (
+            <>
+              <span className={`text-sm font-bold tabular-nums ${
+                exceeded ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"
+              }`}>
+                {current.toLocaleString()}
+              </span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 tabular-nums">
+                / {limit.toLocaleString()}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+      {!isUnlimited && (
+        <>
+          <div className="w-full bg-gray-100 dark:bg-white/[0.06] rounded-full h-1.5 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${
+                exceeded
+                  ? "bg-red-500"
+                  : pct > 80
+                  ? "bg-amber-500"
+                  : "bg-gradient-to-r from-violet-500 to-indigo-500"
+              }`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          {exceeded && (
+            <p className="flex items-center gap-1 text-[11px] text-red-500 dark:text-red-400">
+              <AlertCircle className="w-3 h-3" />
+              한도 초과: 업그레이드가 필요합니다
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+// ─── 메인 ──────────────────────────────────────────────────────────────────────
+
+const PREMIUM_FEATURES = [
+  { icon: Bookmark, text: "북마크 무제한 저장" },
+  { icon: FolderTree, text: "컬렉션 무제한 (5단계 하위)" },
+  { icon: TrendingUp, text: "AI 검색 · 통계 · 인사이트" },
+  { icon: Crown, text: "전체 위젯 · 테마 잠금 해제" },
+];
+
 export const SubscriptionSettings: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { plan, isPremium, limits } = useSubscriptionStore();
   const { rawBookmarks } = useBookmarkStore();
@@ -42,261 +138,197 @@ export const SubscriptionSettings: React.FC = () => {
   }, [user]);
 
   useEffect(() => {
-    if (user) {
-      checkUserStatus();
-    }
+    if (user) checkUserStatus();
   }, [user, checkUserStatus]);
 
-  const premiumFeatures = [
-    t("premium.features.unlimitedBookmarks"),
-    t("premium.features.unlimitedCollections"),
-    t("premium.features.advancedSearch"),
-    t("premium.features.bookmarkStats"),
-    t("premium.features.exportData"),
-    t("premium.features.customTheme"),
-    t("premium.features.restoreDeleted"),
-    t("premium.features.shareBookmarks"),
-  ];
-
-  // 베타 기간 중에는 아무것도 표시하지 않음
-  if (isBetaPeriod()) {
-    return null;
-  }
+  if (isBetaPeriod()) return null;
 
   return (
-    <div className="space-y-6">
-      {/* 현재 구독 상태 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div
-              className={`p-2 rounded-lg ${
+    <div className="space-y-3">
+      {/* 현재 플랜 카드 */}
+      <div
+        className={`relative rounded-2xl overflow-hidden border ${
+          isPremium
+            ? "bg-gradient-to-br from-violet-600 to-indigo-600 text-white border-transparent shadow-lg shadow-violet-500/20"
+            : "bg-white dark:bg-[#111113] border-gray-100 dark:border-white/[0.06]"
+        }`}
+      >
+        {/* 장식 글로우 (프리미엄) */}
+        {isPremium && (
+          <>
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-12 -left-6 w-32 h-32 bg-black/10 rounded-full blur-2xl" />
+          </>
+        )}
+
+        <div className="relative p-5">
+          <div className="flex items-start justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div
+                className={`w-10 h-10 rounded-2xl flex items-center justify-center ${
+                  isPremium
+                    ? "bg-white/20 backdrop-blur-sm"
+                    : "bg-gray-100 dark:bg-white/[0.06]"
+                }`}
+              >
+                <Crown
+                  className={`w-5 h-5 ${
+                    isPremium ? "text-white" : "text-gray-400 dark:text-gray-500"
+                  }`}
+                />
+              </div>
+              <div>
+                <p
+                  className={`text-base font-bold ${
+                    isPremium ? "text-white" : "text-gray-900 dark:text-white"
+                  }`}
+                >
+                  {isPremium ? "프리미엄" : "무료 플랜"}
+                </p>
+                <p
+                  className={`text-xs ${
+                    isPremium ? "text-white/80" : "text-gray-400 dark:text-gray-500"
+                  }`}
+                >
+                  {isPremium
+                    ? "모든 기능을 이용 중입니다"
+                    : "기본 기능을 사용하고 있어요"}
+                </p>
+              </div>
+            </div>
+
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold ${
                 isPremium
-                  ? "bg-yellow-100 dark:bg-yellow-900/30"
-                  : "bg-gray-100 dark:bg-gray-700"
+                  ? "bg-white/20 text-white backdrop-blur-sm"
+                  : "bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400"
               }`}
             >
-              <Crown
-                className={`w-5 h-5 ${
-                  isPremium
-                    ? "text-yellow-600 dark:text-yellow-400"
-                    : "text-gray-400"
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isPremium ? "bg-emerald-300" : "bg-gray-400"
                 }`}
               />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {plan === "premium"
-                  ? t("premium.premiumPlan")
-                  : t("premium.freePlan")}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {isPremium
-                  ? t("premium.activeSubscription")
-                  : t("premium.freeAccount")}
-              </p>
-            </div>
+              {isPremium ? "활성" : "무료"}
+            </span>
           </div>
+
+          {/* 사용량 */}
           <div
-            className={`px-3 py-1 rounded-full text-sm font-medium ${
-              isPremium
-                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+            className={`space-y-4 pt-4 ${
+              isPremium ? "border-t border-white/20" : "border-t border-gray-100 dark:border-white/[0.06]"
             }`}
           >
-            {isPremium ? t("premium.active") : t("premium.free")}
-          </div>
-        </div>
-
-        {/* 사용량 표시 */}
-        <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600 dark:text-gray-400">
-                {t("premium.bookmarks")}
-              </span>
-              <span
-                className={`font-medium ${
-                  bookmarkLimit.allowed
-                    ? "text-gray-900 dark:text-white"
-                    : "text-red-600 dark:text-red-400"
-                }`}
-              >
-                {limits.maxBookmarks === Infinity
-                  ? `∞ (${rawBookmarks.length}${t("common.countUnit", {
-                      defaultValue: "개",
-                    })})`
-                  : `${rawBookmarks.length} / ${limits.maxBookmarks}`}
-              </span>
-            </div>
-            {limits.maxBookmarks !== Infinity && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full ${
-                    !bookmarkLimit.allowed ? "bg-red-500" : "bg-brand-500"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      (rawBookmarks.length / limits.maxBookmarks) * 100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-            )}
-            {!bookmarkLimit.allowed && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center space-x-1">
-                <AlertCircle className="w-3 h-3" />
-                <span>
-                  {t("premium.limitExceeded", {
-                    current: rawBookmarks.length,
-                    limit: limits.maxBookmarks,
-                  })}
-                </span>
-              </p>
-            )}
+            <UsageBar
+              label="북마크"
+              icon={Bookmark}
+              current={rawBookmarks.length}
+              limit={limits.maxBookmarks}
+              exceeded={!bookmarkLimit.allowed}
+              iconBg={isPremium ? "bg-white/20" : "bg-blue-50 dark:bg-blue-500/10"}
+              iconColor={isPremium ? "text-white" : "text-blue-600 dark:text-blue-400"}
+            />
+            <UsageBar
+              label="컬렉션"
+              icon={FolderTree}
+              current={collections.length}
+              limit={limits.maxCollections}
+              exceeded={!collectionLimit.allowed}
+              iconBg={isPremium ? "bg-white/20" : "bg-emerald-50 dark:bg-emerald-500/10"}
+              iconColor={isPremium ? "text-white" : "text-emerald-600 dark:text-emerald-400"}
+            />
           </div>
 
-          <div>
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-600 dark:text-gray-400">
-                {t("premium.collections")}
-              </span>
-              <span
-                className={`font-medium ${
-                  collectionLimit.allowed
-                    ? "text-gray-900 dark:text-white"
-                    : "text-red-600 dark:text-red-400"
-                }`}
-              >
-                {limits.maxCollections === Infinity
-                  ? `∞ (${collections.length}${t("common.countUnit", {
-                      defaultValue: "개",
-                    })})`
-                  : `${collections.length} / ${limits.maxCollections}`}
-              </span>
-            </div>
-            {limits.maxCollections !== Infinity && (
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full ${
-                    !collectionLimit.allowed ? "bg-red-500" : "bg-brand-500"
-                  }`}
-                  style={{
-                    width: `${Math.min(
-                      (collections.length / limits.maxCollections) * 100,
-                      100
-                    )}%`,
-                  }}
-                />
-              </div>
-            )}
-            {!collectionLimit.allowed && (
-              <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center space-x-1">
-                <AlertCircle className="w-3 h-3" />
-                <span>
-                  {t("premium.limitExceeded", {
-                    current: collections.length,
-                    limit: limits.maxCollections,
-                  })}
-                </span>
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* 구독 관리 버튼 */}
-        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          {/* 구독 관리 버튼 */}
           <button
-            onClick={() => navigate("/subscription")}
-            className="w-full flex items-center justify-between px-4 py-3 bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-300 rounded-lg hover:bg-brand-100 dark:hover:bg-brand-900/30 transition-colors"
+            onClick={() => navigate(isPremium ? "/subscription" : "/pricing")}
+            className={`mt-5 w-full flex items-center justify-between px-4 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+              isPremium
+                ? "bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm"
+                : "bg-violet-600 text-white hover:bg-violet-700"
+            }`}
           >
-            <span className="font-medium">
-              {t("premium.subscriptionManagement")}
-            </span>
+            <span>{isPremium ? "구독 관리" : "프리미엄 시작하기"}</span>
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* 얼리유저 정보 */}
+      {/* 얼리유저 혜택 */}
       {!loading && userIsEarly && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <div className="flex items-start space-x-4">
-            <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-xl">
-              <Gift className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
+        <div className="bg-gradient-to-br from-amber-50 via-orange-50/60 to-amber-50 dark:from-amber-500/[0.08] dark:via-orange-500/[0.04] dark:to-amber-500/[0.08] border border-amber-100 dark:border-amber-500/20 rounded-2xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+              <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t("premium.earlyUserBenefits.title", {
-                  defaultValue: "얼리 유저 혜택",
-                })}
-              </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
-                {t("premium.earlyUserBenefits.verified", {
-                  defaultValue:
-                    "베타 기간 중 가입하신 얼리 유저로 인증되었습니다.",
-                })}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-300 mb-1">
+                얼리 유저 혜택
               </p>
-              <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 mt-3">
-                <p className="text-xs text-yellow-800 dark:text-yellow-300">
-                  {t("premium.earlyUserBenefits.description", {
-                    defaultValue:
-                      "베타 기간 중 사용하던 기능들을 계속 무료로 이용하실 수 있습니다.",
-                  })}
-                </p>
-              </div>
+              <p className="text-xs text-amber-700 dark:text-amber-400/80 leading-relaxed">
+                베타 기간 중 가입하신 얼리 유저로 인증되었습니다. 베타 때 사용하던 기능을 계속 무료로 이용하실 수 있어요.
+              </p>
             </div>
           </div>
         </div>
       )}
 
-      {/* 프리미엄 기능 목록 */}
-      {isPremium ? (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {t("premium.premiumFeatures")}
-          </h3>
-          <div className="grid md:grid-cols-2 gap-3">
-            {premiumFeatures.map((feature, index) => (
-              <div key={index} className="flex items-center space-x-2">
-                <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {feature}
-                </span>
+      {/* 무료 사용자 → 프리미엄 안내 */}
+      {!isPremium && (
+        <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+          <div className="px-5 pt-4 pb-3">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              프리미엄으로 얻을 수 있는 것
+            </p>
+          </div>
+          <div className="px-2 pb-2 space-y-0.5">
+            {PREMIUM_FEATURES.map(({ icon: Icon, text }, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors"
+              >
+                <div className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                  <Icon className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <span className="text-sm text-gray-700 dark:text-gray-300">{text}</span>
               </div>
             ))}
           </div>
-        </div>
-      ) : (
-        <div className="bg-gradient-to-r from-brand-50 to-accent-50 dark:from-brand-900/20 dark:to-accent-900/20 rounded-lg shadow-sm border border-brand-200 dark:border-brand-800 p-6">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {t("premium.upgradeToPremium")}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                {t("premium.unlockAllFeatures")}
-              </p>
-              <ul className="space-y-2 mb-4">
-                {premiumFeatures.slice(0, 3).map((feature, index) => (
-                  <li
-                    key={index}
-                    className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300"
-                  >
-                    <Check className="w-4 h-4 text-brand-500" />
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+          <div className="px-3 pb-3">
+            <button
+              onClick={() => navigate("/pricing")}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold hover:from-violet-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+            >
+              플랜 비교하기
+            </button>
           </div>
-          <button
-            onClick={() => navigate("/pricing")}
-            className="w-full px-4 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-lg font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-md hover:shadow-lg"
-          >
-            {t("premium.upgradeNow")}
-          </button>
+        </div>
+      )}
+
+      {/* 프리미엄 기능 목록 */}
+      {isPremium && (
+        <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+          <div className="px-5 pt-4 pb-3">
+            <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              이용 중인 프리미엄 기능
+            </p>
+          </div>
+          <div className="px-2 pb-2 space-y-0.5">
+            {PREMIUM_FEATURES.map(({ icon: Icon, text }, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl"
+              >
+                <div className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Icon className="w-3.5 h-3.5 text-gray-400 dark:text-gray-500" />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{text}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -1,57 +1,46 @@
 import { useState, useEffect } from "react";
-import { X, Crown, Gift } from "lucide-react";
-import { useAuthStore } from "../../stores";
+import { X, Crown, Gift, Sparkles, Check } from "lucide-react";
+import { useAuthStore, useFeatureFlagsStore } from "../../stores";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { betaUtils, BETA_END_DATE } from "../../utils/betaFlags";
 
 interface SubscriptionAnnouncementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  forceShow?: boolean; // 수동으로 열 때 사용
+  forceShow?: boolean;
 }
+
+const HIGHLIGHTS = [
+  "북마크 · 컬렉션 무제한 저장",
+  "AI 기반 고급 검색 + 태그·내용 검색",
+  "북마크 통계 및 인사이트 대시보드",
+  "전체 위젯 + 커스텀 테마 잠금 해제",
+];
 
 export const SubscriptionAnnouncementModal: React.FC<
   SubscriptionAnnouncementModalProps
 > = ({ isOpen, onClose, forceShow = false }) => {
-  const { t } = useTranslation();
   const { user } = useAuthStore();
+  useFeatureFlagsStore((s) => s.flags);
   const navigate = useNavigate();
-  const [isEarlyUser, setIsEarlyUser] = useState(false);
-
-  const checkEarlyUser = async () => {
-    if (!user) return;
-    try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const createdAt = userData.createdAt?.toDate();
-        if (createdAt && createdAt < BETA_END_DATE) {
-          setIsEarlyUser(true);
-        }
-      }
-    } catch (error) {
-      const err = error as { code?: string; message?: string };
-      // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
-      if (
-        err?.code === "permission-denied" ||
-        err?.code === "unauthenticated"
-      ) {
-        return;
-      }
-      if (process.env.NODE_ENV === "development") {
-        console.error("얼리유저 확인 실패:", error);
-      }
-    }
-  };
+  const [isEarly, setIsEarly] = useState(false);
 
   useEffect(() => {
-    if (user && isOpen) {
-      checkEarlyUser();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!user || !isOpen) return;
+    (async () => {
+      try {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const createdAt = userDoc.data().createdAt?.toDate();
+          if (createdAt && createdAt < BETA_END_DATE) setIsEarly(true);
+        }
+      } catch (err) {
+        const e = err as { code?: string };
+        if (e?.code === "permission-denied" || e?.code === "unauthenticated") return;
+      }
+    })();
   }, [user, isOpen]);
 
   const handleSubscribe = () => {
@@ -61,129 +50,99 @@ export const SubscriptionAnnouncementModal: React.FC<
   };
 
   const handleClose = () => {
-    if (!forceShow) {
-      betaUtils.markModalShown();
-    }
+    if (!forceShow) betaUtils.markModalShown();
     onClose();
   };
 
-  // 구독 알림 모달을 표시하지 않는 경우 (수동으로 열 때는 체크 우회)
   if (!isOpen || (!forceShow && !betaUtils.shouldShowModal())) return null;
 
   return (
     <div className="fixed inset-0 z-[10000] overflow-y-auto">
-      {/* 배경 오버레이 */}
       <div
-        className="fixed inset-0 z-[10000] bg-black/50 dark:bg-black/70 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* 모달 컨테이너 */}
-      <div className="relative min-h-full flex items-center justify-center p-4 z-[10001]">
-        <div className="relative w-full max-w-2xl max-h-[calc(100vh-4rem)] my-8 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
-          {/* 닫기 버튼 */}
+      <div className="relative min-h-full flex items-start sm:items-center justify-center p-4 z-[10001]">
+        <div className="relative w-full max-w-md bg-white dark:bg-[#111113] rounded-3xl shadow-2xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+          {/* 닫기 */}
           <button
             onClick={handleClose}
-            className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors z-10"
+            className="absolute top-4 right-4 z-10 p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg backdrop-blur-sm transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
 
-          {/* 헤더 */}
-          <div className="bg-gradient-to-r from-brand-500 to-accent-500 p-6 text-white flex-shrink-0">
-            <div className="flex items-center space-x-3">
-              <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                <Crown className="w-6 h-6" />
+          {/* 그라데이션 헤더 */}
+          <div className="relative bg-gradient-to-br from-violet-600 to-indigo-600 px-6 pt-8 pb-10 text-white overflow-hidden">
+            <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-12 -left-6 w-32 h-32 bg-black/10 rounded-full blur-2xl" />
+
+            <div className="relative flex flex-col items-center text-center">
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm mb-3 shadow-lg">
+                <Crown className="w-7 h-7 text-white" />
               </div>
-              <div>
-                <h2 className="text-2xl font-bold">
-                  {t("premium.subscription.modal.title", {
-                    defaultValue: "프리미엄 구독으로 업그레이드하세요!",
-                  })}
-                </h2>
+              <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm text-[10px] font-semibold mb-2">
+                <Sparkles className="w-3 h-3" />
+                정식 출시
               </div>
+              <h2 className="text-xl font-bold tracking-tight mb-1">
+                북마클이 정식 오픈됐어요
+              </h2>
+              <p className="text-xs text-white/80">
+                프리미엄으로 더 강력한 기능을 만나보세요
+              </p>
             </div>
           </div>
 
-          {/* 내용 */}
-          <div className="p-6 space-y-4 flex-1 overflow-y-auto">
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("premium.subscription.modal.description", {
-                defaultValue:
-                  "Bookmarkle이 정식 오픈되었습니다! 프리미엄 구독으로 더 많은 기능을 이용하실 수 있습니다.",
-              })}
-            </p>
-            <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-              {t("premium.subscription.modal.features", {
-                defaultValue:
-                  "프리미엄 구독으로 무제한 북마크, 고급 검색 기능, 커스텀 테마 등 다양한 기능을 이용하세요.",
-              })}
-            </p>
-            {betaUtils.shouldShowEarlyUserBenefits() && (
-              <>
-                {isEarlyUser && (
-                  <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
-                    <div className="flex items-start space-x-3">
-                      <Gift className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="font-semibold text-yellow-900 dark:text-yellow-200 mb-1">
-                          {t(
-                            "premium.subscription.modal.earlyUserBenefitApplied",
-                            {
-                              defaultValue:
-                                "얼리유저 특별 혜택이 적용되었습니다!",
-                            }
-                          )}
-                        </p>
-                        <p className="text-sm text-yellow-800 dark:text-yellow-300">
-                          {t(
-                            "premium.subscription.modal.earlyUserBenefitDesc",
-                            {
-                              defaultValue:
-                                "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
-                            }
-                          )}
-                        </p>
-                      </div>
-                    </div>
+          {/* 콘텐츠 */}
+          <div className="px-6 pt-5 pb-6 space-y-4">
+            {/* 핵심 혜택 */}
+            <div className="space-y-2.5">
+              {HIGHLIGHTS.map((h, idx) => (
+                <div key={idx} className="flex items-start gap-2.5">
+                  <div className="w-5 h-5 rounded-full bg-violet-50 dark:bg-violet-500/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-violet-600 dark:text-violet-400" />
                   </div>
-                )}
-                {!isEarlyUser && (
-                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
-                    {t("premium.subscription.modal.earlyUserBenefitDesc", {
-                      defaultValue:
-                        "베타 기간 중 가입하신 얼리유저는 특별 할인 혜택을 받으실 수 있습니다.",
-                    })}
+                  <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
+                    {h}
                   </p>
-                )}
-              </>
-            )}
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-4">
-              {t("premium.subscription.modal.betterService", {
-                defaultValue:
-                  "더 나은 서비스를 제공하기 위해 계속 노력하겠습니다.",
-              })}
-            </p>
-          </div>
+                </div>
+              ))}
+            </div>
 
-          {/* 버튼 */}
-          <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
-            <div className="flex space-x-3">
+            {/* 얼리유저 혜택 */}
+            {betaUtils.shouldShowEarlyUserBenefits() && isEarly && (
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50/50 dark:from-amber-500/[0.08] dark:to-orange-500/[0.04] border border-amber-100 dark:border-amber-500/20 rounded-2xl p-3.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-500/15 flex items-center justify-center flex-shrink-0">
+                    <Gift className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-amber-900 dark:text-amber-300 mb-0.5">
+                      얼리 유저 혜택 적용
+                    </p>
+                    <p className="text-[11px] text-amber-700 dark:text-amber-400/80 leading-relaxed">
+                      베타 기간 가입자는 기존 기능을 계속 무료로 이용하실 수 있어요.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 버튼 */}
+            <div className="flex gap-2 pt-1">
               <button
                 onClick={handleClose}
-                className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-colors"
               >
-                {t("premium.subscription.modal.close", {
-                  defaultValue: "닫기",
-                })}
+                나중에
               </button>
               <button
                 onClick={handleSubscribe}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all"
               >
-                {t("premium.subscription.modal.goToPricing", {
-                  defaultValue: "바로가기",
-                })}
+                플랜 보기
               </button>
             </div>
           </div>
