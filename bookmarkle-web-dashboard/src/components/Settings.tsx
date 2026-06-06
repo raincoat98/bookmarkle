@@ -19,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
+import { useFeatureFlagsStore } from "../stores";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { AccountSettings } from "./settings/AccountSettings";
 import { AppearanceSettings } from "./settings/AppearanceSettings";
@@ -30,7 +31,7 @@ import { SubscriptionSettings } from "./settings/SubscriptionSettings";
 import { TrashSettings } from "./settings/TrashSettings";
 import { getUserDefaultPage, auth } from "../firebase";
 import { isBetaPeriod } from "../utils/betaFlags";
-import { performBackup, shouldBackup } from "../utils/backup";
+import { calcChecksum } from "../utils/backup";
 import type { Bookmark, Collection } from "../types";
 
 interface SettingsProps {
@@ -50,13 +51,13 @@ export const Settings: React.FC<SettingsProps> = ({
   isRestoring = false,
 }) => {
   const { user, logout } = useAuthStore();
+  useFeatureFlagsStore((s) => s.flags);
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
   const { theme, setTheme } = useThemeStore();
   const { t } = useTranslation();
 
   const {
-    // 상태
     activeTab,
     setActiveTab,
     notifications,
@@ -75,8 +76,6 @@ export const Settings: React.FC<SettingsProps> = ({
     setShowDeleteAccountModal,
     deletionStatus,
     fileInputRef,
-
-    // 핸들러
     handleThemeChange,
     handleNotificationToggle,
     handleSystemNotificationToggle,
@@ -103,8 +102,6 @@ export const Settings: React.FC<SettingsProps> = ({
     handleConfirmDeleteAccount,
     handleCancelDeletion,
     handleNavigateToNotifications,
-
-    // 기타
     syncBackups,
     i18n,
     chromeBookmarkFileInputRef,
@@ -119,89 +116,30 @@ export const Settings: React.FC<SettingsProps> = ({
     isRestoring,
   });
 
-  // 백업 자동 실행 useEffect
+  // 자동 백업은 App.tsx의 전역 useEffect가 담당 (중복 실행 방지)
+
   useEffect(() => {
-    const backupIntervalRef = { current: null as NodeJS.Timeout | null };
-
-    if (
-      backupSettings.enabled &&
-      user?.uid &&
-      rawBookmarks &&
-      collections &&
-      rawBookmarks.length > 0 &&
-      collections.length > 0
-    ) {
-      const intervalMs = 10000; // 테스트용 10초 간격
-
-      if (shouldBackup()) {
-        const created = performBackup(rawBookmarks, collections, user.uid);
-        if (created) syncBackups();
-      }
-
-      backupIntervalRef.current = setInterval(() => {
-        if (shouldBackup()) {
-          const created = performBackup(rawBookmarks, collections, user.uid);
-          if (created) syncBackups();
-        }
-      }, intervalMs);
-    }
-
-    return () => {
-      if (backupIntervalRef.current) {
-        clearInterval(backupIntervalRef.current);
-      }
-    };
-  }, [
-    backupSettings.enabled,
-    backupSettings.frequency,
-    user?.uid,
-    rawBookmarks,
-    collections,
-    syncBackups,
-  ]);
-
-  // 백업 탭 진입 시 동기화
-  useEffect(() => {
-    if (activeTab === "backup") {
-      syncBackups();
-    }
+    if (activeTab === "backup") syncBackups();
   }, [activeTab, syncBackups]);
 
-  // 사용자 기본 페이지 로드
   useEffect(() => {
     if (user?.uid && auth.currentUser?.uid === user.uid) {
       getUserDefaultPage(user.uid)
-        .then((page: string | null) => {
-          if (page) {
-            setDefaultPage(page);
-          }
-        })
-        .catch((error) => {
-          // 권한 오류는 조용히 무시 (로그아웃 중일 수 있음)
-          console.warn("⚠️ Failed to get user default page:", error);
-        });
+        .then((page: string | null) => { if (page) setDefaultPage(page); })
+        .catch(() => {});
     }
   }, [user?.uid, setDefaultPage]);
 
   const tabs = [
-    { id: "general", label: t("settings.general"), icon: SettingsIcon },
-    // 베타 모드일 때는 구독 탭 숨김
-    ...(!isBetaPeriod()
-      ? [
-          {
-            id: "subscription",
-            label: t("premium.subscriptionLabel"),
-            icon: Crown,
-          },
-        ]
-      : []),
-    { id: "stats", label: t("settings.statistics"), icon: BarChart3 },
-    { id: "backup", label: t("settings.backup"), icon: Download },
-    { id: "trash", label: t("settings.trash"), icon: Trash2 },
-    { id: "account", label: t("settings.account"), icon: User },
-    { id: "appearance", label: t("settings.appearance"), icon: Palette },
-    { id: "notifications", label: t("settings.notifications"), icon: Bell },
-    { id: "privacy", label: t("settings.privacy"), icon: Shield },
+    { id: "general",       label: t("settings.general"),          icon: SettingsIcon },
+    ...(!isBetaPeriod() ? [{ id: "subscription", label: t("premium.subscriptionLabel"), icon: Crown }] : []),
+    { id: "stats",         label: t("settings.statistics"),       icon: BarChart3 },
+    { id: "backup",        label: t("settings.backup"),           icon: Download },
+    { id: "trash",         label: t("settings.trash"),            icon: Trash2 },
+    { id: "account",       label: t("settings.account"),          icon: User },
+    { id: "appearance",    label: t("settings.appearance"),       icon: Palette },
+    { id: "notifications", label: t("settings.notifications"),    icon: Bell },
+    { id: "privacy",       label: t("settings.privacy"),          icon: Shield },
   ];
 
   const renderContent = () => {
@@ -217,18 +155,15 @@ export const Settings: React.FC<SettingsProps> = ({
             onImportChromeBookmarks={handleImportChromeBookmarks}
           />
         );
-      case "subscription":
-        return <SubscriptionSettings />;
-      case "stats":
-        return (
-          <StatsSettings bookmarks={rawBookmarks} collections={collections} />
-        );
+      case "subscription": return <SubscriptionSettings />;
+      case "stats":        return <StatsSettings bookmarks={rawBookmarks} collections={collections} />;
       case "backup":
         return (
           <BackupSettingsComponent
             backupSettings={backupSettings}
             backupStatus={backupStatus}
             backups={backups}
+            currentChecksum={calcChecksum(rawBookmarks ?? [], collections ?? [])}
             onAutoBackupToggle={handleAutoBackupToggle}
             onBackupFrequencyChange={handleBackupFrequencyChange}
             onManualBackup={handleManualBackup}
@@ -248,13 +183,7 @@ export const Settings: React.FC<SettingsProps> = ({
           />
         );
       case "appearance":
-        return (
-          <AppearanceSettings
-            theme={theme}
-            onThemeChange={handleThemeChange}
-            i18n={i18n}
-          />
-        );
+        return <AppearanceSettings theme={theme} onThemeChange={handleThemeChange} i18n={i18n} />;
       case "notifications":
         return (
           <NotificationSettings
@@ -266,10 +195,8 @@ export const Settings: React.FC<SettingsProps> = ({
             onNavigateToNotifications={handleNavigateToNotifications}
           />
         );
-      case "trash":
-        return <TrashSettings />;
-      case "privacy":
-        return <PrivacySettings />;
+      case "trash":   return <TrashSettings />;
+      case "privacy": return <PrivacySettings />;
       default:
         return (
           <GeneralSettings
@@ -285,36 +212,33 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10]">
       {/* 헤더 */}
-      <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-between border-b border-gray-200/50 dark:border-gray-700/50 h-[80px] px-4 lg:px-6">
-            <div className="flex items-center space-x-3 lg:space-x-4">
-              <button
-                onClick={onBack}
-                className="p-1.5 lg:p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-              >
-                <X className="w-5 h-5 lg:w-6 lg:h-6" />
-              </button>
-              <div className="flex items-center space-x-2">
-                <SettingsIcon className="w-5 h-5 lg:w-6 lg:h-6 text-brand-600" />
-                <h1 className="text-base lg:text-lg font-bold text-gray-900 dark:text-white leading-none">
-                  {t("settings.title")}
-                </h1>
-              </div>
-            </div>
+      <div className="sticky top-0 z-50 h-14 lg:h-[80px] px-4 lg:px-6 border-b border-gray-100 dark:border-white/[0.06] bg-white/80 dark:bg-[#111113]/90 backdrop-blur-md flex items-center">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onBack}
+            className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+          <div className="flex items-center gap-2">
+            <SettingsIcon className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+            <h1 className="text-sm font-semibold text-gray-900 dark:text-white">
+              {t("settings.title")}
+            </h1>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="flex flex-col lg:flex-row gap-6">
+
           {/* 사이드바 */}
-          <div className="lg:w-72 flex-shrink-0">
+          <div className="lg:w-56 flex-shrink-0">
             {/* 모바일: 가로 스크롤 */}
             <nav className="block lg:hidden overflow-x-auto -mx-4 px-4 scrollbar-hide">
-              <div className="flex gap-1.5 pb-1">
+              <div className="flex gap-1 pb-1 p-1 bg-gray-100/80 dark:bg-white/[0.04] rounded-xl w-max">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   const active = activeTab === tab.id;
@@ -322,35 +246,37 @@ export const Settings: React.FC<SettingsProps> = ({
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl transition-colors flex-shrink-0 min-w-[56px] ${
+                      className={`flex flex-col items-center gap-1 px-3 py-2 rounded-lg transition-colors flex-shrink-0 ${
                         active
-                          ? "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300"
-                          : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                          ? "bg-white dark:bg-white/[0.08] text-violet-600 dark:text-violet-400 shadow-sm"
+                          : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                       }`}
                     >
-                      <Icon className={`w-4.5 h-4.5 ${active ? "" : ""}`} style={{ width: "18px", height: "18px" }} />
-                      <span className="text-[10px] font-medium leading-none whitespace-nowrap">{tab.label}</span>
+                      <Icon className="w-4 h-4" />
+                      <span className="text-[10px] font-medium whitespace-nowrap">{tab.label}</span>
                     </button>
                   );
                 })}
               </div>
             </nav>
-            {/* 데스크톱: 기존 세로 레이아웃 */}
-            <nav className="hidden lg:block space-y-1">
+
+            {/* 데스크톱: 세로 목록 */}
+            <nav className="hidden lg:block space-y-0.5">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
+                const active = activeTab === tab.id;
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg transition-colors ${
-                      activeTab === tab.id
-                        ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl transition-colors ${
+                      active
+                        ? "bg-violet-50 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400"
+                        : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04] hover:text-gray-700 dark:hover:text-gray-200"
                     }`}
                   >
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{tab.label}</span>
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="text-sm font-medium">{tab.label}</span>
                   </button>
                 );
               })}
@@ -358,69 +284,43 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           {/* 메인 콘텐츠 */}
-          <div className="flex-1">{renderContent()}</div>
+          <div className="flex-1 min-w-0">{renderContent()}</div>
         </div>
       </div>
 
-      {/* 숨겨진 파일 입력 (JSON 형식) */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".json"
-        onChange={handleFileUpload}
-        style={{ display: "none" }}
-      />
-
-      {/* 숨겨진 파일 입력 (Chrome 북마크 HTML 형식) */}
-      <input
-        ref={chromeBookmarkFileInputRef}
-        type="file"
-        accept=".html"
-        onChange={handleChromeBookmarkFileUpload}
-        style={{ display: "none" }}
-      />
+      {/* 숨겨진 파일 입력 */}
+      <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileUpload} className="hidden" />
+      <input ref={chromeBookmarkFileInputRef} type="file" accept=".html" onChange={handleChromeBookmarkFileUpload} className="hidden" />
 
       {/* 데이터 가져오기 확인 모달 */}
       {showImportModal && importData && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-4">
               데이터 가져오기 확인
             </h3>
-            <div className="space-y-4">
-              <div className="bg-blue-50 dark:bg-blue-900 rounded-lg p-4">
-                <p className="text-sm text-blue-800 dark:text-blue-200">
-                  이 파일에는 다음 데이터가 포함되어 있습니다:
-                </p>
-                <ul className="mt-2 text-sm text-blue-700 dark:text-blue-300 space-y-1">
-                  <li>• 북마크: {importData.bookmarks.length}개</li>
-                  <li>• 컬렉션: {importData.collections.length}개</li>
-                  <li>
-                    • 내보내기 날짜:{" "}
-                    {importData.exportedAt
-                      ? new Date(importData.exportedAt).toLocaleDateString()
-                      : "정보 없음"}
-                  </li>
+            <div className="space-y-3 mb-5">
+              <div className="bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20 rounded-xl p-4">
+                <p className="text-xs font-medium text-blue-700 dark:text-blue-300 mb-2">포함된 데이터</p>
+                <ul className="text-xs text-blue-600 dark:text-blue-400 space-y-1">
+                  <li>북마크 {importData.bookmarks.length}개</li>
+                  <li>컬렉션 {importData.collections.length}개</li>
+                  {importData.exportedAt && (
+                    <li>내보내기: {new Date(importData.exportedAt).toLocaleDateString()}</li>
+                  )}
                 </ul>
               </div>
-              <div className="bg-yellow-50 dark:bg-yellow-900 rounded-lg p-4">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
-                  <strong>주의:</strong> 기존 데이터와 병합됩니다. 중복된
-                  북마크나 컬렉션은 추가되지 않습니다.
+              <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-100 dark:border-amber-500/20 rounded-xl p-4">
+                <p className="text-xs text-amber-700 dark:text-amber-300">
+                  기존 데이터와 병합됩니다. 중복된 항목은 추가되지 않습니다.
                 </p>
               </div>
             </div>
-            <div className="flex justify-end space-x-3 mt-6">
-              <button
-                onClick={handleCancelImport}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                취소
+            <div className="flex gap-2">
+              <button onClick={handleCancelImport} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.12] transition-colors">
+                {t("common.cancel")}
               </button>
-              <button
-                onClick={handleConfirmImport}
-                className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-              >
+              <button onClick={handleConfirmImport} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 transition-colors">
                 가져오기
               </button>
             </div>
@@ -430,37 +330,28 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* 백업 복원 확인 모달 */}
       {restoreConfirm.open && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
               {isRestoring ? "백업 복원 중..." : "백업 복원 확인"}
             </h3>
             {isRestoring ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
-                </div>
-                <p className="text-gray-700 dark:text-gray-200 text-center">
-                  백업 데이터를 복원하고 있습니다. 잠시만 기다려주세요...
+              <div className="flex flex-col items-center gap-3 py-4">
+                <div className="animate-spin rounded-full h-7 w-7 border-2 border-violet-200 border-t-violet-600" />
+                <p className="text-sm text-gray-500 dark:text-gray-400 text-center">
+                  백업 데이터를 복원하고 있습니다...
                 </p>
               </div>
             ) : (
               <>
-                <p className="text-gray-700 dark:text-gray-200 mb-6">
-                  이 백업으로 데이터를 복원하시겠습니까? 현재 데이터는
-                  덮어써집니다.
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                  이 백업으로 데이터를 복원하시겠습니까? 현재 데이터는 덮어써집니다.
                 </p>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={handleCancelRestore}
-                    className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    취소
+                <div className="flex gap-2">
+                  <button onClick={handleCancelRestore} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.12] transition-colors">
+                    {t("common.cancel")}
                   </button>
-                  <button
-                    onClick={handleConfirmRestore}
-                    className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition-colors"
-                  >
+                  <button onClick={handleConfirmRestore} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-violet-600 hover:bg-violet-700 transition-colors">
                     확인
                   </button>
                 </div>
@@ -472,25 +363,17 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* 백업 삭제 확인 모달 */}
       {deleteConfirm.open && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              백업 삭제 확인
-            </h3>
-            <p className="text-gray-700 dark:text-gray-200 mb-6">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+          <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">백업 삭제 확인</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
               이 백업을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
             </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={handleCancelDelete}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-              >
-                취소
+            <div className="flex gap-2">
+              <button onClick={handleCancelDelete} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.12] transition-colors">
+                {t("common.cancel")}
               </button>
-              <button
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
+              <button onClick={handleConfirmDelete} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
                 삭제
               </button>
             </div>
@@ -500,31 +383,19 @@ export const Settings: React.FC<SettingsProps> = ({
 
       {/* 계정 삭제 모달 */}
       {showDeleteAccountModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40"
-          onClick={() => setShowDeleteAccountModal(false)}
-        >
-          <div
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm px-4" onClick={() => setShowDeleteAccountModal(false)}>
+          <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] shadow-2xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3">
               {t("settings.deleteAccount")}
             </h3>
-            <p className="text-gray-700 dark:text-gray-300 mb-6 text-sm leading-relaxed">
+            <p className="text-sm text-gray-500 dark:text-gray-400 mb-5 leading-relaxed">
               {t("settings.deleteAccountDescription")}
             </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDeleteAccountModal(false)}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors text-sm"
-              >
+            <div className="flex gap-2">
+              <button onClick={() => setShowDeleteAccountModal(false)} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.12] transition-colors">
                 {t("common.cancel")}
               </button>
-              <button
-                onClick={handleConfirmDeleteAccount}
-                className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors text-sm"
-              >
+              <button onClick={handleConfirmDeleteAccount} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
                 {t("settings.deleteAccount")}
               </button>
             </div>

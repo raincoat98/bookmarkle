@@ -22,9 +22,9 @@ import {
   loadBackupSettings,
   saveBackupSettings,
   performBackup,
-  getAllBackups,
+  getAllBackupsFromFirestore,
+  deleteBackupFromFirestore,
   getBackupStatus,
-  deleteBackup,
   type BackupSettings,
   type BackupStatus,
   type BackupListItem,
@@ -260,7 +260,7 @@ export const useSettings = ({
     loadBackupSettings()
   );
   const [backupStatus, setBackupStatus] = useState<BackupStatus>(() =>
-    getBackupStatus()
+    getBackupStatus(0)
   );
   const [defaultPage, setDefaultPage] = useState(
     () => localStorage.getItem("defaultPage") || "dashboard"
@@ -269,15 +269,13 @@ export const useSettings = ({
   const [importData, setImportData] = useState<ImportPreviewData | null>(null);
   const [restoreConfirm, setRestoreConfirm] = useState<{
     open: boolean;
-    timestamp: string | null;
-  }>({ open: false, timestamp: null });
+    id: string | null;
+  }>({ open: false, id: null });
   const [deleteConfirm, setDeleteConfirm] = useState<{
     open: boolean;
-    timestamp: string | null;
-  }>({ open: false, timestamp: null });
-  const [backups, setBackups] = useState<BackupListItem[]>(() =>
-    getAllBackups()
-  );
+    id: string | null;
+  }>({ open: false, id: null });
+  const [backups, setBackups] = useState<BackupListItem[]>([]);
   const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
   const [deletionStatus, setDeletionStatus] = useState<{
     isScheduled: boolean;
@@ -293,11 +291,17 @@ export const useSettings = ({
     }
   }, [user?.uid]);
 
-  // 백업 동기화 함수
-  const syncBackups = useCallback(() => {
-    setBackups(getAllBackups());
-    setBackupStatus(getBackupStatus());
-  }, []);
+  // 백업 동기화 함수 (Firestore)
+  const syncBackups = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const fetched = await getAllBackupsFromFirestore(user.uid);
+      setBackups(fetched);
+      setBackupStatus(getBackupStatus(fetched.length));
+    } catch (e) {
+      console.error("백업 목록 동기화 실패:", e);
+    }
+  }, [user?.uid]);
 
   // 테마 변경 핸들러
   const handleThemeChange = (newTheme: "light" | "dark" | "auto") => {
@@ -405,116 +409,108 @@ export const useSettings = ({
   };
 
   // 자동 백업 토글 핸들러
-  const handleAutoBackupToggle = () => {
+  const handleAutoBackupToggle = async () => {
     const newSettings = { ...backupSettings, enabled: !backupSettings.enabled };
     setBackupSettings(newSettings);
     saveBackupSettings(newSettings);
-    setBackupStatus(getBackupStatus());
-    toast.success(
-      `자동 백업이 ${
-        !backupSettings.enabled ? "활성화" : "비활성화"
-      }되었습니다.`
-    );
+    setBackupStatus(getBackupStatus(backups.length));
+    toast.success(`자동 백업이 ${!backupSettings.enabled ? "활성화" : "비활성화"}되었습니다.`);
 
     if (!backupSettings.enabled && user?.uid) {
-      const created = performBackup(rawBookmarks, collections, user.uid);
+      const created = await performBackup(rawBookmarks, collections, user.uid, "auto");
       if (created) syncBackups();
     }
   };
 
   // 백업 주기 변경 핸들러
-  const handleBackupFrequencyChange = (
-    frequency: "daily" | "weekly" | "monthly"
-  ) => {
+  const handleBackupFrequencyChange = (frequency: "daily" | "weekly" | "monthly") => {
     const newSettings = { ...backupSettings, frequency };
     setBackupSettings(newSettings);
     saveBackupSettings(newSettings);
-    setBackupStatus(getBackupStatus());
+    setBackupStatus(getBackupStatus(backups.length));
     toast.success(
-      `백업 주기가 ${
-        frequency === "daily"
-          ? "매일"
-          : frequency === "weekly"
-          ? "매주"
-          : "매월"
-      }로 변경되었습니다.`
+      `백업 주기가 ${frequency === "daily" ? "매일" : frequency === "weekly" ? "매주" : "매월"}로 변경되었습니다.`
     );
   };
 
   // 수동 백업 핸들러
-  const handleManualBackup = () => {
-    if (
-      user?.uid &&
-      rawBookmarks &&
-      collections &&
-      (rawBookmarks.length > 0 || collections.length > 0)
-    ) {
-      const created = performBackup(rawBookmarks, collections, user.uid);
+  const handleManualBackup = async () => {
+    if (!user?.uid || (!rawBookmarks?.length && !collections?.length)) {
+      toast.error("백업할 데이터가 없습니다.");
+      return;
+    }
+    const toastId = toast.loading("백업 생성 중...");
+    try {
+      const created = await performBackup(rawBookmarks, collections, user.uid, "manual");
       if (created) {
-        syncBackups();
-        toast.success("새 백업이 생성되었습니다.");
+        await syncBackups();
+        toast.success("새 백업이 생성되었습니다.", { id: toastId });
       } else {
-        toast.error("백업할 데이터가 없습니다.");
+        toast.error("백업 생성에 실패했습니다.", { id: toastId });
       }
+    } catch {
+      toast.error("백업 생성 중 오류가 발생했습니다.", { id: toastId });
     }
   };
 
   // 백업 복원 핸들러
-  const handleBackupRestore = async (timestamp: string) => {
-    setRestoreConfirm({ open: true, timestamp });
+  const handleBackupRestore = (id: string) => {
+    setRestoreConfirm({ open: true, id });
   };
 
   const handleConfirmRestore = async () => {
-    if (!restoreConfirm.timestamp) return;
+    if (!restoreConfirm.id || isRestoring) return;
 
-    if (isRestoring) {
-      console.log("이미 복원 중입니다.");
-      return;
-    }
     try {
-      const latest = getAllBackups();
-      const backupData = latest.find(
-        (b) => b.timestamp === restoreConfirm.timestamp
-      )?.data;
-      if (backupData && onRestoreBackup) {
-        await onRestoreBackup(backupData);
-        toast.success("백업이 성공적으로 복원되었습니다.");
-      } else if (!onRestoreBackup) {
-        console.error("onRestoreBackup prop이 전달되지 않았습니다.");
-        toast.error("복원 핸들러가 없습니다. 관리자에게 문의하세요.");
-      } else {
+      const backupItem = backups.find(b => b.id === restoreConfirm.id);
+      if (!backupItem?.data) {
         toast.error("이미 삭제된 백업입니다.");
-        syncBackups();
+        await syncBackups();
+        return;
       }
+      if (!onRestoreBackup) {
+        toast.error("복원 핸들러가 없습니다. 관리자에게 문의하세요.");
+        return;
+      }
+      // 복원 전 현재 상태를 자동 스냅샷
+      if (user?.uid && (rawBookmarks?.length || collections?.length)) {
+        await performBackup(rawBookmarks, collections, user.uid, "pre-restore");
+      }
+      await onRestoreBackup(backupItem.data);
+      toast.success("백업이 성공적으로 복원되었습니다.");
     } catch (error) {
       console.error("Restore error:", error);
       toast.error("백업 복원 중 오류가 발생했습니다.");
     } finally {
-      setRestoreConfirm({ open: false, timestamp: null });
+      setRestoreConfirm({ open: false, id: null });
       syncBackups();
     }
   };
 
   const handleCancelRestore = () => {
-    setRestoreConfirm({ open: false, timestamp: null });
+    setRestoreConfirm({ open: false, id: null });
   };
 
   // 백업 삭제 핸들러
-  const handleBackupDelete = (timestamp: string) => {
-    setDeleteConfirm({ open: true, timestamp });
+  const handleBackupDelete = (id: string) => {
+    setDeleteConfirm({ open: true, id });
   };
 
-  const handleConfirmDelete = () => {
-    if (!deleteConfirm.timestamp) return;
-
-    deleteBackup(deleteConfirm.timestamp);
-    syncBackups();
-    toast.success("백업이 삭제되었습니다.");
-    setDeleteConfirm({ open: false, timestamp: null });
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm.id || !user?.uid) return;
+    try {
+      await deleteBackupFromFirestore(user.uid, deleteConfirm.id);
+      await syncBackups();
+      toast.success("백업이 삭제되었습니다.");
+    } catch {
+      toast.error("백업 삭제 중 오류가 발생했습니다.");
+    } finally {
+      setDeleteConfirm({ open: false, id: null });
+    }
   };
 
   const handleCancelDelete = () => {
-    setDeleteConfirm({ open: false, timestamp: null });
+    setDeleteConfirm({ open: false, id: null });
   };
 
   // 기본 페이지 변경 핸들러

@@ -16,9 +16,9 @@ const THEMES = [
 ] as const;
 
 const LANGUAGES = [
-  { code: "ko", label: "한국어", sub: "Korean"   },
-  { code: "en", label: "English", sub: "영어"    },
-  { code: "ja", label: "日本語",  sub: "일본어"  },
+  { code: "ko", label: "한국어", sub: "Korean"  },
+  { code: "en", label: "English", sub: "영어"   },
+  { code: "ja", label: "日本語",  sub: "일본어" },
 ] as const;
 
 export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
@@ -29,26 +29,26 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* 테마 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+        <div className="px-5 pt-4 pb-3">
+          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
             {t("settings.theme")}
-          </h3>
+          </p>
         </div>
-        <div className="p-4">
-          <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-900/60 rounded-lg">
+        <div className="px-4 pb-4">
+          <div className="flex gap-1 p-1 bg-gray-50 dark:bg-white/[0.04] rounded-xl">
             {THEMES.map(({ value, icon: Icon, labelKey }) => {
               const active = theme === value;
               return (
                 <button
                   key={value}
                   onClick={() => onThemeChange(value)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all duration-150 ${
+                  className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-150 ${
                     active
-                      ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                      ? "bg-white dark:bg-white/[0.08] text-gray-900 dark:text-white shadow-sm"
+                      : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
@@ -61,22 +61,22 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
       </div>
 
       {/* 언어 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+      <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+        <div className="px-5 pt-4 pb-3">
+          <p className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
             {t("settings.language")}
-          </h3>
+          </p>
         </div>
-        <div className="divide-y divide-gray-100 dark:divide-gray-700/60">
+        <div className="px-2 pb-2 space-y-0.5">
           {LANGUAGES.map(({ code, label, sub }) => {
             const active = i18n.language === code;
             return (
               <button
                 key={code}
                 onClick={() => i18n.changeLanguage(code)}
-                className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-700/40 transition-colors"
+                className="w-full flex items-center justify-between px-3 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors"
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
                     {label}
                   </span>
@@ -85,7 +85,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
                   </span>
                 </div>
                 {active && (
-                  <Check className="w-4 h-4 text-purple-500 dark:text-purple-400 shrink-0" />
+                  <Check className="w-4 h-4 text-violet-500 dark:text-violet-400 shrink-0" />
                 )}
               </button>
             );
