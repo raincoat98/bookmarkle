@@ -32,6 +32,7 @@
     "updating": "更新中...",
     "processing": "処理中...",
     "countUnit": "個",
+    "done": "完了",
     "moreActions": "その他",
     "accountDisabled": "アカウントが無効化されました",
     "accountDisabledDesc": "あなたのアカウントは管理者によって無効化されました。ブックマークとコレクションにアクセスできません。",
@@ -133,7 +134,11 @@
     "yesterday": "昨日",
     "daysAgo": "{{count}}日前",
     "copied": "コピーしました！",
-    "todaysBibleVerse": "今日の聖書の言葉"
+    "todaysBibleVerse": "今日の聖書の言葉",
+    "changeBackground": "背景を変更",
+    "backgroundImage": "画像URL",
+    "bgFixed": "背景を固定",
+    "bgRandom": "開くたびに変更"
   },
   "bookmarks": {
     "title": "ブックマーク",
@@ -214,7 +219,10 @@
     "noSearchResults": "検索結果がありません。別の検索語を試してください。",
     "faviconRefreshed": "ファビコンが更新されました。",
     "favoriteToggleError": "お気に入り状態の変更中にエラーが発生しました。",
-    "reorderError": "ブックマークの順序変更中にエラーが発生しました。"
+    "reorderError": "ブックマークの順序変更中にエラーが発生しました。",
+    "editMode": "編集モード",
+    "longPressHint": "長押しで編集モード",
+    "deleteConfirm": "削除しますか？"
   },
   "collections": {
     "title": "コレクション",
@@ -488,7 +496,8 @@
     "geolocationUnavailable": "位置情報を利用できません",
     "geolocationTimeout": "位置情報のリクエストがタイムアウトしました",
     "locationFetchError": "位置情報を取得できません",
-    "useDefaultLocation": "デフォルトの位置（ソウル駅）を使用しますか？"
+    "useDefaultLocation": "デフォルトの位置（ソウル駅）を使用しますか？",
+    "loading": "天気を取得中"
   },
   "languages": {
     "korean": "한국어",
@@ -521,8 +530,15 @@
     "permissionHelpStep2": "表示されたメニューで「通知」を「許可」に変更します。",
     "permissionHelpStep3": "「サイトの設定」を開いた場合は通知を許可に変更し、タブを閉じます。",
     "permissionHelpStep4": "ページを再読み込みした後、システム通知をもう一度オンにしてください。",
+    "all": "すべて",
+    "unread": "未読",
+    "today": "今日",
+    "thisWeek": "今週",
+    "older": "以前",
     "noNotifications": "通知がありません",
     "noNotificationsDescription": "新しいブックマーク活動があるとここに表示されます",
+    "noUnreadNotifications": "未読の通知はありません",
+    "allCaughtUp": "すべて確認済みです",
     "markAllAsRead": "すべて既読にする",
     "markAsRead": "既読にする",
     "deleteNotification": "削除",

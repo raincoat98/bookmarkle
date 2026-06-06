@@ -32,6 +32,7 @@
     "updating": "수정 중...",
     "processing": "처리 중...",
     "countUnit": "개",
+    "done": "완료",
     "moreActions": "더보기",
     "accountDisabled": "계정이 비활성화되었습니다",
     "accountDisabledDesc": "귀하의 계정이 관리자에 의해 비활성화되었습니다. 북마크 및 컬렉션에 접근할 수 없습니다.",
@@ -146,7 +147,11 @@
     "yesterday": "어제",
     "daysAgo": "{{count}}일 전",
     "copied": "복사됨!",
-    "todaysBibleVerse": "오늘의 성경말씀"
+    "todaysBibleVerse": "오늘의 성경말씀",
+    "changeBackground": "배경 변경",
+    "backgroundImage": "이미지 URL",
+    "bgFixed": "배경 고정",
+    "bgRandom": "열때마다 변경"
   },
   "bookmarks": {
     "title": "북마크",
@@ -227,7 +232,10 @@
     "noSearchResults": "검색 결과가 없습니다. 다른 검색어를 시도해보세요.",
     "faviconRefreshed": "파비콘이 새로고침되었습니다.",
     "favoriteToggleError": "즐겨찾기 상태 변경 중 오류가 발생했습니다.",
-    "reorderError": "북마크 순서 변경 중 오류가 발생했습니다."
+    "reorderError": "북마크 순서 변경 중 오류가 발생했습니다.",
+    "editMode": "편집 모드",
+    "longPressHint": "길게 눌러 편집 모드",
+    "deleteConfirm": "삭제하시겠습니까?"
   },
   "collections": {
     "title": "컬렉션",
@@ -501,7 +509,8 @@
     "geolocationUnavailable": "위치 정보를 사용할 수 없습니다",
     "geolocationTimeout": "위치 정보 요청 시간이 초과되었습니다",
     "locationFetchError": "위치 정보를 가져올 수 없습니다",
-    "useDefaultLocation": "기본 위치(서울역)를 사용하시겠습니까?"
+    "useDefaultLocation": "기본 위치(서울역)를 사용하시겠습니까?",
+    "loading": "날씨 불러오는 중"
   },
   "languages": {
     "korean": "한국어",
@@ -534,8 +543,15 @@
     "permissionHelpStep2": "나타나는 메뉴에서 ‘알림’을 ‘허용’으로 변경합니다.",
     "permissionHelpStep3": "‘사이트 설정’으로 이동한 경우 알림을 허용으로 바꾸고 창을 닫습니다.",
     "permissionHelpStep4": "페이지를 새로고침한 뒤 시스템 알림을 다시 켜주세요.",
+    "all": "전체",
+    "unread": "읽지 않음",
+    "today": "오늘",
+    "thisWeek": "이번 주",
+    "older": "이전",
     "noNotifications": "알림이 없습니다",
     "noNotificationsDescription": "새로운 북마크 활동이 여기에 표시됩니다",
+    "noUnreadNotifications": "읽지 않은 알림이 없습니다",
+    "allCaughtUp": "모든 알림을 확인했습니다",
     "markAllAsRead": "모두 읽음",
     "markAsRead": "읽음 처리",
     "deleteNotification": "삭제",

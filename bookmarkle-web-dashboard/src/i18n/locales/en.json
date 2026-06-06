@@ -32,6 +32,7 @@
     "updating": "Updating...",
     "processing": "Processing...",
     "countUnit": "",
+    "done": "Done",
     "moreActions": "More Actions",
     "accountDisabled": "Account Disabled",
     "accountDisabledDesc": "Your account has been disabled by an administrator. You cannot access bookmarks and collections.",
@@ -133,7 +134,11 @@
     "yesterday": "Yesterday",
     "daysAgo": "{{count}} days ago",
     "copied": "Copied!",
-    "todaysBibleVerse": "Today's Bible Verse"
+    "todaysBibleVerse": "Today's Bible Verse",
+    "changeBackground": "Change Background",
+    "backgroundImage": "Image URL",
+    "bgFixed": "Keep Fixed",
+    "bgRandom": "Change on Open"
   },
   "bookmarks": {
     "title": "Bookmarks",
@@ -214,7 +219,10 @@
     "noSearchResults": "No search results. Try a different search term.",
     "faviconRefreshed": "Favicon has been refreshed.",
     "favoriteToggleError": "An error occurred while changing favorite status.",
-    "reorderError": "An error occurred while reordering bookmarks."
+    "reorderError": "An error occurred while reordering bookmarks.",
+    "editMode": "Edit Mode",
+    "longPressHint": "Long press to edit",
+    "deleteConfirm": "Delete this bookmark?"
   },
   "collections": {
     "title": "Collections",
@@ -488,7 +496,8 @@
     "geolocationUnavailable": "Location information unavailable",
     "geolocationTimeout": "Location request timed out",
     "locationFetchError": "Unable to fetch location information",
-    "useDefaultLocation": "Would you like to use the default location (Seoul Station)?"
+    "useDefaultLocation": "Would you like to use the default location (Seoul Station)?",
+    "loading": "Loading weather..."
   },
   "languages": {
     "korean": "한국어",
@@ -521,8 +530,15 @@
     "permissionHelpStep2": "In the menu that appears, change ‘Notifications’ to ‘Allow’.",
     "permissionHelpStep3": "If you open ‘Site settings’, change the Notifications option to Allow and close the tab.",
     "permissionHelpStep4": "Refresh the page, then turn on system notifications again.",
+    "all": "All",
+    "unread": "Unread",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "older": "Earlier",
     "noNotifications": "No notifications",
     "noNotificationsDescription": "New bookmark activities will be displayed here",
+    "noUnreadNotifications": "No unread notifications",
+    "allCaughtUp": "You're all caught up",
     "markAllAsRead": "Mark All as Read",
     "markAsRead": "Mark as Read",
     "deleteNotification": "Delete",
