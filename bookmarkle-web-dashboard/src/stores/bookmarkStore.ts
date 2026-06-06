@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import {
   collection,
   query,
@@ -115,9 +116,21 @@ interface BookmarkActions {
 let activeBookmarkListeners: (() => void)[] = [];
 let activeTrashListeners: (() => void)[] = [];
 
-export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
+// Date 객체를 sessionStorage에 저장/복원하는 커스텀 storage
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/;
+const dateAwareStorage = createJSONStorage(() => sessionStorage, {
+  reviver: (_key, value) => {
+    if (typeof value === "string" && ISO_DATE_RE.test(value)) {
+      return new Date(value);
+    }
+    return value;
+  },
+});
+
+
+export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
+  persist(
   (set, get) => ({
-    // State
     rawBookmarks: [],
     trashBookmarks: [],
     loading: true,
@@ -179,6 +192,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
     },
 
     subscribeToBookmarks: (userId: string) => {
+
       const q = query(
         collection(db, "bookmarks"),
         where("userId", "==", userId)
@@ -196,6 +210,7 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
             }
           });
 
+          // fromCache: 캐시 응답이든 서버 응답이든 데이터가 있으면 로딩 해제
           set({ rawBookmarks: bookmarkList, loading: false });
         },
         (error) => {
@@ -313,6 +328,9 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
       });
       activeBookmarkListeners = [];
       activeTrashListeners = [];
+      // 로그아웃 시 캐시 초기화 (다른 계정 데이터 노출 방지)
+      sessionStorage.removeItem("bookmarkle-cache");
+      set({ rawBookmarks: [], collections: [], loading: true });
       if (process.env.NODE_ENV === "development") {
         console.log("✅ 북마크 리스너 정리 완료");
       }
@@ -636,5 +654,14 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>(
       });
       return newFavicon;
     },
-  })
-);
+  }),
+  {
+    name: "bookmarkle-cache",
+    storage: dateAwareStorage,
+    // rawBookmarks, collections만 캐시 (loading 등 UI 상태는 제외)
+    partialize: (state) => ({
+      rawBookmarks: state.rawBookmarks,
+      collections:  state.collections,
+    }),
+  }
+));

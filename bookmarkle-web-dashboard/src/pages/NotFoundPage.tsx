@@ -48,7 +48,7 @@ export const NotFoundPage: React.FC = () => {
 
         {/* 아이콘 */}
         <div className="mb-8 flex justify-center">
-          <div className="p-6 bg-gray-100 dark:bg-gray-800 rounded-full">
+          <div className="p-6 bg-gray-100 dark:bg-[#111113] rounded-full">
             <Search className="w-12 h-12 text-gray-400 dark:text-gray-500" />
           </div>
         </div>
@@ -57,7 +57,7 @@ export const NotFoundPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={handleGoBack}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+            className="flex items-center justify-center gap-2 px-6 py-3 bg-white dark:bg-[#111113] text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-white/[0.06] rounded-lg hover:bg-gray-50 dark:hover:bg-white/[0.08] transition-colors font-medium"
           >
             <ArrowLeft className="w-5 h-5" />
             {t("notFound.goBack", { defaultValue: "이전 페이지" })}

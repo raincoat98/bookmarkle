@@ -103,6 +103,10 @@ module.exports = {
           "0%": { transform: "translateY(20px)", opacity: "0" },
           "100%": { transform: "translateY(0)", opacity: "1" },
         },
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-2deg)" },
+          "50%": { transform: "rotate(2deg)" },
+        },
       },
       animation: {
         "slide-in-left": "slide-in-left 0.3s cubic-bezier(0.4,0,0.2,1) both",
@@ -113,6 +117,7 @@ module.exports = {
         float: "float 6s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
         "slide-up": "slide-up 0.4s cubic-bezier(0.4,0,0.2,1) both",
+        wiggle: "wiggle 0.3s ease-in-out infinite",
       },
     },
   },

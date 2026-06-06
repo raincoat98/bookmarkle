@@ -14,7 +14,9 @@ import {
   type User,
 } from "firebase/auth";
 import {
-  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   doc,
   getDoc,
   setDoc,
@@ -37,7 +39,12 @@ const app = initializeApp(firebaseConfig);
 
 // Auth 및 Firestore 인스턴스
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+// IndexedDB 오프라인 캐시 활성화: 재방문 시 캐시에서 즉시 데이터 반환
+export const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
+});
 export const googleProvider = new GoogleAuthProvider();
 
 // 관리자 이메일 목록
