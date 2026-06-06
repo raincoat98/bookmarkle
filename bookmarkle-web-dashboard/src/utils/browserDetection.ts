@@ -13,50 +13,62 @@ export interface BrowserInfo {
 export function detectBrowser(): BrowserInfo {
   const userAgent = navigator.userAgent.toLowerCase();
 
-  // 카카오톡 인앱 브라우저 감지
+  // ─── 인앱 브라우저 감지 ────────────────────────────────────────────
   const isKakaoTalk = userAgent.includes("kakaotalk");
-
-  // 네이버 앱 브라우저 감지 (웨일 브라우저는 제외)
-  const isNaverApp =
-    userAgent.includes("naver") && !userAgent.includes("whale");
-
-  // 라인 앱 브라우저 감지
-  const isLineApp = userAgent.includes("line");
-
-  // 페이스북 인앱 브라우저 감지
-  const isFacebookApp =
-    userAgent.includes("fbav") || userAgent.includes("fban");
-
-  // 인스타그램 인앱 브라우저 감지
+  const isNaverApp = userAgent.includes("naver") && !userAgent.includes("whale");
+  const isLineApp = userAgent.includes(" line/"); // 라인 앱은 정확히 "line/" 형태
+  const isFacebookApp = userAgent.includes("fbav") || userAgent.includes("fban");
   const isInstagramApp = userAgent.includes("instagram");
+  // Android WebView 감지: "; wv)" 패턴이 정확
+  const isAndroidWebView = userAgent.includes("; wv)");
 
-  // 웨일 브라우저 감지 (Chromium 기반이므로 호환 가능)
+  // ─── 일반 브라우저 식별 ───────────────────────────────────────────
   const isWhale = userAgent.includes("whale");
+  const isEdge = userAgent.includes("edg/") || userAgent.includes("edge");
+  const isFirefox = userAgent.includes("firefox") || userAgent.includes("fxios");
+  // Chrome iOS는 "crios" 포함
+  const isChrome =
+    !isEdge &&
+    !isWhale &&
+    (userAgent.includes("chrome") || userAgent.includes("crios"));
+  // Safari: WebKit이고 Chrome/Edge/Firefox/인앱이 아닌 경우
+  // 데스크톱·모바일 모두 정상 식별
+  const hasSafari = userAgent.includes("safari");
+  const isSafari =
+    hasSafari &&
+    !isChrome &&
+    !isEdge &&
+    !isFirefox &&
+    !isKakaoTalk &&
+    !isNaverApp &&
+    !isLineApp &&
+    !isFacebookApp &&
+    !isInstagramApp &&
+    !isAndroidWebView;
 
-  // 기타 인앱 브라우저 감지 패턴
   const isInAppBrowser =
     isKakaoTalk ||
     isNaverApp ||
     isLineApp ||
     isFacebookApp ||
     isInstagramApp ||
-    userAgent.includes("wv") || // WebView 감지
-    (userAgent.includes("version") && userAgent.includes("mobile"));
+    isAndroidWebView;
 
-  // 브라우저 이름 결정
+  // ─── 브라우저 이름 ────────────────────────────────────────────────
   let browserName = "알 수 없는 브라우저";
   if (isKakaoTalk) browserName = "카카오톡";
   else if (isNaverApp) browserName = "네이버 앱";
-  else if (isWhale) browserName = "웨일";
   else if (isLineApp) browserName = "라인";
   else if (isFacebookApp) browserName = "페이스북";
   else if (isInstagramApp) browserName = "인스타그램";
-  else if (userAgent.includes("chrome")) browserName = "Chrome";
-  else if (userAgent.includes("safari")) browserName = "Safari";
-  else if (userAgent.includes("firefox")) browserName = "Firefox";
-  else if (userAgent.includes("edge")) browserName = "Edge";
+  else if (isWhale) browserName = "웨일";
+  else if (isEdge) browserName = "Edge";
+  else if (isChrome) browserName = "Chrome";
+  else if (isFirefox) browserName = "Firefox";
+  else if (isSafari) browserName = "Safari";
 
-  // 호환성 판단 - 인앱 브라우저는 대부분 구글 로그인에 제한이 있음
+  // ─── 호환성 ────────────────────────────────────────────────────────
+  // 인앱 브라우저만 비호환. 일반 브라우저(데스크톱/모바일 Safari, Chrome 등)는 호환
   const isCompatible = !isInAppBrowser;
 
   return {
