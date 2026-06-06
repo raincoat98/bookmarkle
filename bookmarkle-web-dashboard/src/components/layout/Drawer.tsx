@@ -132,8 +132,8 @@ export const Drawer: React.FC<DrawerProps> = ({
         <motion.div
           initial={false}
           animate={{
-            width: isDesktop ? (isDrawerCollapsed ? 64 : 240) : isDrawerOpen ? 240 : 0,
-            x: isDesktop ? 0 : isDrawerOpen ? 0 : -240,
+            width: isDesktop ? (isDrawerCollapsed ? 64 : 300) : isDrawerOpen ? 300 : 0,
+            x: isDesktop ? 0 : isDrawerOpen ? 0 : -300,
           }}
           transition={{ type: "spring", stiffness: 350, damping: 35 }}
           className="fixed inset-y-0 left-0 z-[9999]"
@@ -141,7 +141,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           <div className="flex h-full flex-col bg-white dark:bg-[#111113] border-r border-gray-200/70 dark:border-white/[0.06]">
             {/* 헤더 */}
             <div
-              className={`flex items-center justify-between border-b border-gray-100 dark:border-white/[0.06] h-[80px] ${
+              className={`flex items-center justify-between border-b border-gray-100 dark:border-white/[0.06] h-14 lg:h-[80px] ${
                 isDrawerCollapsed ? "px-3" : "px-4"
               }`}
             >
@@ -178,16 +178,17 @@ export const Drawer: React.FC<DrawerProps> = ({
                 ) : (
                   <button
                     onClick={() => setIsDrawerOpen(false)}
-                    className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 rounded-md hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.14] active:scale-95 transition-all touch-manipulation"
                   >
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
+                    <span className="text-xs font-medium">닫기</span>
                   </button>
                 )}
               </div>
             </div>
 
             {/* 네비게이션 */}
-            <nav className={`pt-2 ${isDrawerCollapsed ? "px-2" : "px-2"}`}>
+            <nav className={`pt-2 ${isDrawerCollapsed ? "px-2" : "px-0"}`}>
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -201,7 +202,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                     }}
                     title={isDrawerCollapsed ? item.name : undefined}
                     className={`flex items-center ${
-                      isDrawerCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+                      isDrawerCollapsed ? "justify-center px-2 py-2.5" : "gap-3 px-4 py-2.5"
                     } rounded-lg text-sm font-medium transition-colors mb-0.5 ${
                       item.current
                         ? "bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300"
@@ -259,10 +260,11 @@ export const Drawer: React.FC<DrawerProps> = ({
       {/* 메인 콘텐츠 */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 모바일 헤더 */}
-        <div className="lg:hidden h-14 px-4 border-b border-gray-200/70 dark:border-white/[0.06] bg-white dark:bg-[#111113] flex items-center">
+        <div className="lg:hidden h-14 px-2 border-b border-gray-200/70 dark:border-white/[0.06] bg-white dark:bg-[#111113] flex items-center">
           <button
             onClick={() => setIsDrawerOpen(true)}
-            className="p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-white/5 transition-colors"
+            className="flex items-center justify-center w-11 h-11 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors active:bg-gray-200 dark:active:bg-white/[0.12] touch-manipulation"
+            aria-label="메뉴 열기"
           >
             <Menu className="w-5 h-5" />
           </button>
@@ -272,7 +274,7 @@ export const Drawer: React.FC<DrawerProps> = ({
         <main
           className="flex-1 overflow-auto"
           style={{
-            paddingLeft: isDesktop ? (isDrawerCollapsed ? "64px" : "240px") : "0",
+            paddingLeft: isDesktop ? (isDrawerCollapsed ? "64px" : "300px") : "0",
             transition: "padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >

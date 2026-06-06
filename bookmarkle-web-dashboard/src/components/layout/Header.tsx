@@ -3,18 +3,19 @@ import {
   useThemeStore,
   useDrawerStore,
   useSubscriptionStore,
+  useFeatureFlagsStore,
 } from "../../stores";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Menu,
   Sun,
   Moon,
+  Monitor,
   Settings,
   User,
   LogOut,
-  Globe,
   Shield,
   Crown,
   ChevronDown,
@@ -36,110 +37,77 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
   const { theme, setTheme } = useThemeStore();
   const { setIsDrawerOpen } = useDrawerStore();
   const { isPremium } = useSubscriptionStore();
+  useFeatureFlagsStore((s) => s.flags);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const toggleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-    } else if (theme === "dark") {
-      setTheme("auto");
-    } else {
-      setTheme("light");
-    }
+    if (theme === "light") setTheme("dark");
+    else if (theme === "dark") setTheme("auto");
+    else setTheme("light");
   };
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       await logout();
-      // 로그아웃 완료되면 navigate (user 상태가 null로 변경되고 Header가 언마운트되기 전에)
       navigate("/", { replace: true });
-    } catch (error) {
-      console.error("로그아웃 실패:", error);
+    } catch {
       setIsLoggingOut(false);
     }
   };
 
-  // 관리자 권한 체크
   useEffect(() => {
-    if (user) {
-      isAdminUser(user).then(setIsAdmin);
-    } else {
-      setIsAdmin(false);
-    }
+    if (user) isAdminUser(user).then(setIsAdmin);
+    else setIsAdmin(false);
   }, [user]);
 
-  // 외부 클릭 시 메뉴 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsUserMenuOpen(false);
       }
     };
-
-    if (isUserMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    if (isUserMenuOpen) document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isUserMenuOpen]);
 
+  const ThemeIcon = theme === "light" ? Sun : theme === "dark" ? Moon : Monitor;
+
   return (
-    <header className="relative z-40 bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-700/50 shadow-glass">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* 왼쪽: 로고 및 메뉴 버튼 */}
-          <div className="flex items-center space-x-4">
+    <header className="sticky top-0 z-40 h-14 lg:h-[80px] bg-white/80 dark:bg-[#111113]/90 backdrop-blur-md border-b border-gray-100 dark:border-white/[0.06] flex items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="flex justify-between items-center">
+          {/* 왼쪽: 로고 */}
+          <div className="flex items-center gap-2">
             {showMenuButton && (
               <button
                 onClick={() => setIsDrawerOpen(true)}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm lg:hidden"
+                className="flex items-center justify-center w-10 h-10 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors lg:hidden touch-manipulation"
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="w-5 h-5" />
               </button>
             )}
-
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <Link to="/about" className="flex items-center space-x-3">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotate: 5 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-xl flex items-center justify-center shadow-soft"
-                >
-                  <BookOpen className="w-5 h-5 text-white" />
-                </motion.div>
-                <motion.h1
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                  className="text-xl font-bold gradient-text"
-                >
-                  {t("common.appName")}
-                </motion.h1>
-              </Link>
-            </motion.div>
+            <Link to="/about" className="flex items-center gap-2.5">
+              <div className="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-4 h-4 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+                {t("common.appName")}
+              </span>
+            </Link>
           </div>
 
-          {/* 오른쪽: 알림, 테마, 사용자 메뉴 */}
-          <div className="flex items-center space-x-2">
-            {/* 알림 센터 */}
+          {/* 오른쪽: 알림, 테마, 사용자 */}
+          <div className="flex items-center gap-1">
             {user && <NotificationCenter />}
 
             {/* 테마 토글 */}
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={toggleTheme}
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
+              className="flex items-center justify-center w-9 h-9 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
               aria-label={t("header.themeToggle")}
               title={t("header.currentTheme", {
                 theme:
@@ -150,137 +118,103 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                     : t("settings.themeSystem"),
               })}
             >
-              <AnimatePresence mode="wait">
-                {theme === "light" ? (
-                  <motion.div
-                    key="moon"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Moon className="w-5 h-5" />
-                  </motion.div>
-                ) : theme === "dark" ? (
-                  <motion.div
-                    key="globe"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Globe className="w-5 h-5" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="sun"
-                    initial={{ rotate: -90, opacity: 0 }}
-                    animate={{ rotate: 0, opacity: 1 }}
-                    exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Sun className="w-5 h-5" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              <ThemeIcon className="w-4 h-4" />
+            </button>
 
             {/* 사용자 메뉴 */}
             {user && (
               <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="flex items-center space-x-2 p-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
+                  className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
                 >
-                  <div className="w-8 h-8 bg-gradient-to-r from-brand-500 to-accent-500 rounded-full flex items-center justify-center shadow-soft">
-                    <User className="w-4 h-4 text-white" />
+                  <div className="w-7 h-7 bg-violet-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="" className="w-7 h-7 rounded-full" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-white" />
+                    )}
                   </div>
-                  {isPremium && <Crown className="w-4 h-4 text-yellow-500" />}
+                  {isPremium && <Crown className="w-3.5 h-3.5 text-amber-500" />}
                   <ChevronDown
-                    className={`w-4 h-4 transition-transform ${
+                    className={`w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-transform ${
                       isUserMenuOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
 
-                {/* 드롭다운 메뉴 */}
                 <AnimatePresence>
                   {isUserMenuOpen && (
                     <motion.div
-                      initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                      initial={{ opacity: 0, y: -8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{ duration: 0.2 }}
-                      className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-[100]"
+                      exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                      transition={{ duration: 0.15 }}
+                      className="absolute right-0 mt-2 w-56 bg-white dark:bg-[#111113] rounded-xl shadow-lg border border-gray-100 dark:border-white/[0.06] py-1 z-[100] overflow-hidden"
                     >
-                      {/* 사용자 정보 */}
-                      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-white/[0.06]">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                           {user.displayName || t("settings.user")}
                         </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                        <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">
                           {user.email}
                         </p>
                       </div>
 
-                      {/* 구독 관리 - 베타 기간 중 숨김 */}
-                      {!isBetaPeriod() && (
+                      <div className="py-1">
+                        {!isBetaPeriod() && (
+                          <Link
+                            to="/subscription"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
+                              isPremium
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-gray-700 dark:text-gray-300"
+                            }`}
+                          >
+                            <Crown className="w-4 h-4" />
+                            <span>
+                              {isPremium
+                                ? t("header.premiumSubscription")
+                                : t("premium.subscriptionManagement")}
+                            </span>
+                          </Link>
+                        )}
+
+                        {isAdmin && (
+                          <Link
+                            to="/admin"
+                            onClick={() => setIsUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/[0.06] transition-colors"
+                          >
+                            <Shield className="w-4 h-4" />
+                            <span>{t("header.adminDashboard")}</span>
+                          </Link>
+                        )}
+
                         <Link
-                          to="/subscription"
+                          to="/settings"
                           onClick={() => setIsUserMenuOpen(false)}
-                          className={`flex items-center space-x-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                            isPremium
-                              ? "text-yellow-600 dark:text-yellow-400"
-                              : "text-gray-700 dark:text-gray-300"
-                          }`}
+                          className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
                         >
-                          <Crown className="w-4 h-4" />
+                          <Settings className="w-4 h-4" />
+                          <span>{t("settings.title")}</span>
+                        </Link>
+
+                        <button
+                          onClick={() => {
+                            setIsUserMenuOpen(false);
+                            handleLogout();
+                          }}
+                          disabled={isLoggingOut}
+                          className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/[0.06] disabled:opacity-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4" />
                           <span>
-                            {isPremium
-                              ? t("header.premiumSubscription")
-                              : t("premium.subscriptionManagement")}
+                            {isLoggingOut ? t("auth.loggingOut") : t("auth.logout")}
                           </span>
-                        </Link>
-                      )}
-
-                      {/* 관리자 페이지 */}
-                      {isAdmin && (
-                        <Link
-                          to="/admin"
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                        >
-                          <Shield className="w-4 h-4" />
-                          <span>{t("header.adminDashboard")}</span>
-                        </Link>
-                      )}
-
-                      {/* 설정 */}
-                      <Link
-                        to="/settings"
-                        onClick={() => setIsUserMenuOpen(false)}
-                        className="flex items-center space-x-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      >
-                        <Settings className="w-4 h-4" />
-                        <span>{t("settings.title")}</span>
-                      </Link>
-
-                      {/* 로그아웃 */}
-                      <button
-                        onClick={() => {
-                          setIsUserMenuOpen(false);
-                          handleLogout();
-                        }}
-                        disabled={isLoggingOut}
-                        className="w-full flex items-center space-x-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>
-                          {isLoggingOut
-                            ? t("auth.loggingOut")
-                            : t("auth.logout")}
-                        </span>
-                      </button>
+                        </button>
+                      </div>
                     </motion.div>
                   )}
                 </AnimatePresence>
