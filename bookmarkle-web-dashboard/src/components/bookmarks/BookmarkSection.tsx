@@ -67,46 +67,19 @@ export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
         >
           {isLoading && showSectionSkeleton ? (
             // 섹션 헤더 스켈레톤 (그룹화된 북마크 뷰에서 로딩 중일 때 표시)
-            <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-                isSubSection
-                  ? "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-700"
-                  : "bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800"
-              }`}
-            >
-              {/* 아이콘 스켈레톤 */}
-              <div className="w-5 h-5 bg-gray-300 dark:bg-gray-600 rounded flex-shrink-0 animate-pulse"></div>
-              {/* 제목 스켈레톤 */}
-              <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32 animate-pulse"></div>
-              {/* 카운트 배지 스켈레톤 */}
-              <div className="h-5 bg-gray-300 dark:bg-gray-600 rounded-full w-12 animate-pulse"></div>
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-white/[0.06]">
+              <div className="w-5 h-5 bg-gray-200 dark:bg-white/[0.08] rounded flex-shrink-0 animate-pulse" />
+              <div className="h-4 bg-gray-200 dark:bg-white/[0.08] rounded w-32 animate-pulse" />
+              <div className="h-5 bg-gray-200 dark:bg-white/[0.08] rounded-full w-12 animate-pulse" />
             </div>
           ) : sectionTitle ? (
             // 실제 섹션 헤더
-            <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg ${
-                isSubSection
-                  ? "bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-700"
-                  : "bg-gradient-to-r from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800"
-              }`}
-            >
+            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-white/[0.06]">
               {sectionIcon && <span className="text-lg">{sectionIcon}</span>}
-              <h3
-                className={`font-semibold text-sm ${
-                  isSubSection
-                    ? "text-purple-700 dark:text-purple-300"
-                    : "text-slate-700 dark:text-slate-300"
-                }`}
-              >
+              <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
                 {sectionTitle}
               </h3>
-              <span
-                className={`text-xs px-2 py-1 rounded-full ${
-                  isSubSection
-                    ? "bg-purple-200 dark:bg-purple-700 text-purple-700 dark:text-purple-300"
-                    : "bg-slate-200 dark:bg-slate-600 text-slate-500 dark:text-slate-400"
-                }`}
-              >
+              <span className="text-xs px-2 py-1 rounded-full bg-white dark:bg-white/[0.08] text-gray-500 dark:text-gray-400 font-medium">
                 {t("bookmarks.count", { count: bookmarks.length })}
               </span>
             </div>

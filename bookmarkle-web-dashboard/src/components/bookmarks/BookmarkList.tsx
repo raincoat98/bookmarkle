@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import type { Bookmark, Collection, SortOption } from "../../types";
 import { sortBookmarks } from "../../utils/sortBookmarks";
 import { useBookmarkActions } from "../../hooks/useBookmarkActions";
@@ -31,6 +31,7 @@ interface BookmarkListProps {
     }[];
   };
   loading?: boolean;
+  collectionLabel?: string;
 }
 
 export const BookmarkList: React.FC<BookmarkListProps> = ({
@@ -47,6 +48,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   onSortChange,
   groupedBookmarks,
   loading = false,
+  collectionLabel,
 }) => {
   // 필터링 및 정렬된 북마크
   const filteredAndSortedBookmarks = useMemo(() => {
@@ -84,6 +86,8 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   }, [groupedBookmarks, currentSort]);
 
   // 북마크 액션 훅 사용
+  const [isEditMode, setIsEditMode] = useState(false);
+
   const {
     faviconLoadingStates,
     movingBookmarkId,
@@ -165,6 +169,9 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
         currentSort={currentSort}
         onSortChange={onSortChange}
         loading={loading}
+        collectionLabel={collectionLabel}
+        isEditMode={isEditMode}
+        onToggleEditMode={() => setIsEditMode((v) => !v)}
       />
 
       {filteredAndSortedBookmarks.length > 0 ? (
@@ -182,6 +189,8 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           onMoveDown={handleMoveDown}
           movingBookmarkId={movingBookmarkId}
           moveDirection={moveDirection}
+          isEditMode={isEditMode}
+          onEditModeChange={setIsEditMode}
         />
       ) : (
         <EmptyBookmarkState searchTerm={searchTerm} />

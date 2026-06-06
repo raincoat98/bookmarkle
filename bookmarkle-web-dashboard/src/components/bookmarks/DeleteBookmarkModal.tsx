@@ -47,8 +47,8 @@ export const DeleteBookmarkModal = ({
   if (!isOpen || !bookmark) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40 transition-opacity duration-200 animate-fade-in p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-md scale-95 animate-fade-in-up min-w-0 transition-transform duration-200 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[10000] flex items-start sm:items-center justify-center bg-black bg-opacity-40 transition-opacity duration-200 animate-fade-in p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-[#111113] rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-md scale-95 animate-fade-in-up min-w-0 transition-transform duration-200 max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           {t("bookmarks.deleteBookmark")}
         </h3>
@@ -56,7 +56,7 @@ export const DeleteBookmarkModal = ({
           <p className="text-gray-700 dark:text-gray-300 mb-3">
             {t("bookmarks.deleteBookmarkConfirm")}
           </p>
-          <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 sm:p-4 overflow-hidden">
+          <div className="bg-gray-50 dark:bg-white/[0.06] rounded-lg p-3 sm:p-4 overflow-hidden">
             <h4 className="font-medium text-gray-900 dark:text-white mb-2 break-words">
               {bookmark.title}
             </h4>
@@ -73,7 +73,7 @@ export const DeleteBookmarkModal = ({
         <div className="flex flex-row justify-end gap-2 sm:gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-150 hover:scale-105 active:scale-95"
+            className="px-4 py-2 rounded bg-gray-200 dark:bg-white/[0.06] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-white/[0.12] transition-colors duration-150 hover:scale-105 active:scale-95"
             disabled={isDeleting}
             title={t("bookmarks.cancelWithEsc")}
           >

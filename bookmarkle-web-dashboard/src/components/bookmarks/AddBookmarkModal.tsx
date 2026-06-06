@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { X, Plus, Globe, Folder } from "lucide-react";
 import type { Collection } from "../../types";
 import { getFaviconUrl, findFaviconFromWebsite } from "../../utils/favicon";
 import { useTranslation } from "react-i18next";
@@ -61,45 +60,29 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
       }
     };
 
-    window.addEventListener(
-      "pasteBookmarkUrl",
-      handlePasteBookmarkUrl as EventListener
-    );
-
+    window.addEventListener("pasteBookmarkUrl", handlePasteBookmarkUrl as EventListener);
     return () => {
-      window.removeEventListener(
-        "pasteBookmarkUrl",
-        handlePasteBookmarkUrl as EventListener
-      );
+      window.removeEventListener("pasteBookmarkUrl", handlePasteBookmarkUrl as EventListener);
     };
   }, [isOpen]);
 
-  // URL이 변경될 때 파비콘 자동 가져오기
+  // URL 변경 시 파비콘 자동 가져오기
   useEffect(() => {
     const fetchFavicon = async () => {
       if (url.trim()) {
         setFaviconLoading(true);
         try {
-          // 먼저 기본 파비콘 URL 생성
           const defaultFavicon = getFaviconUrl(url);
           setFavicon(defaultFavicon);
 
-          // 웹사이트에서 실제 파비콘 찾기 시도 (타임아웃 설정)
           const timeoutPromise = new Promise<string>((_, reject) => {
-            setTimeout(
-              () => reject(new Error("파비콘 가져오기 시간 초과")),
-              5000
-            );
+            setTimeout(() => reject(new Error("파비콘 가져오기 시간 초과")), 5000);
           });
 
           const faviconPromise = findFaviconFromWebsite(url);
-          const actualFavicon = await Promise.race([
-            faviconPromise,
-            timeoutPromise,
-          ]);
+          const actualFavicon = await Promise.race([faviconPromise, timeoutPromise]);
           setFavicon(actualFavicon);
         } catch {
-          // 실패해도 기본 파비콘은 유지
           const defaultFavicon = getFaviconUrl(url);
           setFavicon(defaultFavicon);
         } finally {
@@ -110,25 +93,22 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
       }
     };
 
-    const timeoutId = setTimeout(fetchFavicon, 1000); // 1초 후 실행
+    const timeoutId = setTimeout(fetchFavicon, 1000);
     return () => clearTimeout(timeoutId);
   }, [url]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 기본 유효성 검사
     if (!title.trim()) {
       alert(t("bookmarks.bookmarkTitleRequired"));
       return;
     }
-
     if (!url.trim()) {
       alert(t("bookmarks.bookmarkUrlRequired"));
       return;
     }
 
-    // URL 유효성 검사
     let validUrl = url.trim();
     if (!validUrl.startsWith("http://") && !validUrl.startsWith("https://")) {
       validUrl = `https://${validUrl}`;
@@ -162,12 +142,9 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
 
   const handleUrlChange = (value: string) => {
     setUrl(value);
-    // URL에서 자동으로 제목 추출 시도
     if (!title.trim() && value.trim()) {
       try {
-        const urlObj = new URL(
-          value.startsWith("http") ? value : `https://${value}`
-        );
+        const urlObj = new URL(value.startsWith("http") ? value : `https://${value}`);
         const domain = urlObj.hostname.replace("www.", "");
         setTitle(domain);
       } catch {
@@ -178,190 +155,182 @@ export const AddBookmarkModal: React.FC<AddBookmarkModalProps> = ({
 
   if (!isOpen) return null;
 
+  const inputClass =
+    "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-150";
+  const labelClass = "block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1";
+
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* 배경 오버레이 */}
+    <div className="fixed inset-0 z-[10000] flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+      {/* 오버레이 */}
       <div
-        className="absolute inset-0 bg-black/20 dark:bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
 
-      {/* 모달 래퍼 */}
-      <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-        {/* 모달 컨테이너 */}
-        <div className="relative w-full max-w-md animate-slide-up">
-          <div className="card-glass max-h-[90vh] overflow-hidden flex flex-col">
-            {/* 헤더 - 고정 */}
-            <div className="flex items-center justify-between p-6 sm:p-8 pb-4 sticky top-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-10 border-b border-white/20 dark:border-gray-700/30">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {t("bookmarks.addBookmark")}
-              </h2>
-              <button
-                onClick={onClose}
-                className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {/* 모달 */}
+      <div className="relative w-full max-w-md bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-xl shadow-2xl flex flex-col max-h-[90vh]">
+        {/* 헤더 */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/[0.06]">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            {t("bookmarks.addBookmark")}
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors duration-150"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-            {/* 폼 - 스크롤 가능 */}
-            <div className="flex-1 overflow-y-auto p-6 sm:p-8 pt-4">
-              <form onSubmit={handleSubmit} className="space-y-6">
-                {/* URL 입력 */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t("bookmarks.bookmarkUrl")} *
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Globe className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="url"
-                      value={url}
-                      onChange={(e) => handleUrlChange(e.target.value)}
-                      placeholder="https://example.com"
-                      className="w-full pl-12 pr-4 py-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/30 dark:border-gray-600/30 rounded-2xl focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      required
-                    />
-                  </div>
-                  {/* 파비콘 미리보기 */}
-                  {url.trim() && (
-                    <div className="flex items-center space-x-2">
-                      <div className="relative">
-                        {favicon ? (
-                          <img
-                            src={favicon}
-                            alt={t("common.favicon")}
-                            className="w-6 h-6 rounded"
-                            onError={(e) => {
-                              e.currentTarget.src = "/favicon.svg";
-                            }}
-                          />
-                        ) : (
-                          <div className="w-6 h-6 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
-                            <Globe className="w-4 h-4 text-gray-400" />
-                          </div>
-                        )}
-                        {faviconLoading && (
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-brand-500"></div>
-                          </div>
-                        )}
-                      </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        {faviconLoading
-                          ? t("bookmarks.faviconLoading")
-                          : t("bookmarks.faviconPreview")}
-                      </span>
-                    </div>
-                  )}
+        {/* 폼 */}
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* URL */}
+            <div>
+              <label className={labelClass}>
+                {t("bookmarks.bookmarkUrl")} *
+              </label>
+              <div className="relative">
+                <input
+                  type="url"
+                  value={url}
+                  onChange={(e) => handleUrlChange(e.target.value)}
+                  placeholder="https://example.com"
+                  className={`${inputClass} pl-9`}
+                  required
+                />
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+                  </svg>
                 </div>
+              </div>
 
-                {/* 제목 입력 */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t("bookmarks.bookmarkTitle")} *
-                  </label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder={t("bookmarks.bookmarkTitlePlaceholder")}
-                    className="w-full px-4 py-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/30 dark:border-gray-600/30 rounded-2xl focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                    required
-                  />
-                </div>
-
-                {/* 설명 입력 */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                    {t("bookmarks.bookmarkDescription")} ({t("common.optional")}
-                    )
-                  </label>
-                  <textarea
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    placeholder={t("bookmarks.bookmarkDescriptionPlaceholder")}
-                    rows={3}
-                    className="w-full px-4 py-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/30 dark:border-gray-600/30 rounded-2xl focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 resize-none"
-                  />
-                </div>
-
-                {/* 컬렉션 선택 */}
-                {collections.length > 0 && (
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      {t("bookmarks.bookmarkCollection")} (
-                      {t("common.optional")})
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Folder className="w-5 h-5 text-gray-400" />
-                      </div>
-                      <select
-                        value={selectedCollection}
-                        onChange={(e) => setSelectedCollection(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/30 dark:border-gray-600/30 rounded-2xl focus:ring-2 focus:ring-brand-500/50 focus:border-brand-500 transition-all duration-200 text-gray-900 dark:text-white appearance-none cursor-pointer"
-                      >
-                        <option value="">
-                          {t("collections.noCollectionSelection")}
-                        </option>
-                        {collections.map((collection) => (
-                          <option key={collection.id} value={collection.id}>
-                            {collection.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
-                        <svg
-                          className="w-5 h-5 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
+              {/* 파비콘 미리보기 */}
+              {url.trim() && (
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="relative w-5 h-5 flex-shrink-0">
+                    {favicon ? (
+                      <img
+                        src={favicon}
+                        alt={t("common.favicon")}
+                        className="w-5 h-5 rounded"
+                        onError={(e) => { e.currentTarget.src = "/favicon.svg"; }}
+                      />
+                    ) : (
+                      <div className="w-5 h-5 rounded bg-gray-200 dark:bg-white/[0.06] flex items-center justify-center">
+                        <svg className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3" />
                         </svg>
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* 버튼 그룹 */}
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="flex-1 px-6 py-3 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-2xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 hover:scale-105 backdrop-blur-sm"
-                  >
-                    {t("common.cancel")}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading || !title.trim() || !url.trim()}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-2xl font-medium hover:from-brand-600 hover:to-brand-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 backdrop-blur-sm flex items-center justify-center space-x-2"
-                  >
-                    {isLoading ? (
-                      <>
-                        <div className="spinner w-4 h-4"></div>
-                        <span>{t("common.adding")}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="w-4 h-4" />
-                        <span>{t("common.add")}</span>
-                      </>
                     )}
-                  </button>
+                    {faviconLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="w-3 h-3 border-2 border-violet-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400 dark:text-gray-600">
+                    {faviconLoading ? t("bookmarks.faviconLoading") : t("bookmarks.faviconPreview")}
+                  </span>
                 </div>
-              </form>
+              )}
             </div>
-          </div>
+
+            {/* 제목 */}
+            <div>
+              <label className={labelClass}>
+                {t("bookmarks.bookmarkTitle")} *
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t("bookmarks.bookmarkTitlePlaceholder")}
+                className={inputClass}
+                required
+              />
+            </div>
+
+            {/* 설명 */}
+            <div>
+              <label className={labelClass}>
+                {t("bookmarks.bookmarkDescription")} ({t("common.optional")})
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t("bookmarks.bookmarkDescriptionPlaceholder")}
+                rows={3}
+                className={`${inputClass} resize-none`}
+              />
+            </div>
+
+            {/* 컬렉션 선택 */}
+            {collections.length > 0 && (
+              <div>
+                <label className={labelClass}>
+                  {t("bookmarks.bookmarkCollection")} ({t("common.optional")})
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedCollection}
+                    onChange={(e) => setSelectedCollection(e.target.value)}
+                    className={`${inputClass} pl-9 appearance-none cursor-pointer`}
+                  >
+                    <option value="">{t("collections.noCollectionSelection")}</option>
+                    {collections.map((collection) => (
+                      <option key={collection.id} value={collection.id}>
+                        {collection.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400 dark:text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 버튼 */}
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/[0.08] transition-colors duration-150"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !title.trim() || !url.trim()}
+                className="flex-1 px-4 py-2.5 text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>{t("common.adding")}</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>{t("common.add")}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

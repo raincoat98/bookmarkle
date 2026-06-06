@@ -36,6 +36,8 @@ interface BookmarkGridViewProps {
   onMoveDown: (bookmark: Bookmark) => void;
   movingBookmarkId: string | null;
   moveDirection: "up" | "down" | null;
+  isEditMode?: boolean;
+  onEditModeChange?: (v: boolean) => void;
 }
 
 export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
@@ -52,6 +54,8 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
   onMoveDown,
   movingBookmarkId,
   moveDirection,
+  isEditMode,
+  onEditModeChange,
 }) => {
   const { t } = useTranslation();
 
@@ -99,6 +103,8 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
           onDelete={onDelete}
           onToggleFavorite={onToggleFavorite}
           onReorder={onReorder}
+          isEditMode={isEditMode}
+          onEditModeChange={onEditModeChange}
         />
       </div>
 

@@ -158,6 +158,17 @@ export const BookmarksPage: React.FC = () => {
     return unsubscribe;
   }, [user?.uid, subscribeToBookmarks]);
 
+  // Firestore 캐시가 빠르면 로딩 안 보이도록 400ms 지연
+  const [deferredLoading, setDeferredLoading] = useState(false);
+  useEffect(() => {
+    if (!bookmarksLoading) {
+      setDeferredLoading(false);
+      return;
+    }
+    const timer = setTimeout(() => setDeferredLoading(true), 400);
+    return () => clearTimeout(timer);
+  }, [bookmarksLoading]);
+
   // 나머지 상태 관리
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
@@ -654,32 +665,32 @@ export const BookmarksPage: React.FC = () => {
         setIsAddSubCollectionModalOpen(true);
       }}
     >
-      <div className="flex flex-col min-h-0 bg-gray-50 dark:bg-gray-900">
+      <div className="flex flex-col min-h-0 bg-gray-50 dark:bg-[#0d0d10]">
         {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="flex-shrink-0 sticky top-0 z-50 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm">
+        <div className="flex-shrink-0 sticky top-0 z-50 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-white/[0.06] bg-white/95 dark:bg-[#111113]/95 backdrop-blur-sm">
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
-            {/* 검색창 - 모든 화면 크기에서 보임 */}
+            {/* 검색창 */}
             <div className="relative w-full sm:flex-1 min-w-0">
               <input
                 type="text"
                 placeholder={t("bookmarks.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 h-[44px] border border-slate-300/50 dark:border-slate-600/50 rounded-xl bg-white/90 dark:bg-slate-800/90 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent backdrop-blur-sm shadow-sm text-sm"
+                className="w-full pl-9 pr-4 py-2 h-[38px] rounded-lg bg-gray-100 dark:bg-white/[0.06] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm border-0"
               />
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
             </div>
 
             {/* 데스크톱 컨트롤 */}
-            <div className="hidden sm:flex items-center gap-3 lg:gap-4">
-              {/* 뷰 모드 토글 버튼 - 데스크톱에서만 */}
-              <div className="flex bg-slate-100 dark:bg-slate-700 rounded-xl p-1 shadow-lg h-[44px]">
+            <div className="hidden sm:flex items-center gap-3">
+              {/* 뷰 모드 토글 */}
+              <div className="flex bg-gray-100 dark:bg-white/[0.06] rounded-lg p-1 h-[44px]">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`p-1.5 rounded-lg transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
+                  className={`p-1.5 rounded-md transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
                     viewMode === "grid"
-                      ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-md"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-white dark:bg-white/[0.12] text-violet-600 dark:text-violet-400 shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                   title={t("bookmarks.gridView")}
                 >
@@ -687,10 +698,10 @@ export const BookmarksPage: React.FC = () => {
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-1.5 rounded-lg transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
+                  className={`p-1.5 rounded-md transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
                     viewMode === "list"
-                      ? "bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-md"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-white dark:bg-white/[0.12] text-violet-600 dark:text-violet-400 shadow-sm"
+                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                   }`}
                   title={t("bookmarks.listView")}
                 >
@@ -698,46 +709,43 @@ export const BookmarksPage: React.FC = () => {
                 </button>
               </div>
 
-              {/* 데스크톱 버튼들 */}
-              <div className="flex gap-2 lg:gap-3">
+              {/* 버튼들 */}
+              <div className="flex items-center gap-2">
+                {/* 컬렉션 추가 — 보조 액션 */}
                 <button
                   onClick={() => setIsAddCollectionModalOpen(true)}
-                  className="inline-flex items-center justify-center px-4 lg:px-6 py-2 h-[44px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 h-[40px] border border-violet-300 dark:border-violet-600/60 text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
+                  title={t("collections.addCollection")}
                 >
-                  <FolderPlus className="w-4 h-4 lg:w-5 lg:h-5 mr-1.5 lg:mr-2" />
-                  <span className="hidden lg:inline">
-                    {t("collections.addCollection")}
-                  </span>
-                  <span className="lg:hidden">컬렉션</span>
+                  <FolderPlus className="w-4 h-4" />
+                  <span className="hidden lg:inline">{t("collections.addCollection")}</span>
                 </button>
+                {/* 북마크 추가 — 주요 액션 */}
                 <button
                   onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center justify-center px-4 lg:px-6 py-2 h-[44px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap shadow-lg hover:shadow-xl"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 h-[40px] bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-violet-500/25 transition-all whitespace-nowrap"
                 >
-                  <Plus className="w-4 h-4 lg:w-5 lg:h-5 mr-1.5 lg:mr-2" />
-                  <span className="hidden lg:inline">
-                    {t("bookmarks.addBookmark")}
-                  </span>
-                  <span className="lg:hidden">북마크</span>
+                  <Plus className="w-4 h-4" />
+                  {t("bookmarks.addBookmark")}
                 </button>
               </div>
             </div>
 
-            {/* 모바일 버튼들 - 한 줄에 2개 */}
-            <div className="grid grid-cols-2 gap-2 sm:hidden">
+            {/* 모바일 버튼들 */}
+            <div className="flex gap-2 sm:hidden">
               <button
                 onClick={() => setIsAddCollectionModalOpen(true)}
-                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 h-[38px] border border-violet-300 dark:border-violet-600/60 text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-xs font-medium rounded-lg transition-colors"
               >
-                <FolderPlus className="w-4 h-4 mr-1.5" />
-                <span>컬렉션</span>
+                <FolderPlus className="w-3.5 h-3.5" />
+                <span>{t("collections.addCollection")}</span>
               </button>
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center justify-center px-3 py-2 h-[40px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white text-xs font-medium rounded-xl transition-all duration-200 shadow-lg"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 h-[38px] bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors"
               >
-                <Plus className="w-4 h-4 mr-1.5" />
-                <span>북마크</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>{t("bookmarks.addBookmark")}</span>
               </button>
             </div>
           </div>
@@ -796,7 +804,13 @@ export const BookmarksPage: React.FC = () => {
                     ? filteredBookmarksData
                     : undefined
                 }
-                loading={bookmarksLoading}
+                loading={deferredLoading}
+                collectionLabel={
+                  selectedCollection === "all" ? undefined
+                  : selectedCollection === "favorites" ? t("bookmarks.favorites")
+                  : selectedCollection === "none" ? t("collections.noCollection")
+                  : collections.find(c => c.id === selectedCollection)?.name
+                }
               />
             );
           })()}
@@ -838,12 +852,12 @@ export const BookmarksPage: React.FC = () => {
             );
 
             return allTags.length > 0 && hasBookmarksWithTags ? (
-              <div className="mt-6 flex flex-wrap gap-3">
+              <div className="mt-4 flex flex-wrap gap-1.5">
                 <button
-                  className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 shadow-sm ${
+                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-150 ${
                     selectedTag === null
-                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-500 shadow-lg"
-                      : "bg-white/80 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-600 hover:shadow-md backdrop-blur-sm"
+                      ? "bg-violet-600 text-white"
+                      : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.10]"
                   }`}
                   onClick={() => setSelectedTag(null)}
                 >
@@ -852,14 +866,14 @@ export const BookmarksPage: React.FC = () => {
                 {allTags.map((tag) => (
                   <button
                     key={tag}
-                    className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all duration-200 shadow-sm ${
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-150 ${
                       selectedTag === tag
-                        ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white border-purple-500 shadow-lg"
-                        : "bg-white/80 dark:bg-slate-800/80 text-purple-700 dark:text-purple-300 border-slate-300 dark:border-slate-600 hover:shadow-md backdrop-blur-sm hover:bg-purple-50 dark:hover:bg-purple-900/20"
+                        ? "bg-violet-600 text-white"
+                        : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.10]"
                     }`}
                     onClick={() => setSelectedTag(tag)}
                   >
-                    {tag}
+                    #{tag}
                   </button>
                 ))}
               </div>
@@ -915,8 +929,8 @@ export const BookmarksPage: React.FC = () => {
       />
 
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-xs">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               {t("collections.deleteCollection")}
             </h3>
@@ -975,7 +989,7 @@ export const BookmarksPage: React.FC = () => {
             <div className="flex justify-end space-x-2">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
+                className="px-4 py-2 rounded bg-gray-200 dark:bg-white/[0.06] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-white/[0.12]"
               >
                 {t("common.cancel")}{" "}
                 <span className="text-xs opacity-70">(ESC)</span>
