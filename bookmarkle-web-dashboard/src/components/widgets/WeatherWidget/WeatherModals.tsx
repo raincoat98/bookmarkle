@@ -38,17 +38,17 @@ export const HourlyWeatherModal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
+        className="bg-white dark:bg-[#111113] rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/[0.06]">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {t("weather.hourlyWeather")}
           </h2>
@@ -73,7 +73,7 @@ export const HourlyWeatherModal: React.FC<{
               hourlyWeather.map((hour, index) => (
                 <div
                   key={`${hour.time}-${index}`}
-                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
+                  className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-white/[0.06]"
                 >
                   <div className="flex items-center space-x-3">
                     <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[60px]">
@@ -137,17 +137,17 @@ export const WeeklyWeatherModal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
+        className="bg-white dark:bg-[#111113] rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-white/[0.06]">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
             {t("weather.weeklyWeather")}
           </h2>
@@ -171,7 +171,7 @@ export const WeeklyWeatherModal: React.FC<{
             {weeklyWeather.map((day, index) => (
               <div
                 key={`${day.date}-${index}`}
-                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700"
+                className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-white/[0.06]"
               >
                 <div className="flex items-center space-x-3">
                   <div className="text-sm font-medium text-gray-900 dark:text-white min-w-[40px]">
@@ -207,14 +207,14 @@ export const ConfirmModal: React.FC<{
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] p-4"
       onClick={onClose}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 0.2 }}
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6"
+        className="bg-white dark:bg-[#111113] rounded-lg shadow-xl max-w-md w-full p-6"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">

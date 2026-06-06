@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   DndContext,
+  DragOverlay,
   KeyboardSensor,
   PointerSensor,
   closestCenter,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import type { DragEndEvent } from "@dnd-kit/core";
+import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import {
   SortableContext,
   arrayMove,
@@ -23,6 +24,8 @@ import {
   Settings,
   Trash2,
   X,
+  ArrowLeftRight,
+  ArrowUpDown,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -263,8 +266,19 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     })
   );
 
+  const [activeWidgetId, setActiveWidgetId] = useState<string | null>(null);
+  const [bookmarkPanelSwapped, setBookmarkPanelSwapped] = useState(() => {
+    try { return localStorage.getItem("bookmarksWidget_swapped") === "true"; } catch { return false; }
+  });
+  const activeWidget = widgets.find((w) => w.id === activeWidgetId) ?? null;
+
+  const handleWidgetDragStart = useCallback((event: DragStartEvent) => {
+    setActiveWidgetId(String(event.active.id));
+  }, []);
+
   const handleWidgetDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setActiveWidgetId(null);
       const { active, over } = event;
 
       if (!over || active.id === over.id) return;
@@ -296,6 +310,13 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               onDelete={onDelete}
               onToggleFavorite={onToggleFavorite}
               loading={bookmarksLoading}
+              isEditMode={isEditMode}
+              swapped={bookmarkPanelSwapped}
+              onSwap={() => {
+                const next = !bookmarkPanelSwapped;
+                setBookmarkPanelSwapped(next);
+                try { localStorage.setItem("bookmarksWidget_swapped", String(next)); } catch {}
+              }}
             />
           );
         case "quick-actions":
@@ -322,6 +343,8 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       onAddCollection,
       bookmarksLoading,
       collectionsLoading,
+      bookmarkPanelSwapped,
+      isEditMode,
     ]
   );
 
@@ -385,7 +408,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     setIsNotificationOpen(!isNotificationOpen);
                   }
                 }}
-                className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
+                className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-white/5"
                 aria-label={t("notifications.title")}
               >
                 <Bell className="w-5 h-5" />
@@ -399,9 +422,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               {isNotificationOpen && !isMobile && (
                 <div
                   ref={notificationDropdownRef}
-                  className="absolute right-0 top-12 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-50 max-h-[600px] flex flex-col"
+                  className="absolute right-0 top-12 mt-2 w-80 sm:w-96 bg-white dark:bg-[#111113] rounded-xl shadow-xl border border-gray-200 dark:border-white/[0.06] z-50 max-h-[600px] flex flex-col"
                 >
-                  <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/[0.06]">
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                       {t("notifications.title")}
                     </h3>
@@ -424,7 +447,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       )}
                       <button
                         onClick={() => setIsNotificationOpen(false)}
-                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                       >
                         <X className="w-4 h-4" />
                       </button>
@@ -441,7 +464,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`border-b border-gray-100 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                          className={`border-b border-gray-100 dark:border-white/[0.06] p-4 hover:bg-gray-50 dark:hover:bg-white/[0.08]/50 transition-colors ${
                             !notification.isRead
                               ? "bg-blue-50/50 dark:bg-blue-900/10"
                               : ""
@@ -456,7 +479,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                                   ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                                   : notification.type === "bookmark_deleted"
                                   ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                                  : "bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-gray-400"
                               }`}
                             >
                               {notification.type === "bookmark_added" ? (
@@ -519,7 +542,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                               {!notification.isRead && (
                                 <button
                                   onClick={() => markAsRead(notification.id)}
-                                  className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                                   title={t("notifications.markAsRead")}
                                 >
                                   <Check className="w-4 h-4" />
@@ -529,7 +552,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                                 onClick={() =>
                                   deleteNotification(notification.id)
                                 }
-                                className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                                 title={t("notifications.deleteNotification")}
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -541,7 +564,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                     )}
                   </div>
 
-                  <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+                  <div className="p-4 border-t border-gray-200 dark:border-white/[0.06]">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-900 dark:text-white">
@@ -553,10 +576,10 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       </div>
                       <button
                         onClick={handleNotificationToggle}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 ${
                           notificationsEnabled
-                            ? "bg-blue-600"
-                            : "bg-gray-200 dark:bg-gray-700"
+                            ? "bg-violet-600"
+                            : "bg-gray-200 dark:bg-white/[0.08]"
                         }`}
                       >
                         <span
@@ -576,28 +599,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
           <button
             onClick={() => setIsEditMode(!isEditMode)}
-            className={`px-3 sm:px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors whitespace-nowrap ${
+            className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-sm transition-colors whitespace-nowrap ${
               isEditMode
-                ? "bg-blue-500 text-white hover:bg-blue-600"
-                : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                ? "bg-violet-600 text-white hover:bg-violet-700"
+                : "bg-gray-100 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10"
             }`}
           >
-            <Settings className="w-4 h-4 flex-shrink-0" />
-            <span className="text-sm sm:text-base">
-              {isEditMode
-                ? t("dashboard.editComplete")
-                : t("dashboard.editWidget")}
-            </span>
+            <Settings className="w-4 h-4" />
+            {isEditMode ? t("dashboard.editComplete") : t("dashboard.editWidget")}
           </button>
           {isEditMode && (
             <button
               onClick={resetWidgetOrder}
-              className="px-3 sm:px-4 py-2 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center gap-2 transition-colors whitespace-nowrap"
+              className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/10 flex items-center gap-1.5 text-sm transition-colors whitespace-nowrap"
             >
-              <RotateCcw className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm sm:text-base">
-                {t("dashboard.reset")}
-              </span>
+              <RotateCcw className="w-4 h-4" />
+              {t("dashboard.reset")}
             </button>
           )}
         </div>
@@ -606,6 +623,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
+        onDragStart={handleWidgetDragStart}
         onDragEnd={handleWidgetDragEnd}
       >
         <SortableContext
@@ -630,6 +648,22 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   canMoveUp={canMoveUp}
                   canMoveDown={canMoveDown}
                   animationDelay={index * 0.05}
+                  editControls={widget.id === "bookmarks" ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const next = !bookmarkPanelSwapped;
+                        setBookmarkPanelSwapped(next);
+                        try { localStorage.setItem("bookmarksWidget_swapped", String(next)); } catch {}
+                      }}
+                      className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-white/[0.08] shadow-sm hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+                    >
+                      <ArrowLeftRight className="hidden lg:block w-3.5 h-3.5 text-violet-500 dark:text-violet-400" />
+                      <ArrowUpDown className="lg:hidden w-3.5 h-3.5 text-violet-500 dark:text-violet-400" />
+                      <span className="hidden lg:inline text-xs text-violet-600 dark:text-violet-400 font-medium">좌우 전환</span>
+                      <span className="lg:hidden text-xs text-violet-600 dark:text-violet-400 font-medium">위아래 전환</span>
+                    </button>
+                  ) : undefined}
                 >
                   {renderWidget(widget)}
                 </SortableWidget>
@@ -637,19 +671,34 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             })}
           </div>
         </SortableContext>
+
+        <DragOverlay dropAnimation={{ duration: 180, easing: "ease" }}>
+          {activeWidget && (
+            <div className="opacity-90 scale-[1.02] shadow-2xl rounded-xl ring-2 ring-violet-500/50 pointer-events-none">
+              <div className="bg-white dark:bg-[#111113] rounded-xl border border-violet-200 dark:border-violet-500/30 px-5 py-4 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center flex-shrink-0">
+                  <BookOpen className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                </div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  {activeWidget.id === "bookmarks" ? "북마크"
+                    : activeWidget.id === "clock" ? "시계 / 날씨"
+                    : activeWidget.id === "bible-verse" ? "오늘의 성경말씀"
+                    : activeWidget.id === "quick-actions" ? "빠른 실행"
+                    : activeWidget.id}
+                </p>
+              </div>
+            </div>
+          )}
+        </DragOverlay>
       </DndContext>
 
       {isEditMode && (
-        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-          <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
-            <Settings className="w-5 h-5" />
-            <h3 className="font-medium">{t("dashboard.editMode")}</h3>
-          </div>
-          <div className="text-sm text-blue-600 dark:text-blue-400 mt-2">
-            <p>• {t("dashboard.editModeTip1")}</p>
-            <p className="hidden md:block">• {t("dashboard.editModeTip2")}</p>
-            <p className="md:hidden">• {t("dashboard.editModeTip3")}</p>
-            <p>• {t("dashboard.editModeTip4")}</p>
+        <div className="flex items-start gap-2 px-4 py-3 bg-violet-50 dark:bg-violet-950/20 border border-violet-100 dark:border-violet-900/40 rounded-lg text-xs text-violet-600 dark:text-violet-400">
+          <Settings className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <div className="space-y-0.5">
+            <p>{t("dashboard.editModeTip1")}</p>
+            <p className="hidden md:block">{t("dashboard.editModeTip2")}</p>
+            <p className="md:hidden">{t("dashboard.editModeTip3")}</p>
           </div>
         </div>
       )}

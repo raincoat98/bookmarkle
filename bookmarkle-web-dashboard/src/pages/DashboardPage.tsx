@@ -259,7 +259,7 @@ export const DashboardPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10] flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             {t("auth.loginRequired")}
@@ -275,7 +275,7 @@ export const DashboardPage: React.FC = () => {
   // 비활성화된 사용자 체크
   if (isActive === false) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10] flex items-center justify-center">
         <DisabledUserMessage />
       </div>
     );
@@ -283,7 +283,7 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <Drawer>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10]">
         <div className="p-4 lg:p-6">
           <UpgradeBanner />
           <DashboardOverview

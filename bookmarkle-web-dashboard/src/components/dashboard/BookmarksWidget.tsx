@@ -1,71 +1,148 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
-import { Edit, Trash2, Heart, Sparkles, Globe } from "lucide-react";
+import { Edit, Trash2, Heart, Sparkles, Clock, ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Bookmark, Collection } from "../../types";
 
-// 파비콘 표시 컴포넌트
-interface FaviconDisplayProps {
+// ─── FaviconDisplay ────────────────────────────────────────────────────────────
+
+const FaviconDisplay: React.FC<{ bookmark: Bookmark; fallback: React.ReactNode }> = ({ bookmark, fallback }) => {
+  const [err, setErr] = useState(false);
+  useEffect(() => setErr(false), [bookmark.id, bookmark.favicon]);
+  if (!bookmark.favicon || err) return <>{fallback}</>;
+  return <img src={bookmark.favicon} alt={bookmark.title} className="w-full h-full object-cover" onError={() => setErr(true)} />;
+};
+
+// ─── Sort helpers ───────────────────────────────────────────────────────────────
+
+type FavSort = "order" | "newest" | "az";
+type RecentSort = "newest" | "oldest" | "modified";
+
+const FAV_SORT_LABELS: Record<FavSort, string> = {
+  order: "순서",
+  newest: "최신",
+  az: "A-Z",
+};
+const RECENT_SORT_LABELS: Record<RecentSort, string> = {
+  newest: "최신",
+  oldest: "오래된",
+  modified: "수정",
+};
+const FAV_SORTS: FavSort[] = ["order", "newest", "az"];
+const RECENT_SORTS: RecentSort[] = ["newest", "oldest", "modified"];
+
+// ─── BookmarkIcon ───────────────────────────────────────────────────────────────
+
+interface BookmarkIconProps {
   bookmark: Bookmark;
-  fallbackIcon: React.ReactNode;
-  className?: string;
+  showDate?: boolean;
+  showActionsMobile?: boolean;
+  onOpen: (url: string) => void;
+  onFavorite: (id: string, val: boolean) => void;
+  onEdit: (bookmark: Bookmark) => void;
+  onDelete: (id: string) => void;
+  stopAndMark: (e: React.SyntheticEvent) => void;
 }
 
-const FaviconDisplay: React.FC<FaviconDisplayProps> = ({
-  bookmark,
-  fallbackIcon,
-  className = "w-full h-full object-cover",
+const BookmarkIcon: React.FC<BookmarkIconProps> = ({
+  bookmark, showDate, showActionsMobile, onOpen, onFavorite, onEdit, onDelete, stopAndMark,
 }) => {
-  const [showCustomFavicon, setShowCustomFavicon] = useState(
-    !!bookmark.favicon
-  );
-  const [customFaviconError, setCustomFaviconError] = useState(false);
-  const [googleFaviconError, setGoogleFaviconError] = useState(false);
-
-  const googleFaviconUrl = `https://www.google.com/s2/favicons?domain=${
-    new URL(bookmark.url).hostname
-  }&sz=32`;
-
-  // 북마크가 변경될 때 상태 리셋
-  useEffect(() => {
-    setShowCustomFavicon(!!bookmark.favicon);
-    setCustomFaviconError(false);
-    setGoogleFaviconError(false);
-  }, [bookmark.id, bookmark.favicon]);
-
-  // 모든 파비콘이 실패한 경우 fallback 표시
-  if (customFaviconError && googleFaviconError) {
-    return <>{fallbackIcon}</>;
-  }
+  const { t } = useTranslation();
 
   return (
-    <>
-      {/* 사용자가 직접 입력한 파비콘 */}
-      {bookmark.favicon && showCustomFavicon && !customFaviconError && (
-        <img
-          src={bookmark.favicon}
-          alt={bookmark.title}
-          className={className}
-          onError={() => {
-            setCustomFaviconError(true);
-            setShowCustomFavicon(false);
-          }}
+    <div
+      className="group/icon relative flex flex-col items-center p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer w-[68px] sm:w-[76px] flex-shrink-0 select-none"
+      onClick={() => onOpen(bookmark.url)}
+    >
+      {/* 아이콘 */}
+      <div className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden mb-1.5 shadow-sm border border-gray-100 dark:border-white/[0.06]">
+        <FaviconDisplay
+          bookmark={bookmark}
+          fallback={
+            <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-white/[0.08]">
+              <Clock className="w-4 h-4 text-gray-400" />
+            </div>
+          }
         />
+
+        {/* 호버 액션 오버레이 (데스크톱) */}
+        <div className="absolute inset-0 bg-black/50 hidden sm:flex items-center justify-center gap-1 opacity-0 group-hover/icon:opacity-100 transition-opacity rounded-xl">
+          <button
+            onClick={(e) => { stopAndMark(e); onEdit(bookmark); }}
+            onMouseDown={stopAndMark}
+            className="p-1 rounded-lg bg-white/20 hover:bg-white/40 transition-colors"
+            title={t("common.edit")}
+          >
+            <Edit className="w-3 h-3 text-white pointer-events-none" />
+          </button>
+          <button
+            onClick={(e) => { stopAndMark(e); onDelete(bookmark.id); }}
+            onMouseDown={stopAndMark}
+            className="p-1 rounded-lg bg-white/20 hover:bg-red-500/70 transition-colors"
+            title={t("common.delete")}
+          >
+            <Trash2 className="w-3 h-3 text-white pointer-events-none" />
+          </button>
+        </div>
+      </div>
+
+      {/* 즐겨찾기 버튼 (항상 표시) */}
+      <button
+        onClick={(e) => { stopAndMark(e); onFavorite(bookmark.id, !bookmark.isFavorite); }}
+        onMouseDown={stopAndMark}
+        className={`absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow border-2 border-white dark:border-[#111113] transition-all touch-manipulation ${
+          bookmark.isFavorite
+            ? "bg-red-500 opacity-100"
+            : "bg-white dark:bg-white/[0.08] opacity-0 group-hover/icon:opacity-100 sm:opacity-0 sm:group-hover/icon:opacity-100"
+        } ${!bookmark.isFavorite && showActionsMobile ? "opacity-60" : ""}`}
+        title={bookmark.isFavorite ? t("bookmarks.removeFromFavorites") : t("bookmarks.addToFavorites")}
+      >
+        <Heart className={`w-2.5 h-2.5 pointer-events-none ${bookmark.isFavorite ? "text-white fill-white" : "text-gray-400"}`} />
+      </button>
+
+      {/* 제목 */}
+      <p className="text-[10px] text-gray-600 dark:text-gray-400 text-center truncate w-full leading-tight" title={bookmark.title}>
+        {bookmark.title}
+      </p>
+      {showDate && (
+        <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
+          {formatDate(bookmark.createdAt)}
+        </p>
       )}
-      {/* Google 파비콘 서비스 (커스텀 파비콘이 없거나 실패한 경우) */}
-      {(!bookmark.favicon || customFaviconError) && !googleFaviconError && (
-        <img
-          src={googleFaviconUrl}
-          alt={bookmark.title}
-          className={className}
-          onError={() => {
-            setGoogleFaviconError(true);
-          }}
-        />
+
+      {/* 모바일 액션 버튼 (최근추가 섹션에서만) */}
+      {showActionsMobile && (
+        <div className="flex sm:hidden items-center gap-1 mt-1">
+          <button
+            onClick={(e) => { stopAndMark(e); onEdit(bookmark); }}
+            onMouseDown={stopAndMark}
+            className="p-1 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-gray-400 active:bg-gray-200 touch-manipulation"
+          >
+            <Edit className="w-2.5 h-2.5 pointer-events-none" />
+          </button>
+          <button
+            onClick={(e) => { stopAndMark(e); onDelete(bookmark.id); }}
+            onMouseDown={stopAndMark}
+            className="p-1 rounded-lg bg-gray-100 dark:bg-white/[0.06] text-red-400 active:bg-red-50 touch-manipulation"
+          >
+            <Trash2 className="w-2.5 h-2.5 pointer-events-none" />
+          </button>
+        </div>
       )}
-    </>
+    </div>
   );
 };
+
+// ─── formatDate (module-level) ─────────────────────────────────────────────────
+
+function formatDate(date: Date): string {
+  const diffDays = Math.floor((Date.now() - new Date(date).getTime()) / 86400000);
+  if (diffDays === 0) return "오늘";
+  if (diffDays === 1) return "어제";
+  if (diffDays < 7) return `${diffDays}일 전`;
+  return new Date(date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+}
+
+// ─── BookmarksWidget ────────────────────────────────────────────────────────────
 
 interface BookmarksWidgetProps {
   bookmarks: Bookmark[];
@@ -74,6 +151,9 @@ interface BookmarksWidgetProps {
   onDelete: (id: string) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   loading?: boolean;
+  isEditMode?: boolean;
+  swapped?: boolean;
+  onSwap?: () => void;
 }
 
 export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
@@ -82,414 +162,137 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
   onDelete,
   onToggleFavorite,
   loading = false,
+  isEditMode = false,
+  swapped = false,
+  onSwap: _onSwap,
 }) => {
   const { t } = useTranslation();
-  const [isMobile, setIsMobile] = useState(false);
-  // 버튼 클릭 시 카드 클릭 방지를 위한 플래그
-  const buttonClickedRef = useRef<boolean>(false);
+  const buttonClickedRef = useRef(false);
 
-  useEffect(() => {
-    const checkIsMobile = () => {
-      setIsMobile(window.innerWidth < 768 || "ontouchstart" in window);
-    };
+  const [favSort, setFavSort] = useState<FavSort>("order");
+  const [recentSort, setRecentSort] = useState<RecentSort>("newest");
 
-    checkIsMobile();
-    window.addEventListener("resize", checkIsMobile);
-    return () => window.removeEventListener("resize", checkIsMobile);
-  }, []);
+  const cycleFavSort = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const idx = FAV_SORTS.indexOf(favSort);
+    setFavSort(FAV_SORTS[(idx + 1) % FAV_SORTS.length]);
+  };
+
+  const cycleRecentSort = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const idx = RECENT_SORTS.indexOf(recentSort);
+    setRecentSort(RECENT_SORTS[(idx + 1) % RECENT_SORTS.length]);
+  };
 
   const favoriteBookmarks = useMemo(() => {
     if (loading) return [];
-    const filtered = bookmarks.filter((b) => b.isFavorite);
-    // 즐겨찾기는 사용자가 지정한 순서(order 필드)로 정렬하고 최대 10개만 표시
-    return filtered
-      .slice()
-      .sort((a, b) => {
-        // order 필드가 있으면 order로 정렬
-        if (a.order !== undefined && b.order !== undefined) {
-          return a.order - b.order;
-        }
-        // order가 없는 경우 생성일 기준으로 정렬 (최신순)
-        return (
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-      })
-      .slice(0, 10); // 최대 10개만 표시
-  }, [bookmarks, loading]);
+    const favs = bookmarks.filter((b) => b.isFavorite);
+    if (favSort === "order") favs.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    else if (favSort === "newest") favs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    else favs.sort((a, b) => a.title.localeCompare(b.title));
+    return favs.slice(0, 10);
+  }, [bookmarks, loading, favSort]);
 
   const recentBookmarks = useMemo(() => {
     if (loading) return [];
-    return bookmarks
-      .slice()
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )
-      .slice(0, 5);
-  }, [bookmarks, loading]);
+    const all = [...bookmarks];
+    if (recentSort === "newest") all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    else if (recentSort === "oldest") all.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    else all.sort((a, b) => new Date(b.updatedAt ?? b.createdAt).getTime() - new Date(a.updatedAt ?? a.createdAt).getTime());
+    return all.slice(0, 8);
+  }, [bookmarks, loading, recentSort]);
 
-  const formatDate = (date: Date) => {
-    const now = new Date();
-    const diffTime = now.getTime() - date.getTime();
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const stopAndMark = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+    buttonClickedRef.current = true;
+  };
 
-    if (diffDays === 0) return t("dashboard.today");
-    if (diffDays === 1) return t("dashboard.yesterday");
-    if (diffDays < 7) return t("dashboard.daysAgo", { count: diffDays });
-    return date.toLocaleDateString("ko-KR", { month: "short", day: "numeric" });
+  const handleOpen = (url: string) => {
+    if (!buttonClickedRef.current) window.open(url, "_blank");
+    setTimeout(() => { buttonClickedRef.current = false; }, 100);
   };
 
   if (loading) {
     return (
-      <div className="card-glass p-4 sm:p-6 h-full flex flex-col items-center justify-center">
-        <div className="text-gray-500 dark:text-gray-400">
-          {t("common.loading")}
-        </div>
+      <div className="bg-white dark:bg-[#111113] rounded-xl border border-gray-200/80 dark:border-white/[0.06] p-4 sm:p-5 h-full flex items-center justify-center">
+        <span className="text-sm text-gray-400">{t("common.loading")}</span>
       </div>
     );
   }
 
-  const favoritesToShow = favoriteBookmarks;
-  const recentsToShow = recentBookmarks;
+  const iconProps = { onOpen: handleOpen, onFavorite: onToggleFavorite, onEdit, onDelete, stopAndMark };
 
-  const handleFaviconClick = (url: string) => {
-    window.open(url, "_blank");
-  };
+  const renderFavPanel = (isLeft: boolean) => (
+    <div className={`flex flex-col ${isLeft ? "lg:pr-4" : "lg:pl-4"}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+          {t("bookmarks.favorites")}
+        </h4>
+        <button
+          onClick={cycleFavSort}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          <ArrowUpDown className="w-2.5 h-2.5" />
+          {FAV_SORT_LABELS[favSort]}
+        </button>
+      </div>
+      {favoriteBookmarks.length > 0 ? (
+        <div className="flex flex-wrap gap-0.5">
+          {favoriteBookmarks.map((b) => (
+            <BookmarkIcon key={b.id} bookmark={b} showActionsMobile={isEditMode} {...iconProps} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
+          <Sparkles className="w-8 h-8 text-gray-200 dark:text-gray-700 mb-2" />
+          <p className="text-xs text-gray-400 dark:text-gray-500">{t("bookmarks.noFavorites")}</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderRecentPanel = (isLeft: boolean) => (
+    <div className={`flex flex-col ${isLeft ? "lg:pr-4" : "lg:pl-4"}`}>
+      <div className="flex items-center justify-between mb-2">
+        <h4 className="text-xs font-medium text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+          <Clock className="w-3.5 h-3.5 text-blue-400" />
+          {t("bookmarks.recentlyAdded")}
+        </h4>
+        <button
+          onClick={cycleRecentSort}
+          className="flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+        >
+          <ArrowUpDown className="w-2.5 h-2.5" />
+          {RECENT_SORT_LABELS[recentSort]}
+        </button>
+      </div>
+      {recentBookmarks.length > 0 ? (
+        <div className="flex flex-wrap gap-0.5">
+          {recentBookmarks.map((b) => (
+            <BookmarkIcon key={b.id} bookmark={b} showDate showActionsMobile={isEditMode} {...iconProps} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
+          <Clock className="w-8 h-8 text-gray-200 dark:text-gray-700 mb-2" />
+          <p className="text-xs text-gray-400 dark:text-gray-500">{t("bookmarks.noRecentBookmarks")}</p>
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-      className="card-glass p-4 sm:p-6 h-full flex flex-col"
-    >
-      <motion.h3
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1, duration: 0.4 }}
-        className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-4 sm:mb-6 flex items-center"
-      >
-        <motion.div
-          animate={{ scale: [1, 1.2, 1] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <Heart className="w-4 sm:w-5 h-4 sm:h-5 text-red-500 mr-2 sm:mr-3" />
-        </motion.div>
+    <div className="bg-white dark:bg-[#111113] rounded-xl border border-gray-200/80 dark:border-white/[0.06] p-4 sm:p-5 h-full flex flex-col">
+      <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+        <Heart className="w-4 h-4 text-red-400" />
         {t("bookmarks.title")}
-      </motion.h3>
+      </h3>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-          className="favorites-section group/fav-section flex flex-col bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-2xl p-3 sm:p-4 border border-yellow-200/50 dark:border-yellow-800/50 hover:shadow-lg transition-all duration-300"
-        >
-          <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 sm:mb-4 flex items-center">
-            <Sparkles className="w-4 h-4 text-yellow-500 mr-2" />
-            {t("bookmarks.favorites")}
-          </h4>
-          {favoritesToShow.length > 0 ? (
-            <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
-              {favoritesToShow.map((bookmark, index) => {
-                return (
-                  <motion.div
-                    key={bookmark.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 + index * 0.05, duration: 0.3 }}
-                    whileTap={isMobile ? { scale: 0.95 } : undefined}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto cursor-pointer"
-                    onClick={() => {
-                      // 버튼 클릭이 아닌 경우에만 카드 클릭 처리
-                      if (!buttonClickedRef.current) {
-                        handleFaviconClick(bookmark.url);
-                      }
-                      // 다음 클릭을 위해 플래그 리셋 (약간의 지연 후)
-                      setTimeout(() => {
-                        buttonClickedRef.current = false;
-                      }, 100);
-                    }}
-                  >
-                    <div
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFaviconClick(bookmark.url);
-                      }}
-                    >
-                      <FaviconDisplay
-                        bookmark={bookmark}
-                        fallbackIcon={
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-yellow-400 to-orange-500">
-                            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/fav-section:animate-pulse" />
-                          </div>
-                        }
-                      />
-                    </div>
-
-                    <p
-                      className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white text-center truncate w-full leading-tight"
-                      title={bookmark.title}
-                    >
-                      {bookmark.title}
-                    </p>
-
-                    <div
-                      className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 transition-all duration-300 transform ${
-                        isMobile
-                          ? "opacity-70"
-                          : "opacity-0 group-hover/fav-section:opacity-100"
-                      }`}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                          onToggleFavorite(bookmark.id, false);
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onPointerDown={(e) => {
-                          // 마우스와 터치 이벤트 모두 처리
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchStart={(e) => {
-                          // passive 이벤트 리스너 문제 해결
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="w-5 h-5 sm:w-6 sm:h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:bg-red-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
-                        title={t("bookmarks.removeFromFavorites")}
-                      >
-                        <Heart className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-current pointer-events-none" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.3, duration: 0.4 }}
-              className="text-center py-8 flex-1 flex flex-col items-center justify-center"
-            >
-              <Sparkles className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {t("bookmarks.noFavorites")}
-              </p>
-            </motion.div>
-          )}
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3, duration: 0.4 }}
-          className="recent-section group/recent-section flex flex-col bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-2xl p-3 sm:p-4 border border-blue-200/50 dark:border-blue-800/50 hover:shadow-lg transition-all duration-300"
-        >
-          <h4 className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 sm:mb-4 flex items-center">
-            <Globe className="w-4 h-4 text-blue-500 mr-2" />
-            {t("bookmarks.recentlyAdded")}
-          </h4>
-          {recentsToShow.length > 0 ? (
-            <div className="flex flex-wrap gap-2 sm:gap-3 lg:grid lg:grid-cols-3 xl:grid-cols-5">
-              {recentsToShow.map((bookmark, index) => {
-                return (
-                  <motion.div
-                    key={bookmark.id}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.4 + index * 0.05, duration: 0.3 }}
-                    whileTap={isMobile ? { scale: 0.95 } : undefined}
-                    className="relative flex flex-col items-center p-2 sm:p-3 rounded-xl hover:bg-white/80 dark:hover:bg-gray-700/80 active:bg-white/80 dark:active:bg-gray-700/80 hover:shadow-lg active:shadow-lg transition-all duration-300 bg-white/50 dark:bg-gray-800/50 border border-white/30 dark:border-gray-600/30 w-20 sm:w-24 flex-shrink-0 lg:w-auto cursor-pointer"
-                    onClick={() => {
-                      // 버튼 클릭이 아닌 경우에만 카드 클릭 처리
-                      if (!buttonClickedRef.current) {
-                        handleFaviconClick(bookmark.url);
-                      }
-                      // 다음 클릭을 위해 플래그 리셋 (약간의 지연 후)
-                      setTimeout(() => {
-                        buttonClickedRef.current = false;
-                      }, 100);
-                    }}
-                  >
-                    <div
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer mb-1 sm:mb-2 relative overflow-hidden"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleFaviconClick(bookmark.url);
-                      }}
-                    >
-                      <FaviconDisplay
-                        bookmark={bookmark}
-                        fallbackIcon={
-                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-r from-blue-500 to-blue-600">
-                            <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-white group-hover/recent-section:animate-pulse" />
-                          </div>
-                        }
-                      />
-                    </div>
-
-                    <p
-                      className="text-[10px] sm:text-xs font-medium text-gray-900 dark:text-white text-center truncate w-full leading-tight"
-                      title={bookmark.title}
-                    >
-                      {bookmark.title}
-                    </p>
-
-                    <p className="text-[9px] sm:text-xs text-gray-500 dark:text-gray-400 text-center mt-0.5 sm:mt-1 leading-tight">
-                      {formatDate(bookmark.createdAt)}
-                    </p>
-
-                    <div
-                      className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 transition-all duration-300 transform ${
-                        isMobile
-                          ? "opacity-70"
-                          : "opacity-0 group-hover/recent-section:opacity-100"
-                      }`}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                          onToggleFavorite(bookmark.id, !bookmark.isFavorite);
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onPointerDown={(e) => {
-                          // 마우스와 터치 이벤트 모두 처리
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchStart={(e) => {
-                          // passive 이벤트 리스너 문제 해결
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="w-5 h-5 sm:w-6 sm:h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center hover:bg-yellow-600 active:bg-yellow-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
-                        title={
-                          bookmark.isFavorite
-                            ? t("bookmarks.removeFromFavorites")
-                            : t("bookmarks.addToFavorites")
-                        }
-                      >
-                        <Heart
-                          className={`w-2.5 h-2.5 sm:w-3 sm:h-3 pointer-events-none ${
-                            bookmark.isFavorite ? "fill-current" : ""
-                          }`}
-                        />
-                      </button>
-                    </div>
-
-                    <div
-                      className={`absolute -bottom-1 left-1/2 transform -translate-x-1/2 transition-all duration-300 flex space-x-1.5 sm:space-x-2 ${
-                        isMobile
-                          ? "hidden"
-                          : "opacity-0 group-hover/recent-section:opacity-100"
-                      }`}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                          onEdit(bookmark);
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onPointerDown={(e) => {
-                          // 마우스와 터치 이벤트 모두 처리
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchStart={(e) => {
-                          // passive 이벤트 리스너 문제 해결
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 active:bg-blue-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
-                        title={t("common.edit")}
-                      >
-                        <Edit className="w-2 h-2 sm:w-2.5 sm:h-2.5 pointer-events-none" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                          onDelete(bookmark.id);
-                        }}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onPointerDown={(e) => {
-                          // 마우스와 터치 이벤트 모두 처리
-                          e.preventDefault();
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchStart={(e) => {
-                          // passive 이벤트 리스너 문제 해결
-                          e.stopPropagation();
-                          buttonClickedRef.current = true;
-                        }}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation();
-                        }}
-                        className="w-4 h-4 sm:w-5 sm:h-5 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 active:bg-red-600 shadow-lg hover:shadow-xl active:shadow-xl transition-all duration-200 touch-none"
-                        title={t("common.delete")}
-                      >
-                        <Trash2 className="w-2 h-2 sm:w-2.5 sm:h-2.5 pointer-events-none" />
-                      </button>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          ) : (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4, duration: 0.4 }}
-              className="text-center py-8 flex-1 flex flex-col items-center justify-center"
-            >
-              <Globe className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-500 dark:text-gray-400 text-sm">
-                {t("bookmarks.noRecentBookmarks")}
-              </p>
-            </motion.div>
-          )}
-        </motion.div>
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-0 lg:divide-x lg:divide-gray-100 dark:divide-white/[0.06]">
+        {swapped ? renderRecentPanel(true) : renderFavPanel(true)}
+        {swapped ? renderFavPanel(false) : renderRecentPanel(false)}
       </div>
-    </motion.div>
+    </div>
   );
 };

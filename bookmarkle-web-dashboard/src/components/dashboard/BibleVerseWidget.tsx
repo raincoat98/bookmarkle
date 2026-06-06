@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
-import { BookOpen } from "lucide-react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { BookOpen, Copy, Check, Palette, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import bibleVersesKo from "../../data/bibleVerses.json";
 import bibleVersesEn from "../../data/bibleVerses.en.json";
@@ -12,516 +12,350 @@ interface BibleVerseEntry {
 
 interface BibleVersesData {
   verses: BibleVerseEntry[];
-  _copyright: {
-    notice: string;
-  };
+  _copyright: { notice: string };
 }
 
-const backgrounds = [
-  "bg-gradient-to-br from-blue-900/90 via-purple-900/90 to-indigo-900/90",
-  "bg-gradient-to-br from-indigo-900/90 via-blue-900/90 to-cyan-900/90",
-  "bg-gradient-to-br from-cyan-900/90 via-blue-900/90 to-indigo-900/90",
-  "bg-gradient-to-br from-sky-900/90 via-blue-900/90 to-slate-900/90",
-  "bg-gradient-to-br from-blue-800/90 via-indigo-800/90 to-purple-800/90",
-  "bg-gradient-to-br from-purple-900/90 via-pink-900/90 to-red-900/90",
-  "bg-gradient-to-br from-violet-900/90 via-purple-900/90 to-indigo-900/90",
-  "bg-gradient-to-br from-rose-900/90 via-pink-900/90 to-purple-900/90",
-  "bg-gradient-to-br from-fuchsia-900/90 via-purple-900/90 to-violet-900/90",
-  "bg-gradient-to-br from-pink-800/90 via-rose-800/90 to-red-800/90",
-  "bg-gradient-to-br from-emerald-900/90 via-teal-900/90 to-blue-900/90",
-  "bg-gradient-to-br from-teal-900/90 via-cyan-900/90 to-blue-900/90",
-  "bg-gradient-to-br from-green-900/90 via-emerald-900/90 to-teal-900/90",
-  "bg-gradient-to-br from-lime-800/90 via-green-800/90 to-emerald-800/90",
-  "bg-gradient-to-br from-orange-900/90 via-red-900/90 to-pink-900/90",
-  "bg-gradient-to-br from-amber-900/90 via-orange-900/90 to-red-900/90",
-  "bg-gradient-to-br from-yellow-800/90 via-amber-800/90 to-orange-800/90",
-  "bg-gradient-to-br from-red-900/90 via-rose-900/90 to-pink-900/90",
-  "bg-gradient-to-br from-slate-900/90 via-gray-900/90 to-zinc-900/90",
-  "bg-gradient-to-br from-gray-900/90 via-slate-900/90 to-stone-900/90",
-  "bg-gradient-to-br from-zinc-900/90 via-neutral-900/90 to-stone-900/90",
-  "bg-gradient-to-br from-purple-900/90 via-blue-900/90 to-teal-900/90",
-  "bg-gradient-to-br from-rose-900/90 via-orange-900/90 to-amber-900/90",
-  "bg-gradient-to-br from-emerald-900/90 via-blue-900/90 to-purple-900/90",
-  "bg-gradient-to-br from-indigo-900/90 via-pink-900/90 to-red-900/90",
-  "bg-gradient-to-br from-teal-900/90 via-purple-900/90 to-rose-900/90",
-  "bg-gradient-to-tr from-blue-900/90 via-purple-900/90 to-pink-900/90",
-  "bg-gradient-to-tl from-emerald-900/90 via-cyan-900/90 to-blue-900/90",
-  "bg-gradient-to-bl from-violet-900/90 via-indigo-900/90 to-blue-900/90",
-  "bg-gradient-to-r from-orange-900/90 via-red-900/90 to-rose-900/90",
+const PRESET_BG = [
+  { id: "dark",     bg: "#1a1a2e" },
+  { id: "violet",   bg: "linear-gradient(135deg, #4c1d95 0%, #6d28d9 50%, #4338ca 100%)" },
+  { id: "midnight", bg: "linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #2d2b6b 100%)" },
+  { id: "sunset",   bg: "linear-gradient(135deg, #7f1d1d 0%, #b91c1c 40%, #6b21a8 100%)" },
+  { id: "ocean",    bg: "linear-gradient(135deg, #1e40af 0%, #0369a1 50%, #0f766e 100%)" },
+  { id: "forest",   bg: "linear-gradient(135deg, #064e3b 0%, #15803d 50%, #1e6b3c 100%)" },
+  { id: "aurora",   bg: "linear-gradient(135deg, #3730a3 0%, #7e22ce 50%, #9d174d 100%)" },
+  { id: "golden",   bg: "linear-gradient(135deg, #78350f 0%, #b45309 50%, #92400e 100%)" },
 ];
+
+const LS_KEY = "bible-verse-bg";
+
+type BgType = { type: "preset"; id: string } | { type: "image"; url: string };
+type BgBehavior = "fixed" | "random";
+
+interface StoredConfig {
+  behavior: BgBehavior;
+  bg: BgType;
+}
+
+function getBgStyle(bg: BgType): React.CSSProperties {
+  if (bg.type === "image") {
+    return { backgroundImage: `url(${bg.url})`, backgroundSize: "cover", backgroundPosition: "center" };
+  }
+  const preset = PRESET_BG.find((p) => p.id === bg.id);
+  return { background: preset?.bg ?? "#111113" };
+}
+
+function randomPreset(): BgType {
+  const presets = PRESET_BG.filter((p) => p.id !== "dark");
+  const idx = Math.floor(Math.random() * presets.length);
+  return { type: "preset", id: presets[idx].id };
+}
+
+function loadConfig(): StoredConfig {
+  const fallback: StoredConfig = { behavior: "fixed", bg: { type: "preset", id: "dark" } };
+  try {
+    const saved = localStorage.getItem(LS_KEY);
+    if (!saved) return fallback;
+    const parsed = JSON.parse(saved);
+    // 구 포맷 마이그레이션: { type, id } | { type, url }
+    if (parsed && parsed.type && !parsed.behavior) {
+      return { behavior: "fixed", bg: parsed as BgType };
+    }
+    // 새 포맷 검증
+    if (parsed && parsed.behavior && parsed.bg && parsed.bg.type) {
+      return parsed as StoredConfig;
+    }
+  } catch {}
+  return fallback;
+}
 
 export const BibleVerseWidget: React.FC = () => {
   const { t, i18n } = useTranslation();
 
-  // 언어에 따라 적절한 성경 구절 데이터 선택
+  const [config, setConfig] = useState<StoredConfig>(() => {
+    const c = loadConfig();
+    if (c.behavior === "random") return { ...c, bg: randomPreset() };
+    return c;
+  });
+  const [showSettings, setShowSettings] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState(
+    config.bg.type === "image" ? config.bg.url : ""
+  );
+  const [copied, setCopied] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+
   const bibleVersesData = useMemo(() => {
     const lang = i18n.language.toLowerCase();
-    const isEnglishOrJapanese =
-      lang === "en" ||
-      lang.startsWith("en") ||
-      lang === "ja" ||
-      lang.startsWith("ja");
-    return (
-      isEnglishOrJapanese ? bibleVersesEn : bibleVersesKo
-    ) as BibleVersesData;
+    const isEnOrJa = lang === "en" || lang.startsWith("en") || lang === "ja" || lang.startsWith("ja");
+    return (isEnOrJa ? bibleVersesEn : bibleVersesKo) as BibleVersesData;
   }, [i18n.language]);
 
   const [currentVerse, setCurrentVerse] = useState<BibleVerseEntry>(() => {
-    const randomIndex = Math.floor(
-      Math.random() * bibleVersesData.verses.length
-    );
-    return bibleVersesData.verses[randomIndex];
+    const idx = Math.floor(Math.random() * bibleVersesData.verses.length);
+    return bibleVersesData.verses[idx];
   });
-  const [copied, setCopied] = useState(false);
-  const [backgroundIndex] = useState(() =>
-    Math.floor(Math.random() * backgrounds.length)
-  );
-
-  const handleCopyVerse = async () => {
-    if (!currentVerse) {
-      return;
-    }
-
-    const textToCopy = `"${currentVerse.verse}" - ${currentVerse.reference}`;
-
-    if (navigator.clipboard && window.isSecureContext) {
-      try {
-        await navigator.clipboard.writeText(textToCopy);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-        return;
-      } catch (error) {
-        console.error("Clipboard API 복사 실패:", error);
-      }
-    }
-
-    try {
-      const textArea = document.createElement("textarea");
-      textArea.value = textToCopy;
-      textArea.style.position = "fixed";
-      textArea.style.left = "-999999px";
-      textArea.style.top = "-999999px";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      const successful = document.execCommand("copy");
-      document.body.removeChild(textArea);
-
-      if (successful) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      } else {
-        alert("복사 기능을 사용할 수 없습니다. 브라우저가 지원하지 않습니다.");
-      }
-    } catch (fallbackError) {
-      console.error("모든 복사 방법 실패:", fallbackError);
-      alert(
-        "복사 기능을 사용할 수 없습니다. 수동으로 텍스트를 선택해서 복사해주세요."
-      );
-    }
-  };
 
   useEffect(() => {
-    const randomIndex = Math.floor(
-      Math.random() * bibleVersesData.verses.length
-    );
-    setCurrentVerse(bibleVersesData.verses[randomIndex]);
+    const idx = Math.floor(Math.random() * bibleVersesData.verses.length);
+    setCurrentVerse(bibleVersesData.verses[idx]);
   }, [bibleVersesData]);
 
-  const renderVerseWithBreaks = () => {
-    const verse = currentVerse.verse;
-    const lang = i18n.language.toLowerCase();
-    const isEnglishOrJapanese =
-      lang === "en" ||
-      lang.startsWith("en") ||
-      lang === "ja" ||
-      lang.startsWith("ja");
-
-    // 한국어 구절 분리 패턴
-    const koreanBreakPatterns = [
-      " 그리하면 ",
-      " 그러므로 ",
-      " 하지만 ",
-      " 그런데 ",
-      " 왜냐하면 ",
-      " 그리고 ",
-    ];
-
-    // 영어 구절 분리 패턴
-    const englishBreakPatterns = [
-      " so that ",
-      " therefore ",
-      " but ",
-      " however ",
-      " because ",
-      " and ",
-      " for ",
-    ];
-
-    const breakPatterns = isEnglishOrJapanese
-      ? englishBreakPatterns
-      : koreanBreakPatterns;
-
-    for (const pattern of breakPatterns) {
-      if (verse.includes(pattern)) {
-        const parts = verse.split(pattern);
-        return (
-          <>
-            "{parts[0]}
-            {pattern.trim()}
-            <br />
-            {parts.slice(1).join(pattern)}"
-          </>
-        );
+  useEffect(() => {
+    if (!showSettings) return;
+    const handle = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setShowSettings(false);
       }
-    }
+    };
+    document.addEventListener("mousedown", handle);
+    return () => document.removeEventListener("mousedown", handle);
+  }, [showSettings]);
 
-    const commaIndex = verse.indexOf(",");
-    if (commaIndex > 10 && commaIndex < verse.length - 10) {
-      return (
-        <>
-          "{verse.substring(0, commaIndex + 1)}
-          <br />
-          {verse.substring(commaIndex + 1).trim()}"
-        </>
-      );
-    }
+  const saveConfig = (next: StoredConfig) => {
+    setConfig(next);
+    try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
+  };
 
-    const words = verse.split(" ");
-    if (words.length > 8) {
-      const midPoint = Math.floor(words.length / 2);
-      return (
-        <>
-          "{words.slice(0, midPoint).join(" ")}
-          <br />
-          {words.slice(midPoint).join(" ")}"
-        </>
-      );
-    }
+  const applyPreset = (id: string) => {
+    saveConfig({ ...config, bg: { type: "preset", id } });
+  };
 
-    return `"${verse}"`;
+  const applyImage = (url: string) => {
+    saveConfig({ ...config, bg: { type: "image", url } });
+  };
+
+  const setBehavior = (behavior: BgBehavior) => {
+    const next: StoredConfig = { behavior, bg: behavior === "random" ? randomPreset() : config.bg };
+    saveConfig(next);
+  };
+
+  const handleCopy = async () => {
+    if (showSettings) return;
+    const text = `"${currentVerse.verse}" - ${currentVerse.reference}`;
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const el = document.createElement("textarea");
+        el.value = text;
+        el.style.cssText = "position:fixed;left:-9999px";
+        document.body.appendChild(el);
+        el.focus(); el.select();
+        document.execCommand("copy");
+        document.body.removeChild(el);
+      }
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {}
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.9, rotateX: -15 }}
-      animate={{
-        opacity: 1,
-        scale: 1,
-        rotateX: 0,
-      }}
-      transition={{
-        duration: 1.5,
-        ease: "easeOut",
-      }}
-      whileHover={{
-        scale: 1.02,
-        boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-      }}
-      whileTap={{ scale: 0.98 }}
-      className={`relative overflow-hidden rounded-2xl md:rounded-3xl ${backgrounds[backgroundIndex]} backdrop-blur-xl border border-white/20 shadow-2xl min-h-[320px] sm:min-h-[360px] md:min-h-[400px] flex items-center cursor-pointer`}
-      onClick={handleCopyVerse}
-      title={copied ? t("dashboard.copied") : t("dashboard.clickToCopyVerse")}
+    // overflow-visible so the settings panel is NOT clipped
+    <div
+      className="relative rounded-xl border border-white/[0.06] cursor-pointer group"
+      onClick={handleCopy}
       role="button"
       tabIndex={0}
+      title={copied ? t("dashboard.copied") : undefined}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          handleCopyVerse();
-        }
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleCopy(); }
       }}
     >
-      <div className="absolute inset-0 opacity-10" style={{ zIndex: -10 }}>
-        <motion.div
-          className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.1)_0%,transparent_50%)]"
-          style={{ zIndex: -10 }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-        />
-        <motion.div
-          className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.05)_0%,transparent_50%)]"
-          style={{ zIndex: -10 }}
-          animate={{ rotate: -360 }}
-          transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
-        />
-        <motion.div
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-[radial-gradient(circle,rgba(255,255,255,0.03)_0%,transparent_70%)]"
-          style={{ zIndex: -10 }}
-          animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-1/4 left-1/4 w-2 h-2 bg-white/20 rounded-full"
-          style={{ zIndex: -10 }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-3/4 right-1/4 w-1 h-1 bg-white/30 rounded-full"
-          style={{ zIndex: -10 }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{
-            duration: 4,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1,
-          }}
-        />
-        <motion.div
-          className="absolute top-1/2 right-1/3 w-1.5 h-1.5 bg-white/25 rounded-full"
-          style={{ zIndex: -10 }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{
-            duration: 3.5,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-        />
-        <motion.div
-          className="absolute top-1/3 right-1/2 w-1 h-1 bg-white/15 rounded-full"
-          style={{ zIndex: -10 }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{
-            duration: 2.8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 0.5,
-          }}
-        />
-        <motion.div
-          className="absolute bottom-1/3 left-1/3 w-1.5 h-1.5 bg-white/20 rounded-full"
-          style={{ zIndex: -10 }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{
-            duration: 3.2,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 1.5,
-          }}
-        />
-        <motion.div
-          className="absolute top-2/3 left-2/3 w-1 h-1 bg-white/25 rounded-full"
-          style={{ zIndex: -10 }}
-          animate={{ y: [0, -20, 0] }}
-          transition={{
-            duration: 3.6,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 3,
-          }}
-        />
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
-          style={{ zIndex: -10 }}
-          animate={{ opacity: [0.3, 0.7, 0.3] }}
-          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-l from-transparent via-white/3 to-transparent"
-          style={{ zIndex: -10 }}
-          animate={{ opacity: [0.2, 0.6, 0.2] }}
-          transition={{
-            duration: 12,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-        />
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-t from-transparent via-white/2 to-transparent"
-          style={{ zIndex: -10 }}
-          animate={{ opacity: [0.1, 0.5, 0.1] }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 4,
-          }}
-        />
-        <motion.div
-          className="absolute top-1/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/30 to-transparent opacity-60"
-          style={{ zIndex: -10 }}
-          animate={{ x: [0, 100, 0] }}
-          transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div
-          className="absolute top-3/4 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-40"
-          style={{ zIndex: -10 }}
-          animate={{ x: [0, -100, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        />
-      </div>
-
-      <motion.div
-        className="relative p-4 sm:p-6 md:p-8 lg:p-12 text-center w-full"
-        style={{ zIndex: 100 }}
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 1 }}
+      {/* 배경 레이어 */}
+      <div
+        className="absolute inset-0 rounded-xl overflow-hidden"
+        style={getBgStyle(config.bg)}
       >
-        <motion.div
-          className="mb-8"
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.7, duration: 0.8 }}
-        >
-          <div
-            className="inline-flex items-center space-x-1 sm:space-x-2 px-3 sm:px-4 md:px-6 py-2 sm:py-3 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 shadow-lg relative"
-            style={{ zIndex: 200 }}
-          >
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <BookOpen className="w-5 h-5 text-white/80" />
-            </motion.div>
-            <span className="text-white/80 text-sm font-medium">
-              {copied ? t("dashboard.copied") : t("dashboard.todaysBibleVerse")}
-            </span>
-          </div>
-        </motion.div>
-
-        {copied && (
-          <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.8 }}
-            className="absolute top-4 right-4 bg-white/90 text-gray-800 px-4 py-2 rounded-full text-sm font-medium shadow-xl backdrop-blur-sm border border-white/20 flex items-center space-x-2"
-            style={{ zIndex: 300 }}
-          >
-            <motion.div
-              animate={{ scale: [1, 1.2, 1] }}
-              transition={{ duration: 0.3 }}
-            >
-              ✓
-            </motion.div>
-            <span>{t("dashboard.copied")}</span>
-          </motion.div>
+        {config.bg.type === "image" && (
+          <div className="absolute inset-0 bg-black/45" />
         )}
 
-        <div className="space-y-8">
-          <motion.div
-            className="relative"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 1, duration: 1.2, ease: "easeOut" }}
-          >
-            <motion.div
-              className="absolute -top-6 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-              initial={{ width: 0 }}
-              animate={{ width: 96 }}
-              transition={{ delay: 1.5, duration: 1 }}
-            ></motion.div>
-            <motion.div
-              className="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-light text-white leading-relaxed tracking-wide px-2 sm:px-3 md:px-4 relative"
-              style={{
-                zIndex: 200,
-                textShadow:
-                  "0 2px 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6)",
-                backgroundColor: "rgba(0,0,0,0.2)",
-                borderRadius: "8px",
-                padding: "0.75rem 1rem",
-              }}
-              initial={{ y: 30, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 1.2, duration: 1 }}
-            >
-              {renderVerseWithBreaks()}
-            </motion.div>
-            <motion.div
-              className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-              initial={{ width: 0 }}
-              animate={{ width: 96 }}
-              transition={{ delay: 2, duration: 1 }}
-            ></motion.div>
-          </motion.div>
+        {/* 플로팅 오브 */}
+        <motion.div
+          className="absolute w-72 h-72 rounded-full bg-white/10 blur-3xl"
+          style={{ top: "-30%", left: "-8%" }}
+          animate={{ x: [0, 24, 0], y: [0, -16, 0], scale: [1, 1.12, 1] }}
+          transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          className="absolute w-56 h-56 rounded-full bg-white/[0.08] blur-2xl"
+          style={{ bottom: "-20%", right: "5%" }}
+          animate={{ x: [0, -18, 0], y: [0, 14, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 11, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+        />
+        <motion.div
+          className="absolute w-40 h-40 rounded-full bg-white/[0.06] blur-xl"
+          style={{ top: "20%", right: "12%" }}
+          animate={{ x: [0, 12, -8, 0], y: [0, -12, 6, 0] }}
+          transition={{ duration: 13, repeat: Infinity, ease: "easeInOut", delay: 4 }}
+        />
 
-          <motion.div
-            className="pt-6"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 2.2, duration: 0.8 }}
+        {/* 장식 십자 파티클 */}
+        {[
+          { top: "15%", left: "8%", delay: 0 },
+          { top: "70%", left: "20%", delay: 1.5 },
+          { top: "25%", right: "22%", delay: 3 },
+          { top: "65%", right: "10%", delay: 0.8 },
+          { top: "45%", left: "40%", delay: 2.2 },
+        ].map((pos, i) => (
+          <motion.span
+            key={i}
+            className="absolute text-white/20 text-lg select-none"
+            style={pos}
+            animate={{ opacity: [0.15, 0.45, 0.15], scale: [0.8, 1.2, 0.8] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: pos.delay }}
           >
-            <p
-              className="text-xs sm:text-sm md:text-base lg:text-lg text-white/90 font-medium tracking-wide relative"
-              style={{
-                zIndex: 200,
-                textShadow: "0 2px 8px rgba(0,0,0,0.7)",
-                borderRadius: "6px",
-                padding: "0.5rem 0.75rem",
-              }}
-            >
-              {currentVerse.reference}
-            </p>
-            <p
-              className="text-xs text-white/70 mt-2 font-light tracking-wide relative"
-              style={{
-                zIndex: 200,
-                textShadow: "0 1px 4px rgba(0,0,0,0.5)",
-              }}
-            >
-              {bibleVersesData._copyright.notice}
-            </p>
-          </motion.div>
+            ✦
+          </motion.span>
+        ))}
+      </div>
+
+      {/* 본문 */}
+      <div className="relative z-10 px-10 py-20 sm:px-16 sm:py-24 text-center">
+        <div className="flex items-center justify-center gap-2 mb-6">
+          <BookOpen className="w-4 h-4 text-white/60 drop-shadow" />
+          <span className="text-xs font-medium text-white/60 tracking-widest uppercase drop-shadow">
+            {t("dashboard.todaysBibleVerse")}
+          </span>
         </div>
 
-        <motion.div
-          className="absolute top-4 sm:top-6 md:top-8 right-4 sm:right-6 md:right-8 w-12 sm:w-16 md:w-20 lg:w-24 h-12 sm:h-16 md:h-20 lg:h-24 bg-white/5 rounded-full backdrop-blur-sm border border-white/10"
-          style={{ zIndex: 50 }}
-          animate={{
-            scale: [1, 1.1, 1],
-            rotate: [0, 180, 360],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        ></motion.div>
-        <motion.div
-          className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-4 sm:left-6 md:left-8 w-10 sm:w-14 md:w-16 lg:w-20 h-10 sm:h-14 md:h-16 lg:h-20 bg-white/5 rounded-full backdrop-blur-sm border border-white/10"
-          style={{ zIndex: 50 }}
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.7, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2,
-          }}
-        ></motion.div>
-        <motion.div
-          className="absolute top-1/4 left-4 sm:left-6 md:left-8 w-6 sm:w-8 md:w-10 lg:w-12 h-6 sm:h-8 md:h-10 lg:h-12 bg-white/3 rounded-full backdrop-blur-sm"
-          style={{ zIndex: 50 }}
-          animate={{
-            y: [0, -20, 0],
-            opacity: [0.2, 0.5, 0.2],
-          }}
-          transition={{
-            duration: 6,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        ></motion.div>
-        <motion.div
-          className="absolute bottom-1/4 right-6 sm:right-8 md:right-10 lg:right-12 w-8 sm:w-10 md:w-12 lg:w-16 h-8 sm:h-10 md:h-12 lg:h-16 bg-white/3 rounded-full backdrop-blur-sm"
-          style={{ zIndex: 50 }}
-          animate={{
-            x: [0, 10, 0],
-            scale: [1, 1.1, 1],
-          }}
-          transition={{
-            duration: 7,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 3,
-          }}
-        ></motion.div>
-      </motion.div>
-    </motion.div>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={currentVerse.verse}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="text-2xl sm:text-3xl md:text-4xl font-light text-white leading-relaxed tracking-wide break-keep"
+            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.5)" }}
+          >
+            "{currentVerse.verse}"
+          </motion.p>
+        </AnimatePresence>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="mt-6 text-base font-semibold text-white/80"
+          style={{ textShadow: "0 1px 4px rgba(0,0,0,0.5)" }}
+        >
+          {currentVerse.reference}
+        </motion.p>
+        <p className="mt-1.5 text-xs text-white/40 drop-shadow">
+          {bibleVersesData._copyright.notice}
+        </p>
+      </div>
+
+      {/* 복사 힌트 */}
+      <div className="absolute top-3 right-10 opacity-0 group-hover:opacity-100 transition-opacity z-20 pointer-events-none">
+        {copied ? (
+          <Check className="w-4 h-4 text-white/60" />
+        ) : (
+          <Copy className="w-4 h-4 text-white/30" />
+        )}
+      </div>
+
+      {/* 배경 변경 버튼 */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setShowSettings((v) => !v); }}
+        className={`absolute top-2.5 right-2.5 p-1.5 rounded-lg transition-colors z-20 ${
+          showSettings
+            ? "text-white/80 bg-white/15"
+            : "text-white/30 hover:text-white/70 hover:bg-white/10 opacity-0 group-hover:opacity-100"
+        }`}
+        title={t("dashboard.changeBackground") ?? "배경 변경"}
+      >
+        <Palette className="w-4 h-4" />
+      </button>
+
+      {/* 배경 선택 패널 */}
+      {showSettings && (
+        <div
+          ref={settingsRef}
+          className="absolute top-12 right-2.5 z-30 w-64 bg-white/95 dark:bg-[#1c1c1f]/95 backdrop-blur-sm border border-gray-200 dark:border-white/[0.10] rounded-xl shadow-2xl p-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* 헤더 */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-[11px] font-semibold text-gray-500 dark:text-white/60 uppercase tracking-wider">
+              {t("dashboard.changeBackground") ?? "배경 변경"}
+            </span>
+            <button
+              onClick={() => setShowSettings(false)}
+              className="p-1 rounded-md text-gray-400 dark:text-white/40 hover:text-gray-600 dark:hover:text-white/70 hover:bg-gray-100 dark:hover:bg-white/10 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* 동작 옵션 */}
+          <div className="flex gap-1.5 mb-3">
+            {(["fixed", "random"] as BgBehavior[]).map((b) => (
+              <button
+                key={b}
+                onClick={() => setBehavior(b)}
+                className={`flex-1 py-1.5 text-[11px] font-medium rounded-lg transition-colors ${
+                  config.behavior === b
+                    ? "bg-violet-600 text-white border border-violet-600"
+                    : "bg-gray-100 dark:bg-white/[0.06] text-gray-500 dark:text-white/40 hover:bg-gray-200 dark:hover:bg-white/[0.10] border border-gray-200 dark:border-white/[0.06]"
+                }`}
+              >
+                {b === "fixed"
+                  ? (t("dashboard.bgFixed") ?? "배경 고정")
+                  : (t("dashboard.bgRandom") ?? "열때마다 변경")}
+              </button>
+            ))}
+          </div>
+
+          {/* 프리셋 스와치 */}
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {PRESET_BG.map((preset) => (
+              <button
+                key={preset.id}
+                onClick={() => applyPreset(preset.id)}
+                className={`w-full aspect-square rounded-lg border-2 transition-all hover:scale-105 ${
+                  config.bg.type === "preset" && config.bg.id === preset.id
+                    ? "border-violet-500 ring-2 ring-violet-400/30"
+                    : "border-gray-200 dark:border-white/10 hover:border-gray-400 dark:hover:border-white/30"
+                }`}
+                style={{ background: preset.bg }}
+              />
+            ))}
+          </div>
+
+          {/* 이미지 URL */}
+          <div className="border-t border-gray-200 dark:border-white/[0.08] pt-3 space-y-2">
+            <p className="text-[10px] text-gray-400 dark:text-white/35 uppercase tracking-wider">
+              {t("dashboard.backgroundImage") ?? "이미지 URL"}
+            </p>
+            <input
+              type="text"
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+              placeholder="https://..."
+              className="w-full px-2.5 py-1.5 text-xs bg-gray-100 dark:bg-white/[0.06] border border-gray-200 dark:border-white/[0.10] rounded-lg text-gray-800 dark:text-white/80 placeholder-gray-400 dark:placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-violet-500"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && imageUrlInput.trim()) {
+                  applyImage(imageUrlInput.trim());
+                  setShowSettings(false);
+                }
+              }}
+            />
+            <button
+              onClick={() => {
+                if (imageUrlInput.trim()) {
+                  applyImage(imageUrlInput.trim());
+                  setShowSettings(false);
+                }
+              }}
+              disabled={!imageUrlInput.trim()}
+              className="w-full py-1.5 text-xs font-medium bg-gray-100 dark:bg-white/10 hover:bg-gray-200 dark:hover:bg-white/20 text-gray-600 dark:text-white/70 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t("common.apply")}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
