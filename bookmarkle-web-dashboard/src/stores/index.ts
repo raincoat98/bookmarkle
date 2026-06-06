@@ -5,3 +5,8 @@ export { useDrawerStore } from "./drawerStore";
 export { useBookmarkStore } from "./bookmarkStore";
 export { useCollectionStore } from "./collectionStore";
 export { useSubscriptionStore } from "./subscriptionStore";
+export {
+  useFeatureFlagsStore,
+  getCurrentFlags,
+  type FeatureFlags,
+} from "./featureFlagsStore";
