@@ -339,3 +339,47 @@
     animation: sparkle 4s infinite ease-in-out;
   }
 }
+
+/* ─── Modern Toast 스타일 ──────────────────────────────────────────── */
+.modern-toast {
+  animation: toast-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.modern-toast[data-visible="false"] {
+  animation: toast-slide-out 0.18s cubic-bezier(0.4, 0, 1, 1) !important;
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes toast-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+}
+
+/* 라이트 모드 토스트 */
+@media (prefers-color-scheme: light) {
+  html:not(.dark) .modern-toast {
+    background: rgba(255, 255, 255, 0.96) !important;
+    color: #111827 !important;
+    border: 1px solid rgba(0, 0, 0, 0.06) !important;
+    box-shadow:
+      0 10px 30px rgba(0, 0, 0, 0.08),
+      0 2px 6px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5) !important;
+  }
+}

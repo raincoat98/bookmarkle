@@ -33,6 +33,7 @@ import {
   useBookmarkStore,
   useCollectionStore,
   useSubscriptionStore,
+  useFeatureFlagsStore,
   initializeTheme,
 } from "./stores";
 import { auth } from "./firebase";
@@ -180,6 +181,8 @@ function App() {
     authInitialized.current = true;
     const unsubscribeAuth = initializeAuth();
     const unsubscribeTheme = initializeTheme();
+    // Feature flags Firestore 구독 시작
+    useFeatureFlagsStore.getState().subscribe();
 
     return () => {
       unsubscribeAuth();
@@ -302,7 +305,7 @@ function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10] flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">로딩 중...</p>
@@ -316,11 +319,45 @@ function App() {
       <AppRoutes />
       <Toaster
         position="top-right"
+        gutter={8}
+        containerStyle={{ top: 20, right: 20 }}
         toastOptions={{
-          duration: 4000,
+          duration: 3500,
+          className: "modern-toast",
           style: {
-            background: "#363636",
+            background: "rgba(17, 17, 19, 0.92)",
             color: "#fff",
+            backdropFilter: "blur(12px)",
+            WebkitBackdropFilter: "blur(12px)",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "14px",
+            padding: "12px 16px",
+            fontSize: "13px",
+            fontWeight: 500,
+            boxShadow:
+              "0 10px 30px rgba(0,0,0,0.25), 0 2px 6px rgba(0,0,0,0.15), inset 0 1px 0 rgba(255,255,255,0.06)",
+            maxWidth: "360px",
+          },
+          success: {
+            iconTheme: { primary: "#10b981", secondary: "#fff" },
+            style: {
+              background: "rgba(17, 17, 19, 0.92)",
+              border: "1px solid rgba(16, 185, 129, 0.25)",
+            },
+          },
+          error: {
+            iconTheme: { primary: "#ef4444", secondary: "#fff" },
+            style: {
+              background: "rgba(17, 17, 19, 0.92)",
+              border: "1px solid rgba(239, 68, 68, 0.25)",
+            },
+          },
+          loading: {
+            iconTheme: { primary: "#8b5cf6", secondary: "#fff" },
+            style: {
+              background: "rgba(17, 17, 19, 0.92)",
+              border: "1px solid rgba(139, 92, 246, 0.25)",
+            },
           },
         }}
       />
