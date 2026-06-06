@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import type { Timestamp } from "firebase/firestore";
 import type { AdminUser } from "../../types";
@@ -13,6 +13,13 @@ import {
   Crown,
   Gift,
   X,
+  Users,
+  Activity,
+  TrendingUp,
+  CheckCircle,
+  XCircle,
+  Eye,
+  Filter,
 } from "lucide-react";
 
 interface AdminUserListProps {
@@ -22,130 +29,268 @@ interface AdminUserListProps {
 }
 
 const formatDate = (date: Date | Timestamp): string => {
-  const resolvedDate = date instanceof Date ? date : date.toDate();
-
-  return resolvedDate.toLocaleDateString("ko-KR");
+  const d = date instanceof Date ? date : date.toDate();
+  return d.toLocaleDateString("ko-KR");
 };
 
-export function AdminUserList({
-  users,
-  loading,
-  onToggleUserStatus,
-}: AdminUserListProps) {
+type StatusFilter = "all" | "active" | "inactive" | "premium" | "early";
+
+export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserListProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.displayName?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // 통계 계산
+  const stats = useMemo(() => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 86400000);
 
-  const earlyUserCount = users.filter((u) => u.isEarlyUser).length;
+    const premium = users.filter(
+      (u) =>
+        u.subscription?.plan === "premium" &&
+        (u.subscription.status === "active" || u.subscription.status === "trialing")
+    );
+    const earlyUsers = users.filter((u) => u.isEarlyUser);
+    const activeUsers = users.filter((u) => u.isActive);
+    const inactiveUsers = users.filter((u) => !u.isActive);
+    const recentSignups = users.filter((u) => u.createdAt >= sevenDaysAgo);
+    const recentLogins = users.filter((u) => u.lastLoginAt && u.lastLoginAt >= today);
+    const totalBookmarks = users.reduce((sum, u) => sum + u.bookmarkCount, 0);
+    const totalCollections = users.reduce((sum, u) => sum + u.collectionCount, 0);
+    const avgBookmarks = users.length > 0 ? Math.round(totalBookmarks / users.length) : 0;
+
+    return {
+      total: users.length,
+      premium: premium.length,
+      earlyUsers: earlyUsers.length,
+      active: activeUsers.length,
+      inactive: inactiveUsers.length,
+      recentSignups: recentSignups.length,
+      recentLogins: recentLogins.length,
+      totalBookmarks,
+      totalCollections,
+      avgBookmarks,
+      conversionRate:
+        users.length > 0 ? ((premium.length / users.length) * 100).toFixed(1) : "0.0",
+    };
+  }, [users]);
+
+  // 필터링
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (u) =>
+          u.email?.toLowerCase().includes(term) ||
+          u.displayName?.toLowerCase().includes(term)
+      );
+    }
+    switch (statusFilter) {
+      case "active":
+        filtered = filtered.filter((u) => u.isActive);
+        break;
+      case "inactive":
+        filtered = filtered.filter((u) => !u.isActive);
+        break;
+      case "premium":
+        filtered = filtered.filter(
+          (u) =>
+            u.subscription?.plan === "premium" &&
+            (u.subscription.status === "active" || u.subscription.status === "trialing")
+        );
+        break;
+      case "early":
+        filtered = filtered.filter((u) => u.isEarlyUser);
+        break;
+    }
+    return filtered;
+  }, [users, searchTerm, statusFilter]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600" />
+        <div className="w-7 h-7 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      {/* 검색 바 */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <input
-          type="text"
-          placeholder={t("admin.searchPlaceholder")}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-        />
-      </div>
+  const STAT_CARDS = [
+    {
+      key: "total",
+      icon: Users,
+      label: "전체 사용자",
+      value: stats.total,
+      subtext: `최근 7일 +${stats.recentSignups}`,
+      iconBg: "bg-violet-50 dark:bg-violet-500/10",
+      iconColor: "text-violet-600 dark:text-violet-400",
+    },
+    {
+      key: "active",
+      icon: Activity,
+      label: "오늘 활동",
+      value: stats.recentLogins,
+      subtext: `활성 ${stats.active} · 비활성 ${stats.inactive}`,
+      iconBg: "bg-emerald-50 dark:bg-emerald-500/10",
+      iconColor: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      key: "premium",
+      icon: Crown,
+      label: "프리미엄",
+      value: stats.premium,
+      subtext: `전환율 ${stats.conversionRate}%`,
+      iconBg: "bg-amber-50 dark:bg-amber-500/10",
+      iconColor: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      key: "early",
+      icon: Gift,
+      label: "얼리 유저",
+      value: stats.earlyUsers,
+      subtext: `평생 무료 혜택`,
+      iconBg: "bg-orange-50 dark:bg-orange-500/10",
+      iconColor: "text-orange-600 dark:text-orange-400",
+    },
+    {
+      key: "bookmarks",
+      icon: Bookmark,
+      label: "총 북마크",
+      value: stats.totalBookmarks,
+      subtext: `평균 ${stats.avgBookmarks}개/명`,
+      iconBg: "bg-blue-50 dark:bg-blue-500/10",
+      iconColor: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      key: "collections",
+      icon: Folder,
+      label: "총 컬렉션",
+      value: stats.totalCollections,
+      subtext: `사용자별 평균 ${users.length > 0 ? Math.round(stats.totalCollections / users.length) : 0}개`,
+      iconBg: "bg-purple-50 dark:bg-purple-500/10",
+      iconColor: "text-purple-600 dark:text-purple-400",
+    },
+  ];
 
+  const FILTERS: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all", label: "전체", count: stats.total },
+    { key: "active", label: "활성", count: stats.active },
+    { key: "inactive", label: "비활성", count: stats.inactive },
+    { key: "premium", label: "프리미엄", count: stats.premium },
+    { key: "early", label: "얼리", count: stats.earlyUsers },
+  ];
+
+  return (
+    <div className="space-y-4">
       {/* 통계 카드 */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        {[
-          {
-            label: t("admin.totalUsers"),
-            value: users.length,
-            icon: <UserIcon className="h-8 w-8 md:h-12 md:w-12 text-brand-500 flex-shrink-0" />,
-          },
-          {
-            label: t("admin.premiumUsers"),
-            value: users.filter(
-              (u) =>
-                u.subscription?.plan === "premium" &&
-                (u.subscription.status === "active" || u.subscription.status === "trialing")
-            ).length,
-            icon: <Crown className="h-8 w-8 md:h-12 md:w-12 text-yellow-500 flex-shrink-0" />,
-          },
-          {
-            label: t("admin.earlyUsers"),
-            value: earlyUserCount,
-            icon: <Gift className="h-8 w-8 md:h-12 md:w-12 text-orange-500 flex-shrink-0" />,
-          },
-          {
-            label: t("admin.totalBookmarks"),
-            value: users.reduce((sum, u) => sum + u.bookmarkCount, 0),
-            icon: <Bookmark className="h-8 w-8 md:h-12 md:w-12 text-blue-500 flex-shrink-0" />,
-          },
-          {
-            label: t("admin.totalCollections"),
-            value: users.reduce((sum, u) => sum + u.collectionCount, 0),
-            icon: <Folder className="h-8 w-8 md:h-12 md:w-12 text-green-500 flex-shrink-0" />,
-          },
-        ].map(({ label, value, icon }) => (
-          <div key={label} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 md:p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400">
-                  {label}
-                </p>
-                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                  {value}
-                </p>
-              </div>
-              {icon}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {STAT_CARDS.map(({ key, icon: Icon, label, value, subtext, iconBg, iconColor }) => (
+          <div
+            key={key}
+            className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-4 transition-colors hover:border-gray-200 dark:hover:border-white/[0.10]"
+          >
+            <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-3 ${iconBg}`}>
+              <Icon className={`w-4 h-4 ${iconColor}`} />
             </div>
+            <p className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white leading-none mb-1">
+              {value.toLocaleString()}
+            </p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 font-medium mb-1">{label}</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-600">{subtext}</p>
           </div>
         ))}
       </div>
 
-      {/* 사용자 테이블 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900">
-              <tr>
-                {[
-                  t("admin.userInfo"),
-                  t("admin.email"),
-                  t("admin.bookmarks"),
-                  t("admin.collections"),
-                  t("admin.subscription"),
-                  t("admin.earlyUser"),
-                  t("admin.joinDate"),
-                  t("admin.status"),
-                  t("admin.actions"),
-                ].map((header) => (
-                  <th
-                    key={header}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+      {/* 검색 + 필터 */}
+      <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] p-3 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder={t("admin.searchPlaceholder")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 text-sm bg-gray-50 dark:bg-white/[0.04] border border-transparent rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:bg-white dark:focus:bg-[#111113] focus:border-violet-500/40 focus:ring-2 focus:ring-violet-500/20 transition-colors"
+          />
+        </div>
+
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+            <Filter className="w-3 h-3" />
+            <span>필터</span>
+          </div>
+          <div className="flex gap-1">
+            {FILTERS.map(({ key, label, count }) => {
+              const active = statusFilter === key;
+              return (
+                <button
+                  key={key}
+                  onClick={() => setStatusFilter(key)}
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
+                    active
+                      ? "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300"
+                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
+                  }`}
+                >
+                  {label}
+                  <span
+                    className={`px-1.5 py-px rounded text-[10px] tabular-nums ${
+                      active
+                        ? "bg-white/60 dark:bg-violet-900/40"
+                        : "bg-gray-100 dark:bg-white/[0.06]"
+                    }`}
                   >
-                    {header}
-                  </th>
-                ))}
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* 사용자 테이블 */}
+      <div className="bg-white dark:bg-[#111113] rounded-2xl border border-gray-100 dark:border-white/[0.06] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-gray-100 dark:border-white/[0.06]">
+                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  사용자
+                </th>
+                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  활동
+                </th>
+                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  구독
+                </th>
+                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  가입일
+                </th>
+                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  상태
+                </th>
+                <th className="px-5 py-3 text-right text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                  작업
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody>
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
-                    {searchTerm ? t("admin.noSearchResults") : t("admin.noRegisteredUsers")}
+                  <td colSpan={6} className="px-5 py-12 text-center">
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-white/[0.04] flex items-center justify-center">
+                        <UserIcon className="w-5 h-5 text-gray-300 dark:text-gray-600" />
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        {searchTerm || statusFilter !== "all"
+                          ? t("admin.noSearchResults")
+                          : t("admin.noRegisteredUsers")}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -158,107 +303,103 @@ export function AdminUserList({
                   return (
                     <tr
                       key={user.uid}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className="border-b border-gray-50 dark:border-white/[0.04] last:border-0 hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-brand-100 dark:bg-brand-900 rounded-full flex items-center justify-center">
-                            <UserIcon className="h-6 w-6 text-brand-600 dark:text-brand-400" />
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 w-9 h-9 bg-violet-50 dark:bg-violet-500/10 rounded-full flex items-center justify-center">
+                            <span className="text-sm font-semibold text-violet-600 dark:text-violet-400">
+                              {(user.displayName || user.email || "U")[0].toUpperCase()}
+                            </span>
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[200px]">
                               {user.displayName || t("admin.noName")}
-                            </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              ID: {user.uid.substring(0, 8)}...
-                            </div>
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500 truncate max-w-[200px]">
+                              {user.email || "N/A"}
+                            </p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                        {user.email || "N/A"}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900 dark:text-white">
-                          <Bookmark className="h-4 w-4 mr-1 text-blue-500" />
-                          {user.bookmarkCount}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-900 dark:text-white">
-                          <Folder className="h-4 w-4 mr-1 text-green-500" />
-                          {user.collectionCount}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {isPremium ? (
-                          <div className="flex items-center space-x-2">
-                            <Crown className="h-4 w-4 text-yellow-500" />
-                            <span className="text-sm font-medium text-yellow-600 dark:text-yellow-400">
-                              {t("admin.premium")}
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-3 text-xs">
+                          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                            <Bookmark className="w-3 h-3 text-blue-400" />
+                            <span className="font-semibold text-gray-900 dark:text-white tabular-nums">
+                              {user.bookmarkCount}
                             </span>
-                            {user.subscription?.billingCycle === "yearly" && (
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                ({t("admin.yearlyShort")})
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {t("admin.free")}
                           </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {user.isEarlyUser ? (
-                          <div className="flex items-center space-x-2">
-                            <Gift className="h-4 w-4 text-orange-500" />
-                            <span className="text-sm font-medium text-orange-600 dark:text-orange-400">
-                              {t("admin.earlyUser")}
+                          <span className="flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                            <Folder className="w-3 h-3 text-emerald-400" />
+                            <span className="font-semibold text-gray-900 dark:text-white tabular-nums">
+                              {user.collectionCount}
                             </span>
-                          </div>
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        {isPremium ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium">
+                            <Crown className="w-3 h-3" />
+                            프리미엄
+                          </span>
+                        ) : user.isEarlyUser ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-xs font-medium">
+                            <Gift className="w-3 h-3" />
+                            얼리
+                          </span>
                         ) : (
-                          <span className="text-sm text-gray-500 dark:text-gray-400">-</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">무료</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                          <Calendar className="h-4 w-4 mr-1" />
+                      <td className="px-5 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                          <Calendar className="w-3 h-3" />
                           {user.createdAt.toLocaleDateString("ko-KR")}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
                             user.isActive
-                              ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
-                              : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                              : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
                           }`}
                         >
-                          {user.isActive ? t("admin.active") : t("admin.inactive")}
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              user.isActive ? "bg-emerald-500" : "bg-red-500"
+                            }`}
+                          />
+                          {user.isActive ? "활성" : "비활성"}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="text-brand-600 hover:text-brand-900 dark:text-brand-400 dark:hover:text-brand-300"
-                        >
-                          {t("admin.viewDetails")}
-                        </button>
-                        <button
-                          onClick={() => onToggleUserStatus(user.uid, !user.isActive)}
-                          className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium transition-colors ${
-                            user.isActive
-                              ? "text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300"
-                              : "text-green-600 hover:text-green-800 hover:bg-green-50 dark:text-green-400 dark:hover:text-green-300"
-                          }`}
-                        >
-                          {user.isActive ? (
-                            <><UserX className="h-3 w-3 mr-1" />{t("admin.deactivate")}</>
-                          ) : (
-                            <><UserCheck className="h-3 w-3 mr-1" />{t("admin.activate")}</>
-                          )}
-                        </button>
+                      <td className="px-5 py-3 whitespace-nowrap text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
+                            title="상세 보기"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => onToggleUserStatus(user.uid, !user.isActive)}
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              user.isActive
+                                ? "text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+                                : "text-gray-400 dark:text-gray-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+                            }`}
+                            title={user.isActive ? "비활성화" : "활성화"}
+                          >
+                            {user.isActive ? (
+                              <UserX className="w-3.5 h-3.5" />
+                            ) : (
+                              <UserCheck className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -267,140 +408,167 @@ export function AdminUserList({
             </tbody>
           </table>
         </div>
+
+        {filteredUsers.length > 0 && (
+          <div className="px-5 py-3 border-t border-gray-50 dark:border-white/[0.04] flex items-center justify-between">
+            <p className="text-xs text-gray-400 dark:text-gray-500">
+              총 <span className="font-semibold text-gray-700 dark:text-gray-300">{filteredUsers.length}</span>명 표시 중
+            </p>
+            <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+              <TrendingUp className="w-3 h-3" />
+              <span>전체 {stats.total}명</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* 사용자 상세 모달 */}
       {selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {t("admin.userDetails")}
-              </h3>
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setSelectedUser(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#111113] rounded-2xl shadow-2xl border border-gray-100 dark:border-white/[0.06] max-w-lg w-full max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/[0.06]">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-violet-50 dark:bg-violet-500/10 rounded-full flex items-center justify-center">
+                  <span className="text-base font-semibold text-violet-600 dark:text-violet-400">
+                    {(selectedUser.displayName || selectedUser.email || "U")[0].toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    {selectedUser.displayName || t("admin.noName")}
+                  </h3>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">{selectedUser.email}</p>
+                </div>
+              </div>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
               >
-                <X className="h-6 w-6" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              {[
-                { label: t("admin.userId"), value: selectedUser.uid, mono: true },
-                { label: t("admin.name"), value: selectedUser.displayName || t("admin.noName") },
-                { label: t("admin.email"), value: selectedUser.email || "N/A" },
-              ].map(({ label, value, mono }) => (
-                <div key={label}>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {label}
-                  </label>
-                  <p className={`mt-1 text-sm text-gray-900 dark:text-white ${mono ? "font-mono" : ""}`}>
-                    {value}
-                  </p>
-                </div>
-              ))}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t("admin.bookmarkCount")}
-                  </label>
-                  <p className="mt-1 text-2xl font-bold text-blue-600 dark:text-blue-400">
+            <div className="p-5 space-y-4">
+              {/* 활동 통계 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-blue-50 dark:bg-blue-500/[0.06] border border-blue-100 dark:border-blue-500/20 rounded-xl p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Bookmark className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                    <p className="text-xs text-blue-700 dark:text-blue-400 font-medium">북마크</p>
+                  </div>
+                  <p className="text-xl font-bold text-blue-700 dark:text-blue-300">
                     {selectedUser.bookmarkCount}
                   </p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t("admin.collectionCount")}
-                  </label>
-                  <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-400">
+                <div className="bg-emerald-50 dark:bg-emerald-500/[0.06] border border-emerald-100 dark:border-emerald-500/20 rounded-xl p-3">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Folder className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">컬렉션</p>
+                  </div>
+                  <p className="text-xl font-bold text-emerald-700 dark:text-emerald-300">
                     {selectedUser.collectionCount}
                   </p>
                 </div>
               </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {t("admin.subscriptionStatus")}
-                </label>
-                <div className="mt-1 flex items-center space-x-2">
+              {/* 정보 */}
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-white/[0.04]">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">UID</span>
+                  <span className="font-mono text-xs text-gray-700 dark:text-gray-300 truncate max-w-[260px]">
+                    {selectedUser.uid}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-white/[0.04]">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">구독</span>
                   {selectedUser.subscription?.plan === "premium" &&
                   (selectedUser.subscription.status === "active" ||
                     selectedUser.subscription.status === "trialing") ? (
-                    <>
-                      <Crown className="h-5 w-5 text-yellow-500" />
-                      <div>
-                        <p className="text-sm font-semibold text-yellow-600 dark:text-yellow-400">
-                          {t("admin.premium")}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {selectedUser.subscription.billingCycle === "monthly"
-                            ? t("admin.monthly")
-                            : t("admin.yearly")}
-                          {selectedUser.subscription.endDate &&
-                            ` · ${t("admin.expiryDate")}: ${formatDate(selectedUser.subscription.endDate)}`}
-                        </p>
-                      </div>
-                    </>
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 text-xs font-medium">
+                        <Crown className="w-3 h-3" />
+                        프리미엄
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {selectedUser.subscription.billingCycle === "monthly" ? "월간" : "연간"}
+                      </span>
+                    </div>
                   ) : (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {t("admin.free")}
-                    </span>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">무료</span>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {t("admin.earlyUserStatus")}
-                </label>
-                <div className="mt-1 flex items-center space-x-2">
+                {selectedUser.subscription?.endDate && (
+                  <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-white/[0.04]">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">만료일</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      {formatDate(selectedUser.subscription.endDate)}
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-white/[0.04]">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">얼리 유저</span>
                   {selectedUser.isEarlyUser ? (
-                    <>
-                      <Gift className="h-5 w-5 text-orange-500" />
-                      <div>
-                        <p className="text-sm font-semibold text-orange-600 dark:text-orange-400">
-                          {t("admin.earlyUser")}
-                        </p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {t("admin.earlyUserDesc")}
-                        </p>
-                      </div>
-                    </>
-                  ) : (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      {t("admin.regularUser")}
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 text-xs font-medium">
+                      <Gift className="w-3 h-3" />
+                      예
                     </span>
+                  ) : (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">아니오</span>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {t("admin.joinDate")}
-                </label>
-                <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                  {selectedUser.createdAt.toLocaleString("ko-KR")}
-                </p>
-              </div>
-
-              {selectedUser.lastLoginAt && (
-                <div>
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t("admin.lastLogin")}
-                  </label>
-                  <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                    {selectedUser.lastLoginAt.toLocaleString("ko-KR")}
-                  </p>
+                <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-white/[0.04]">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">상태</span>
+                  <span
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      selectedUser.isActive
+                        ? "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : "bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
+                    }`}
+                  >
+                    {selectedUser.isActive ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                    {selectedUser.isActive ? "활성" : "비활성"}
+                  </span>
                 </div>
-              )}
+                <div className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-white/[0.04]">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">가입일</span>
+                  <span className="text-xs text-gray-700 dark:text-gray-300">
+                    {selectedUser.createdAt.toLocaleString("ko-KR")}
+                  </span>
+                </div>
+                {selectedUser.lastLoginAt && (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-xs text-gray-400 dark:text-gray-500">마지막 로그인</span>
+                    <span className="text-xs text-gray-700 dark:text-gray-300">
+                      {selectedUser.lastLoginAt.toLocaleString("ko-KR")}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="px-5 py-3 border-t border-gray-100 dark:border-white/[0.06] flex gap-2">
+              <button
+                onClick={() => {
+                  onToggleUserStatus(selectedUser.uid, !selectedUser.isActive);
+                  setSelectedUser(null);
+                }}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
+                  selectedUser.isActive
+                    ? "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20"
+                    : "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-500/20"
+                }`}
+              >
+                {selectedUser.isActive ? "비활성화" : "활성화"}
+              </button>
               <button
                 onClick={() => setSelectedUser(null)}
-                className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="flex-1 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-colors"
               >
                 {t("common.close")}
               </button>

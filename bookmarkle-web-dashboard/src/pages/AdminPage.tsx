@@ -12,7 +12,7 @@ export function AdminPage() {
   const [activeTab, setActiveTab] = useState<"users" | "subscription">("users");
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10]">
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
         {/* 헤더 섹션 */}
@@ -31,14 +31,14 @@ export function AdminPage() {
         </div>
 
         {/* 탭 네비게이션 */}
-        <div className="mb-4 sm:mb-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="mb-4 sm:mb-6 border-b border-gray-200 dark:border-white/[0.06]">
           <nav className="flex space-x-1">
             <button
               onClick={() => setActiveTab("users")}
               className={`flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-t-lg transition-all duration-200 ${
                 activeTab === "users"
-                  ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400 -mb-px"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  ? "bg-white dark:bg-[#111113] text-violet-600 dark:text-violet-400 border-b-2 border-violet-600 dark:border-violet-400 -mb-px"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.05]"
               }`}
             >
               <Users className="w-4 h-4" />
@@ -48,8 +48,8 @@ export function AdminPage() {
               onClick={() => setActiveTab("subscription")}
               className={`flex items-center space-x-2 px-3 sm:px-4 py-2.5 sm:py-3 text-sm font-medium rounded-t-lg transition-all duration-200 ${
                 activeTab === "subscription"
-                  ? "bg-white dark:bg-gray-800 text-brand-600 dark:text-brand-400 border-b-2 border-brand-600 dark:border-brand-400 -mb-px"
-                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  ? "bg-white dark:bg-[#111113] text-violet-600 dark:text-violet-400 border-b-2 border-violet-600 dark:border-violet-400 -mb-px"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/[0.05]"
               }`}
             >
               <Settings className="w-4 h-4" />
@@ -59,7 +59,7 @@ export function AdminPage() {
         </div>
 
         {/* 탭 컨텐츠 */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-[#111113] rounded-lg shadow-sm border border-gray-200 dark:border-white/[0.06] overflow-hidden">
           {activeTab === "users" && (
             <AdminUserManagement
               users={users}
