@@ -199,7 +199,7 @@ export const NotificationCenter = () => {
       {/* 알림 버튼 */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-gray-700/50 backdrop-blur-sm"
+        className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-xl transition-all duration-200 hover:scale-110 hover:bg-white/50 dark:hover:bg-white/[0.05] backdrop-blur-sm"
         aria-label={t("notifications.title")}
       >
         <Bell className="w-5 h-5" />
@@ -212,9 +212,9 @@ export const NotificationCenter = () => {
 
       {/* 알림 드롭다운 */}
       {isOpen && (
-        <div className="fixed right-2 left-2 top-16 sm:right-4 sm:left-auto sm:w-80 lg:absolute lg:right-0 lg:top-10 lg:mt-2 lg:w-96 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 z-[9999] max-h-[600px] flex flex-col">
+        <div className="fixed right-2 left-2 top-16 sm:right-4 sm:left-auto sm:w-80 lg:absolute lg:right-0 lg:top-10 lg:mt-2 lg:w-96 bg-white dark:bg-[#111113] rounded-xl shadow-xl border border-gray-200 dark:border-white/[0.06] z-[9999] max-h-[600px] flex flex-col">
           {/* 헤더 */}
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 gap-2 sm:gap-3">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-white/[0.06] gap-2 sm:gap-3">
             <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex-shrink-0">
               {t("notifications.title")}
             </h3>
@@ -237,7 +237,7 @@ export const NotificationCenter = () => {
               )}
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex-shrink-0"
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.08] flex-shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -255,7 +255,7 @@ export const NotificationCenter = () => {
               notifications.map((notification: Notification) => (
                 <div
                   key={notification.id}
-                  className={`border-b border-gray-100 dark:border-gray-700 p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors ${
+                  className={`border-b border-gray-100 dark:border-white/[0.06] p-4 hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors ${
                     !notification.isRead
                       ? "bg-blue-50/50 dark:bg-blue-900/10"
                       : ""
@@ -271,7 +271,7 @@ export const NotificationCenter = () => {
                           ? "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
                           : notification.type === "bookmark_deleted"
                           ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                          : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400"
+                          : "bg-gray-100 dark:bg-white/[0.08] text-gray-600 dark:text-gray-400"
                       }`}
                     >
                       {getNotificationIcon(notification.type)}
@@ -295,7 +295,7 @@ export const NotificationCenter = () => {
                       {!notification.isRead && (
                         <button
                           onClick={() => markAsRead(notification.id)}
-                          className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                          className="p-1 text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                           title={t("notifications.markAsRead")}
                         >
                           <Check className="w-4 h-4" />
@@ -303,7 +303,7 @@ export const NotificationCenter = () => {
                       )}
                       <button
                         onClick={() => deleteNotification(notification.id)}
-                        className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                        className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                         title={t("notifications.deleteNotification")}
                       >
                         <Trash2 className="w-4 h-4" />
@@ -317,7 +317,7 @@ export const NotificationCenter = () => {
 
           {/* 푸터 */}
           {notifications.filter((n: Notification) => n.isRead).length > 0 && (
-            <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="p-3 border-t border-gray-200 dark:border-white/[0.06]">
               <button
                 onClick={deleteReadNotifications}
                 className="w-full text-sm text-gray-500 hover:text-red-500 dark:hover:text-red-400 text-center"
