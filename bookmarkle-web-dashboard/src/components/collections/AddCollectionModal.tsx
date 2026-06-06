@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { IconPicker } from "./IconPicker";
 import * as LucideIcons from "lucide-react";
-import { PinIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface AddCollectionModalProps {
@@ -54,110 +53,162 @@ export const AddCollectionModal = ({
     setIcon(iconName);
   };
 
-  // 현재 선택된 아이콘 컴포넌트 렌더링
   const renderSelectedIcon = () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const IconComponent = (LucideIcons as any)[icon];
-    if (!IconComponent) return <LucideIcons.Folder className="w-6 h-6" />;
-    return <IconComponent className="w-6 h-6" />;
+    if (!IconComponent) return <LucideIcons.Folder className="w-4 h-4" />;
+    return <IconComponent className="w-4 h-4" />;
   };
+
+  const inputClass =
+    "w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-lg text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-150";
+  const labelClass = "block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1";
 
   return (
     <>
-      <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-40">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md mx-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            {parentId
-              ? t("collections.addSubCollection")
-              : t("collections.addCollection")}
-          </h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("collections.collectionName")} *
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                placeholder={t("collections.collectionNamePlaceholder")}
-                required
-                autoFocus
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("collections.collectionIcon")}
-              </label>
-              <div className="relative">
+      <div className="fixed inset-0 z-[10000] flex items-start sm:items-center justify-center p-4 overflow-y-auto">
+        {/* 오버레이 */}
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
+        {/* 모달 */}
+        <div className="relative w-full max-w-md bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-xl shadow-2xl">
+          {/* 헤더 */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/[0.06]">
+            <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+              {parentId
+                ? t("collections.addSubCollection")
+                : t("collections.addCollection")}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 transition-colors duration-150"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* 폼 */}
+          <div className="px-5 py-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* 이름 */}
+              <div>
+                <label className={labelClass}>
+                  {t("collections.collectionName")} *
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className={inputClass}
+                  placeholder={t("collections.collectionNamePlaceholder")}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              {/* 아이콘 선택 */}
+              <div>
+                <label className={labelClass}>
+                  {t("collections.collectionIcon")}
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowIconPicker(true)}
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
+                  className="w-full px-3 py-2.5 text-sm bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08] rounded-lg text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors duration-150 flex items-center justify-between"
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-gray-700 dark:text-gray-300">
-                      {renderSelectedIcon()}
-                    </div>
-                    <span>{icon}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-gray-500 dark:text-gray-400">{renderSelectedIcon()}</span>
+                    <span className="text-gray-700 dark:text-gray-300">{icon}</span>
                   </div>
-                  <span className="text-gray-500">
+                  <span className="text-xs text-gray-400 dark:text-gray-500">
                     {t("collections.selectIcon")}
                   </span>
                 </button>
               </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                {t("collections.collectionDescription")}
-              </label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-500 focus:border-transparent"
-                placeholder={t("collections.collectionDescriptionPlaceholder")}
-              />
-            </div>
 
-            {/* 고정하기 옵션 */}
-            <div className="flex items-center space-x-3">
-              <input
-                type="checkbox"
-                id="isPinned"
-                checked={isPinned}
-                onChange={(e) => setIsPinned(e.target.checked)}
-                className="w-4 h-4 text-brand-600 bg-gray-100 border-gray-300 rounded focus:ring-brand-500 dark:focus:ring-brand-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
-              />
-              <label
-                htmlFor="isPinned"
-                className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center space-x-2"
-              >
-                <div className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                  <PinIcon className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+              {/* 설명 */}
+              <div>
+                <label className={labelClass}>
+                  {t("collections.collectionDescription")}
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  rows={3}
+                  className={`${inputClass} resize-none`}
+                  placeholder={t("collections.collectionDescriptionPlaceholder")}
+                />
+              </div>
+
+              {/* 고정하기 toggle */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-3.5 h-3.5 text-violet-600 dark:text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {t("collections.pinCollection")}
+                    </p>
+                  </div>
                 </div>
-                <span>{t("collections.pinCollection")}</span>
-              </label>
-            </div>
-            <div className="flex justify-end space-x-2 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600"
-                disabled={loading}
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !name.trim()}
-                className="px-4 py-2 rounded bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? t("common.adding") : t("common.add")}
-              </button>
-            </div>
-          </form>
+                {/* toggle switch */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={isPinned}
+                  onClick={() => setIsPinned(!isPinned)}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-75 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-2 dark:focus:ring-offset-[#111113] ${
+                    isPinned ? "bg-violet-600" : "bg-gray-200 dark:bg-white/10"
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-75 ${
+                      isPinned ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* 버튼 */}
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  disabled={loading}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium bg-gray-100 dark:bg-white/5 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/[0.08] disabled:opacity-50 transition-colors duration-150"
+                >
+                  {t("common.cancel")}
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !name.trim()}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium bg-violet-600 hover:bg-violet-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      <span>{t("common.adding")}</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <span>{t("common.add")}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 

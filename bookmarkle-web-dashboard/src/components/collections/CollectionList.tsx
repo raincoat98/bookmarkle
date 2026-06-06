@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Collection } from "../../types";
 import { renderCollectionIcon } from "../../utils/iconRenderer";
 import { useTranslation } from "react-i18next";
-import { PinIcon, Star } from "lucide-react";
+import { Star, BookMarked, FolderX } from "lucide-react";
 interface CollectionListProps {
   collections: Collection[];
   loading: boolean;
@@ -75,14 +75,14 @@ export const CollectionList = ({
       const nodes = [
         <div
           key={collection.id}
-          className={`w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-left transition-colors duration-200 cursor-pointer relative tree-item border-l-4 ${
+          className={`group w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-left transition-colors duration-200 cursor-pointer relative tree-item border-l-4 ${
             selectedCollection === collection.id
-              ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300 border-brand-500 dark:border-brand-400"
+              ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300 border-brand-500 dark:border-violet-500"
               : depth === 1
-              ? "tree-depth-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+              ? "tree-depth-1 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
               : depth === 2
-              ? "tree-depth-2 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700"
-              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 border-transparent"
+              ? "tree-depth-2 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.08]"
+              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08] border-transparent"
           }`}
           style={{
             paddingLeft: `${depth * 8 + 6}px`,
@@ -92,12 +92,7 @@ export const CollectionList = ({
               ? (e) => handleCollectionContextMenu(e, collection.id)
               : undefined
           }
-          onClick={() => {
-            if (hasChild) {
-              handleToggle(collection.id);
-            }
-            onCollectionChange(collection.id);
-          }}
+          onClick={() => onCollectionChange(collection.id)}
         >
           {/* 트리 라인 표시 */}
           {depth > 0 && (
@@ -112,11 +107,12 @@ export const CollectionList = ({
           )}
 
           {/* 트리 아이콘 영역 - 고정된 공간 할당 */}
-          <div className="w-3 h-3 flex items-center justify-center">
+          <div className="w-3 h-3 flex items-center justify-center mr-1">
             {hasChild && (
               <span
                 className="tree-toggle"
                 style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+                title={isOpen ? t("collections.collapse") : t("collections.expand")}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleToggle(collection.id);
@@ -133,40 +129,48 @@ export const CollectionList = ({
             {collection.isPinned && (
               <div className="flex-shrink-0">
                 <div
-                  className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-blue-100 dark:bg-blue-900/30"
+                  className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-100 dark:bg-violet-500/15"
                   title={t("collections.pinnedCollection")}
                 >
-                  <PinIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Star
+                    className="w-3 h-3 text-violet-500 dark:text-violet-400"
+                    style={{ fill: "currentColor", stroke: "none" }}
+                  />
                 </div>
               </div>
             )}
             {renderCollectionIcon(collection.icon, "w-5 h-5")}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {!collapsed && (
-              <>
-                <span
-                  className="font-medium block text-left"
-                  style={{ wordBreak: "break-all", whiteSpace: "normal" }}
-                >
-                  {collection.name}
-                </span>
-                {collection.description && collection.description.trim() && (
-                  <span
-                    className="block text-xs text-gray-500 dark:text-gray-400 text-left mt-0.5"
-                    style={{ wordBreak: "break-all", whiteSpace: "normal" }}
-                  >
-                    {collection.description}
-                  </span>
-                )}
-              </>
+              <span className="font-medium block text-left truncate">
+                {collection.name}
+              </span>
             )}
           </div>
 
-          {/* 액션 버튼들 */}
+          {/* 액션 버튼들 - hover 시에만 표시 */}
           {!collapsed && (
-            <div className="flex items-center space-x-1 ml-2">
+            <div className="flex items-center space-x-0.5 ml-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
+              {/* 하위 컬렉션 추가 버튼 */}
+              {depth < 2 && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.nativeEvent.stopImmediatePropagation();
+                    onOpenAddSubCollectionModal(collection.id);
+                  }}
+                  className="p-0.5 text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
+                  title={t("collections.addSubCollection")}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                </button>
+              )}
+
               {/* 수정 버튼 */}
               <button
                 onClick={(e) => {
@@ -175,7 +179,7 @@ export const CollectionList = ({
                   e.nativeEvent.stopImmediatePropagation();
                   onEditCollection(collection);
                 }}
-                className="p-1 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-0.5 text-gray-400 hover:text-brand-600 dark:hover:text-brand-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                 title={t("common.edit")}
               >
                 <svg
@@ -198,7 +202,7 @@ export const CollectionList = ({
                   e.nativeEvent.stopImmediatePropagation();
                   onDeleteCollectionRequest(collection.id, collection.name);
                 }}
-                className="p-1 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="p-0.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                 title={t("common.delete")}
               >
                 <svg
@@ -235,12 +239,12 @@ export const CollectionList = ({
             onClick={() => onCollectionChange("all")}
             className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
               selectedCollection === "all"
-                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
             title={t("collections.all")}
           >
-            <span className="text-lg">📚</span>
+            <BookMarked className="w-5 h-5" />
           </button>
 
           {/* 즐겨찾기 */}
@@ -248,8 +252,8 @@ export const CollectionList = ({
             onClick={() => onCollectionChange("favorites")}
             className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
               selectedCollection === "favorites"
-                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
             title={t("bookmarks.favorites")}
           >
@@ -261,12 +265,12 @@ export const CollectionList = ({
             onClick={() => onCollectionChange("none")}
             className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
               selectedCollection === "none"
-                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
             title={t("collections.noCollection")}
           >
-            <span className="text-lg">📄</span>
+            <FolderX className="w-5 h-5" />
           </button>
 
           {/* 최상위 컬렉션들만 표시 */}
@@ -291,8 +295,8 @@ export const CollectionList = ({
                     onClick={() => onCollectionChange(collection.id)}
                     className={`w-full flex items-center justify-center p-3 rounded-lg transition-colors duration-200 ${
                       selectedCollection === collection.id
-                        ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
                     }`}
                     title={collection.name}
                   >
@@ -300,16 +304,11 @@ export const CollectionList = ({
                   </button>
                   {collection.isPinned && (
                     <div className="absolute -top-1 -right-1">
-                      <div className="inline-flex items-center justify-center w-4 h-4 rounded-md bg-blue-100 dark:bg-blue-900/30">
-                        <svg
-                          className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                        >
-                          <path d="M12 2l-2 2H6a2 2 0 0 0 0 4h2l-1 8H8a2 2 0 0 0 0 4h8a2 2 0 0 0 0-4h-1l-1-8h2a2 2 0 0 0 0-4h-4l-2-2z" />
-                        </svg>
+                      <div className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-violet-100 dark:bg-violet-500/20">
+                        <Star
+                          className="w-2.5 h-2.5 text-violet-500 dark:text-violet-400"
+                          style={{ fill: "currentColor", stroke: "none" }}
+                        />
                       </div>
                     </div>
                   )}
@@ -319,7 +318,7 @@ export const CollectionList = ({
         </div>
 
         {/* 새 컬렉션 추가 버튼 */}
-        <div className="p-2 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-2 border-t border-gray-200 dark:border-white/[0.06]">
           <button
             onClick={onOpenAddCollectionModal}
             className="w-full flex items-center justify-center p-3 btn-primary rounded-lg"
@@ -355,7 +354,7 @@ export const CollectionList = ({
           onClick={
             openIds.length === allIds.length ? handleCloseAll : handleOpenAll
           }
-          className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-bold"
+          className="text-xs px-2 py-1 rounded bg-gray-100 dark:bg-white/[0.06] hover:bg-gray-200 dark:hover:bg-white/[0.10] text-gray-600 dark:text-gray-400 font-medium"
         >
           {openIds.length === allIds.length
             ? t("collections.closeAll")
@@ -371,11 +370,11 @@ export const CollectionList = ({
             onClick={() => onCollectionChange("all")}
             className={`w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-left transition-colors duration-200 ${
               selectedCollection === "all"
-                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
           >
-            <span className="text-lg">📚</span>
+            <BookMarked className="w-5 h-5" />
             <span className="font-medium transition-all duration-300">
               {t("collections.all")}
             </span>
@@ -386,8 +385,8 @@ export const CollectionList = ({
             onClick={() => onCollectionChange("favorites")}
             className={`w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-left transition-colors duration-200 ${
               selectedCollection === "favorites"
-                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
           >
             <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
@@ -401,11 +400,11 @@ export const CollectionList = ({
             onClick={() => onCollectionChange("none")}
             className={`w-full flex items-center space-x-2 px-2 py-1.5 rounded-lg text-left transition-colors duration-200 ${
               selectedCollection === "none"
-                ? "bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-brand-100 dark:bg-violet-950/50 text-brand-700 dark:text-violet-300"
+                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
           >
-            <span className="text-lg">📄</span>
+            <FolderX className="w-5 h-5" />
             <span className="font-medium transition-all duration-300">
               {t("collections.noCollection")}
             </span>
