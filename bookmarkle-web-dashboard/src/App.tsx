@@ -6,7 +6,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
+import { Toaster, ToastBar, toast as toastApi } from "react-hot-toast";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BookmarksPage } from "./pages/BookmarksPage";
 import { SettingsPage } from "./pages/SettingsPage";
@@ -322,7 +322,7 @@ function App() {
         gutter={8}
         containerStyle={{ top: 20, right: 20 }}
         toastOptions={{
-          duration: 3500,
+          duration: 1800,
           className: "modern-toast",
           style: {
             background: "rgba(17, 17, 19, 0.92)",
@@ -360,7 +360,27 @@ function App() {
             },
           },
         }}
-      />
+      >
+        {(t) => (
+          <ToastBar toast={t}>
+            {({ icon, message }) => (
+              <span
+                onClick={() => toastApi.dismiss(t.id)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  cursor: "pointer",
+                  flex: 1,
+                }}
+              >
+                {icon}
+                {message}
+              </span>
+            )}
+          </ToastBar>
+        )}
+      </Toaster>
     </Router>
   );
 }
