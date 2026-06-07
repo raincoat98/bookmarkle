@@ -85,18 +85,18 @@ const BookmarkIcon: React.FC<BookmarkIconProps> = ({
         </div>
       </div>
 
-      {/* 즐겨찾기 버튼 (항상 표시) */}
+      {/* 즐겨찾기 버튼 (항상 표시 — 미즐겨찾기는 약한 톤, 호버 시 진해짐) */}
       <button
         onClick={(e) => { stopAndMark(e); onFavorite(bookmark.id, !bookmark.isFavorite); }}
         onMouseDown={stopAndMark}
         className={`absolute top-0.5 right-0.5 w-5 h-5 rounded-full flex items-center justify-center shadow border-2 border-white dark:border-[#111113] transition-all touch-manipulation ${
           bookmark.isFavorite
             ? "bg-red-500 opacity-100"
-            : "bg-white dark:bg-white/[0.08] opacity-0 group-hover/icon:opacity-100 sm:opacity-0 sm:group-hover/icon:opacity-100"
-        } ${!bookmark.isFavorite && showActionsMobile ? "opacity-60" : ""}`}
+            : "bg-white dark:bg-white/[0.1] opacity-60 group-hover/icon:opacity-100"
+        }`}
         title={bookmark.isFavorite ? t("bookmarks.removeFromFavorites") : t("bookmarks.addToFavorites")}
       >
-        <Heart className={`w-2.5 h-2.5 pointer-events-none ${bookmark.isFavorite ? "text-white fill-white" : "text-gray-400"}`} />
+        <Heart className={`w-2.5 h-2.5 pointer-events-none ${bookmark.isFavorite ? "text-white fill-white" : "text-gray-400 dark:text-gray-300"}`} />
       </button>
 
       {/* 제목 */}
