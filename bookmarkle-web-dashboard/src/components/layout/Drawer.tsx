@@ -136,7 +136,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             x: isDesktop ? 0 : isDrawerOpen ? 0 : -300,
           }}
           transition={{ type: "spring", stiffness: 350, damping: 35 }}
-          className="fixed inset-y-0 left-0 z-[9999]"
+          className="fixed inset-y-0 left-0 z-[9999] overflow-hidden"
         >
           <div className="flex h-full flex-col bg-white dark:bg-[#111113] border-r border-gray-200/70 dark:border-white/[0.06]">
             {/* 헤더 */}
@@ -157,7 +157,7 @@ export const Drawer: React.FC<DrawerProps> = ({
                   <BookOpen className={`text-white ${isDrawerCollapsed ? "w-3.5 h-3.5" : "w-4 h-4"}`} />
                 </div>
                 {!isDrawerCollapsed && (
-                  <span className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight whitespace-nowrap">
                     북마클
                   </span>
                 )}

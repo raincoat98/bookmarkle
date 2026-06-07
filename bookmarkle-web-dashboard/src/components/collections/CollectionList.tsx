@@ -374,8 +374,8 @@ export const CollectionList = ({
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
           >
-            <BookMarked className="w-5 h-5" />
-            <span className="font-medium transition-all duration-300">
+            <BookMarked className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium whitespace-nowrap">
               {t("collections.all")}
             </span>
           </button>
@@ -389,8 +389,8 @@ export const CollectionList = ({
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
           >
-            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-            <span className="font-medium transition-all duration-300">
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500 flex-shrink-0" />
+            <span className="font-medium whitespace-nowrap">
               {t("bookmarks.favorites")}
             </span>
           </button>
@@ -404,8 +404,8 @@ export const CollectionList = ({
                 : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/[0.08]"
             }`}
           >
-            <FolderX className="w-5 h-5" />
-            <span className="font-medium transition-all duration-300">
+            <FolderX className="w-5 h-5 flex-shrink-0" />
+            <span className="font-medium whitespace-nowrap">
               {t("collections.noCollection")}
             </span>
           </button>
@@ -453,7 +453,7 @@ export const CollectionList = ({
               d="M12 6v6m0 0v6m0-6h6m-6 0H6"
             />
           </svg>
-          <span className="transition-all duration-300">
+          <span className="whitespace-nowrap">
             {t("collections.newCollection")}
           </span>
         </button>
