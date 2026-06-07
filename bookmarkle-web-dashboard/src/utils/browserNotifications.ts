@@ -44,96 +44,117 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
   return permission === "granted";
 };
 
+const getServiceWorkerRegistration =
+  async (): Promise<ServiceWorkerRegistration | null> => {
+    if (!("serviceWorker" in navigator)) return null;
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) return reg;
+      return await navigator.serviceWorker.ready;
+    } catch {
+      return null;
+    }
+  };
+
 /**
- * 브라우저 알림을 표시합니다
+ * 브라우저 알림을 표시합니다. PWA(Service Worker) 환경에서는 SW 경유,
+ * 그 외에는 `new Notification()` 폴백을 사용합니다.
  */
-export const showBrowserNotification = (
+export const showBrowserNotification = async (
   title: string,
   options?: NotificationOptions
-): Notification | null => {
+): Promise<void> => {
   if (!("Notification" in window)) {
     console.warn("이 브라우저는 알림을 지원하지 않습니다.");
-    return null;
+    return;
   }
 
   if (Notification.permission !== "granted") {
-    console.warn("알림 권한이 없습니다.");
-    return null;
+    return;
   }
 
-  const defaultOptions: NotificationOptions = {
-    icon: "/favicon.ico",
-    badge: "/favicon.ico",
+  const merged: NotificationOptions = {
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
     tag: "bookmarkhub-notification",
     requireInteraction: false,
     silent: false,
     ...options,
   };
 
-  try {
-    const notification = new Notification(title, defaultOptions);
+  const registration = await getServiceWorkerRegistration();
+  if (registration && typeof registration.showNotification === "function") {
+    try {
+      await registration.showNotification(title, merged);
+      return;
+    } catch (error) {
+      console.warn("SW 알림 표시 실패, fallback 사용:", error);
+    }
+  }
 
-    // 알림 클릭 시 포커스
+  try {
+    const notification = new Notification(title, merged);
     notification.onclick = () => {
       window.focus();
       notification.close();
     };
-
-    // 자동으로 닫기 (5초 후)
-    setTimeout(() => {
-      notification.close();
-    }, 5000);
-
-    return notification;
+    setTimeout(() => notification.close(), 5000);
   } catch (error) {
     console.error("알림 표시 중 오류:", error);
-    return null;
   }
 };
 
+const bookmarkIconMap = {
+  added: "/icons/icon-192.png",
+  updated: "/icons/icon-192.png",
+  deleted: "/icons/icon-192.png",
+} as const;
+
 /**
- * 북마크 관련 알림을 표시합니다 (다국어 지원)
+ * 북마크 관련 알림을 표시합니다 (다국어 메시지는 호출 측에서 전달)
  */
-export const showBookmarkNotification = (
+export const showBookmarkNotification = async (
   type: "added" | "updated" | "deleted",
   bookmarkTitle: string,
-  title?: string,
-  message?: string
-): Notification | null => {
+  options: { title?: string; message?: string; bookmarkId?: string } = {}
+): Promise<void> => {
   const defaultMessages = {
     added: {
-      title: title || "새 북마크 추가됨",
-      body: message || `"${bookmarkTitle}" 북마크가 추가되었습니다.`,
-      icon: "/icons/bookmark-added.png",
+      title: options.title || "새 북마크 추가됨",
+      body: options.message || `"${bookmarkTitle}" 북마크가 추가되었습니다.`,
     },
     updated: {
-      title: title || "북마크 수정됨",
-      body: message || `"${bookmarkTitle}" 북마크가 수정되었습니다.`,
-      icon: "/icons/bookmark-updated.png",
+      title: options.title || "북마크 수정됨",
+      body: options.message || `"${bookmarkTitle}" 북마크가 수정되었습니다.`,
     },
     deleted: {
-      title: title || "북마크 삭제됨",
-      body: message || `"${bookmarkTitle}" 북마크가 삭제되었습니다.`,
-      icon: "/icons/bookmark-deleted.png",
+      title: options.title || "북마크 삭제됨",
+      body: options.message || `"${bookmarkTitle}" 북마크가 삭제되었습니다.`,
     },
   };
 
-  const messageConfig = defaultMessages[type];
-  return showBrowserNotification(messageConfig.title, {
-    body: messageConfig.body,
-    icon: messageConfig.icon,
+  const config = defaultMessages[type];
+  const tag = options.bookmarkId
+    ? `bookmark-${type}-${options.bookmarkId}`
+    : `bookmark-${type}`;
+
+  await showBrowserNotification(config.title, {
+    body: config.body,
+    icon: bookmarkIconMap[type],
+    tag,
   });
 };
 
 /**
- * 테스트 알림을 표시합니다 (다국어 지원)
+ * 테스트 알림을 표시합니다
  */
-export const showTestNotification = (
+export const showTestNotification = async (
   title?: string,
   message?: string
-): Notification | null => {
-  return showBrowserNotification(title || "테스트 알림", {
+): Promise<void> => {
+  await showBrowserNotification(title || "테스트 알림", {
     body: message || "브라우저 알림이 정상적으로 작동합니다!",
-    icon: "/favicon.ico",
+    icon: "/icons/icon-192.png",
+    tag: "bookmarkhub-test",
   });
 };

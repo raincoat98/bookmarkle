@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { DashboardOverview } from "../components/dashboard/DashboardOverview";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
 import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
-import { useNotifications } from "../hooks/useNotifications";
 import type { Bookmark, BookmarkFormData } from "../types";
 import toast from "react-hot-toast";
 import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
@@ -60,8 +59,6 @@ export const DashboardPage: React.FC = () => {
       loading: state.loading,
     }))
   );
-  const { createNotification } = useNotifications(user?.uid || "");
-
   // 북마크 데이터 가져오기
   const bookmarks = getFilteredBookmarks();
 
@@ -107,7 +104,7 @@ export const DashboardPage: React.FC = () => {
     try {
       console.log("DashboardPage - 북마크 추가 시도:", data);
 
-      const bookmarkId = await addBookmark(
+      await addBookmark(
         {
           ...data,
           isFavorite: data.isFavorite || false,
@@ -116,18 +113,6 @@ export const DashboardPage: React.FC = () => {
       );
       setIsAddModalOpen(false);
       toast.success(t("bookmarks.bookmarkAdded"));
-
-      // 알림 생성
-      try {
-        await createNotification(
-          "bookmark_added",
-          undefined,
-          `"${data.title}" 북마크가 추가되었습니다`,
-          bookmarkId
-        );
-      } catch (notifError) {
-        console.error("알림 생성 실패:", notifError);
-      }
     } catch (error) {
       console.error("DashboardPage - 북마크 추가 실패:", error);
       console.error("오류 상세:", {
@@ -163,18 +148,6 @@ export const DashboardPage: React.FC = () => {
       );
       setEditingBookmark(null);
       toast.success(t("bookmarks.bookmarkUpdated"));
-
-      // 알림 생성 (에러가 나도 알림은 생성되도록)
-      try {
-        await createNotification(
-          "bookmark_updated",
-          undefined,
-          `"${data.title}" 북마크가 수정되었습니다`,
-          id
-        );
-      } catch (notifError) {
-        console.error("알림 생성 실패:", notifError);
-      }
     } catch {
       toast.error("북마크 수정 중 오류가 발생했습니다.");
     }
@@ -184,24 +157,9 @@ export const DashboardPage: React.FC = () => {
   const handleDeleteBookmark = async (id: string) => {
     setIsDeletingBookmark(true);
     try {
-      const bookmark = deleteBookmarkModal.bookmark;
       await deleteBookmark(id);
       setDeleteBookmarkModal({ isOpen: false, bookmark: null });
       toast.success(t("bookmarks.bookmarkDeleted"));
-
-      // 알림 생성
-      if (bookmark) {
-        try {
-          await createNotification(
-            "bookmark_deleted",
-            undefined,
-            `"${bookmark.title}" 북마크가 삭제되었습니다`,
-            id
-          );
-        } catch (notifError) {
-          console.error("알림 생성 실패:", notifError);
-        }
-      }
     } catch {
       toast.error("북마크 삭제 중 오류가 발생했습니다.");
     } finally {

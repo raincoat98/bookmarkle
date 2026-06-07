@@ -20,6 +20,7 @@ import {
   showBookmarkNotification,
   getNotificationPermission,
 } from "../utils/browserNotifications";
+import { createBookmarkNotification } from "../utils/notificationCenter";
 
 const isSystemNotificationEnabled = () => {
   const saved = localStorage.getItem("systemNotifications");
@@ -27,6 +28,34 @@ const isSystemNotificationEnabled = () => {
   const fallback = localStorage.getItem("notifications");
   if (fallback !== null) return JSON.parse(fallback);
   return true;
+};
+
+const shouldEmitSystemNotification = () => {
+  if (!getNotificationPermission().granted) return false;
+  return isSystemNotificationEnabled();
+};
+
+// 본인이 이 창에서 막 추가한 북마크 ID — onSnapshot의 added 이벤트와 매칭되면
+// 외부 추가가 아니라고 판단해서 시스템 알림을 띄우지 않는다.
+const LOCAL_ADD_TTL_MS = 30_000;
+const recentLocalAddIds = new Map<string, number>();
+
+const markLocalAdd = (id: string) => {
+  recentLocalAddIds.set(id, Date.now());
+};
+
+const consumeLocalAdd = (id: string): boolean => {
+  const ts = recentLocalAddIds.get(id);
+  if (ts === undefined) return false;
+  recentLocalAddIds.delete(id);
+  return Date.now() - ts <= LOCAL_ADD_TTL_MS;
+};
+
+const sweepRecentLocalAdds = () => {
+  const now = Date.now();
+  for (const [id, ts] of recentLocalAddIds) {
+    if (now - ts > LOCAL_ADD_TTL_MS) recentLocalAddIds.delete(id);
+  }
 };
 
 const convertSnapshotToBookmark = (
@@ -198,6 +227,8 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
         where("userId", "==", userId)
       );
 
+      let isFirstSnapshot = true;
+
       const unsubscribe = onSnapshot(
         q,
         (querySnapshot) => {
@@ -212,6 +243,34 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
 
           // fromCache: 캐시 응답이든 서버 응답이든 데이터가 있으면 로딩 해제
           set({ rawBookmarks: bookmarkList, loading: false });
+
+          // 초기 스냅샷은 기존 데이터 로드이므로 알림을 띄우지 않는다.
+          if (isFirstSnapshot) {
+            isFirstSnapshot = false;
+            sweepRecentLocalAdds();
+            return;
+          }
+
+          // 외부(다른 창/기기/확장)에서 새로 추가된 북마크만 시스템 알림 + 알림센터.
+          const emitSystem = shouldEmitSystemNotification();
+          querySnapshot.docChanges().forEach((change) => {
+            if (change.type !== "added") return;
+            const bookmark = convertSnapshotToBookmark(change.doc);
+            if (!bookmark || bookmark.deletedAt) return;
+            if (consumeLocalAdd(change.doc.id)) return;
+
+            if (emitSystem) {
+              showBookmarkNotification("added", bookmark.title, {
+                bookmarkId: change.doc.id,
+              });
+            }
+            createBookmarkNotification(userId, "bookmark_added", {
+              bookmarkId: change.doc.id,
+              message: `"${bookmark.title}" 북마크가 추가되었습니다`,
+            });
+          });
+
+          sweepRecentLocalAdds();
         },
         (error) => {
           const err = error as { code?: string; message?: string };
@@ -439,10 +498,11 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
 
       const docRef = await addDoc(collection(db, "bookmarks"), newBookmark);
 
-      const permission = getNotificationPermission();
-      if (permission.granted && isSystemNotificationEnabled()) {
-        showBookmarkNotification("added", trimmedTitle);
-      }
+      markLocalAdd(docRef.id);
+      createBookmarkNotification(userId, "bookmark_added", {
+        bookmarkId: docRef.id,
+        message: `"${trimmedTitle}" 북마크가 추가되었습니다`,
+      });
 
       return docRef.id;
     },
@@ -471,10 +531,10 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
         isFavorite: Boolean(bookmarkData.isFavorite),
       });
 
-      const permission = getNotificationPermission();
-      if (permission.granted && isSystemNotificationEnabled()) {
-        showBookmarkNotification("updated", bookmarkData.title);
-      }
+      createBookmarkNotification(userId, "bookmark_updated", {
+        bookmarkId,
+        message: `"${bookmarkData.title}" 북마크가 수정되었습니다`,
+      });
     },
 
     deleteBookmark: async (bookmarkId: string) => {
@@ -488,11 +548,11 @@ export const useBookmarkStore = create<BookmarkState & BookmarkActions>()(
         updatedAt: now,
       });
 
-      if (bookmarkToDelete) {
-        const permission = getNotificationPermission();
-        if (permission.granted && isSystemNotificationEnabled()) {
-          showBookmarkNotification("deleted", bookmarkToDelete.title);
-        }
+      if (bookmarkToDelete?.userId) {
+        createBookmarkNotification(bookmarkToDelete.userId, "bookmark_deleted", {
+          bookmarkId,
+          message: `"${bookmarkToDelete.title}" 북마크가 삭제되었습니다`,
+        });
       }
     },
 

@@ -4,15 +4,13 @@ import {
   query,
   where,
   onSnapshot,
-  addDoc,
   updateDoc,
   deleteDoc,
   doc,
-  Timestamp,
 } from "firebase/firestore";
-import { db, getUserNotificationSettings } from "../firebase";
+import { db } from "../firebase";
 import type { Notification, NotificationType } from "../types";
-import i18n from "../i18n";
+import { createBookmarkNotification } from "../utils/notificationCenter";
 
 export const useNotifications = (userId: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -94,7 +92,7 @@ export const useNotifications = (userId: string) => {
     };
   }, [userId]);
 
-  // 알림 생성 (다국어 지원)
+  // 알림 생성 (notificationCenter 유틸 래퍼)
   const createNotification = async (
     type: NotificationType,
     title?: string,
@@ -106,79 +104,12 @@ export const useNotifications = (userId: string) => {
       console.error("알림 생성 실패: userId가 없습니다.");
       throw new Error("사용자가 로그인되지 않았습니다.");
     }
-
-    try {
-      const settings = await getUserNotificationSettings(userId);
-      const notificationsEnabled =
-        settings.notifications !== undefined
-          ? settings.notifications
-          : settings.bookmarkNotifications !== undefined
-          ? settings.bookmarkNotifications
-          : true;
-
-      if (!notificationsEnabled) {
-        return null;
-      }
-    } catch {
-      // 설정 확인 실패 시 기본값(활성화)으로 처리하여 알림 생성 계속 진행
-    }
-
-    try {
-      // 다국어 메시지 생성
-      const getLocalizedMessage = (type: NotificationType) => {
-        const t = i18n.t;
-        switch (type) {
-          case "bookmark_added":
-            return {
-              title: title || t("notifications.types.bookmarkAdded"),
-              message: message || t("notifications.messages.bookmarkAdded"),
-            };
-          case "bookmark_updated":
-            return {
-              title: title || t("notifications.types.bookmarkUpdated"),
-              message: message || t("notifications.messages.bookmarkUpdated"),
-            };
-          case "bookmark_deleted":
-            return {
-              title: title || t("notifications.types.bookmarkDeleted"),
-              message: message || t("notifications.messages.bookmarkDeleted"),
-            };
-          case "system":
-            return {
-              title: title || t("notifications.types.system"),
-              message: message || t("notifications.messages.systemUpdate"),
-            };
-          default:
-            return {
-              title: title || t("notifications.title"),
-              message: message || "",
-            };
-        }
-      };
-
-      const localizedMessage = getLocalizedMessage(type);
-
-      const notificationData = {
-        userId,
-        type,
-        title: localizedMessage.title,
-        message: localizedMessage.message,
-        isRead: false,
-        createdAt: Timestamp.now(),
-        bookmarkId: bookmarkId || null,
-        metadata: metadata || null,
-      };
-
-      const docRef = await addDoc(
-        collection(db, "notifications"),
-        notificationData
-      );
-
-      return docRef.id;
-    } catch (error) {
-      console.error("알림 생성 실패:", error);
-      throw error;
-    }
+    return createBookmarkNotification(userId, type, {
+      title,
+      message,
+      bookmarkId,
+      metadata,
+    });
   };
 
   // 알림 읽음 처리
