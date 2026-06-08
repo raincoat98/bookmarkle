@@ -21,6 +21,13 @@ import { Folder } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Bookmark, Collection, SortOption } from "../../types";
 import { BookmarkListHeader } from "./BookmarkListHeader";
+
+const stripParentName = (name: string, parentName: string | undefined): string => {
+  if (!parentName) return name;
+  if (name.endsWith(" " + parentName)) return name.slice(0, -(parentName.length + 1));
+  if (name.startsWith(parentName + " ")) return name.slice(parentName.length + 1);
+  return name;
+};
 import { SubCollectionToggle } from "./SubCollectionToggle";
 import { BookmarkSection } from "./BookmarkSection";
 import { EmptyBookmarkState } from "./EmptyBookmarkState";
@@ -335,7 +342,7 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                                   </span>
                                 )}
                                 <h3 className="font-semibold text-sm text-violet-700 dark:text-violet-300">
-                                  {group.collectionName}
+                                  {stripParentName(group.collectionName, sortedGroupedBookmarks.selectedCollectionName)}
                                 </h3>
                                 <span className="text-xs px-2 py-1 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
                                   {t("bookmarks.count", {
@@ -505,7 +512,7 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                               <BookmarkSection
                                 key={group.collectionId}
                                 bookmarks={group.bookmarks}
-                                sectionTitle={group.collectionName}
+                                sectionTitle={stripParentName(group.collectionName, sortedGroupedBookmarks.selectedCollectionName)}
                                 sectionIcon={
                                   collections.find(
                                     (col) => col.id === group.collectionId

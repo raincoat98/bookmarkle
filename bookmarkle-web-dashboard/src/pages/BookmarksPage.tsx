@@ -1,583 +1,76 @@
-import React, { useState, useMemo, useEffect, useCallback } from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
+import { Drawer } from "../components/layout/Drawer";
 import { BookmarkList } from "../components/bookmarks/BookmarkList";
+import { BookmarksTopBar } from "../components/bookmarks/BookmarksTopBar";
+import { TagFilter } from "../components/bookmarks/TagFilter";
 import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
 import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
 import { DeleteBookmarkModal } from "../components/bookmarks/DeleteBookmarkModal";
 import { AddCollectionModal } from "../components/collections/AddCollectionModal";
 import { EditCollectionModal } from "../components/collections/EditCollectionModal";
-import {
-  useAuthStore,
-  useBookmarkStore,
-  useCollectionStore,
-  useSubscriptionStore,
-} from "../stores";
+import { DeleteCollectionModal } from "../components/collections/DeleteCollectionModal";
 import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
-import type {
-  Bookmark,
-  BookmarkFormData,
-  Collection,
-  SortOption,
-} from "../types";
-import toast from "react-hot-toast";
-import { Search, Grid3X3, List, Plus, FolderPlus } from "lucide-react";
-import { Drawer } from "../components/layout/Drawer";
-import { useTranslation } from "react-i18next";
 import { UpgradeModal } from "../components/subscription/UpgradeModal";
-import {
-  checkBookmarkLimit,
-  checkCollectionLimit,
-} from "../utils/subscriptionLimits";
-import { usePasteBookmark } from "../hooks/usePasteBookmark";
-import { useShallow } from "zustand/react/shallow";
-import { auth } from "../firebase";
+import { useBookmarksPage } from "../hooks/useBookmarksPage";
 
 export const BookmarksPage: React.FC = () => {
-  const { user, isActive } = useAuthStore(
-    useShallow((state) => ({
-      user: state.user,
-      isActive: state.isActive,
-    }))
-  );
-  const { plan, limits } = useSubscriptionStore(
-    useShallow((state) => ({
-      plan: state.plan,
-      limits: state.limits,
-    }))
-  );
   const { t } = useTranslation();
-
-  // 상태 관리
-  const [selectedCollection, setSelectedCollection] = useState("all");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<
-    "bookmark_limit" | "collection_limit" | "premium_feature"
-  >("bookmark_limit");
-
-  // 정렬 상태 관리
-  const [currentSort, setCurrentSort] = useState<SortOption>({
-    field: "order",
-    direction: "asc",
-    label: t("bookmarks.sortByUserOrder"),
-  });
-
   const {
+    user,
+    isActive,
     collections,
-    addCollection,
-    updateCollection,
-    deleteCollection,
-    setPinned,
-    subscribeToCollections,
-  } = useCollectionStore(
-    useShallow((state) => ({
-      collections: state.collections,
-      addCollection: state.addCollection,
-      updateCollection: state.updateCollection,
-      deleteCollection: state.deleteCollection,
-      setPinned: state.setPinned,
-      subscribeToCollections: state.subscribeToCollections,
-    }))
-  );
-
-  const {
-    getFilteredBookmarks,
-    addBookmark,
-    updateBookmark,
-    deleteBookmark,
-    reorderBookmarks,
-    toggleFavorite,
-    updateBookmarkFavicon,
-    subscribeToBookmarks,
-    setSelectedCollection: setBookmarkSelectedCollection,
-    setCollections: setBookmarkCollections,
-    loading: bookmarksLoading,
-  } = useBookmarkStore(
-    useShallow((state) => ({
-      getFilteredBookmarks: state.getFilteredBookmarks,
-      addBookmark: state.addBookmark,
-      updateBookmark: state.updateBookmark,
-      deleteBookmark: state.deleteBookmark,
-      reorderBookmarks: state.reorderBookmarks,
-      toggleFavorite: state.toggleFavorite,
-      updateBookmarkFavicon: state.updateBookmarkFavicon,
-      subscribeToBookmarks: state.subscribeToBookmarks,
-      setSelectedCollection: state.setSelectedCollection,
-      setCollections: state.setCollections,
-      loading: state.loading,
-    }))
-  );
-
-  // 핀된 컬렉션을 기본 탭으로 설정
-  React.useEffect(() => {
-    if (collections.length > 0) {
-      const pinnedCollection = collections.find((col) => col.isPinned);
-      if (pinnedCollection) {
-        setSelectedCollection((current) =>
-          current === "all" ? pinnedCollection.id : current
-        );
-      }
-    }
-  }, [collections]);
-
-  // 북마크 데이터 가져오기
-  const bookmarks = getFilteredBookmarks();
-
-  // 북마크 스토어 상태 동기화
-  React.useEffect(() => {
-    setBookmarkSelectedCollection(selectedCollection);
-    setBookmarkCollections(collections);
-  }, [
-    selectedCollection,
-    collections,
-    setBookmarkSelectedCollection,
-    setBookmarkCollections,
-  ]);
-
-  // 컬렉션 데이터 실시간 구독
-  React.useEffect(() => {
-    if (!user?.uid) return;
-
-    const unsubscribe = subscribeToCollections(user.uid);
-
-    return () => unsubscribe();
-  }, [user?.uid, subscribeToCollections]);
-
-  // 북마크 구독 설정
-  React.useEffect(() => {
-    if (!user?.uid) return;
-
-    // 실제 Firebase Auth 상태 확인 (authStore의 user만으로는 부족)
-    const currentUser = auth.currentUser;
-    if (!currentUser || currentUser.uid !== user.uid) {
-      return;
-    }
-
-    const unsubscribe = subscribeToBookmarks(user.uid);
-    return unsubscribe;
-  }, [user?.uid, subscribeToBookmarks]);
-
-  // Firestore 캐시가 빠르면 로딩 안 보이도록 400ms 지연
-  const [deferredLoading, setDeferredLoading] = useState(false);
-  useEffect(() => {
-    if (!bookmarksLoading) {
-      setDeferredLoading(false);
-      return;
-    }
-    const timer = setTimeout(() => setDeferredLoading(true), 400);
-    return () => clearTimeout(timer);
-  }, [bookmarksLoading]);
-
-  // 나머지 상태 관리
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
-  const [viewMode, setViewMode] = useState<"grid" | "list">(() => {
-    const saved = localStorage.getItem("bookmarkViewMode");
-    return saved === "grid" || saved === "list" ? saved : "grid";
-  });
-
-  // 뷰 모드 localStorage 저장
-  React.useEffect(() => {
-    localStorage.setItem("bookmarkViewMode", viewMode);
-  }, [viewMode]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingCollection, setEditingCollection] = useState<Collection | null>(
-    null
-  );
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [targetCollectionId, setTargetCollectionId] = useState<string | null>(
-    null
-  );
-  const [targetCollectionName, setTargetCollectionName] = useState<string>("");
-  const [deletingCollectionId, setDeletingCollectionId] = useState<
-    string | null
-  >(null);
-  const [isAddCollectionModalOpen, setIsAddCollectionModalOpen] =
-    useState(false);
-  const [isAddSubCollectionModalOpen, setIsAddSubCollectionModalOpen] =
-    useState(false);
-  const [subCollectionParentId, setSubCollectionParentId] = useState<
-    string | null
-  >(null);
-
-  // 북마크 삭제 모달 상태
-  const [deleteBookmarkModal, setDeleteBookmarkModal] = useState<{
-    isOpen: boolean;
-    bookmark: Bookmark | null;
-  }>({
-    isOpen: false,
-    bookmark: null,
-  });
-  const [isDeletingBookmark, setIsDeletingBookmark] = useState(false);
-
-  // 전체 북마크에서 사용된 태그 집계
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    bookmarks.forEach((b) => b.tags?.forEach((t) => tagSet.add(t)));
-    return Array.from(tagSet).sort();
-  }, [bookmarks]);
-
-  // 하위 컬렉션 ID들을 재귀적으로 가져오는 함수
-  const getChildCollectionIds = React.useCallback(
-    (parentId: string): string[] => {
-      const childIds: string[] = [];
-      const getChildren = (id: string) => {
-        const children = collections.filter((col) => col.parentId === id);
-        children.forEach((child) => {
-          childIds.push(child.id);
-          getChildren(child.id);
-        });
-      };
-      getChildren(parentId);
-      return childIds;
-    },
-    [collections]
-  );
-
-  // parentId의 깊이 계산 함수
-  const getCollectionDepth = (id: string | null): number => {
-    let depth = 0;
-    let current = collections.find((col) => col.id === id);
-    while (current && current.parentId) {
-      depth++;
-      const parent = collections.find((col) => col.id === current!.parentId);
-      if (!parent) break;
-      current = parent;
-    }
-    return depth;
-  };
-
-  // 컬렉션 추가 핸들러
-  const handleAddCollection = async (
-    name: string,
-    description: string,
-    icon: string,
-    parentId?: string | null,
-    isPinned?: boolean
-  ) => {
-    // parentId의 깊이가 2 이상이면 추가 불가
-    if (parentId && getCollectionDepth(parentId) >= 2) {
-      toast.error(t("collections.maxDepthExceeded"));
-      return;
-    }
-
-    // 컬렉션 제한 체크
-    const collectionLimit = checkCollectionLimit(collections.length, plan);
-    if (!collectionLimit.allowed) {
-      setUpgradeReason("collection_limit");
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    try {
-      const collectionId = await addCollection(
-        {
-          name,
-          description,
-          icon,
-          parentId: parentId ?? null,
-          isPinned: isPinned ?? false,
-        },
-        user?.uid || ""
-      );
-
-      // 핀이 설정된 경우, 다른 컬렉션들의 핀을 해제
-      if (isPinned && collectionId) {
-        await setPinned(collectionId, true);
-      }
-
-      toast.success(t("collections.collectionAdded"));
-    } catch (error) {
-      console.error("Error adding collection:", error);
-      toast.error(t("collections.collectionAddError"));
-    }
-  };
-
-  // 필터링된 북마크 (검색 및 태그 필터링만)
-  const filteredBookmarksData = useMemo(() => {
-    const filtered = bookmarks.filter((bookmark) => {
-      const matchesSearch = searchTerm
-        ? bookmark.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          bookmark.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (bookmark.description &&
-            bookmark.description
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()))
-        : true;
-
-      const matchesTag = selectedTag
-        ? bookmark.tags && bookmark.tags.includes(selectedTag)
-        : true;
-
-      return matchesSearch && matchesTag;
-    });
-
-    // 하위 컬렉션이 있는 경우 그룹화 (즐겨찾기는 제외)
-    if (
-      selectedCollection !== "all" &&
-      selectedCollection !== "none" &&
-      selectedCollection !== "favorites" &&
-      selectedCollection
-    ) {
-      const childCollectionIds = getChildCollectionIds(selectedCollection);
-      if (childCollectionIds.length > 0) {
-        const selectedCollectionBookmarks = filtered.filter(
-          (bookmark) => bookmark.collection === selectedCollection
-        );
-
-        const groupedBookmarks: {
-          collectionId: string;
-          collectionName: string;
-          bookmarks: Bookmark[];
-        }[] = [];
-
-        childCollectionIds.forEach((childId) => {
-          const childCollection = collections.find((col) => col.id === childId);
-          if (childCollection) {
-            const childBookmarks = filtered.filter(
-              (bookmark) => bookmark.collection === childId
-            );
-            if (childBookmarks.length > 0) {
-              groupedBookmarks.push({
-                collectionId: childId,
-                collectionName: childCollection.name,
-                bookmarks: childBookmarks,
-              });
-            }
-          }
-        });
-
-        return {
-          isGrouped: true,
-          selectedCollectionBookmarks,
-          selectedCollectionName:
-            collections.find((col) => col.id === selectedCollection)?.name ||
-            t("collections.selectedCollection"),
-          groupedBookmarks,
-        };
-      }
-    }
-
-    return {
-      isGrouped: false,
-      bookmarks: filtered,
-    };
-  }, [
     bookmarks,
-    searchTerm,
+    limits,
+    deferredLoading,
     selectedCollection,
+    setSelectedCollection,
+    viewMode,
+    setViewMode,
+    searchTerm,
+    setSearchTerm,
     selectedTag,
-    collections,
-    getChildCollectionIds,
-    t,
-  ]);
-
-  // 이벤트 핸들러들
-  const handleAddBookmark = async (bookmarkData: BookmarkFormData) => {
-    // 북마크 제한 체크
-    const bookmarkLimit = checkBookmarkLimit(bookmarks.length, plan);
-    if (!bookmarkLimit.allowed) {
-      setUpgradeReason("bookmark_limit");
-      setShowUpgradeModal(true);
-      return;
-    }
-
-    try {
-      console.log("BookmarksPage - 북마크 추가 시도:", bookmarkData);
-
-      await addBookmark(
-        {
-          ...bookmarkData,
-          isFavorite: bookmarkData.isFavorite || false,
-        },
-        user?.uid || ""
-      );
-      setIsAddModalOpen(false);
-      toast.success(t("bookmarks.bookmarkAdded"));
-    } catch (error) {
-      console.error("BookmarksPage - 북마크 추가 실패:", error);
-      console.error("오류 상세:", {
-        message: error instanceof Error ? error.message : "알 수 없는 오류",
-        stack: error instanceof Error ? error.stack : "스택 없음",
-        type: typeof error,
-      });
-
-      // 사용자에게 더 구체적인 오류 메시지 표시
-      const errorMessage =
-        error instanceof Error ? error.message : "알 수 없는 오류";
-      toast.error(`${t("bookmarks.bookmarkAddError")}: ${errorMessage}`);
-    }
-  };
-
-  // 붙여넣기 북마크 추가 기능
-  usePasteBookmark({
-    onAddBookmark: handleAddBookmark,
-    onOpenModal: () => setIsAddModalOpen(true),
-    enabled: !!user && isActive !== false,
-  });
-
-  const handleUpdateBookmark = async (
-    id: string,
-    bookmarkData: BookmarkFormData
-  ) => {
-    try {
-      await updateBookmark(
-        id,
-        {
-          ...bookmarkData,
-          isFavorite: bookmarkData.isFavorite || false,
-        },
-        user?.uid || ""
-      );
-      setEditingBookmark(null);
-      toast.success(t("bookmarks.bookmarkUpdated"));
-    } catch (error) {
-      console.error("Error updating bookmark:", error);
-      toast.error(t("bookmarks.bookmarkUpdateError"));
-    }
-  };
-
-  const handleDeleteBookmark = async (id: string) => {
-    setIsDeletingBookmark(true);
-    try {
-      await deleteBookmark(id);
-      setDeleteBookmarkModal({ isOpen: false, bookmark: null });
-      toast.success(t("bookmarks.bookmarkDeleted"));
-    } catch (error) {
-      console.error("Error deleting bookmark:", error);
-      toast.error(t("bookmarks.bookmarkDeleteError"));
-    } finally {
-      setIsDeletingBookmark(false);
-    }
-  };
-
-  const handleToggleFavorite = async (id: string, isFavorite: boolean) => {
-    try {
-      await toggleFavorite(id, isFavorite, user?.uid || "");
-      toast.success(
-        isFavorite
-          ? t("bookmarks.addToFavorites")
-          : t("bookmarks.removeFromFavorites")
-      );
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-      toast.error(t("bookmarks.favoriteToggleError"));
-    }
-  };
-
-  // 파비콘 새로고침 핸들러 추가
-  const handleRefreshFavicon = async (bookmarkId: string, url: string) => {
-    try {
-      const newFavicon = await updateBookmarkFavicon(
-        bookmarkId,
-        url,
-        user?.uid || ""
-      );
-      toast.success(t("bookmarks.faviconRefreshed"));
-      return newFavicon;
-    } catch (error) {
-      console.error("Error refreshing favicon:", error);
-      toast.error(t("bookmarks.faviconRefreshError"));
-      throw error;
-    }
-  };
-
-  const handleDeleteCollection = useCallback(
-    async (collectionId: string) => {
-      setDeletingCollectionId(collectionId);
-      try {
-        await deleteCollection(collectionId, user?.uid || "");
-        toast.success(t("collections.collectionDeleted"));
-        setDeletingCollectionId(null);
-        setShowDeleteModal(false);
-      } catch (error) {
-        console.error("Error deleting collection:", error);
-        toast.error(t("collections.collectionDeleteError"));
-        setDeletingCollectionId(null);
-      }
-    },
-    [deleteCollection, user?.uid, t]
-  );
-
-  // 컬렉션 삭제 모달 키보드 이벤트 처리
-  useEffect(() => {
-    if (!showDeleteModal || !targetCollectionId) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        // 삭제 중이 아닐 때만 삭제 실행
-        if (deletingCollectionId !== targetCollectionId) {
-          handleDeleteCollection(targetCollectionId);
-        }
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        setShowDeleteModal(false);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [
+    setSelectedTag,
+    currentSort,
+    setCurrentSort,
+    isAddModalOpen,
+    setIsAddModalOpen,
+    editingBookmark,
+    setEditingBookmark,
+    deleteBookmarkModal,
+    setDeleteBookmarkModal,
+    isDeletingBookmark,
+    editingCollection,
+    setEditingCollection,
     showDeleteModal,
+    setShowDeleteModal,
     targetCollectionId,
+    targetCollectionName,
     deletingCollectionId,
+    isAddCollectionModalOpen,
+    setIsAddCollectionModalOpen,
+    isAddSubCollectionModalOpen,
+    setIsAddSubCollectionModalOpen,
+    subCollectionParentId,
+    setSubCollectionParentId,
+    showUpgradeModal,
+    setShowUpgradeModal,
+    upgradeReason,
+    filteredBookmarksData,
+    bookmarksToDisplay,
+    visibleTags,
+    handleAddBookmark,
+    handleUpdateBookmark,
+    handleDeleteBookmark,
+    handleToggleFavorite,
+    handleRefreshFavicon,
     handleDeleteCollection,
-  ]);
-
-  const handleUpdateCollection = async (
-    collectionId: string,
-    collectionData: Partial<Collection>
-  ) => {
-    try {
-      // isPinned가 변경된 경우 setPinned 함수 사용
-      if ("isPinned" in collectionData) {
-        await setPinned(collectionId, collectionData.isPinned || false);
-        // isPinned를 제외한 나머지 데이터만 updateCollection으로 처리
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { isPinned: _, ...otherData } = collectionData;
-        if (Object.keys(otherData).length > 0) {
-          await updateCollection(collectionId, otherData);
-        }
-      } else {
-        await updateCollection(collectionId, collectionData);
-      }
-
-      toast.success(t("collections.collectionUpdated"));
-      setShowEditModal(false);
-      setEditingCollection(null);
-    } catch (error) {
-      console.error("Error updating collection:", error);
-      toast.error(t("collections.collectionUpdateError"));
-    }
-  };
-
-  const handleReorderBookmarks = async (newBookmarks: Bookmark[]) => {
-    console.log(
-      "handleReorderBookmarks called with:",
-      newBookmarks.length,
-      "bookmarks"
-    ); // 디버깅 로그
-    console.log("Current bookmarks length:", bookmarks.length); // 현재 상태 로그
-    console.log(
-      "New bookmarks order:",
-      newBookmarks.map((b) => ({ id: b.id, title: b.title }))
-    ); // 새로운 순서 로그
-
-    try {
-      // Firestore에 순서 업데이트
-      await reorderBookmarks(newBookmarks, user?.uid || "");
-
-      console.log("Bookmarks reordered successfully"); // 디버깅 로그
-      console.log("Updated bookmarks length:", newBookmarks.length); // 업데이트 후 상태 로그
-      // toast.success("북마크 순서가 변경되었습니다."); // 중복 토스트 제거
-    } catch (error) {
-      console.error("Error reordering bookmarks:", error);
-      toast.error(t("bookmarks.reorderError"));
-    }
-  };
+    handleUpdateCollection,
+    handleReorderBookmarks,
+    handleAddCollection,
+    openDeleteCollectionModal,
+    openEditCollectionModal,
+  } = useBookmarksPage();
 
   if (!user) {
     return (
@@ -594,7 +87,6 @@ export const BookmarksPage: React.FC = () => {
     );
   }
 
-  // 비활성화된 사용자 체크
   if (isActive === false) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
@@ -608,15 +100,8 @@ export const BookmarksPage: React.FC = () => {
       collections={collections}
       selectedCollection={selectedCollection}
       onCollectionChange={setSelectedCollection}
-      onDeleteCollectionRequest={(id, name) => {
-        setTargetCollectionId(id);
-        setTargetCollectionName(name);
-        setShowDeleteModal(true);
-      }}
-      onEditCollection={(collection) => {
-        setEditingCollection(collection);
-        setShowEditModal(true);
-      }}
+      onDeleteCollectionRequest={openDeleteCollectionModal}
+      onEditCollection={openEditCollectionModal}
       onOpenAddCollectionModal={() => setIsAddCollectionModalOpen(true)}
       onOpenAddSubCollectionModal={(parentId) => {
         setSubCollectionParentId(parentId);
@@ -624,227 +109,55 @@ export const BookmarksPage: React.FC = () => {
       }}
     >
       <div className="flex flex-col min-h-0 bg-gray-50 dark:bg-[#0d0d10]">
-        {/* 북마크 리스트 상단 컨트롤 바 */}
-        <div className="flex-shrink-0 sticky top-0 z-50 min-h-[80px] sm:h-[80px] px-4 lg:px-6 py-3 sm:py-0 border-b border-gray-200 dark:border-white/[0.06] bg-white/95 dark:bg-[#111113]/95 backdrop-blur-sm">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full h-full sm:items-center">
-            {/* 검색창 */}
-            <div className="relative w-full sm:flex-1 min-w-0">
-              <input
-                type="text"
-                placeholder={t("bookmarks.searchPlaceholder")}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 h-[38px] rounded-lg bg-gray-100 dark:bg-white/[0.06] text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 text-sm border-0"
-              />
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-gray-500 pointer-events-none" />
-            </div>
-
-            {/* 데스크톱 컨트롤 */}
-            <div className="hidden sm:flex items-center gap-3">
-              {/* 뷰 모드 토글 */}
-              <div className="flex bg-gray-100 dark:bg-white/[0.06] rounded-lg p-1 h-[44px]">
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`p-1.5 rounded-md transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
-                    viewMode === "grid"
-                      ? "bg-white dark:bg-white/[0.12] text-violet-600 dark:text-violet-400 shadow-sm"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                  title={t("bookmarks.gridView")}
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-1.5 rounded-md transition-all duration-200 min-w-[36px] h-full flex items-center justify-center ${
-                    viewMode === "list"
-                      ? "bg-white dark:bg-white/[0.12] text-violet-600 dark:text-violet-400 shadow-sm"
-                      : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                  }`}
-                  title={t("bookmarks.listView")}
-                >
-                  <List className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* 버튼들 */}
-              <div className="flex items-center gap-2">
-                {/* 컬렉션 추가 — 보조 액션 */}
-                <button
-                  onClick={() => setIsAddCollectionModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 h-[40px] border border-violet-300 dark:border-violet-600/60 text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-sm font-medium rounded-lg transition-colors whitespace-nowrap"
-                  title={t("collections.addCollection")}
-                >
-                  <FolderPlus className="w-4 h-4" />
-                  <span className="hidden lg:inline">{t("collections.addCollection")}</span>
-                </button>
-                {/* 북마크 추가 — 주요 액션 */}
-                <button
-                  onClick={() => setIsAddModalOpen(true)}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 h-[40px] bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-lg shadow-sm hover:shadow-violet-500/25 transition-all whitespace-nowrap"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t("bookmarks.addBookmark")}
-                </button>
-              </div>
-            </div>
-
-            {/* 모바일 버튼들 */}
-            <div className="flex gap-2 sm:hidden">
-              <button
-                onClick={() => setIsAddCollectionModalOpen(true)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 h-[38px] border border-violet-300 dark:border-violet-600/60 text-violet-700 dark:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 text-xs font-medium rounded-lg transition-colors"
-              >
-                <FolderPlus className="w-3.5 h-3.5" />
-                <span>{t("collections.addCollection")}</span>
-              </button>
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 h-[38px] bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold rounded-lg transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>{t("bookmarks.addBookmark")}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* 메인 콘텐츠 - 스크롤은 Drawer의 main에서 처리 */}
+        <BookmarksTopBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onAddCollection={() => setIsAddCollectionModalOpen(true)}
+          onAddBookmark={() => setIsAddModalOpen(true)}
+        />
         <div className="flex-1 p-4 lg:p-6 w-full min-w-0">
-          {(() => {
-            // 필터링된 북마크 데이터에서 실제 북마크 배열 추출
-            let bookmarksToDisplay: Bookmark[] = [];
-
-            if (Array.isArray(filteredBookmarksData)) {
-              bookmarksToDisplay = filteredBookmarksData;
-            } else if (filteredBookmarksData.isGrouped) {
-              // 그룹된 데이터의 경우 모든 북마크를 평면화
-              const groupedData = filteredBookmarksData as {
-                isGrouped: true;
-                selectedCollectionBookmarks: Bookmark[];
-                selectedCollectionName: string;
-                groupedBookmarks: {
-                  collectionId: string;
-                  collectionName: string;
-                  bookmarks: Bookmark[];
-                }[];
-              };
-              bookmarksToDisplay = [
-                ...groupedData.selectedCollectionBookmarks,
-                ...groupedData.groupedBookmarks.flatMap(
-                  (group) => group.bookmarks
-                ),
-              ];
-            } else {
-              bookmarksToDisplay = filteredBookmarksData.bookmarks || [];
+          <BookmarkList
+            bookmarks={bookmarksToDisplay}
+            onEdit={setEditingBookmark}
+            onDelete={(bookmark) =>
+              setDeleteBookmarkModal({ isOpen: true, bookmark })
             }
-
-            return (
-              <BookmarkList
-                bookmarks={bookmarksToDisplay}
-                onEdit={setEditingBookmark}
-                onDelete={(bookmark: Bookmark) => {
-                  setDeleteBookmarkModal({
-                    isOpen: true,
-                    bookmark: bookmark,
-                  });
-                }}
-                onToggleFavorite={handleToggleFavorite}
-                onReorder={handleReorderBookmarks}
-                onRefreshFavicon={handleRefreshFavicon} // 파비콘 새로고침 함수 전달
-                collections={collections}
-                searchTerm="" // 이미 필터링된 북마크를 전달하므로 빈 문자열
-                viewMode={viewMode}
-                currentSort={currentSort}
-                onSortChange={setCurrentSort}
-                groupedBookmarks={
-                  filteredBookmarksData.isGrouped
-                    ? filteredBookmarksData
-                    : undefined
-                }
-                loading={deferredLoading}
-                collectionLabel={
-                  selectedCollection === "all" ? undefined
-                  : selectedCollection === "favorites" ? t("bookmarks.favorites")
-                  : selectedCollection === "none" ? t("collections.noCollection")
-                  : collections.find(c => c.id === selectedCollection)?.name
-                }
-              />
-            );
-          })()}
-
-          {/* 태그 필터 UI */}
-          {(() => {
-            const currentBookmarks = (() => {
-              if (
-                typeof filteredBookmarksData === "object" &&
-                "isGrouped" in filteredBookmarksData &&
-                filteredBookmarksData.isGrouped
-              ) {
-                const groupedData = filteredBookmarksData as {
-                  isGrouped: true;
-                  selectedCollectionBookmarks: Bookmark[];
-                  selectedCollectionName: string;
-                  groupedBookmarks: {
-                    collectionId: string;
-                    collectionName: string;
-                    bookmarks: Bookmark[];
-                  }[];
-                };
-                return [
-                  ...groupedData.selectedCollectionBookmarks,
-                  ...groupedData.groupedBookmarks.flatMap(
-                    (group) => group.bookmarks
-                  ),
-                ];
-              } else {
-                const bookmarksArray = Array.isArray(filteredBookmarksData)
-                  ? filteredBookmarksData
-                  : filteredBookmarksData.bookmarks || [];
-                return bookmarksArray;
-              }
-            })();
-
-            const hasBookmarksWithTags = currentBookmarks.some(
-              (bookmark) => bookmark.tags && bookmark.tags.length > 0
-            );
-
-            return allTags.length > 0 && hasBookmarksWithTags ? (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                <button
-                  className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-150 ${
-                    selectedTag === null
-                      ? "bg-violet-600 text-white"
-                      : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.10]"
-                  }`}
-                  onClick={() => setSelectedTag(null)}
-                >
-                  {t("collections.all")}
-                </button>
-                {allTags.map((tag) => (
-                  <button
-                    key={tag}
-                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors duration-150 ${
-                      selectedTag === tag
-                        ? "bg-violet-600 text-white"
-                        : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-white/[0.10]"
-                    }`}
-                    onClick={() => setSelectedTag(tag)}
-                  >
-                    #{tag}
-                  </button>
-                ))}
-              </div>
-            ) : null;
-          })()}
+            onToggleFavorite={handleToggleFavorite}
+            onReorder={handleReorderBookmarks}
+            onRefreshFavicon={handleRefreshFavicon}
+            collections={collections}
+            searchTerm=""
+            viewMode={viewMode}
+            currentSort={currentSort}
+            onSortChange={setCurrentSort}
+            groupedBookmarks={
+              filteredBookmarksData.isGrouped ? filteredBookmarksData : undefined
+            }
+            loading={deferredLoading}
+            collectionLabel={
+              selectedCollection === "all"
+                ? undefined
+                : selectedCollection === "favorites"
+                ? t("bookmarks.favorites")
+                : selectedCollection === "none"
+                ? t("collections.noCollection")
+                : collections.find((c) => c.id === selectedCollection)?.name
+            }
+          />
+          <TagFilter
+            tags={visibleTags}
+            selectedTag={selectedTag}
+            onSelectTag={setSelectedTag}
+          />
         </div>
       </div>
 
-      {/* 모달들 */}
       <AddBookmarkModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAdd={({ title, url, description, collection, tags, isFavorite }) => {
+        onAdd={({ title, url, description, collection, tags, isFavorite }) =>
           handleAddBookmark({
             title,
             url,
@@ -852,8 +165,8 @@ export const BookmarksPage: React.FC = () => {
             collection: collection || "",
             tags,
             isFavorite,
-          });
-        }}
+          })
+        }
         collections={collections}
       />
 
@@ -867,18 +180,15 @@ export const BookmarksPage: React.FC = () => {
 
       <DeleteBookmarkModal
         isOpen={deleteBookmarkModal.isOpen}
-        onClose={() =>
-          setDeleteBookmarkModal({ isOpen: false, bookmark: null })
-        }
+        onClose={() => setDeleteBookmarkModal({ isOpen: false, bookmark: null })}
         onDelete={handleDeleteBookmark}
         bookmark={deleteBookmarkModal.bookmark}
         isDeleting={isDeletingBookmark}
       />
 
       <EditCollectionModal
-        isOpen={showEditModal}
+        isOpen={!!editingCollection}
         onClose={() => {
-          setShowEditModal(false);
           setEditingCollection(null);
         }}
         onUpdate={handleUpdateCollection}
@@ -886,87 +196,15 @@ export const BookmarksPage: React.FC = () => {
         collections={collections}
       />
 
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              {t("collections.deleteCollection")}
-            </h3>
-            <div className="mb-6">
-              <p className="text-gray-700 dark:text-gray-300 mb-3">
-                <span className="font-bold">{targetCollectionName}</span>{" "}
-                {(() => {
-                  const text = t("collections.deleteConfirmation");
-                  const deleteWords = ["삭제", "delete", "削除"];
-                  const deleteWord = deleteWords.find((word) =>
-                    text.toLowerCase().includes(word.toLowerCase())
-                  );
-                  if (deleteWord) {
-                    const parts = text.split(
-                      new RegExp(`(${deleteWord})`, "i")
-                    );
-                    return (
-                      <>
-                        {parts[0]}
-                        <span className="font-bold text-red-600 dark:text-red-400">
-                          {parts[1]}
-                        </span>
-                        {parts[2]}
-                      </>
-                    );
-                  }
-                  return text;
-                })()}
-              </p>
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-                <p className="text-red-700 dark:text-red-400 text-sm font-medium">
-                  <span className="font-bold">⚠️ {t("common.warning")}: </span>
-                  {(() => {
-                    const text = t("collections.deleteWarning");
-                    const deleteWords = ["삭제", "deleted", "削除"];
-                    const deleteWord = deleteWords.find((word) =>
-                      text.toLowerCase().includes(word.toLowerCase())
-                    );
-                    if (deleteWord) {
-                      const parts = text.split(
-                        new RegExp(`(${deleteWord})`, "i")
-                      );
-                      return (
-                        <>
-                          {parts[0]}
-                          <span className="font-bold">{parts[1]}</span>
-                          {parts[2]}
-                        </>
-                      );
-                    }
-                    return text;
-                  })()}
-                </p>
-              </div>
-            </div>
-            <div className="flex justify-end space-x-2">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded bg-gray-200 dark:bg-white/[0.06] text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-white/[0.12]"
-              >
-                {t("common.cancel")}{" "}
-                <span className="text-xs opacity-70">(ESC)</span>
-              </button>
-              <button
-                onClick={() =>
-                  targetCollectionId &&
-                  handleDeleteCollection(targetCollectionId)
-                }
-                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
-                disabled={deletingCollectionId === targetCollectionId}
-              >
-                {t("common.delete")}{" "}
-                <span className="text-xs opacity-70">(Enter)</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteCollectionModal
+        isOpen={showDeleteModal}
+        collectionName={targetCollectionName}
+        isDeleting={deletingCollectionId === targetCollectionId}
+        onConfirm={() =>
+          targetCollectionId && handleDeleteCollection(targetCollectionId)
+        }
+        onClose={() => setShowDeleteModal(false)}
+      />
 
       <AddCollectionModal
         isOpen={isAddCollectionModalOpen}
