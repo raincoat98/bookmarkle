@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState } from "react";
 import { Cloud, RefreshCw, Settings, Droplets, Wind } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useWeather } from "./useWeather";
@@ -11,15 +11,6 @@ export const WeatherWidget: React.FC = () => {
   const { weather, weeklyWeather, hourlyWeather, loading, error, fetchWeather, handleSelectLocation } = useWeather();
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {}
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   if (loading) {
     return (

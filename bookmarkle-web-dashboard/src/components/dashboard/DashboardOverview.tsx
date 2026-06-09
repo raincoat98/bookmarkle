@@ -312,11 +312,6 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               loading={bookmarksLoading}
               isEditMode={isEditMode}
               swapped={bookmarkPanelSwapped}
-              onSwap={() => {
-                const next = !bookmarkPanelSwapped;
-                setBookmarkPanelSwapped(next);
-                try { localStorage.setItem("bookmarksWidget_swapped", String(next)); } catch {}
-              }}
             />
           );
         case "quick-actions":
@@ -654,7 +649,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                         e.stopPropagation();
                         const next = !bookmarkPanelSwapped;
                         setBookmarkPanelSwapped(next);
-                        try { localStorage.setItem("bookmarksWidget_swapped", String(next)); } catch {}
+                        try {
+                          localStorage.setItem("bookmarksWidget_swapped", String(next));
+                        } catch {
+                          return;
+                        }
                       }}
                       className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-white/[0.08] shadow-sm hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-colors"
                     >

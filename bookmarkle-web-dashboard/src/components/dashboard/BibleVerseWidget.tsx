@@ -64,7 +64,9 @@ function loadConfig(): StoredConfig {
     if (parsed && parsed.behavior && parsed.bg && parsed.bg.type) {
       return parsed as StoredConfig;
     }
-  } catch {}
+  } catch {
+    return fallback;
+  }
   return fallback;
 }
 
@@ -112,7 +114,11 @@ export const BibleVerseWidget: React.FC = () => {
 
   const saveConfig = (next: StoredConfig) => {
     setConfig(next);
-    try { localStorage.setItem(LS_KEY, JSON.stringify(next)); } catch {}
+    try {
+      localStorage.setItem(LS_KEY, JSON.stringify(next));
+    } catch {
+      return;
+    }
   };
 
   const applyPreset = (id: string) => {
@@ -145,7 +151,9 @@ export const BibleVerseWidget: React.FC = () => {
       }
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {}
+    } catch {
+      return;
+    }
   };
 
   return (

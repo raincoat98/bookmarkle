@@ -153,7 +153,6 @@ interface BookmarksWidgetProps {
   loading?: boolean;
   isEditMode?: boolean;
   swapped?: boolean;
-  onSwap?: () => void;
 }
 
 export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
@@ -164,7 +163,6 @@ export const BookmarksWidget: React.FC<BookmarksWidgetProps> = ({
   loading = false,
   isEditMode = false,
   swapped = false,
-  onSwap: _onSwap,
 }) => {
   const { t } = useTranslation();
   const buttonClickedRef = useRef(false);
