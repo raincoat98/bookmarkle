@@ -14,7 +14,6 @@ import {
   User,
   Palette,
   Bell,
-  Shield,
   Crown,
   Trash2,
 } from "lucide-react";
@@ -25,7 +24,6 @@ import { AccountSettings } from "./settings/AccountSettings";
 import { AppearanceSettings } from "./settings/AppearanceSettings";
 import { NotificationSettings } from "./settings/NotificationSettings";
 import { StatsSettings } from "./settings/StatsSettings";
-import { PrivacySettings } from "./settings/PrivacySettings";
 import { BackupSettingsComponent } from "./settings/BackupSettings";
 import { SubscriptionSettings } from "./settings/SubscriptionSettings";
 import { TrashSettings } from "./settings/TrashSettings";
@@ -139,7 +137,6 @@ export const Settings: React.FC<SettingsProps> = ({
     { id: "account",       label: t("settings.account"),          icon: User },
     { id: "appearance",    label: t("settings.appearance"),       icon: Palette },
     { id: "notifications", label: t("settings.notifications"),    icon: Bell },
-    { id: "privacy",       label: t("settings.privacy"),          icon: Shield },
   ];
 
   const renderContent = () => {
@@ -196,7 +193,6 @@ export const Settings: React.FC<SettingsProps> = ({
           />
         );
       case "trash":   return <TrashSettings />;
-      case "privacy": return <PrivacySettings />;
       default:
         return (
           <GeneralSettings

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Key, Shield, ChevronRight, ChevronLeft, Pencil, Check, LogOut } from "lucide-react";
 import { isAdminUser } from "../../firebase";
 import type { User } from "firebase/auth";
+import { PrivacySettings } from "./PrivacySettings";
 
 interface AccountSettingsProps {
   user: User | null;
@@ -230,6 +231,7 @@ export const AccountSettings: React.FC<AccountSettingsProps> = ({
           </>
         )}
       </div>
+      {!showDetail && <PrivacySettings />}
     </div>
   );
 };
