@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuthStore } from "../../stores";
 import { toast } from "react-hot-toast";
 import { FirebaseError } from "firebase/app";
@@ -14,11 +14,15 @@ export const LoginScreen = () => {
   const { login, loginWithEmail, signup, user } = useAuthStore();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const extensionAutoLoginStartedRef = useRef(false);
+  const extensionAuthResultHandledRef = useRef(false);
 
   // Extension 탭 감지
   const urlParams = new URLSearchParams(window.location.search);
   const isExtensionTab =
-    urlParams.get("extension") === "true" || window.name === "extension-auth";
+    window.location.pathname === "/signin-popup" ||
+    urlParams.get("extension") === "true" ||
+    window.name === "extension-auth";
   const authModeParam = urlParams.get("mode") as "google" | "email" | null;
 
   // 폼 데이터
@@ -39,7 +43,14 @@ export const LoginScreen = () => {
 
   // Extension 탭에서 로그인 성공 후 처리
   useEffect(() => {
-    if (!isExtensionTab || !user) return;
+    if (!isExtensionTab || !user || extensionAuthResultHandledRef.current) {
+      return;
+    }
+
+    extensionAuthResultHandledRef.current = true;
+    let checkExtensionRead: ReturnType<typeof setInterval> | undefined;
+    let forceCloseTimer: ReturnType<typeof setTimeout> | undefined;
+    let closeTimer: ReturnType<typeof setTimeout> | undefined;
 
     const handleAuthSuccess = async () => {
       try {
@@ -57,11 +68,10 @@ export const LoginScreen = () => {
           type: "AUTH_RESULT",
           user: userData,
           idToken: idToken,
-          refreshToken: refreshToken, // Refresh Token 추가
+          refreshToken: refreshToken,
           timestamp: Date.now(),
         };
 
-        // localStorage/sessionStorage에 저장
         try {
           localStorage.setItem(
             "extension_auth_result",
@@ -75,40 +85,44 @@ export const LoginScreen = () => {
           console.error("❌ localStorage 저장 실패:", storageError);
         }
 
-        // Extension content script에 인증 결과 전송
         window.postMessage(
           {
             type: "AUTH_RESULT",
             user: userData,
             idToken: idToken,
-            refreshToken: refreshToken, // Refresh Token 추가
+            refreshToken: refreshToken,
           },
           window.location.origin
         );
 
-        // Extension이 읽었는지 확인하고 탭 닫기
-        const checkExtensionRead = setInterval(() => {
+        checkExtensionRead = setInterval(() => {
           const stillExists =
             localStorage.getItem("extension_auth_result") ||
             sessionStorage.getItem("extension_auth_result");
 
           if (!stillExists) {
-            clearInterval(checkExtensionRead);
-            setTimeout(() => window.close(), 500);
+            if (checkExtensionRead) clearInterval(checkExtensionRead);
+            closeTimer = setTimeout(() => window.close(), 500);
           }
         }, 1000);
 
-        // 최대 30초 후 탭 닫기
-        setTimeout(() => {
-          clearInterval(checkExtensionRead);
+        forceCloseTimer = setTimeout(() => {
+          if (checkExtensionRead) clearInterval(checkExtensionRead);
           window.close();
         }, 30000);
       } catch (error) {
+        extensionAuthResultHandledRef.current = false;
         console.error("Extension 인증 결과 처리 실패:", error);
       }
     };
 
     handleAuthSuccess();
+
+    return () => {
+      if (checkExtensionRead) clearInterval(checkExtensionRead);
+      if (forceCloseTimer) clearTimeout(forceCloseTimer);
+      if (closeTimer) clearTimeout(closeTimer);
+    };
   }, [isExtensionTab, user]);
 
   const handleError = useCallback(
@@ -295,13 +309,21 @@ export const LoginScreen = () => {
 
   // Extension 탭이고 mode가 google이면 자동으로 Google 로그인 시작
   useEffect(() => {
-    if (isExtensionTab && authModeParam !== "email" && !user && !loading) {
-      const timer = setTimeout(() => {
-        handleGoogleLogin();
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (
+      !isExtensionTab ||
+      authModeParam === "email" ||
+      user ||
+      extensionAutoLoginStartedRef.current
+    ) {
+      return;
     }
-  }, [isExtensionTab, authModeParam, user, loading, handleGoogleLogin]);
+
+    extensionAutoLoginStartedRef.current = true;
+    const timer = setTimeout(() => {
+      handleGoogleLogin();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [isExtensionTab, authModeParam, user, handleGoogleLogin]);
 
   // Extension 탭이 아니거나 email 모드가 아닌 경우에만 UI 표시
   const shouldShowUI = !isExtensionTab || authModeParam === "email";
