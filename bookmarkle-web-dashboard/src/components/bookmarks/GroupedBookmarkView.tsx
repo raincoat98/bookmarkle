@@ -332,7 +332,7 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                                 <MobileIconView
                                   bookmarks={group.bookmarks}
                                   onEdit={onEdit}
-                                  onDelete={onDelete}
+                                  onDirectDelete={onDirectDelete}
                                   onToggleFavorite={onToggleFavorite}
                                   onReorder={onReorder}
                                 />
