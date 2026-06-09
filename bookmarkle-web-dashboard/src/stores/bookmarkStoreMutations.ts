@@ -36,6 +36,7 @@ type BookmarkMutationActions = Pick<
   | "emptyTrash"
   | "cleanupOldTrash"
   | "reorderBookmarks"
+  | "moveBookmarkToCollection"
   | "toggleFavorite"
   | "updateBookmarkFavicon"
 >;
@@ -277,6 +278,37 @@ export const createBookmarkMutations = (
       });
       return { rawBookmarks: updated };
     });
+  },
+
+  moveBookmarkToCollection: async (
+    bookmarkId: string,
+    newCollection: string | null,
+    allBookmarksNewOrder: Bookmark[]
+  ) => {
+    const batch = writeBatch(db);
+
+    batch.update(bookmarkDocRef(bookmarkId), {
+      collection: newCollection,
+      order: allBookmarksNewOrder.findIndex((b) => b.id === bookmarkId),
+      updatedAt: new Date(),
+    });
+
+    allBookmarksNewOrder.forEach((bookmark, index) => {
+      if (bookmark.id !== bookmarkId) {
+        batch.update(bookmarkDocRef(bookmark.id), { order: index });
+      }
+    });
+
+    await batch.commit();
+
+    set((state) => ({
+      rawBookmarks: state.rawBookmarks.map((b) => {
+        const newIndex = allBookmarksNewOrder.findIndex((bm) => bm.id === b.id);
+        if (b.id === bookmarkId) return { ...b, collection: newCollection, order: newIndex };
+        if (newIndex !== -1) return { ...b, order: newIndex };
+        return b;
+      }),
+    }));
   },
 
   toggleFavorite: async (

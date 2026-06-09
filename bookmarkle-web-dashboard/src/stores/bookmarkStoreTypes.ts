@@ -36,6 +36,11 @@ export interface BookmarkActions {
   emptyTrash: (userId: string) => Promise<void>;
   cleanupOldTrash: (userId: string) => Promise<void>;
   reorderBookmarks: (newBookmarks: Bookmark[], userId: string) => Promise<void>;
+  moveBookmarkToCollection: (
+    bookmarkId: string,
+    newCollection: string | null,
+    allBookmarksNewOrder: Bookmark[]
+  ) => Promise<void>;
   toggleFavorite: (
     bookmarkId: string,
     isFavorite: boolean,

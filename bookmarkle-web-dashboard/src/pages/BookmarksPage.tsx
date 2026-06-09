@@ -68,6 +68,7 @@ export const BookmarksPage: React.FC = () => {
     handleDeleteCollection,
     handleUpdateCollection,
     handleReorderBookmarks,
+    handleMoveBookmarkToCollection,
     handleAddCollection,
     openDeleteCollectionModal,
     openEditCollectionModal,
@@ -127,6 +128,14 @@ export const BookmarksPage: React.FC = () => {
             }
             onToggleFavorite={handleToggleFavorite}
             onReorder={handleReorderBookmarks}
+            onMoveBookmark={handleMoveBookmarkToCollection}
+            selectedCollectionId={
+              selectedCollection !== "all" &&
+              selectedCollection !== "favorites" &&
+              selectedCollection !== "none"
+                ? selectedCollection
+                : undefined
+            }
             onRefreshFavicon={handleRefreshFavicon}
             collections={collections}
             searchTerm=""

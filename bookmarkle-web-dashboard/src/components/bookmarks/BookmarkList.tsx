@@ -14,6 +14,8 @@ interface BookmarkListProps {
   onDelete: (bookmark: Bookmark) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onReorder: (newBookmarks: Bookmark[]) => void;
+  onMoveBookmark?: (bookmarkId: string, newCollectionId: string | null, allBookmarksNewOrder: Bookmark[]) => Promise<void>;
+  selectedCollectionId?: string;
   onRefreshFavicon?: (bookmarkId: string, url: string) => Promise<string>;
   collections?: Collection[];
   searchTerm: string;
@@ -40,6 +42,8 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   onDelete,
   onToggleFavorite,
   onReorder,
+  onMoveBookmark,
+  selectedCollectionId,
   onRefreshFavicon,
   collections = [],
   searchTerm,
@@ -138,6 +142,8 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
         onDelete={onDelete}
         onToggleFavorite={onToggleFavorite}
         onReorder={onReorder}
+        onMoveBookmark={onMoveBookmark}
+        selectedCollectionId={selectedCollectionId}
         onRefreshFavicon={handleRefreshFaviconWrapper}
         faviconLoadingStates={faviconLoadingStates}
       />

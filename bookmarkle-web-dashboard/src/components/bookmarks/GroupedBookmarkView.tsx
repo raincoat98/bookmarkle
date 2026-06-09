@@ -65,6 +65,8 @@ interface GroupedBookmarkViewProps {
   onDelete: (bookmark: Bookmark) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onReorder: (newBookmarks: Bookmark[]) => void;
+  onMoveBookmark?: (bookmarkId: string, newCollectionId: string | null, allBookmarksNewOrder: Bookmark[]) => Promise<void>;
+  selectedCollectionId?: string;
   onRefreshFavicon?: (bookmark: Bookmark) => Promise<void>;
   faviconLoadingStates: Record<string, boolean>;
 }
@@ -81,6 +83,8 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
   onDelete,
   onToggleFavorite,
   onReorder,
+  onMoveBookmark,
+  selectedCollectionId,
   onRefreshFavicon,
   faviconLoadingStates,
 }) => {
@@ -115,32 +119,45 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    if (!over || active.id === over.id) return;
 
     const allGroupedBookmarks = [
       ...(sortedGroupedBookmarks.selectedCollectionBookmarks || []),
-      ...(sortedGroupedBookmarks.groupedBookmarks?.flatMap(
-        (group) => group.bookmarks
-      ) || []),
+      ...(sortedGroupedBookmarks.groupedBookmarks?.flatMap((g) => g.bookmarks) || []),
     ];
 
-    const oldIndex = allGroupedBookmarks.findIndex(
-      (item) => item.id === active.id
-    );
-    const newIndex = allGroupedBookmarks.findIndex(
-      (item) => item.id === over.id
-    );
+    const oldIndex = allGroupedBookmarks.findIndex((item) => item.id === active.id);
+    const newIndex = allGroupedBookmarks.findIndex((item) => item.id === over.id);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const newBookmarks = arrayMove(allGroupedBookmarks, oldIndex, newIndex);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newBookmarks = arrayMove(allGroupedBookmarks, oldIndex, newIndex);
+
+    // 각 북마크가 속한 섹션(컬렉션 ID) 파악
+    const parentIds = new Set(
+      (sortedGroupedBookmarks.selectedCollectionBookmarks || []).map((b) => b.id)
+    );
+    const subCollectionMap = new Map<string, string>();
+    sortedGroupedBookmarks.groupedBookmarks?.forEach((group) => {
+      group.bookmarks.forEach((b) => subCollectionMap.set(b.id, group.collectionId));
+    });
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    const activeInParent = parentIds.has(activeId);
+    const overInParent = parentIds.has(overId);
+
+    if (activeInParent === overInParent) {
+      // 같은 섹션 내 순서 변경
       onReorder(newBookmarks);
-
-      toast.success(t("bookmarks.bookmarkOrderChanged"), {
-        duration: 2000,
-        icon: "📌",
-      });
+      toast.success(t("bookmarks.bookmarkOrderChanged"), { duration: 2000, icon: "📌" });
+    } else if (onMoveBookmark) {
+      // 크로스 섹션 이동
+      const targetCollectionId = overInParent
+        ? (selectedCollectionId ?? null)
+        : (subCollectionMap.get(overId) ?? null);
+      onMoveBookmark(activeId, targetCollectionId, newBookmarks);
+      toast.success(t("bookmarks.bookmarkOrderChanged"), { duration: 2000, icon: "📌" });
     }
   };
 

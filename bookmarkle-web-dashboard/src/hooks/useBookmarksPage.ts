@@ -68,6 +68,7 @@ export const useBookmarksPage = () => {
     updateBookmark,
     deleteBookmark,
     reorderBookmarks,
+    moveBookmarkToCollection,
     toggleFavorite,
     updateBookmarkFavicon,
     subscribeToBookmarks,
@@ -81,6 +82,7 @@ export const useBookmarksPage = () => {
       updateBookmark: state.updateBookmark,
       deleteBookmark: state.deleteBookmark,
       reorderBookmarks: state.reorderBookmarks,
+      moveBookmarkToCollection: state.moveBookmarkToCollection,
       toggleFavorite: state.toggleFavorite,
       updateBookmarkFavicon: state.updateBookmarkFavicon,
       subscribeToBookmarks: state.subscribeToBookmarks,
@@ -379,6 +381,19 @@ export const useBookmarksPage = () => {
     }
   };
 
+  const handleMoveBookmarkToCollection = async (
+    bookmarkId: string,
+    newCollectionId: string | null,
+    allBookmarksNewOrder: Bookmark[]
+  ) => {
+    try {
+      await moveBookmarkToCollection(bookmarkId, newCollectionId, allBookmarksNewOrder);
+    } catch (error) {
+      console.error("Error moving bookmark:", error);
+      toast.error(t("bookmarks.reorderError"));
+    }
+  };
+
   const openDeleteCollectionModal = useCallback((id: string, name: string) => {
     setTargetCollectionId(id);
     setTargetCollectionName(name);
@@ -444,6 +459,7 @@ export const useBookmarksPage = () => {
     handleDeleteCollection,
     handleUpdateCollection,
     handleReorderBookmarks,
+    handleMoveBookmarkToCollection,
     handleAddCollection,
     openDeleteCollectionModal,
     openEditCollectionModal,
