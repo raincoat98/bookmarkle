@@ -425,7 +425,7 @@ export const useSettings = ({
   };
 
   // 백업 주기 변경 핸들러
-  const handleBackupFrequencyChange = (frequency: "daily" | "weekly" | "monthly") => {
+  const handleBackupFrequencyChange = async (frequency: "daily" | "weekly" | "monthly") => {
     const current = loadBackupSettings();
     const newSettings = { ...current, frequency };
     setBackupSettings(newSettings);
@@ -434,6 +434,11 @@ export const useSettings = ({
     toast.success(
       `백업 주기가 ${frequency === "daily" ? "매일" : frequency === "weekly" ? "매주" : "매월"}로 변경되었습니다.`
     );
+
+    if (backups.length === 0 && user?.uid) {
+      const created = await performBackup(rawBookmarks, collections, user.uid, "auto");
+      if (created) syncBackups();
+    }
   };
 
   // 수동 백업 핸들러
