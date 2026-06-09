@@ -27,6 +27,7 @@ interface BookmarkGridViewProps {
   viewMode: "grid" | "list";
   onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
+  onDirectDelete: (bookmark: Bookmark) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onReorder: (newBookmarks: Bookmark[]) => void;
   onRefreshFavicon?: (bookmark: Bookmark) => Promise<void>;
@@ -41,6 +42,7 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
   viewMode,
   onEdit,
   onDelete,
+  onDirectDelete,
   onToggleFavorite,
   onReorder,
   onRefreshFavicon,
@@ -92,7 +94,7 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
         <MobileIconView
           bookmarks={bookmarks}
           onEdit={onEdit}
-          onDelete={onDelete}
+          onDirectDelete={onDirectDelete}
           onToggleFavorite={onToggleFavorite}
           onReorder={onReorder}
           isEditMode={isEditMode}

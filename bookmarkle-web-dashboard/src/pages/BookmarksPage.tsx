@@ -126,6 +126,7 @@ export const BookmarksPage: React.FC = () => {
             onDelete={(bookmark) =>
               setDeleteBookmarkModal({ isOpen: true, bookmark })
             }
+            onDirectDelete={(bookmark) => handleDeleteBookmark(bookmark.id)}
             onToggleFavorite={handleToggleFavorite}
             onReorder={handleReorderBookmarks}
             onMoveBookmark={handleMoveBookmarkToCollection}

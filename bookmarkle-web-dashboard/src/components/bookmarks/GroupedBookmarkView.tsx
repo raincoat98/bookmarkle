@@ -63,6 +63,7 @@ interface GroupedBookmarkViewProps {
   // 북마크 액션 props
   onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
+  onDirectDelete: (bookmark: Bookmark) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onReorder: (newBookmarks: Bookmark[]) => void;
   onMoveBookmark?: (bookmarkId: string, newCollectionId: string | null, allBookmarksNewOrder: Bookmark[]) => Promise<void>;
@@ -81,6 +82,7 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
   loading = false,
   onEdit,
   onDelete,
+  onDirectDelete,
   onToggleFavorite,
   onReorder,
   onMoveBookmark,
@@ -214,7 +216,7 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                     sortedGroupedBookmarks.selectedCollectionBookmarks || []
                   }
                   onEdit={onEdit}
-                  onDelete={onDelete}
+                  onDirectDelete={onDirectDelete}
                   onToggleFavorite={onToggleFavorite}
                   onReorder={onReorder}
                 />

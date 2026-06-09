@@ -140,6 +140,7 @@ const SortableIcon = React.memo(
           touchAction: isEditMode ? "none" : "manipulation",
         }}
         onClick={handleClick}
+        onContextMenu={(e) => e.preventDefault()}
         className={`relative flex flex-col items-center w-full select-none ${
           isDragging ? "opacity-40 scale-95 z-50" : ""
         } ${isEditMode ? "cursor-grab" : ""}`}
@@ -228,7 +229,7 @@ const SortableIcon = React.memo(
 interface MobileIconViewProps {
   bookmarks: Bookmark[];
   onEdit: (bookmark: Bookmark) => void;
-  onDelete: (bookmark: Bookmark) => void;
+  onDirectDelete: (bookmark: Bookmark) => void;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onReorder?: (newBookmarks: Bookmark[]) => void;
   isEditMode?: boolean;
@@ -238,7 +239,7 @@ interface MobileIconViewProps {
 export const MobileIconView: React.FC<MobileIconViewProps> = ({
   bookmarks,
   onEdit,
-  onDelete,
+  onDirectDelete,
   onToggleFavorite,
   onReorder,
   isEditMode: externalEditMode,
@@ -291,14 +292,17 @@ export const MobileIconView: React.FC<MobileIconViewProps> = ({
 
   const handleTap = useCallback((b: Bookmark) => setSheet(b), []);
 
-  const handleDeleteBadge = useCallback((b: Bookmark) => setDeleteTarget(b), []);
+  const handleDeleteBadge = useCallback((b: Bookmark) => {
+    setActiveId(null);
+    setDeleteTarget(b);
+  }, []);
 
   const confirmDelete = useCallback(() => {
     if (deleteTarget) {
-      onDelete(deleteTarget);
+      onDirectDelete(deleteTarget);
       setDeleteTarget(null);
     }
-  }, [deleteTarget, onDelete]);
+  }, [deleteTarget, onDirectDelete]);
 
   return (
     <div className="relative">
@@ -382,48 +386,10 @@ export const MobileIconView: React.FC<MobileIconViewProps> = ({
         </p>
       )}
 
-      {/* 삭제 확인 다이얼로그 */}
-      {deleteTarget && (
-        <div className="fixed inset-0 z-[10001] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDeleteTarget(null)} />
-          <div className="relative w-full max-w-sm bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-t-2xl p-5 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center ${
-                deleteTarget.favicon ? "bg-white dark:bg-white/[0.06] border border-gray-200 dark:border-white/[0.08]" : `bg-gradient-to-br ${getGradient(deleteTarget.url)}`
-              }`}>
-                {deleteTarget.favicon ? (
-                  <img src={deleteTarget.favicon} alt="" className="w-7 h-7 object-contain" />
-                ) : (
-                  <span className="text-white font-bold">{getInitial(deleteTarget.title)}</span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{deleteTarget.title}</p>
-                <p className="text-xs text-gray-400 dark:text-gray-500">{t("bookmarks.deleteConfirm") ?? "삭제하시겠습니까?"}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setDeleteTarget(null)}
-                className="flex-1 py-2.5 text-sm font-medium bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 rounded-lg"
-              >
-                {t("common.cancel")}
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 py-2.5 text-sm font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg"
-              >
-                {t("common.delete")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* 액션 바텀시트 */}
       {sheet && (
         <div className="fixed inset-0 z-[10001] flex items-end justify-center">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setSheet(null)} />
+          <div className="absolute inset-0 bg-black/50" onClick={() => setSheet(null)} />
           <div className="relative w-full max-w-sm bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-t-2xl overflow-hidden">
             {/* 핸들 */}
             <div className="flex justify-center pt-3 pb-1">
@@ -512,6 +478,44 @@ export const MobileIconView: React.FC<MobileIconViewProps> = ({
                 className="w-full py-3 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.06] rounded-xl"
               >
                 {t("common.cancel")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 삭제 확인 다이얼로그 */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-[10002] flex items-end justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setDeleteTarget(null)} />
+          <div className="relative w-full max-w-sm bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.06] rounded-t-2xl p-5 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center ${
+                deleteTarget.favicon ? "bg-white dark:bg-white/[0.06] border border-gray-200 dark:border-white/[0.08]" : `bg-gradient-to-br ${getGradient(deleteTarget.url)}`
+              }`}>
+                {deleteTarget.favicon ? (
+                  <img src={deleteTarget.favicon} alt="" className="w-7 h-7 object-contain" />
+                ) : (
+                  <span className="text-white font-bold">{getInitial(deleteTarget.title)}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{deleteTarget.title}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500">{t("bookmarks.deleteConfirm") ?? "삭제하시겠습니까?"}</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                className="flex-1 py-2.5 text-sm font-medium bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 rounded-lg"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 py-2.5 text-sm font-medium bg-red-500 hover:bg-red-600 text-white rounded-lg"
+              >
+                {t("common.delete")}
               </button>
             </div>
           </div>
