@@ -88,16 +88,7 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
   // 북마크 액션 훅 사용
   const [isEditMode, setIsEditMode] = useState(false);
 
-  const {
-    faviconLoadingStates,
-    movingBookmarkId,
-    moveDirection,
-    handleMoveUp,
-    handleMoveDown,
-    handleRefreshFavicon,
-  } = useBookmarkActions({
-    bookmarks,
-    onReorder,
+  const { faviconLoadingStates, handleRefreshFavicon } = useBookmarkActions({
     onRefreshFavicon,
   });
 
@@ -127,10 +118,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           faviconLoadingStates={faviconLoadingStates}
           collections={collections}
           onToggleFavorite={onToggleFavorite}
-          onMoveUp={handleMoveUp}
-          onMoveDown={handleMoveDown}
-          movingBookmarkId={movingBookmarkId}
-          moveDirection={moveDirection}
         />
       </div>
     );
@@ -153,10 +140,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
         onReorder={onReorder}
         onRefreshFavicon={handleRefreshFaviconWrapper}
         faviconLoadingStates={faviconLoadingStates}
-        onMoveUp={handleMoveUp}
-        onMoveDown={handleMoveDown}
-        movingBookmarkId={movingBookmarkId}
-        moveDirection={moveDirection}
       />
     );
   }
@@ -185,10 +168,6 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           onRefreshFavicon={handleRefreshFaviconWrapper}
           faviconLoadingStates={faviconLoadingStates}
           collections={collections}
-          onMoveUp={handleMoveUp}
-          onMoveDown={handleMoveDown}
-          movingBookmarkId={movingBookmarkId}
-          moveDirection={moveDirection}
           isEditMode={isEditMode}
           onEditModeChange={setIsEditMode}
         />

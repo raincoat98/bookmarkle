@@ -247,10 +247,13 @@ export const MobileIconView: React.FC<MobileIconViewProps> = ({
   const { t } = useTranslation();
   const [internalEditMode, setInternalEditMode] = useState(false);
   const isEditMode = externalEditMode ?? internalEditMode;
-  const setIsEditMode = (v: boolean) => {
-    setInternalEditMode(v);
-    onEditModeChange?.(v);
-  };
+  const setIsEditMode = useCallback(
+    (v: boolean) => {
+      setInternalEditMode(v);
+      onEditModeChange?.(v);
+    },
+    [onEditModeChange]
+  );
   const [sheet, setSheet] = useState<Bookmark | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Bookmark | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -279,12 +282,12 @@ export const MobileIconView: React.FC<MobileIconViewProps> = ({
     [bookmarks, onReorder]
   );
 
-  const enterEditMode = useCallback(() => setIsEditMode(true), []);
+  const enterEditMode = useCallback(() => setIsEditMode(true), [setIsEditMode]);
   const exitEditMode = useCallback(() => {
     setIsEditMode(false);
     setSheet(null);
     setDeleteTarget(null);
-  }, []);
+  }, [setIsEditMode]);
 
   const handleTap = useCallback((b: Bookmark) => setSheet(b), []);
 

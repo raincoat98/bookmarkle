@@ -4,32 +4,18 @@ import { useMemo, useState } from "react";
 import { Globe, ChevronRight } from "lucide-react";
 import type { Bookmark, Collection } from "../../types";
 import { renderCollectionIcon } from "../../utils/iconRenderer";
+import { buildCollectionPath } from "../../utils/collectionPath";
 import { useTranslation } from "react-i18next";
 
-function buildCollectionPath(id: string | null | undefined, all: Collection[]): Collection[] {
-  const path: Collection[] = [];
-  let cur = all.find(c => c.id === id);
-  while (cur) {
-    path.unshift(cur);
-    cur = cur.parentId ? all.find(c => c.id === cur!.parentId) : undefined;
-  }
-  return path;
-}
 
 interface SortableBookmarkListItemProps {
   bookmark: Bookmark;
   onEdit: (bookmark: Bookmark) => void;
   onDelete: (bookmark: Bookmark) => void;
   collections: Collection[];
-  onMoveUp?: (bookmark: Bookmark) => void;
-  onMoveDown?: (bookmark: Bookmark) => void;
-  isFirst?: boolean;
-  isLast?: boolean;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
   onRefreshFavicon?: (bookmark: Bookmark) => Promise<void>;
   faviconLoading?: boolean;
-  isMoving?: boolean;
-  moveDirection?: "up" | "down" | null;
 }
 
 export const SortableBookmarkListItem = ({
@@ -39,7 +25,6 @@ export const SortableBookmarkListItem = ({
   collections,
   onToggleFavorite,
   faviconLoading = false,
-  isMoving = false,
 }: SortableBookmarkListItemProps) => {
   const { t } = useTranslation();
   const [faviconError, setFaviconError] = useState(false);
@@ -74,7 +59,7 @@ export const SortableBookmarkListItem = ({
       style={style}
       className={`group relative bg-gradient-to-r from-white to-gray-50/40 dark:bg-[#111113] dark:bg-none border border-gray-200/60 dark:border-white/[0.06] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none rounded-xl transition-all duration-200 overflow-hidden hover:shadow-[0_4px_14px_rgba(0,0,0,0.07),0_0_0_1px_rgba(139,92,246,0.15)] hover:border-violet-200/50 dark:hover:shadow-none dark:hover:border-white/[0.10] ${
         isDragging ? "opacity-40 shadow-2xl scale-[1.01]" : ""
-      } ${isMoving ? "ring-2 ring-violet-400 dark:ring-violet-500" : ""}`}
+      }`}
     >
       {/* 드래그 핸들 */}
       <div

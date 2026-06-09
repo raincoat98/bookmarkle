@@ -22,10 +22,6 @@ interface BookmarkSectionProps {
   faviconLoadingStates: Record<string, boolean>;
   collections: Collection[];
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
-  onMoveUp: (bookmark: Bookmark) => void;
-  onMoveDown: (bookmark: Bookmark) => void;
-  movingBookmarkId: string | null;
-  moveDirection: "up" | "down" | null;
 }
 
 export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
@@ -42,10 +38,6 @@ export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
   faviconLoadingStates,
   collections,
   onToggleFavorite,
-  onMoveUp,
-  onMoveDown,
-  movingBookmarkId,
-  moveDirection,
 }) => {
   const { t } = useTranslation();
 
@@ -125,7 +117,7 @@ export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
               : "space-y-3"
           }
         >
-          {bookmarks.map((bookmark, idx) =>
+          {bookmarks.map((bookmark) =>
             viewMode === "grid" ? (
               <SortableBookmarkCard
                 key={bookmark.id}
@@ -140,12 +132,6 @@ export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
                 faviconLoading={faviconLoadingStates[bookmark.id] || false}
                 collections={collections}
                 onToggleFavorite={onToggleFavorite}
-                onMoveUp={onMoveUp}
-                onMoveDown={onMoveDown}
-                isFirst={idx === 0}
-                isLast={idx === bookmarks.length - 1}
-                isMoving={movingBookmarkId === bookmark.id}
-                moveDirection={moveDirection}
               />
             ) : (
               <SortableBookmarkListItem
@@ -161,12 +147,6 @@ export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
                 faviconLoading={faviconLoadingStates[bookmark.id] || false}
                 collections={collections}
                 onToggleFavorite={onToggleFavorite}
-                onMoveUp={onMoveUp}
-                onMoveDown={onMoveDown}
-                isFirst={idx === 0}
-                isLast={idx === bookmarks.length - 1}
-                isMoving={movingBookmarkId === bookmark.id}
-                moveDirection={moveDirection}
               />
             )
           )}

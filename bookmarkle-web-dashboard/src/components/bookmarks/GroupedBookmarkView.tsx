@@ -67,10 +67,6 @@ interface GroupedBookmarkViewProps {
   onReorder: (newBookmarks: Bookmark[]) => void;
   onRefreshFavicon?: (bookmark: Bookmark) => Promise<void>;
   faviconLoadingStates: Record<string, boolean>;
-  onMoveUp: (bookmark: Bookmark) => void;
-  onMoveDown: (bookmark: Bookmark) => void;
-  movingBookmarkId: string | null;
-  moveDirection: "up" | "down" | null;
 }
 
 export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
@@ -87,10 +83,6 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
   onReorder,
   onRefreshFavicon,
   faviconLoadingStates,
-  onMoveUp,
-  onMoveDown,
-  movingBookmarkId,
-  moveDirection,
 }) => {
   const { t } = useTranslation();
 
@@ -423,10 +415,6 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                     faviconLoadingStates={faviconLoadingStates}
                     collections={collections}
                     onToggleFavorite={onToggleFavorite}
-                    onMoveUp={onMoveUp}
-                    onMoveDown={onMoveDown}
-                    movingBookmarkId={movingBookmarkId}
-                    moveDirection={moveDirection}
                   />
                 </div>
               ) : null}
@@ -500,10 +488,6 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                                 faviconLoadingStates={faviconLoadingStates}
                                 collections={collections}
                                 onToggleFavorite={onToggleFavorite}
-                                onMoveUp={onMoveUp}
-                                onMoveDown={onMoveDown}
-                                movingBookmarkId={movingBookmarkId}
-                                moveDirection={moveDirection}
                               />
                             </div>
                           ))
@@ -528,10 +512,6 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                                 faviconLoadingStates={faviconLoadingStates}
                                 collections={collections}
                                 onToggleFavorite={onToggleFavorite}
-                                onMoveUp={onMoveUp}
-                                onMoveDown={onMoveDown}
-                                movingBookmarkId={movingBookmarkId}
-                                moveDirection={moveDirection}
                               />
                             )
                           )}

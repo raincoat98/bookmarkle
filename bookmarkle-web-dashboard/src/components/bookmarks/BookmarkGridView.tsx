@@ -32,10 +32,6 @@ interface BookmarkGridViewProps {
   onRefreshFavicon?: (bookmark: Bookmark) => Promise<void>;
   faviconLoadingStates: Record<string, boolean>;
   collections: Collection[];
-  onMoveUp: (bookmark: Bookmark) => void;
-  onMoveDown: (bookmark: Bookmark) => void;
-  movingBookmarkId: string | null;
-  moveDirection: "up" | "down" | null;
   isEditMode?: boolean;
   onEditModeChange?: (v: boolean) => void;
 }
@@ -50,10 +46,6 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
   onRefreshFavicon,
   faviconLoadingStates,
   collections,
-  onMoveUp,
-  onMoveDown,
-  movingBookmarkId,
-  moveDirection,
   isEditMode,
   onEditModeChange,
 }) => {
@@ -130,7 +122,7 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
                   : "space-y-3"
               }
             >
-              {bookmarks.map((bookmark: Bookmark, idx: number) =>
+              {bookmarks.map((bookmark: Bookmark) =>
                 viewMode === "grid" ? (
                   <SortableBookmarkCard
                     key={bookmark.id}
@@ -145,12 +137,6 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
                     faviconLoading={faviconLoadingStates[bookmark.id] || false}
                     collections={collections}
                     onToggleFavorite={onToggleFavorite}
-                    onMoveUp={onMoveUp}
-                    onMoveDown={onMoveDown}
-                    isFirst={idx === 0}
-                    isLast={idx === bookmarks.length - 1}
-                    isMoving={movingBookmarkId === bookmark.id}
-                    moveDirection={moveDirection}
                   />
                 ) : (
                   <SortableBookmarkListItem
@@ -166,12 +152,6 @@ export const BookmarkGridView: React.FC<BookmarkGridViewProps> = ({
                     faviconLoading={faviconLoadingStates[bookmark.id] || false}
                     collections={collections}
                     onToggleFavorite={onToggleFavorite}
-                    onMoveUp={onMoveUp}
-                    onMoveDown={onMoveDown}
-                    isFirst={idx === 0}
-                    isLast={idx === bookmarks.length - 1}
-                    isMoving={movingBookmarkId === bookmark.id}
-                    moveDirection={moveDirection}
                   />
                 )
               )}

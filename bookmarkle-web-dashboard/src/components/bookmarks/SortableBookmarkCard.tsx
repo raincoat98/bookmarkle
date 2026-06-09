@@ -4,17 +4,9 @@ import { useState, useRef, useCallback } from "react";
 import { Globe, ChevronRight } from "lucide-react";
 import type { Bookmark, Collection } from "../../types";
 import { renderCollectionIcon } from "../../utils/iconRenderer";
+import { buildCollectionPath } from "../../utils/collectionPath";
 import { useTranslation } from "react-i18next";
 
-function buildCollectionPath(id: string | null | undefined, all: Collection[]): Collection[] {
-  const path: Collection[] = [];
-  let cur = all.find(c => c.id === id);
-  while (cur) {
-    path.unshift(cur);
-    cur = cur.parentId ? all.find(c => c.id === cur!.parentId) : undefined;
-  }
-  return path;
-}
 
 interface SortableBookmarkCardProps {
   bookmark: Bookmark;
@@ -23,13 +15,7 @@ interface SortableBookmarkCardProps {
   onRefreshFavicon: (bookmark: Bookmark) => Promise<void>;
   faviconLoading: boolean;
   collections: Collection[];
-  onMoveUp?: (bookmark: Bookmark) => void;
-  onMoveDown?: (bookmark: Bookmark) => void;
-  isFirst?: boolean;
-  isLast?: boolean;
   onToggleFavorite: (id: string, isFavorite: boolean) => void;
-  isMoving?: boolean;
-  moveDirection?: "up" | "down" | null;
 }
 
 export const SortableBookmarkCard = ({
@@ -39,7 +25,6 @@ export const SortableBookmarkCard = ({
   faviconLoading,
   collections,
   onToggleFavorite,
-  isMoving = false,
 }: SortableBookmarkCardProps) => {
   const { t } = useTranslation();
   const [faviconError, setFaviconError] = useState(false);
@@ -103,7 +88,7 @@ export const SortableBookmarkCard = ({
       onTouchMove={handleTouchEnd}
       className={`group relative bg-gradient-to-br from-white to-gray-50/60 dark:bg-[#111113] dark:bg-none border border-gray-200/60 dark:border-white/[0.06] rounded-xl shadow-[0_1px_4px_rgba(0,0,0,0.05),0_0_0_1px_rgba(0,0,0,0.02)] dark:shadow-none transition-all duration-200 overflow-hidden hover:shadow-[0_6px_20px_rgba(0,0,0,0.08),0_0_0_1px_rgba(139,92,246,0.18)] hover:border-violet-200/50 dark:hover:shadow-none dark:hover:border-white/[0.10] ${
         isDragging ? "opacity-40 scale-[1.02]" : ""
-      } ${isMoving ? "ring-2 ring-violet-400 dark:ring-violet-500" : ""}`}
+      }`}
     >
       {/* 모바일 롱프레스 액션 오버레이 */}
       {showMobileActions && (
