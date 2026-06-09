@@ -15,6 +15,24 @@ import {
 import { db } from "../firebase";
 import type { Collection, CollectionFormData } from "../types";
 
+type TimestampLike = {
+  toDate: () => Date;
+};
+
+const hasToDate = (value: unknown): value is TimestampLike =>
+  typeof value === "object" &&
+  value !== null &&
+  "toDate" in value &&
+  typeof value.toDate === "function";
+
+const parseDate = (dateValue: unknown): Date => {
+  if (!dateValue) return new Date();
+  if (hasToDate(dateValue)) return dateValue.toDate();
+  if (typeof dateValue === "string") return new Date(dateValue);
+  if (dateValue instanceof Date) return dateValue;
+  return new Date();
+};
+
 interface CollectionState {
   collections: Collection[];
   loading: boolean;
@@ -62,23 +80,6 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
         querySnapshot.forEach((doc) => {
           const data = doc.data();
 
-          // createdAt과 updatedAt이 Timestamp 객체인지 문자열인지 확인
-          const parseDate = (dateValue: any): Date => {
-            if (!dateValue) return new Date();
-            // Firestore Timestamp 객체인 경우
-            if (dateValue.toDate && typeof dateValue.toDate === "function") {
-              return dateValue.toDate();
-            }
-            // ISO 문자열인 경우
-            if (typeof dateValue === "string") {
-              return new Date(dateValue);
-            }
-            // 이미 Date 객체인 경우
-            if (dateValue instanceof Date) {
-              return dateValue;
-            }
-            return new Date();
-          };
 
           collectionList.push({
             id: doc.id,
@@ -127,23 +128,6 @@ export const useCollectionStore = create<CollectionState & CollectionActions>(
         where("userId", "==", userId)
       );
 
-      // createdAt과 updatedAt이 Timestamp 객체인지 문자열인지 확인하는 헬퍼 함수
-      const parseDate = (dateValue: any): Date => {
-        if (!dateValue) return new Date();
-        // Firestore Timestamp 객체인 경우
-        if (dateValue.toDate && typeof dateValue.toDate === "function") {
-          return dateValue.toDate();
-        }
-        // ISO 문자열인 경우
-        if (typeof dateValue === "string") {
-          return new Date(dateValue);
-        }
-        // 이미 Date 객체인 경우
-        if (dateValue instanceof Date) {
-          return dateValue;
-        }
-        return new Date();
-      };
 
       const unsubscribe = onSnapshot(
         q,

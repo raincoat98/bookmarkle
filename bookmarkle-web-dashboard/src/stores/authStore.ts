@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { auth } from "../firebase";
+import { auth, firebaseConfig } from "../firebase";
 import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import {
@@ -11,12 +11,32 @@ import {
 } from "../firebase";
 
 import { onAuthStateChanged } from "firebase/auth";
+import { useBookmarkStore } from "./bookmarkStore";
+import { useSubscriptionStore } from "./subscriptionStore";
+
+const hasCachedAuthSession = (): boolean => {
+  if (typeof window === "undefined") return false;
+
+  try {
+    const keyPrefix = `firebase:authUser:${firebaseConfig.apiKey}:`;
+    for (let index = 0; index < localStorage.length; index++) {
+      if (localStorage.key(index)?.startsWith(keyPrefix)) {
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+
+  return false;
+};
 
 interface AuthState {
   user: User | null;
   idToken: string | null;
   loading: boolean;
   isActive: boolean | null;
+  hasCachedSession: boolean;
 }
 
 interface AuthActions {
@@ -37,6 +57,7 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   idToken: null,
   loading: true,
   isActive: null,
+  hasCachedSession: hasCachedAuthSession(),
 
   // Google 로그인 (firebase.ts에서 처리)
   login: async () => {
@@ -77,20 +98,8 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         return;
       }
 
-      // Firestore 리스너 정리
-      try {
-        const bookmarkStore = await import("./bookmarkStore");
-        bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-      } catch (error) {
-        console.warn("북마크 리스너 정리 중 오류:", error);
-      }
-
-      try {
-        const subscriptionStore = await import("./subscriptionStore");
-        subscriptionStore.useSubscriptionStore.getState().cleanupAllListeners();
-      } catch (error) {
-        console.warn("구독 리스너 정리 중 오류:", error);
-      }
+      useBookmarkStore.getState().cleanupAllListeners();
+      useSubscriptionStore.getState().cleanupAllListeners();
 
       await fbLogout();
     } catch (error) {
@@ -103,49 +112,33 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
   initializeAuth: () => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // idToken 가져오기
-        const idToken = await user.getIdToken().catch(() => null);
+        // idToken과 사용자 상태를 병렬로 가져오기
+        const [idToken, userDoc] = await Promise.all([
+          user.getIdToken().catch(() => null),
+          getDoc(doc(db, "users", user.uid)).catch(() => null),
+        ]);
 
-        // 사용자 상태 확인
-        let isActive = true;
-        try {
-          const userDoc = await getDoc(doc(db, "users", user.uid));
-          if (userDoc.exists()) {
-            isActive = userDoc.data().isActive !== false;
-          }
-        } catch (error) {
-          console.error("사용자 상태 확인 실패:", error);
-        }
+        const isActive = userDoc?.exists()
+          ? userDoc.data().isActive !== false
+          : true;
 
         set({
           user,
           idToken,
           loading: false,
           isActive,
+          hasCachedSession: true,
         });
       } else {
-        // Firestore 리스너 정리
-        try {
-          const bookmarkStore = await import("./bookmarkStore");
-          bookmarkStore.useBookmarkStore.getState().cleanupAllListeners();
-        } catch (error) {
-          console.warn("북마크 리스너 정리 중 오류:", error);
-        }
-
-        try {
-          const subscriptionStore = await import("./subscriptionStore");
-          subscriptionStore.useSubscriptionStore
-            .getState()
-            .cleanupAllListeners();
-        } catch (error) {
-          console.warn("구독 리스너 정리 중 오류:", error);
-        }
+        useBookmarkStore.getState().cleanupAllListeners();
+        useSubscriptionStore.getState().cleanupAllListeners();
 
         set({
           user: null,
           idToken: null,
           loading: false,
           isActive: null,
+          hasCachedSession: false,
         });
       }
     });
