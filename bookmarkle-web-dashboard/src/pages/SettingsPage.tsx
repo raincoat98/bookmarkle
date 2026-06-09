@@ -200,21 +200,6 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10] flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            로그인이 필요합니다
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            설정을 변경하려면 먼저 로그인해주세요.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <Drawer>
       <Settings

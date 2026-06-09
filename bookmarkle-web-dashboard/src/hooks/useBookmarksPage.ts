@@ -20,8 +20,13 @@ import { usePasteBookmark } from "./usePasteBookmark";
 import { useFilteredBookmarks } from "./useFilteredBookmarks";
 
 export const useBookmarksPage = () => {
-  const { user, isActive } = useAuthStore(
-    useShallow((state) => ({ user: state.user, isActive: state.isActive }))
+  const { user, isActive, loading: authLoading, hasCachedSession } = useAuthStore(
+    useShallow((state) => ({
+      user: state.user,
+      isActive: state.isActive,
+      loading: state.loading,
+      hasCachedSession: state.hasCachedSession,
+    }))
   );
   const { plan, limits } = useSubscriptionStore(
     useShallow((state) => ({ plan: state.plan, limits: state.limits }))
@@ -98,6 +103,7 @@ export const useBookmarksPage = () => {
   }, [collections]);
 
   const bookmarks = getFilteredBookmarks();
+  const isAuthPrefetching = authLoading && hasCachedSession;
 
   useEffect(() => {
     setBookmarkSelectedCollection(selectedCollection);
@@ -392,6 +398,7 @@ export const useBookmarksPage = () => {
     limits,
     plan,
     deferredLoading,
+    isAuthPrefetching,
     selectedCollection,
     setSelectedCollection,
     viewMode,

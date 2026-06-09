@@ -23,6 +23,7 @@ export const BookmarksPage: React.FC = () => {
     bookmarks,
     limits,
     deferredLoading,
+    isAuthPrefetching,
     selectedCollection,
     setSelectedCollection,
     viewMode,
@@ -72,7 +73,7 @@ export const BookmarksPage: React.FC = () => {
     openEditCollectionModal,
   } = useBookmarksPage();
 
-  if (!user) {
+  if (!user && !isAuthPrefetching) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
         <div className="text-center">

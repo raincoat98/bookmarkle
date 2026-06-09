@@ -16,10 +16,12 @@ import { useShallow } from "zustand/react/shallow";
 import { auth } from "../firebase";
 
 export const DashboardPage: React.FC = () => {
-  const { user, isActive } = useAuthStore(
+  const { user, isActive, loading: authLoading, hasCachedSession } = useAuthStore(
     useShallow((state) => ({
       user: state.user,
       isActive: state.isActive,
+      loading: state.loading,
+      hasCachedSession: state.hasCachedSession,
     }))
   );
   const { t } = useTranslation();
@@ -61,6 +63,7 @@ export const DashboardPage: React.FC = () => {
   );
   // 북마크 데이터 가져오기
   const bookmarks = getFilteredBookmarks();
+  const isAuthPrefetching = authLoading && hasCachedSession;
 
   // 북마크 스토어 상태 동기화 (대시보드는 "all" 컬렉션 사용)
   useEffect(() => {
@@ -215,7 +218,7 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  if (!user) {
+  if (!user && !isAuthPrefetching) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10] flex items-center justify-center">
         <div className="text-center">
