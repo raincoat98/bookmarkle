@@ -8,14 +8,23 @@ export default defineConfig({
       output: {
         manualChunks: {
           "vendor-react": ["react", "react-dom", "react-router-dom"],
-          "vendor-firebase": ["firebase/app", "firebase/auth", "firebase/firestore"],
-          "vendor-dnd": ["@dnd-kit/core", "@dnd-kit/sortable", "@dnd-kit/utilities"],
-          "vendor-ui": ["framer-motion", "lucide-react", "react-hot-toast"],
+          "vendor-firebase": [
+            "firebase/app",
+            "firebase/auth",
+            "firebase/firestore",
+          ],
+          "vendor-dnd": [
+            "@dnd-kit/core",
+            "@dnd-kit/sortable",
+            "@dnd-kit/utilities",
+          ],
+          "vendor-motion": ["framer-motion"],
+          "vendor-toast": ["react-hot-toast"],
           "vendor-i18n": ["react-i18next", "i18next"],
         },
       },
     },
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 900,
   },
   plugins: [
     react(),
