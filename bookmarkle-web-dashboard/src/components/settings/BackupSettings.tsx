@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { RotateCcw, Trash2, Download, Shield } from "lucide-react";
+import { RotateCcw, Trash2, Download, Shield, RefreshCw } from "lucide-react";
 import type { BackupSettings, BackupStatus, BackupListItem } from "../../utils/backup";
 import { downloadBackupAsFile } from "../../utils/backup";
 
@@ -12,6 +12,7 @@ interface BackupSettingsProps {
   onAutoBackupToggle: () => void;
   onBackupFrequencyChange: (frequency: "daily" | "weekly" | "monthly") => void;
   onManualBackup: () => void;
+  onRefreshBackups: () => void;
   onBackupRestore: (id: string) => void;
   onBackupDelete: (id: string) => void;
 }
@@ -55,6 +56,7 @@ export const BackupSettingsComponent: React.FC<BackupSettingsProps> = ({
   onAutoBackupToggle,
   onBackupFrequencyChange,
   onManualBackup,
+  onRefreshBackups,
   onBackupRestore,
   onBackupDelete,
 }) => {
@@ -139,12 +141,21 @@ export const BackupSettingsComponent: React.FC<BackupSettingsProps> = ({
               </p>
             )}
           </div>
-          <button
-            onClick={onManualBackup}
-            className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 transition-colors shrink-0 whitespace-nowrap mt-0.5"
-          >
-            {t("settings.createNewBackup")}
-          </button>
+          <div className="flex items-center gap-2 shrink-0 mt-0.5">
+            <button
+              onClick={onRefreshBackups}
+              className="p-2 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-white/[0.08] rounded-lg transition-colors"
+              title="새로고침"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={onManualBackup}
+              className="flex items-center gap-1.5 px-3 py-2 bg-violet-600 text-white text-xs font-medium rounded-lg hover:bg-violet-700 transition-colors whitespace-nowrap"
+            >
+              {t("settings.createNewBackup")}
+            </button>
+          </div>
         </div>
 
         {backups.length > 0 ? (

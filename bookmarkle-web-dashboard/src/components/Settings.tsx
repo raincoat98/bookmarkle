@@ -164,6 +164,7 @@ export const Settings: React.FC<SettingsProps> = ({
             onAutoBackupToggle={handleAutoBackupToggle}
             onBackupFrequencyChange={handleBackupFrequencyChange}
             onManualBackup={handleManualBackup}
+            onRefreshBackups={syncBackups}
             onBackupRestore={handleBackupRestore}
             onBackupDelete={handleBackupDelete}
           />

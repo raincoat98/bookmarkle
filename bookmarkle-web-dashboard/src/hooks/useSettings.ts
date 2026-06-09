@@ -451,13 +451,14 @@ export const useSettings = ({
     try {
       const created = await performBackup(rawBookmarks, collections, user.uid, "manual");
       if (created) {
-        await syncBackups();
         toast.success("새 백업이 생성되었습니다.", { id: toastId });
       } else {
         toast.error("백업 생성에 실패했습니다.", { id: toastId });
       }
     } catch {
       toast.error("백업 생성 중 오류가 발생했습니다.", { id: toastId });
+    } finally {
+      await syncBackups();
     }
   };
 
