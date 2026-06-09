@@ -20,7 +20,7 @@ export const SubCollectionToggle: React.FC<SubCollectionToggleProps> = ({
   return (
     <button
       onClick={onToggle}
-      className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-colors"
+      className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.08] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none transition-colors"
       title={
         showSubCollections
           ? t("bookmarks.hideSubCollections")

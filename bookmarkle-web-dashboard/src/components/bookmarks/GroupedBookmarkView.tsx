@@ -185,36 +185,6 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
               sortedGroupedBookmarks.selectedCollectionBookmarks.length >
                 0)) && (
             <div className="bg-white dark:bg-[#111113] rounded-xl p-4 shadow-sm border border-gray-100 dark:border-white/[0.06]">
-              <div className="mb-4">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-gray-50 to-gray-100 dark:from-white/[0.04] dark:to-white/[0.06]">
-                  {collections.find(
-                    (col) =>
-                      col.name === sortedGroupedBookmarks.selectedCollectionName
-                  )?.icon && (
-                    <span className="text-lg">
-                      {
-                        collections.find(
-                          (col) =>
-                            col.name ===
-                            sortedGroupedBookmarks.selectedCollectionName
-                        )?.icon
-                      }
-                    </span>
-                  )}
-                  <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-300">
-                    {sortedGroupedBookmarks.selectedCollectionName}
-                  </h3>
-                  <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-white/[0.08] text-gray-500 dark:text-gray-400">
-                    {loading
-                      ? t("common.loading")
-                      : t("bookmarks.count", {
-                          count:
-                            sortedGroupedBookmarks.selectedCollectionBookmarks
-                              ?.length || 0,
-                        })}
-                  </span>
-                </div>
-              </div>
               {loading ? (
                 <div className="grid grid-cols-5 gap-2 p-3 justify-items-center">
                   {Array.from({ length: 10 }).map((_, idx) => (
@@ -274,13 +244,10 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                   className="bg-gradient-to-br from-violet-50/50 to-indigo-50/30 dark:from-violet-500/[0.06] dark:to-indigo-500/[0.04] rounded-xl p-4 shadow-sm border border-violet-100 dark:border-violet-500/20 overflow-hidden"
                 >
                   <div className="mb-4">
-                    <h2 className="text-lg font-bold text-violet-700 dark:text-violet-300 flex items-center gap-2">
-                      <Folder className="w-5 h-5" />
+                    <h2 className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2">
+                      <Folder className="w-4 h-4" />
                       {t("bookmarks.subCollectionBookmarks")}
                     </h2>
-                    <p className="text-sm text-violet-600 dark:text-violet-400">
-                      {t("bookmarks.subCollectionBookmarksDescription")}
-                    </p>
                   </div>
                   <motion.div
                     initial={{ opacity: 0 }}
@@ -390,21 +357,6 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                     bookmarks={
                       sortedGroupedBookmarks.selectedCollectionBookmarks || []
                     }
-                    sectionTitle={
-                      loading
-                        ? undefined
-                        : sortedGroupedBookmarks.selectedCollectionName ||
-                          undefined
-                    }
-                    sectionIcon={
-                      loading
-                        ? undefined
-                        : collections.find(
-                            (col) =>
-                              col.name ===
-                              sortedGroupedBookmarks.selectedCollectionName
-                          )?.icon
-                    }
                     isSubSection={false}
                     isLoading={loading}
                     showSectionSkeleton={true}
@@ -459,13 +411,10 @@ export const GroupedBookmarkView: React.FC<GroupedBookmarkViewProps> = ({
                     className="bg-gradient-to-br from-violet-50/50 to-indigo-50/30 dark:from-violet-500/[0.06] dark:to-indigo-500/[0.04] rounded-xl p-6 shadow-sm border border-violet-100 dark:border-violet-500/20 overflow-hidden"
                   >
                     <div className="mb-4">
-                      <h2 className="text-lg font-bold text-violet-700 dark:text-violet-300 flex items-center gap-2">
-                        <Folder className="w-5 h-5" />
+                      <h2 className="text-sm font-semibold text-violet-700 dark:text-violet-300 flex items-center gap-2">
+                        <Folder className="w-4 h-4" />
                         {t("bookmarks.subCollectionBookmarks")}
                       </h2>
-                      <p className="text-sm text-violet-600 dark:text-violet-400">
-                        {t("bookmarks.subCollectionBookmarksDescription")}
-                      </p>
                     </div>
                     <motion.div
                       initial={{ opacity: 0 }}

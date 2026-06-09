@@ -1,4 +1,5 @@
 import React from "react";
+import { Folder } from "lucide-react";
 import type { Bookmark, Collection } from "../../types";
 import { SortableBookmarkCard } from "./SortableBookmarkCard";
 import { SortableBookmarkListItem } from "./SortableBookmarkListItem";
@@ -27,7 +28,6 @@ interface BookmarkSectionProps {
 export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
   bookmarks,
   sectionTitle,
-  sectionIcon,
   isSubSection = false,
   isLoading = false,
   showSectionSkeleton = false,
@@ -66,12 +66,12 @@ export const BookmarkSection: React.FC<BookmarkSectionProps> = ({
             </div>
           ) : sectionTitle ? (
             // 실제 섹션 헤더
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-100 dark:bg-white/[0.06]">
-              {sectionIcon && <span className="text-lg">{sectionIcon}</span>}
-              <h3 className="font-semibold text-sm text-gray-800 dark:text-gray-200">
+            <div className="flex items-center gap-2 px-3 py-2 rounded-full border border-violet-200 dark:border-violet-500/30 bg-white dark:bg-white/[0.04]">
+              <Folder className="w-3 h-3 text-violet-500 dark:text-violet-400 flex-shrink-0" />
+              <h3 className="font-semibold text-sm text-violet-700 dark:text-violet-300">
                 {sectionTitle}
               </h3>
-              <span className="text-xs px-2 py-1 rounded-full bg-white dark:bg-white/[0.08] text-gray-500 dark:text-gray-400 font-medium">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 font-medium">
                 {t("bookmarks.count", { count: bookmarks.length })}
               </span>
             </div>

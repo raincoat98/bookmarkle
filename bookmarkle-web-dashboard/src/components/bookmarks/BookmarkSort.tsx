@@ -48,7 +48,7 @@ export const BookmarkSort: React.FC<BookmarkSortProps> = ({
       <div className="relative z-40">
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.08] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-[#111113] border border-gray-200 dark:border-white/[0.08] rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 focus:outline-none transition-colors"
         >
           <ArrowUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
           <span className="max-w-[72px] sm:max-w-none truncate text-xs sm:text-sm">{currentLabel}</span>
@@ -102,7 +102,7 @@ export const BookmarkSort: React.FC<BookmarkSortProps> = ({
                 <button
                   key={`${option.field}-${option.direction}`}
                   onClick={() => handleSelect(option)}
-                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl text-sm font-medium transition-colors touch-manipulation ${
+                  className={`w-full flex items-center justify-between px-4 py-3.5 rounded-lg text-sm font-medium transition-colors touch-manipulation ${
                     isActive(option)
                       ? "bg-violet-50 dark:bg-violet-500/10 text-violet-600 dark:text-violet-400"
                       : "text-gray-700 dark:text-gray-300 active:bg-gray-50 dark:active:bg-white/[0.04]"
@@ -120,7 +120,7 @@ export const BookmarkSort: React.FC<BookmarkSortProps> = ({
             <div className="px-4 pt-1 pb-6">
               <button
                 onClick={() => setIsOpen(false)}
-                className="w-full py-3 rounded-xl text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.06] active:bg-gray-200 dark:active:bg-white/[0.10] transition-colors"
+                className="w-full py-3 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-white/[0.06] active:bg-gray-200 dark:active:bg-white/[0.10] transition-colors"
               >
                 {t("common.cancel")}
               </button>
