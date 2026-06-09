@@ -410,13 +410,15 @@ export const useSettings = ({
 
   // 자동 백업 토글 핸들러
   const handleAutoBackupToggle = async () => {
-    const newSettings = { ...backupSettings, enabled: !backupSettings.enabled };
+    const current = loadBackupSettings();
+    const enabling = !current.enabled;
+    const newSettings = { ...current, enabled: enabling };
     setBackupSettings(newSettings);
     saveBackupSettings(newSettings);
     setBackupStatus(getBackupStatus(backups.length));
-    toast.success(`자동 백업이 ${!backupSettings.enabled ? "활성화" : "비활성화"}되었습니다.`);
+    toast.success(`자동 백업이 ${enabling ? "활성화" : "비활성화"}되었습니다.`);
 
-    if (!backupSettings.enabled && user?.uid) {
+    if (enabling && user?.uid) {
       const created = await performBackup(rawBookmarks, collections, user.uid, "auto");
       if (created) syncBackups();
     }
@@ -424,7 +426,8 @@ export const useSettings = ({
 
   // 백업 주기 변경 핸들러
   const handleBackupFrequencyChange = (frequency: "daily" | "weekly" | "monthly") => {
-    const newSettings = { ...backupSettings, frequency };
+    const current = loadBackupSettings();
+    const newSettings = { ...current, frequency };
     setBackupSettings(newSettings);
     saveBackupSettings(newSettings);
     setBackupStatus(getBackupStatus(backups.length));
