@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { doc, getDoc, onSnapshot, Timestamp } from "firebase/firestore";
-import { db } from "../firebase";
-import type { Subscription, SubscriptionPlan, UserLimits } from "../types";
-import { getUserLimits, getUserLimitsSync } from "../utils/subscriptionLimits";
+import { db } from "../../firebase";
+import type { Subscription, SubscriptionPlan, UserLimits } from "../../types";
+import { getUserLimits, getUserLimitsSync } from "../../utils/subscriptionLimits";
 
 // Timestamp를 Date로 변환하는 헬퍼 함수
 const toDate = (date: Date | Timestamp | null): Date | null => {

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../../firebase";
 
 export interface FeatureFlags {
   IS_BETA: boolean;

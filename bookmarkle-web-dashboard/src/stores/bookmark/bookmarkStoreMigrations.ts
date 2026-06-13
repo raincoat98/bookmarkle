@@ -1,6 +1,6 @@
 import { writeBatch } from "firebase/firestore";
-import { db } from "../firebase";
-import { getFaviconUrl } from "../utils/favicon";
+import { db } from "../../firebase";
+import { getFaviconUrl } from "../../utils/favicon";
 import type { BookmarkActions, BookmarkStoreGet } from "./bookmarkStoreTypes";
 import { bookmarkDocRef } from "./bookmarkStoreHelpers";
 

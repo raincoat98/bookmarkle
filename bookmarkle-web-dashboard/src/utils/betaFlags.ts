@@ -6,7 +6,7 @@
  * 로컬 dismiss 상태는 localStorage에 저장됩니다.
  */
 
-import { getCurrentFlags } from "../stores/featureFlagsStore";
+import { getCurrentFlags } from "../stores/flags/featureFlagsStore";
 
 // 베타 종료일 (정식 오픈 예정일) - 미정
 export const BETA_END_DATE = new Date("2099-12-31");

@@ -1,12 +1,12 @@
 // Zustand stores
-export { useAuthStore } from "./authStore";
-export { useThemeStore, initializeTheme } from "./themeStore";
-export { useDrawerStore } from "./drawerStore";
-export { useBookmarkStore } from "./bookmarkStore";
-export { useCollectionStore } from "./collectionStore";
-export { useSubscriptionStore } from "./subscriptionStore";
+export { useAuthStore } from "./auth/authStore";
+export { useThemeStore, initializeTheme } from "./ui/themeStore";
+export { useDrawerStore } from "./ui/drawerStore";
+export { useBookmarkStore } from "./bookmark/bookmarkStore";
+export { useCollectionStore } from "./collection/collectionStore";
+export { useSubscriptionStore } from "./auth/subscriptionStore";
 export {
   useFeatureFlagsStore,
   getCurrentFlags,
   type FeatureFlags,
-} from "./featureFlagsStore";
+} from "./flags/featureFlagsStore";

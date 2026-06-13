@@ -1,4 +1,4 @@
-import type { Bookmark, BookmarkFormData, Collection } from "../types";
+import type { Bookmark, BookmarkFormData, Collection } from "../../types";
 
 export interface BookmarkState {
   rawBookmarks: Bookmark[];

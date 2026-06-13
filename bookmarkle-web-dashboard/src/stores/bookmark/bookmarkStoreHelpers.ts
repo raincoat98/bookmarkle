@@ -5,13 +5,13 @@ import {
   where,
   type DocumentSnapshot,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import type { Bookmark } from "../types";
+import { db } from "../../firebase";
+import type { Bookmark } from "../../types";
 import {
   showBookmarkNotification,
   getNotificationPermission,
-} from "../utils/browserNotifications";
-import { createBookmarkNotification } from "../utils/notificationCenter";
+} from "../../utils/browserNotifications";
+import { createBookmarkNotification } from "../../utils/notificationCenter";
 
 const LOCAL_ADD_TTL_MS = 30_000;
 const recentLocalAddIds = new Map<string, number>();

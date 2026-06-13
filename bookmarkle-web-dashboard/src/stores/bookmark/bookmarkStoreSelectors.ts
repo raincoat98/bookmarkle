@@ -1,4 +1,4 @@
-import type { Bookmark } from "../types";
+import type { Bookmark } from "../../types";
 import type {
   BookmarkActions,
   BookmarkStoreGet,

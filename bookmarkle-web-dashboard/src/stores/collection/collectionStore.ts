@@ -12,8 +12,8 @@ import {
   onSnapshot,
   writeBatch,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import type { Collection, CollectionFormData } from "../types";
+import { db } from "../../firebase";
+import type { Collection, CollectionFormData } from "../../types";
 
 type TimestampLike = {
   toDate: () => Date;

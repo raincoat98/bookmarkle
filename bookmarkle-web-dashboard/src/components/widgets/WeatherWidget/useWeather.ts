@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { useAuthStore } from "../../../stores/authStore";
+import { useAuthStore } from "../../../stores/auth/authStore";
 import {
   getUserWeatherLocation,
   setUserWeatherLocation,

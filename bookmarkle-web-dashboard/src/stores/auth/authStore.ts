@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { auth, firebaseConfig } from "../firebase";
+import { auth, firebaseConfig } from "../../firebase";
 import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import {
@@ -8,10 +8,10 @@ import {
   loginWithEmail as fbLoginWithEmail,
   signupWithEmail,
   logout as fbLogout,
-} from "../firebase";
+} from "../../firebase";
 
 import { onAuthStateChanged } from "firebase/auth";
-import { useBookmarkStore } from "./bookmarkStore";
+import { useBookmarkStore } from "../bookmark/bookmarkStore";
 import { useSubscriptionStore } from "./subscriptionStore";
 
 const hasCachedAuthSession = (): boolean => {

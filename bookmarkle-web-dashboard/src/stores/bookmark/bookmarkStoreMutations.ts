@@ -8,10 +8,10 @@ import {
   writeBatch,
   Timestamp,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import type { Bookmark, BookmarkFormData } from "../types";
-import { getFaviconUrl, refreshFavicon } from "../utils/favicon";
-import { createBookmarkNotification } from "../utils/notificationCenter";
+import { db } from "../../firebase";
+import type { Bookmark, BookmarkFormData } from "../../types";
+import { getFaviconUrl, refreshFavicon } from "../../utils/favicon";
+import { createBookmarkNotification } from "../../utils/notificationCenter";
 import type {
   BookmarkActions,
   BookmarkStoreGet,
