@@ -157,7 +157,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
           return;
         }
 
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV) {
           console.error("알림 설정 실시간 동기화 실패:", error);
         }
         if (user?.uid) {
@@ -181,7 +181,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
               }
             })
             .catch((err) => {
-              if (process.env.NODE_ENV === "development") {
+              if (import.meta.env.DEV) {
                 console.error("알림 설정 로드 실패:", err);
               }
             });

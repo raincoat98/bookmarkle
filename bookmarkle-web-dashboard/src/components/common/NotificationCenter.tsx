@@ -124,7 +124,7 @@ export const NotificationCenter = () => {
               }
             )
             .catch((err: Error) => {
-              if (process.env.NODE_ENV === "development") {
+              if (import.meta.env.DEV) {
                 console.error("알림 설정 로드 실패:", err);
               }
             });

@@ -101,30 +101,30 @@ export function resetPassword(email: string) {
 }
 
 export async function logout() {
-  if (process.env.NODE_ENV === "development") {
+  if (import.meta.env.DEV) {
     console.log("🧹 Clearing Firebase storage");
   }
   await clearFirebaseStorage();
 
   await signOut(auth);
-  if (process.env.NODE_ENV === "development") {
+  if (import.meta.env.DEV) {
     console.log("✅ Logout completed");
   }
 }
 
 export async function clearFirebaseStorage() {
   try {
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log("🧹 Starting Firebase storage cleanup...");
     }
 
     const localKeyCount = removeMatchingStorageKeys(localStorage);
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log(`✅ localStorage cleared: ${localKeyCount} keys`);
     }
 
     const sessionKeyCount = removeMatchingStorageKeys(sessionStorage);
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log(`✅ sessionStorage cleared: ${sessionKeyCount} keys`);
       console.log("✅ Firebase storage cleanup completed");
     }

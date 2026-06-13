@@ -165,20 +165,20 @@ export const useSubscriptionStore = create<
   },
 
   cleanupAllListeners: () => {
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log("🧹 구독 리스너 정리 중...");
     }
     activeSubscriptionListeners.forEach((unsubscribe) => {
       try {
         unsubscribe();
       } catch (error) {
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV) {
           console.warn("구독 리스너 정리 중 오류:", error);
         }
       }
     });
     activeSubscriptionListeners = [];
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log("✅ 구독 리스너 정리 완료");
     }
   },

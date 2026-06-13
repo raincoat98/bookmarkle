@@ -116,7 +116,7 @@ export const createBookmarkSubscriptions = (
   },
 
   cleanupAllListeners: () => {
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log("🧹 북마크 리스너 정리 중...");
     }
 
@@ -124,7 +124,7 @@ export const createBookmarkSubscriptions = (
       try {
         unsubscribe();
       } catch (error) {
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV) {
           console.warn("북마크 리스너 정리 중 오류:", error);
         }
       }
@@ -133,7 +133,7 @@ export const createBookmarkSubscriptions = (
       try {
         unsubscribe();
       } catch (error) {
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV) {
           console.warn("휴지통 리스너 정리 중 오류:", error);
         }
       }
@@ -145,7 +145,7 @@ export const createBookmarkSubscriptions = (
     sessionStorage.removeItem("bookmarkle-cache");
     set({ rawBookmarks: [], collections: [], loading: true });
 
-    if (process.env.NODE_ENV === "development") {
+    if (import.meta.env.DEV) {
       console.log("✅ 북마크 리스너 정리 완료");
     }
   },

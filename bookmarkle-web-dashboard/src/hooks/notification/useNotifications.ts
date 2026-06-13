@@ -80,7 +80,7 @@ export const useNotifications = (userId: string) => {
           return;
         }
 
-        if (process.env.NODE_ENV === "development") {
+        if (import.meta.env.DEV) {
           console.error("알림 로딩 오류:", error);
         }
         setLoading(false);
