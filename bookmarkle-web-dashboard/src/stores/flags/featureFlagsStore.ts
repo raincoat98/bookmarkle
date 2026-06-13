@@ -9,15 +9,12 @@ export interface FeatureFlags {
   SHOW_EARLY_USER_BENEFITS: boolean;
 }
 
-// env 기반 초기값 (Firestore 로드 전까지의 폴백)
-const ENV_DEFAULTS: FeatureFlags = {
-  IS_BETA: import.meta.env.VITE_IS_BETA === "true",
-  SHOW_SUBSCRIPTION_BANNER:
-    import.meta.env.VITE_SHOW_SUBSCRIPTION_BANNER === "true",
-  SHOW_SUBSCRIPTION_MODAL:
-    import.meta.env.VITE_SHOW_SUBSCRIPTION_MODAL === "true",
-  SHOW_EARLY_USER_BENEFITS:
-    import.meta.env.VITE_SHOW_EARLY_USER_BENEFITS === "true",
+// Firestore 로드 전까지의 폴백 — 안전한 기본값(모두 false)
+const DEFAULT_FLAGS: FeatureFlags = {
+  IS_BETA: false,
+  SHOW_SUBSCRIPTION_BANNER: false,
+  SHOW_SUBSCRIPTION_MODAL: false,
+  SHOW_EARLY_USER_BENEFITS: false,
 };
 
 const FLAGS_DOC_PATH = ["config", "featureFlags"] as const;
@@ -36,7 +33,7 @@ interface FeatureFlagsState {
 }
 
 export const useFeatureFlagsStore = create<FeatureFlagsState>((set, get) => ({
-  flags: ENV_DEFAULTS,
+  flags: DEFAULT_FLAGS,
   loaded: false,
   loading: false,
   unsubscribe: null,
@@ -54,24 +51,24 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>((set, get) => ({
           const data = snap.data() as Partial<FeatureFlags>;
           set({
             flags: {
-              IS_BETA: data.IS_BETA ?? ENV_DEFAULTS.IS_BETA,
+              IS_BETA: data.IS_BETA ?? DEFAULT_FLAGS.IS_BETA,
               SHOW_SUBSCRIPTION_BANNER:
-                data.SHOW_SUBSCRIPTION_BANNER ?? ENV_DEFAULTS.SHOW_SUBSCRIPTION_BANNER,
+                data.SHOW_SUBSCRIPTION_BANNER ?? DEFAULT_FLAGS.SHOW_SUBSCRIPTION_BANNER,
               SHOW_SUBSCRIPTION_MODAL:
-                data.SHOW_SUBSCRIPTION_MODAL ?? ENV_DEFAULTS.SHOW_SUBSCRIPTION_MODAL,
+                data.SHOW_SUBSCRIPTION_MODAL ?? DEFAULT_FLAGS.SHOW_SUBSCRIPTION_MODAL,
               SHOW_EARLY_USER_BENEFITS:
-                data.SHOW_EARLY_USER_BENEFITS ?? ENV_DEFAULTS.SHOW_EARLY_USER_BENEFITS,
+                data.SHOW_EARLY_USER_BENEFITS ?? DEFAULT_FLAGS.SHOW_EARLY_USER_BENEFITS,
             },
             loaded: true,
             loading: false,
           });
         } else {
-          // 문서가 없으면 env 기본값 유지
+          // 문서가 없으면 기본값 유지
           set({ loaded: true, loading: false });
         }
       },
       (err) => {
-        // 권한 없거나 미인증이면 env 기본값 유지
+        // 권한 없거나 미인증이면 기본값 유지
         const e = err as { code?: string };
         if (e?.code === "permission-denied" || e?.code === "unauthenticated") {
           set({ loaded: true, loading: false });
