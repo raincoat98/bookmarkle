@@ -4,7 +4,7 @@ import {
   useBookmarkStore,
   useCollectionStore,
   useThemeStore,
-} from "../stores";
+} from "../../stores";
 import { useTranslation } from "react-i18next";
 import {
   Settings as SettingsIcon,
@@ -17,20 +17,20 @@ import {
   Crown,
   Trash2,
 } from "lucide-react";
-import { useSettings, type ImportPreviewData } from "../hooks/settings/useSettings";
-import { useFeatureFlagsStore } from "../stores";
-import { GeneralSettings } from "./settings/GeneralSettings";
-import { AccountSettings } from "./settings/AccountSettings";
-import { AppearanceSettings } from "./settings/AppearanceSettings";
-import { NotificationSettings } from "./settings/NotificationSettings";
-import { StatsSettings } from "./settings/StatsSettings";
-import { BackupSettingsComponent } from "./settings/BackupSettings";
-import { SubscriptionSettings } from "./settings/SubscriptionSettings";
-import { TrashSettings } from "./settings/TrashSettings";
-import { getUserDefaultPage, auth } from "../firebase";
-import { isBetaPeriod } from "../utils/betaFlags";
-import { calcChecksum } from "../utils/backup";
-import type { Bookmark, Collection } from "../types";
+import { useSettings, type ImportPreviewData } from "../../hooks/settings/useSettings";
+import { useFeatureFlagsStore } from "../../stores";
+import { GeneralSettings } from "./GeneralSettings";
+import { AccountSettings } from "./AccountSettings";
+import { AppearanceSettings } from "./AppearanceSettings";
+import { NotificationSettings } from "./NotificationSettings";
+import { StatsSettings } from "./StatsSettings";
+import { BackupSettingsComponent } from "./BackupSettings";
+import { SubscriptionSettings } from "./SubscriptionSettings";
+import { TrashSettings } from "./TrashSettings";
+import { getUserDefaultPage, auth } from "../../firebase";
+import { isBetaPeriod } from "../../utils/betaFlags";
+import { calcChecksum } from "../../utils/backup";
+import type { Bookmark, Collection } from "../../types";
 
 interface SettingsProps {
   onBack: () => void;

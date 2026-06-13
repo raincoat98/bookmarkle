@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Settings } from "../../components/Settings";
+import { Settings } from "../../components/settings/Settings";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../../stores";
 import type { Bookmark, Collection } from "../../types";
 import { Drawer } from "../../components/layout/Drawer";
