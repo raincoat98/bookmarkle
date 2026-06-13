@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import type { Bookmark, Collection } from "../types";
+import type { Bookmark, Collection } from "../../types";
 
 export type FilteredBookmarksData =
   | {

@@ -10,7 +10,7 @@ import {
   Info,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks/notification/useNotifications";
 import { useAuthStore } from "../../stores";
 import type { Notification } from "../../types";
 import { db, getUserNotificationSettings } from "../../firebase";

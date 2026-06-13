@@ -11,7 +11,7 @@ import { AddCollectionModal } from "../components/collections/AddCollectionModal
 import { Drawer } from "../components/layout/Drawer";
 import { UpgradeBanner } from "../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
-import { usePasteBookmark } from "../hooks/usePasteBookmark";
+import { usePasteBookmark } from "../hooks/bookmark/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
 import { auth } from "../firebase";
 

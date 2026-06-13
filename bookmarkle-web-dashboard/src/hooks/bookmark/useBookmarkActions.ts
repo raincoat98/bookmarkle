@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import type { Bookmark } from "../types";
+import type { Bookmark } from "../../types";
 
 interface UseBookmarkActionsProps {
   onRefreshFavicon?: (bookmarkId: string, url: string) => Promise<string>;

@@ -3,7 +3,7 @@ import { Settings } from "../components/Settings";
 import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
 import type { Bookmark, Collection } from "../types";
 import { Drawer } from "../components/layout/Drawer";
-import type { ImportPreviewData } from "../hooks/useSettings";
+import type { ImportPreviewData } from "../hooks/settings/useSettings";
 
 export const SettingsPage: React.FC = () => {
   const { user } = useAuthStore();

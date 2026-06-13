@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
-import { getFaviconUrl } from "../utils/favicon";
-import type { BookmarkFormData } from "../types";
+import { getFaviconUrl } from "../../utils/favicon";
+import type { BookmarkFormData } from "../../types";
 
 interface UsePasteBookmarkOptions {
   onAddBookmark: (bookmarkData: BookmarkFormData) => Promise<void>;

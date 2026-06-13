@@ -12,7 +12,7 @@ import { EditCollectionModal } from "../components/collections/EditCollectionMod
 import { DeleteCollectionModal } from "../components/collections/DeleteCollectionModal";
 import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
 import { UpgradeModal } from "../components/subscription/UpgradeModal";
-import { useBookmarksPage } from "../hooks/useBookmarksPage";
+import { useBookmarksPage } from "../hooks/bookmark/useBookmarksPage";
 
 export const BookmarksPage: React.FC = () => {
   const { t } = useTranslation();

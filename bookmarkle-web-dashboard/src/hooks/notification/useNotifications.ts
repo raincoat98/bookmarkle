@@ -8,9 +8,9 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import { db } from "../firebase";
-import type { Notification, NotificationType } from "../types";
-import { createBookmarkNotification } from "../utils/notificationCenter";
+import { db } from "../../firebase";
+import type { Notification, NotificationType } from "../../types";
+import { createBookmarkNotification } from "../../utils/notificationCenter";
 
 export const useNotifications = (userId: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);

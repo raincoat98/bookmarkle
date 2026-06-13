@@ -4,7 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { ChevronDown, ChevronUp, EyeOff, Eye, GripHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { WidgetId } from "../../hooks/useWidgetOrder";
+import type { WidgetId } from "../../hooks/widget/useWidgetOrder";
 
 interface SortableWidgetProps {
   id: WidgetId;

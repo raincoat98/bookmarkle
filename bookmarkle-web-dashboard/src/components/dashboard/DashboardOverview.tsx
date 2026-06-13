@@ -37,10 +37,10 @@ import { QuickActions } from "./QuickActions";
 import { BookmarksWidget } from "./BookmarksWidget";
 import { ClockWidget } from "./ClockWidget";
 import { BibleVerseWidget } from "./BibleVerseWidget";
-import { useWidgetOrder, type WidgetConfig } from "../../hooks/useWidgetOrder";
+import { useWidgetOrder, type WidgetConfig } from "../../hooks/widget/useWidgetOrder";
 import type { Bookmark, Collection } from "../../types";
 import { useAuthStore } from "../../stores";
-import { useNotifications } from "../../hooks/useNotifications";
+import { useNotifications } from "../../hooks/notification/useNotifications";
 import {
   db,
   getUserNotificationSettings,

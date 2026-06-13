@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { useAuthStore } from "../stores";
-import { useNotifications } from "../hooks/useNotifications";
+import { useNotifications } from "../hooks/notification/useNotifications";
 import { Drawer } from "../components/layout/Drawer";
 import {
   getUserNotificationSettings,

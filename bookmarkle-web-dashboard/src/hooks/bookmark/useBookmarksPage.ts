@@ -7,15 +7,15 @@ import {
   useBookmarkStore,
   useCollectionStore,
   useSubscriptionStore,
-} from "../stores";
+} from "../../stores";
 import type {
   Bookmark,
   BookmarkFormData,
   Collection,
   SortOption,
-} from "../types";
-import { auth } from "../firebase";
-import { checkBookmarkLimit, checkCollectionLimit } from "../utils/subscriptionLimits";
+} from "../../types";
+import { auth } from "../../firebase";
+import { checkBookmarkLimit, checkCollectionLimit } from "../../utils/subscriptionLimits";
 import { usePasteBookmark } from "./usePasteBookmark";
 import { useFilteredBookmarks } from "./useFilteredBookmarks";
 

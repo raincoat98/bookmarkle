@@ -7,7 +7,7 @@ import {
   getNotificationPermission,
   requestNotificationPermission,
   showTestNotification,
-} from "../utils/browserNotifications";
+} from "../../utils/browserNotifications";
 import { updateProfile } from "firebase/auth";
 import {
   setUserDefaultPage,
@@ -17,7 +17,7 @@ import {
   scheduleAccountDeletion,
   cancelAccountDeletion,
   getAccountDeletionStatus,
-} from "../firebase";
+} from "../../firebase";
 import {
   loadBackupSettings,
   saveBackupSettings,
@@ -28,13 +28,13 @@ import {
   type BackupSettings,
   type BackupStatus,
   type BackupListItem,
-} from "../utils/backup";
+} from "../../utils/backup";
 import {
   downloadChromeBookmarks,
   parseChromeBookmarks,
   convertChromeBookmarksToAppFormat,
-} from "../utils/chromeBookmarks";
-import type { Bookmark, Collection } from "../types";
+} from "../../utils/chromeBookmarks";
+import type { Bookmark, Collection } from "../../types";
 
 export interface ImportPreviewData {
   version?: string;

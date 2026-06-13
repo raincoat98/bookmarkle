@@ -17,7 +17,7 @@ import {
   Crown,
   Trash2,
 } from "lucide-react";
-import { useSettings, type ImportPreviewData } from "../hooks/useSettings";
+import { useSettings, type ImportPreviewData } from "../hooks/settings/useSettings";
 import { useFeatureFlagsStore } from "../stores";
 import { GeneralSettings } from "./settings/GeneralSettings";
 import { AccountSettings } from "./settings/AccountSettings";

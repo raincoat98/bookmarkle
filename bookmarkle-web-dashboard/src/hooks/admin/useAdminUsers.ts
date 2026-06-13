@@ -8,9 +8,9 @@ import {
   updateDoc,
   getCountFromServer,
 } from "firebase/firestore";
-import { db, auth } from "../firebase";
-import { BETA_END_DATE } from "../utils/earlyUser";
-import type { AdminUser } from "../types";
+import { db, auth } from "../../firebase";
+import { BETA_END_DATE } from "../../utils/earlyUser";
+import type { AdminUser } from "../../types";
 
 export function useAdminUsers() {
   const [users, setUsers] = useState<AdminUser[]>([]);
