@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import type { Collection, CollectionFormData } from "../../types";
-import { IconPicker } from "./IconPicker";
+import type { Collection, CollectionFormData } from "../../../types";
+import { IconPicker } from "../IconPicker";
 import * as LucideIcons from "lucide-react";
 import toast from "react-hot-toast";
 

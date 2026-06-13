@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IconPicker } from "./IconPicker";
+import { IconPicker } from "../IconPicker";
 import * as LucideIcons from "lucide-react";
 import { useTranslation } from "react-i18next";
 

@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { AddBookmarkModal } from "../../components/bookmarks/modals/AddBookmarkModal";
 import { EditBookmarkModal } from "../../components/bookmarks/modals/EditBookmarkModal";
 import { DeleteBookmarkModal } from "../../components/bookmarks/modals/DeleteBookmarkModal";
-import { AddCollectionModal } from "../../components/collections/AddCollectionModal";
+import { AddCollectionModal } from "../../components/collections/modals/AddCollectionModal";
 import { Drawer } from "../../components/layout/Drawer";
 import { UpgradeBanner } from "../../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
