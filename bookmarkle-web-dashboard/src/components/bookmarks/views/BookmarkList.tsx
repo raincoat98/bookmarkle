@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import type { Bookmark, Collection, SortOption } from "../../../types";
 import { sortBookmarks } from "../../../utils/sortBookmarks";
 import { useBookmarkActions } from "../../../hooks/bookmark/useBookmarkActions";
-import { BookmarkListHeader } from "../BookmarkListHeader";
+import { BookmarkListHeader } from "../headers/BookmarkListHeader";
 import { BookmarkGridView } from "./BookmarkGridView";
 import { GroupedBookmarkView } from "./GroupedBookmarkView";
 import { EmptyBookmarkState } from "../EmptyBookmarkState";

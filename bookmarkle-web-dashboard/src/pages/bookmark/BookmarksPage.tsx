@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { Drawer } from "../../components/layout/Drawer";
 import { BookmarkList } from "../../components/bookmarks/views/BookmarkList";
-import { BookmarksTopBar } from "../../components/bookmarks/BookmarksTopBar";
+import { BookmarksTopBar } from "../../components/bookmarks/headers/BookmarksTopBar";
 import { TagFilter } from "../../components/bookmarks/filters/TagFilter";
 import { AddBookmarkModal } from "../../components/bookmarks/modals/AddBookmarkModal";
 import { EditBookmarkModal } from "../../components/bookmarks/modals/EditBookmarkModal";

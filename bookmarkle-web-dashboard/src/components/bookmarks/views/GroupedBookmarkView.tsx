@@ -20,7 +20,7 @@ import { toast } from "react-hot-toast";
 import { Folder } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Bookmark, Collection, SortOption } from "../../../types";
-import { BookmarkListHeader } from "../BookmarkListHeader";
+import { BookmarkListHeader } from "../headers/BookmarkListHeader";
 
 const stripParentName = (name: string, parentName: string | undefined): string => {
   if (!parentName) return name;
