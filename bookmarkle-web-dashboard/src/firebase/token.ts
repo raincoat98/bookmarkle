@@ -1,5 +1,5 @@
 import type { User } from "firebase/auth";
-import { auth, firebaseConfig } from "./firebaseCore";
+import { auth, firebaseConfig } from "./core";
 
 type StsTokenUser = User & {
   stsTokenManager?: {

@@ -9,8 +9,8 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { auth, googleProvider } from "./firebaseCore";
-import { saveUserToFirestore } from "./firebaseUser";
+import { auth, googleProvider } from "./core";
+import { saveUserToFirestore } from "./user";
 
 type PopupLoginError = {
   code?: string;

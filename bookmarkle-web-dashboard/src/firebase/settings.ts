@@ -1,6 +1,6 @@
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { auth, db } from "./firebaseCore";
-import { isPermissionOrAuthError } from "./firebaseErrors";
+import { auth, db } from "./core";
+import { isPermissionOrAuthError } from "./errors";
 
 export type NotificationSettings = {
   notifications?: boolean;

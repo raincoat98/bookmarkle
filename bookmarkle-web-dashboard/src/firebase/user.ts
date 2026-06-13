@@ -1,6 +1,6 @@
 import type { User } from "firebase/auth";
 import { doc, serverTimestamp, setDoc } from "firebase/firestore";
-import { ADMIN_EMAILS, db } from "./firebaseCore";
+import { ADMIN_EMAILS, db } from "./core";
 
 export async function saveUserToFirestore(
   user: User,

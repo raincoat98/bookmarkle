@@ -4,8 +4,8 @@ export {
   db,
   firebaseConfig,
   googleProvider,
-} from "./firebaseCore";
-export { default } from "./firebaseCore";
+} from "./core";
+export { default } from "./core";
 export {
   clearFirebaseStorage,
   loginWithEmail,
@@ -13,13 +13,13 @@ export {
   logout,
   resetPassword,
   signupWithEmail,
-} from "./firebaseAuth";
-export { checkAdminStatus, isAdmin, isAdminUser } from "./firebaseAdmin";
+} from "./auth";
+export { checkAdminStatus, isAdmin, isAdminUser } from "./admin";
 export {
   cancelAccountDeletion,
   getAccountDeletionStatus,
   scheduleAccountDeletion,
-} from "./firebaseAccount";
+} from "./account";
 export {
   getUserDefaultPage,
   getUserNotificationSettings,
@@ -29,5 +29,5 @@ export {
   setUserWeatherLocation,
   type NotificationSettings,
   type WeatherLocation,
-} from "./firebaseSettings";
-export { getRefreshToken } from "./firebaseToken";
+} from "./settings";
+export { getRefreshToken } from "./token";

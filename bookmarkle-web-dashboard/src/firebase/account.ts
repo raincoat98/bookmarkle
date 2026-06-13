@@ -1,6 +1,6 @@
 import { doc, getDoc, serverTimestamp, Timestamp, updateDoc } from "firebase/firestore";
-import { db } from "./firebaseCore";
-import { isPermissionOrAuthError } from "./firebaseErrors";
+import { db } from "./core";
+import { isPermissionOrAuthError } from "./errors";
 
 export async function scheduleAccountDeletion(uid: string): Promise<void> {
   const deletionDate = new Date();

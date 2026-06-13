@@ -1,7 +1,7 @@
 import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { ADMIN_EMAILS, db } from "./firebaseCore";
-import { isPermissionOrAuthError } from "./firebaseErrors";
+import { ADMIN_EMAILS, db } from "./core";
+import { isPermissionOrAuthError } from "./errors";
 
 export function isAdmin(user: User | null): boolean {
   return !!user?.email && ADMIN_EMAILS.includes(user.email);
