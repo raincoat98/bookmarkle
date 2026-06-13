@@ -1,5 +1,11 @@
 const admin = require("firebase-admin");
-require("dotenv").config();
+const path = require("path");
+
+// 프로젝트 루트의 .env와 대시보드의 .env 둘 다 시도
+require("dotenv").config({ path: path.resolve(__dirname, "../.env") });
+require("dotenv").config({
+  path: path.resolve(__dirname, "../bookmarkle-web-dashboard/.env"),
+});
 
 // Firebase Admin SDK 초기화
 admin.initializeApp({

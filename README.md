@@ -81,11 +81,13 @@
 │   ├── firebase.json                # Firebase Hosting 설정
 │   └── .env                         # Firebase 환경변수 (⚠️ .gitignore)
 │
-├── 🛠 빌드 & 배포 스크립트
+├── 🛠 scripts/                       # 빌드/배포/관리 스크립트
 │   ├── build.sh                     # 통합 빌드 스크립트
 │   ├── dev.sh                       # 개발 서버 스크립트
 │   ├── deploy.sh                    # 통합 배포 스크립트
-│   └── setup-env.sh                 # 환경변수 설정 스크립트
+│   ├── setup-env.sh                 # 환경변수 설정 스크립트
+│   ├── set-admin.js                 # Admin 권한 설정 스크립트
+│   └── lib/common.sh                # 스크립트 공통 헬퍼
 │
 ├── 📦 build/                        # 빌드 결과물 (⚠️ .gitignore)
 │   ├── bookmarkle-web-extension/    # Extension 빌드 결과
@@ -98,7 +100,6 @@
 │   ├── firestore.rules              # Firestore 보안 규칙
 │   ├── firestore.indexes.json       # Firestore 인덱스 설정
 │   ├── serviceAccountKey.json       # Firebase Admin SDK Key (⚠️ .gitignore)
-│   ├── set-admin.js                 # Admin 권한 설정 스크립트
 │   └── LICENSE                      # MIT 라이선스
 │
 └── 📚 README.md                     # 메인 문서
@@ -213,15 +214,15 @@ firebase hosting:sites:create YOUR_PROJECT_ID
 ```bash
 # 모든 프로젝트 빌드
 npm run build
-./build.sh all
+./scripts/build.sh all
 
 # 모든 프로젝트 배포
 npm run deploy
-./deploy.sh all
+./scripts/deploy.sh all
 
 # 모든 프로젝트 개발 서버 실행
 npm run dev:all
-./dev.sh all
+./scripts/dev.sh all
 ```
 
 ### 📱 개별 프로젝트 관리
@@ -231,15 +232,15 @@ npm run dev:all
 ```bash
 # 개발 서버 실행
 npm run dev:dashboard
-./dev.sh dashboard
+./scripts/dev.sh dashboard
 
 # 빌드
 npm run build:dashboard
-./build.sh dashboard
+./scripts/build.sh dashboard
 
 # 배포
 npm run deploy:dashboard
-./deploy.sh dashboard "배포 메시지"
+./scripts/deploy.sh dashboard "배포 메시지"
 ```
 
 #### 🧩 Chrome Extension (bookmarkle-web-extension)
@@ -247,22 +248,22 @@ npm run deploy:dashboard
 ```bash
 # 빌드 & 패키징
 npm run build:extension
-./build.sh my-extension
+./scripts/build.sh my-extension
 
 # 배포
 npm run deploy:extension
-./deploy.sh my-extension "배포 메시지"
+./scripts/deploy.sh my-extension "배포 메시지"
 ```
 
 ## 📋 사용 가능한 스크립트
 
 ### 🔧 통합 스크립트
 
-| 스크립트      | 설명      | 사용법                            |
-| ------------- | --------- | --------------------------------- |
-| `./deploy.sh` | 통합 배포 | `./deploy.sh [프로젝트] [메시지]` |
-| `./dev.sh`    | 개발 서버 | `./dev.sh`                        |
-| `./build.sh`  | 통합 빌드 | `./build.sh [프로젝트]`           |
+| 스크립트              | 설명      | 사용법                                    |
+| --------------------- | --------- | ----------------------------------------- |
+| `./scripts/deploy.sh` | 통합 배포 | `./scripts/deploy.sh [프로젝트] [메시지]` |
+| `./scripts/dev.sh`    | 개발 서버 | `./scripts/dev.sh`                        |
+| `./scripts/build.sh`  | 통합 빌드 | `./scripts/build.sh [프로젝트]`           |
 
 ### 📋 NPM 스크립트
 
@@ -287,7 +288,7 @@ npm run deploy:extension
 
 ```bash
 # 환경변수 설정 스크립트 실행
-./setup-env.sh
+./scripts/setup-env.sh
 
 # Firebase 설정 정보 입력 후 자동으로 모든 설정 파일 생성
 ```
@@ -709,7 +710,7 @@ git clone https://github.com/raincoat98/bookmarkle.git
 cd bookmarkle
 
 # 2. 환경변수 설정
-./setup-env.sh
+./scripts/setup-env.sh
 
 # 3. 개발 서버 실행
 npm run dev:all
@@ -725,7 +726,7 @@ npm run dev:extension   # Extension 개발용 빌드
 # 1. 빌드
 npm run build:extension
 # 또는
-./build.sh my-extension
+./scripts/build.sh my-extension
 
 # 2. Chrome 확장 프로그램 페이지 열기
 chrome://extensions

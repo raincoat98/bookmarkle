@@ -53,8 +53,8 @@ npm install
 # 관리자 권한 설정
 npm run admin:set
 
-# 또는 직접 실행
-node set-admin.js
+# 또는 직접 실행 (프로젝트 루트에서)
+node ../scripts/set-admin.js
 ```
 
 **추가 명령어:**
