@@ -1,11 +1,11 @@
 import React from "react";
 import { Folder } from "lucide-react";
-import type { Bookmark, Collection } from "../../types";
-import { SortableBookmarkCard } from "./SortableBookmarkCard";
-import { SortableBookmarkListItem } from "./SortableBookmarkListItem";
-import { BookmarkCardSkeleton } from "./BookmarkCardSkeleton";
-import { BookmarkListItemSkeleton } from "./BookmarkListItemSkeleton";
-import { MobileIconSkeleton } from "./MobileIconSkeleton";
+import type { Bookmark, Collection } from "../../../types";
+import { SortableBookmarkCard } from "../items/SortableBookmarkCard";
+import { SortableBookmarkListItem } from "../items/SortableBookmarkListItem";
+import { BookmarkCardSkeleton } from "../skeletons/BookmarkCardSkeleton";
+import { BookmarkListItemSkeleton } from "../skeletons/BookmarkListItemSkeleton";
+import { MobileIconSkeleton } from "../skeletons/MobileIconSkeleton";
 import { useTranslation } from "react-i18next";
 
 interface BookmarkSectionProps {

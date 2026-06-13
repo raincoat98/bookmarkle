@@ -1,7 +1,7 @@
 import React from "react";
 import { createPortal } from "react-dom";
 import { ChevronDown, ArrowUpDown, Check } from "lucide-react";
-import type { SortOption } from "../../types";
+import type { SortOption } from "../../../types";
 import { useTranslation } from "react-i18next";
 
 interface BookmarkSortProps {

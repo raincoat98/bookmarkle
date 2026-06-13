@@ -2,9 +2,9 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMemo, useState } from "react";
 import { Globe, ChevronRight } from "lucide-react";
-import type { Bookmark, Collection } from "../../types";
-import { renderCollectionIcon } from "../../utils/iconRenderer";
-import { buildCollectionPath } from "../../utils/collectionPath";
+import type { Bookmark, Collection } from "../../../types";
+import { renderCollectionIcon } from "../../../utils/iconRenderer";
+import { buildCollectionPath } from "../../../utils/collectionPath";
 import { useTranslation } from "react-i18next";
 
 

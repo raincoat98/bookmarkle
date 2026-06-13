@@ -1,5 +1,5 @@
 import React from "react";
-import { BookmarkSort } from "./BookmarkSort";
+import { BookmarkSort } from "./filters/BookmarkSort";
 import type { SortOption } from "../../types";
 import { useTranslation } from "react-i18next";
 import { Pencil, X } from "lucide-react";

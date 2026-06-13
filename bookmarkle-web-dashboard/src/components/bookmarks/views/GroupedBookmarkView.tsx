@@ -19,8 +19,8 @@ import {
 import { toast } from "react-hot-toast";
 import { Folder } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Bookmark, Collection, SortOption } from "../../types";
-import { BookmarkListHeader } from "./BookmarkListHeader";
+import type { Bookmark, Collection, SortOption } from "../../../types";
+import { BookmarkListHeader } from "../BookmarkListHeader";
 
 const stripParentName = (name: string, parentName: string | undefined): string => {
   if (!parentName) return name;
@@ -28,11 +28,11 @@ const stripParentName = (name: string, parentName: string | undefined): string =
   if (name.startsWith(parentName + " ")) return name.slice(parentName.length + 1);
   return name;
 };
-import { SubCollectionToggle } from "./SubCollectionToggle";
+import { SubCollectionToggle } from "../SubCollectionToggle";
 import { BookmarkSection } from "./BookmarkSection";
-import { EmptyBookmarkState } from "./EmptyBookmarkState";
+import { EmptyBookmarkState } from "../EmptyBookmarkState";
 import { MobileIconView } from "./MobileIconView";
-import { MobileIconSkeleton } from "./MobileIconSkeleton";
+import { MobileIconSkeleton } from "../skeletons/MobileIconSkeleton";
 
 interface GroupedBookmarkViewProps {
   sortedGroupedBookmarks: {

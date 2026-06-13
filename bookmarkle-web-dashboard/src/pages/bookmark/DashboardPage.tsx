@@ -4,9 +4,9 @@ import { useAuthStore, useBookmarkStore, useCollectionStore } from "../../stores
 import { DisabledUserMessage } from "../../components/common/DisabledUserMessage";
 import type { Bookmark, BookmarkFormData } from "../../types";
 import toast from "react-hot-toast";
-import { AddBookmarkModal } from "../../components/bookmarks/AddBookmarkModal";
-import { EditBookmarkModal } from "../../components/bookmarks/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../../components/bookmarks/DeleteBookmarkModal";
+import { AddBookmarkModal } from "../../components/bookmarks/modals/AddBookmarkModal";
+import { EditBookmarkModal } from "../../components/bookmarks/modals/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../../components/bookmarks/modals/DeleteBookmarkModal";
 import { AddCollectionModal } from "../../components/collections/AddCollectionModal";
 import { Drawer } from "../../components/layout/Drawer";
 import { UpgradeBanner } from "../../components/subscription/UpgradeBanner";

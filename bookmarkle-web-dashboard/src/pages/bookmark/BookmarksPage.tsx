@@ -1,12 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { Drawer } from "../../components/layout/Drawer";
-import { BookmarkList } from "../../components/bookmarks/BookmarkList";
+import { BookmarkList } from "../../components/bookmarks/views/BookmarkList";
 import { BookmarksTopBar } from "../../components/bookmarks/BookmarksTopBar";
-import { TagFilter } from "../../components/bookmarks/TagFilter";
-import { AddBookmarkModal } from "../../components/bookmarks/AddBookmarkModal";
-import { EditBookmarkModal } from "../../components/bookmarks/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../../components/bookmarks/DeleteBookmarkModal";
+import { TagFilter } from "../../components/bookmarks/filters/TagFilter";
+import { AddBookmarkModal } from "../../components/bookmarks/modals/AddBookmarkModal";
+import { EditBookmarkModal } from "../../components/bookmarks/modals/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../../components/bookmarks/modals/DeleteBookmarkModal";
 import { AddCollectionModal } from "../../components/collections/AddCollectionModal";
 import { EditCollectionModal } from "../../components/collections/EditCollectionModal";
 import { DeleteCollectionModal } from "../../components/collections/DeleteCollectionModal";

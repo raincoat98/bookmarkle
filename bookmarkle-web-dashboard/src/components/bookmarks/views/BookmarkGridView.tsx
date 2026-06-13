@@ -17,9 +17,9 @@ import {
 } from "@dnd-kit/sortable";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import type { Bookmark, Collection } from "../../types";
-import { SortableBookmarkCard } from "./SortableBookmarkCard";
-import { SortableBookmarkListItem } from "./SortableBookmarkListItem";
+import type { Bookmark, Collection } from "../../../types";
+import { SortableBookmarkCard } from "../items/SortableBookmarkCard";
+import { SortableBookmarkListItem } from "../items/SortableBookmarkListItem";
 import { MobileIconView } from "./MobileIconView";
 
 interface BookmarkGridViewProps {

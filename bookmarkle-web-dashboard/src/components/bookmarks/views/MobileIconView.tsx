@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import type { Bookmark } from "../../types";
+import type { Bookmark } from "../../../types";
 import { X, ExternalLink, Edit, Trash2, Heart } from "lucide-react";
 import {
   DndContext,
