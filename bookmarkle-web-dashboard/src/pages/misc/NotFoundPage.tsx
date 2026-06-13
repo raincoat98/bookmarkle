@@ -2,7 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Home, ArrowLeft, Search } from "lucide-react";
-import { useAuthStore } from "../stores";
+import { useAuthStore } from "../../stores";
 
 export const NotFoundPage: React.FC = () => {
   const { t } = useTranslation();

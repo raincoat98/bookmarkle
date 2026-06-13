@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { DashboardOverview } from "../components/dashboard/DashboardOverview";
-import { useAuthStore, useBookmarkStore, useCollectionStore } from "../stores";
-import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
-import type { Bookmark, BookmarkFormData } from "../types";
+import { DashboardOverview } from "../../components/dashboard/DashboardOverview";
+import { useAuthStore, useBookmarkStore, useCollectionStore } from "../../stores";
+import { DisabledUserMessage } from "../../components/common/DisabledUserMessage";
+import type { Bookmark, BookmarkFormData } from "../../types";
 import toast from "react-hot-toast";
-import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
-import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../components/bookmarks/DeleteBookmarkModal";
-import { AddCollectionModal } from "../components/collections/AddCollectionModal";
-import { Drawer } from "../components/layout/Drawer";
-import { UpgradeBanner } from "../components/subscription/UpgradeBanner";
+import { AddBookmarkModal } from "../../components/bookmarks/AddBookmarkModal";
+import { EditBookmarkModal } from "../../components/bookmarks/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../../components/bookmarks/DeleteBookmarkModal";
+import { AddCollectionModal } from "../../components/collections/AddCollectionModal";
+import { Drawer } from "../../components/layout/Drawer";
+import { UpgradeBanner } from "../../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
-import { usePasteBookmark } from "../hooks/bookmark/usePasteBookmark";
+import { usePasteBookmark } from "../../hooks/bookmark/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
-import { auth } from "../firebase";
+import { auth } from "../../firebase";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, loading: authLoading, hasCachedSession } = useAuthStore(

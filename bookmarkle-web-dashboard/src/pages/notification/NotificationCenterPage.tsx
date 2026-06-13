@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
-import { useAuthStore } from "../stores";
-import { useNotifications } from "../hooks/notification/useNotifications";
-import { Drawer } from "../components/layout/Drawer";
+import { useAuthStore } from "../../stores";
+import { useNotifications } from "../../hooks/notification/useNotifications";
+import { Drawer } from "../../components/layout/Drawer";
 import {
   getUserNotificationSettings,
   setUserNotificationSettings,
   db,
-} from "../firebase";
+} from "../../firebase";
 import { doc, onSnapshot } from "firebase/firestore";
 import {
   Bell,
@@ -24,8 +24,8 @@ import { useNavigate } from "react-router-dom";
 import {
   getNotificationPermission,
   requestNotificationPermission,
-} from "../utils/browserNotifications";
-import type { Notification } from "../types";
+} from "../../utils/browserNotifications";
+import type { Notification } from "../../types";
 
 type FilterTab = "all" | "unread";
 

@@ -1,18 +1,18 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Drawer } from "../components/layout/Drawer";
-import { BookmarkList } from "../components/bookmarks/BookmarkList";
-import { BookmarksTopBar } from "../components/bookmarks/BookmarksTopBar";
-import { TagFilter } from "../components/bookmarks/TagFilter";
-import { AddBookmarkModal } from "../components/bookmarks/AddBookmarkModal";
-import { EditBookmarkModal } from "../components/bookmarks/EditBookmarkModal";
-import { DeleteBookmarkModal } from "../components/bookmarks/DeleteBookmarkModal";
-import { AddCollectionModal } from "../components/collections/AddCollectionModal";
-import { EditCollectionModal } from "../components/collections/EditCollectionModal";
-import { DeleteCollectionModal } from "../components/collections/DeleteCollectionModal";
-import { DisabledUserMessage } from "../components/common/DisabledUserMessage";
-import { UpgradeModal } from "../components/subscription/UpgradeModal";
-import { useBookmarksPage } from "../hooks/bookmark/useBookmarksPage";
+import { Drawer } from "../../components/layout/Drawer";
+import { BookmarkList } from "../../components/bookmarks/BookmarkList";
+import { BookmarksTopBar } from "../../components/bookmarks/BookmarksTopBar";
+import { TagFilter } from "../../components/bookmarks/TagFilter";
+import { AddBookmarkModal } from "../../components/bookmarks/AddBookmarkModal";
+import { EditBookmarkModal } from "../../components/bookmarks/EditBookmarkModal";
+import { DeleteBookmarkModal } from "../../components/bookmarks/DeleteBookmarkModal";
+import { AddCollectionModal } from "../../components/collections/AddCollectionModal";
+import { EditCollectionModal } from "../../components/collections/EditCollectionModal";
+import { DeleteCollectionModal } from "../../components/collections/DeleteCollectionModal";
+import { DisabledUserMessage } from "../../components/common/DisabledUserMessage";
+import { UpgradeModal } from "../../components/subscription/UpgradeModal";
+import { useBookmarksPage } from "../../hooks/bookmark/useBookmarksPage";
 
 export const BookmarksPage: React.FC = () => {
   const { t } = useTranslation();

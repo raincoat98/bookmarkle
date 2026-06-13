@@ -6,16 +6,16 @@ import {
   useSubscriptionStore,
   useBookmarkStore,
   useCollectionStore,
-} from "../stores";
-import { Header } from "../components/layout/Header";
+} from "../../stores";
+import { Header } from "../../components/layout/Header";
 import { ArrowLeft, Check, Calendar, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
   checkBookmarkLimit,
   checkCollectionLimit,
-} from "../utils/subscriptionLimits";
-import { isBetaPeriod } from "../utils/betaFlags";
+} from "../../utils/subscriptionLimits";
+import { isBetaPeriod } from "../../utils/betaFlags";
 
 // Timestamp를 Date로 변환하는 헬퍼 함수
 const toDate = (date: Date | Timestamp): Date => {

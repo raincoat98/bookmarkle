@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useSubscriptionStore } from "../stores";
-import { Header } from "../components/layout/Header";
+import { useSubscriptionStore } from "../../stores";
+import { Header } from "../../components/layout/Header";
 import {
   Check,
   Sparkles,
@@ -21,7 +21,7 @@ import {
   Crown,
   Shield,
 } from "lucide-react";
-import { isBetaPeriod } from "../utils/betaFlags";
+import { isBetaPeriod } from "../../utils/betaFlags";
 
 // ─── Plan 데이터 ────────────────────────────────────────────────────────────────
 

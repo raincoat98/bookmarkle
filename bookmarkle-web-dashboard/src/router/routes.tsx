@@ -9,40 +9,50 @@ import { getUserDefaultPage, auth } from "../firebase";
 import { useAuthStore } from "../stores";
 
 const DashboardPage = lazy(() =>
-  import("../pages/DashboardPage").then((m) => ({ default: m.DashboardPage }))
+  import("../pages/bookmark/DashboardPage").then((m) => ({
+    default: m.DashboardPage,
+  }))
 );
 const BookmarksPage = lazy(() =>
-  import("../pages/BookmarksPage").then((m) => ({ default: m.BookmarksPage }))
+  import("../pages/bookmark/BookmarksPage").then((m) => ({
+    default: m.BookmarksPage,
+  }))
 );
 const SettingsPage = lazy(() =>
-  import("../pages/SettingsPage").then((m) => ({ default: m.SettingsPage }))
+  import("../pages/settings/SettingsPage").then((m) => ({
+    default: m.SettingsPage,
+  }))
 );
 const AdminPage = lazy(() =>
-  import("../pages/AdminPage").then((m) => ({ default: m.AdminPage }))
+  import("../pages/admin/AdminPage").then((m) => ({ default: m.AdminPage }))
 );
 const NotificationCenterPage = lazy(() =>
-  import("../pages/NotificationCenterPage").then((m) => ({
+  import("../pages/notification/NotificationCenterPage").then((m) => ({
     default: m.NotificationCenterPage,
   }))
 );
 const PricingPage = lazy(() =>
-  import("../pages/PricingPage").then((m) => ({ default: m.PricingPage }))
+  import("../pages/subscription/PricingPage").then((m) => ({
+    default: m.PricingPage,
+  }))
 );
 const SubscriptionPage = lazy(() =>
-  import("../pages/SubscriptionPage").then((m) => ({
+  import("../pages/subscription/SubscriptionPage").then((m) => ({
     default: m.SubscriptionPage,
   }))
 );
 const EarlyBirdPolicyPage = lazy(() =>
-  import("../pages/EarlyBirdPolicyPage").then((m) => ({
+  import("../pages/subscription/EarlyBirdPolicyPage").then((m) => ({
     default: m.EarlyBirdPolicyPage,
   }))
 );
 const LandingPage = lazy(() =>
-  import("../pages/LandingPage").then((m) => ({ default: m.LandingPage }))
+  import("../pages/misc/LandingPage").then((m) => ({ default: m.LandingPage }))
 );
 const NotFoundPage = lazy(() =>
-  import("../pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
+  import("../pages/misc/NotFoundPage").then((m) => ({
+    default: m.NotFoundPage,
+  }))
 );
 
 function LayoutWrapper({ children }: { children: React.ReactNode }) {

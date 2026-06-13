@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Header } from "../components/layout/Header";
-import { AdminUserManagement } from "../components/admin/AdminUserManagement";
-import { useAdminUsers } from "../hooks/admin/useAdminUsers";
-import { SubscriptionFeatureSettings } from "../components/settings/SubscriptionFeatureSettings";
+import { Header } from "../../components/layout/Header";
+import { AdminUserManagement } from "../../components/admin/AdminUserManagement";
+import { useAdminUsers } from "../../hooks/admin/useAdminUsers";
+import { SubscriptionFeatureSettings } from "../../components/settings/SubscriptionFeatureSettings";
 import { ShieldCheck, Users, Settings } from "lucide-react";
 
 export function AdminPage() {
