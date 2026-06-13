@@ -2,8 +2,8 @@ import React, { useEffect, useState, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, Copy, Check, Palette, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import bibleVersesKo from "../../data/bibleVerses.json";
-import bibleVersesEn from "../../data/bibleVerses.en.json";
+import bibleVersesKo from "../../../data/bibleVerses.json";
+import bibleVersesEn from "../../../data/bibleVerses.en.json";
 
 interface BibleVerseEntry {
   verse: string;

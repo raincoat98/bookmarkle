@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Edit, Trash2, Heart, Sparkles, Clock, ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Bookmark, Collection } from "../../types";
+import type { Bookmark, Collection } from "../../../types";
 
 // ─── FaviconDisplay ────────────────────────────────────────────────────────────
 

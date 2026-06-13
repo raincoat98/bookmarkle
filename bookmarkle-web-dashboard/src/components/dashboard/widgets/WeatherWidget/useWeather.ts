@@ -1,10 +1,10 @@
 import { useState, useCallback, useEffect } from "react";
-import { useAuthStore } from "../../../stores/auth/authStore";
+import { useAuthStore } from "../../../../stores/auth/authStore";
 import {
   getUserWeatherLocation,
   setUserWeatherLocation,
   auth,
-} from "../../../firebase";
+} from "../../../../firebase";
 import type {
   WeatherData,
   WeeklyWeatherData,

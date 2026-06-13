@@ -33,10 +33,10 @@ import toast from "react-hot-toast";
 import { doc, onSnapshot } from "firebase/firestore";
 
 import { SortableWidget } from "./SortableWidget";
-import { QuickActions } from "./QuickActions";
-import { BookmarksWidget } from "./BookmarksWidget";
-import { ClockWidget } from "./ClockWidget";
-import { BibleVerseWidget } from "./BibleVerseWidget";
+import { QuickActions } from "./widgets/QuickActions";
+import { BookmarksWidget } from "./widgets/BookmarksWidget";
+import { ClockWidget } from "./widgets/ClockWidget";
+import { BibleVerseWidget } from "./widgets/BibleVerseWidget";
 import { useWidgetOrder, type WidgetConfig } from "../../hooks/widget/useWidgetOrder";
 import type { Bookmark, Collection } from "../../types";
 import { useAuthStore } from "../../stores";
