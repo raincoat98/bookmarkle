@@ -11,7 +11,6 @@ import { AddCollectionModal } from "../../components/collections/modals/AddColle
 import { EditCollectionModal } from "../../components/collections/modals/EditCollectionModal";
 import { DeleteCollectionModal } from "../../components/collections/modals/DeleteCollectionModal";
 import { DisabledUserMessage } from "../../components/common/DisabledUserMessage";
-import { UpgradeModal } from "../../components/subscription/UpgradeModal";
 import { useBookmarksPage } from "../../hooks/bookmark/useBookmarksPage";
 
 export const BookmarksPage: React.FC = () => {
@@ -20,8 +19,6 @@ export const BookmarksPage: React.FC = () => {
     user,
     isActive,
     collections,
-    bookmarks,
-    limits,
     deferredLoading,
     isAuthPrefetching,
     selectedCollection,
@@ -54,9 +51,6 @@ export const BookmarksPage: React.FC = () => {
     setIsAddSubCollectionModalOpen,
     subCollectionParentId,
     setSubCollectionParentId,
-    showUpgradeModal,
-    setShowUpgradeModal,
-    upgradeReason,
     filteredBookmarksData,
     bookmarksToDisplay,
     visibleTags,
@@ -233,25 +227,6 @@ export const BookmarksPage: React.FC = () => {
         parentId={subCollectionParentId}
       />
 
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        reason={upgradeReason}
-        currentCount={
-          upgradeReason === "bookmark_limit"
-            ? bookmarks.length
-            : upgradeReason === "collection_limit"
-            ? collections.length
-            : undefined
-        }
-        limit={
-          upgradeReason === "bookmark_limit"
-            ? limits.maxBookmarks
-            : upgradeReason === "collection_limit"
-            ? limits.maxCollections
-            : undefined
-        }
-      />
     </Drawer>
   );
 };

@@ -11,41 +11,6 @@ export interface AppUser {
   provider?: string;
 }
 
-// 구독 플랜 타입
-export type SubscriptionPlan = "free" | "premium";
-
-// 구독 상태 타입
-export type SubscriptionStatus = "active" | "canceled" | "expired" | "trialing";
-
-// 구독 주기 타입
-export type SubscriptionBillingCycle = "monthly" | "yearly";
-
-// 구독 정보 인터페이스
-export interface Subscription {
-  plan: SubscriptionPlan;
-  status: SubscriptionStatus;
-  billingCycle: SubscriptionBillingCycle;
-  startDate: Date | Timestamp; // serverTimestamp
-  endDate: Date | Timestamp | null; // serverTimestamp (연간 구독의 경우)
-  cancelAtPeriodEnd?: boolean; // 기간 종료 시 취소 예정
-  subscriptionId?: string; // Stripe subscription ID
-  customerId?: string; // Stripe customer ID
-  trialEndDate?: Date | Timestamp | null; // 무료 체험 종료일
-}
-
-// 사용자 제한 설정
-export interface UserLimits {
-  maxBookmarks: number;
-  maxCollections: number;
-  maxBackupsPerWeek: number;
-  canUseAdvancedSearch: boolean;
-  canExportData: boolean;
-  canUseCustomTheme: boolean;
-  canRestoreDeletedBookmarks: boolean;
-  canShareBookmarks: boolean;
-  canUseAllWidgets: boolean;
-}
-
 // Firestore에 저장되는 사용자 데이터 타입
 export interface FirestoreUser {
   uid: string;
@@ -57,7 +22,6 @@ export interface FirestoreUser {
   updatedAt: Timestamp; // serverTimestamp
   provider: string;
   isActive?: boolean; // 사용자 활성화 상태
-  subscription?: Subscription; // 구독 정보
 }
 
 export interface Bookmark {
@@ -124,6 +88,23 @@ export interface SortOption {
   field: SortField;
   direction: SortDirection;
   label: string;
+}
+
+// 구독 정보 (관리자 페이지에서 Firestore 문서 읽기 전용)
+export type SubscriptionPlan = "free" | "premium";
+export type SubscriptionStatus = "active" | "canceled" | "expired" | "trialing";
+export type SubscriptionBillingCycle = "monthly" | "yearly";
+
+export interface Subscription {
+  plan: SubscriptionPlan;
+  status: SubscriptionStatus;
+  billingCycle: SubscriptionBillingCycle;
+  startDate: Date;
+  endDate?: Date;
+  cancelAtPeriodEnd?: boolean;
+  subscriptionId?: string;
+  customerId?: string;
+  trialEndDate?: Date;
 }
 
 // 관리자 관련 타입

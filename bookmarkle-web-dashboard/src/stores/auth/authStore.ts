@@ -12,7 +12,6 @@ import {
 
 import { onAuthStateChanged } from "firebase/auth";
 import { useBookmarkStore } from "../bookmark/bookmarkStore";
-import { useSubscriptionStore } from "./subscriptionStore";
 
 const hasCachedAuthSession = (): boolean => {
   if (typeof window === "undefined") return false;
@@ -99,7 +98,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
       }
 
       useBookmarkStore.getState().cleanupAllListeners();
-      useSubscriptionStore.getState().cleanupAllListeners();
 
       await fbLogout();
     } catch (error) {
@@ -131,7 +129,6 @@ export const useAuthStore = create<AuthState & AuthActions>((set, get) => ({
         });
       } else {
         useBookmarkStore.getState().cleanupAllListeners();
-        useSubscriptionStore.getState().cleanupAllListeners();
 
         set({
           user: null,

@@ -1,10 +1,4 @@
-import {
-  useAuthStore,
-  useThemeStore,
-  useDrawerStore,
-  useSubscriptionStore,
-  useFeatureFlagsStore,
-} from "../../stores";
+import { useAuthStore, useThemeStore, useDrawerStore } from "../../stores";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "framer-motion";
@@ -17,14 +11,12 @@ import {
   User,
   LogOut,
   Shield,
-  Crown,
   ChevronDown,
   BookOpen,
 } from "lucide-react";
 import { isAdminUser } from "../../firebase";
 import { useState, useEffect, useRef } from "react";
 import { NotificationCenter } from "../common/NotificationCenter";
-import { isBetaPeriod } from "../../utils/betaFlags";
 
 interface HeaderProps {
   showMenuButton?: boolean;
@@ -36,8 +28,6 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
   const { user, logout } = useAuthStore();
   const { theme, setTheme } = useThemeStore();
   const { setIsDrawerOpen } = useDrawerStore();
-  const { isPremium } = useSubscriptionStore();
-  useFeatureFlagsStore((s) => s.flags);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -135,7 +125,6 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       <User className="w-3.5 h-3.5 text-white" />
                     )}
                   </div>
-                  {isPremium && <Crown className="w-3.5 h-3.5 text-amber-500" />}
                   <ChevronDown
                     className={`w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-transform ${
                       isUserMenuOpen ? "rotate-180" : ""
@@ -162,25 +151,6 @@ export const Header = ({ showMenuButton = false }: HeaderProps) => {
                       </div>
 
                       <div className="py-1">
-                        {!isBetaPeriod() && (
-                          <Link
-                            to="/subscription"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className={`flex items-center gap-3 px-4 py-2 text-sm hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors ${
-                              isPremium
-                                ? "text-amber-600 dark:text-amber-400"
-                                : "text-gray-700 dark:text-gray-300"
-                            }`}
-                          >
-                            <Crown className="w-4 h-4" />
-                            <span>
-                              {isPremium
-                                ? t("header.premiumSubscription")
-                                : t("premium.subscriptionManagement")}
-                            </span>
-                          </Link>
-                        )}
-
                         {isAdmin && (
                           <Link
                             to="/admin"
