@@ -1,379 +1,207 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Timestamp } from "firebase/firestore";
-import {
-  useSubscriptionStore,
-  useBookmarkStore,
-  useCollectionStore,
-} from "../../stores";
-import { Header } from "../../components/layout/Header";
-import { ArrowLeft, Check, Calendar, AlertCircle } from "lucide-react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import toast from "react-hot-toast";
+import { Crown, Check, Sparkles, ArrowLeft } from "lucide-react";
+import { Drawer } from "../../components/layout/Drawer";
+import { EarlyUserBenefits } from "../../components/subscription/EarlyUserBenefits";
+import { useAuthStore } from "../../stores";
 import {
-  checkBookmarkLimit,
-  checkCollectionLimit,
-} from "../../utils/subscriptionLimits";
-import { isBetaPeriod } from "../../utils/betaFlags";
+  FREE_PLAN_FEATURES,
+  PREMIUM_PLAN_FEATURES,
+  PREMIUM_PRICING,
+  formatKRW,
+  type BillingCycle,
+} from "../../constants/planLimits";
 
-// Timestamp를 Date로 변환하는 헬퍼 함수
-const toDate = (date: Date | Timestamp): Date => {
-  return date instanceof Date ? date : date.toDate();
-};
+const CYCLES: BillingCycle[] = ["monthly", "yearly"];
 
 export const SubscriptionPage: React.FC = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { plan, isPremium, subscription, limits } = useSubscriptionStore();
-  const { rawBookmarks } = useBookmarkStore();
-  const { collections } = useCollectionStore();
-  const [isCanceling, setIsCanceling] = useState(false);
-
-  // 베타 기간 중 접근 차단
-  useEffect(() => {
-    if (isBetaPeriod()) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [navigate]);
-
-  const handleCancelSubscription = async () => {
-    // 현재 북마크/컬렉션 개수 확인
-    const currentBookmarkCount = rawBookmarks.length;
-    const currentCollectionCount = collections.length;
-    const freeBookmarkLimit = 100;
-    const freeCollectionLimit = 10;
-
-    // 무료 플랜으로 다운그레이드 시 제한 초과 여부 확인
-    const bookmarkLimit = checkBookmarkLimit(currentBookmarkCount, "free");
-    const collectionLimit = checkCollectionLimit(
-      currentCollectionCount,
-      "free"
-    );
-
-    // 제한 초과 시 경고 메시지
-    let warningMessage = t("premium.confirmCancel");
-    if (!bookmarkLimit.allowed || !collectionLimit.allowed) {
-      warningMessage += "\n\n";
-      warningMessage += t("premium.cancelWarning");
-      if (!bookmarkLimit.allowed) {
-        warningMessage += `\n- ${t(
-          "premium.bookmarks"
-        )}: ${currentBookmarkCount}${t("common.countUnit", {
-          defaultValue: "개",
-        })} (${t("premium.limit", {
-          defaultValue: "제한",
-        })}: ${freeBookmarkLimit}${t("common.countUnit", {
-          defaultValue: "개",
-        })})`;
-      }
-      if (!collectionLimit.allowed) {
-        warningMessage += `\n- ${t(
-          "premium.collections"
-        )}: ${currentCollectionCount}${t("common.countUnit", {
-          defaultValue: "개",
-        })} (${t("premium.limit", {
-          defaultValue: "제한",
-        })}: ${freeCollectionLimit}${t("common.countUnit", {
-          defaultValue: "개",
-        })})`;
-      }
-      warningMessage += `\n\n${t("premium.cancelWarningNote")}`;
-    }
-
-    if (!confirm(warningMessage)) {
-      return;
-    }
-
-    setIsCanceling(true);
-    try {
-      // TODO: Stripe 구독 취소 API 호출
-      // 현재는 임시로 알림만 표시
-      toast.success(t("premium.cancelPending"));
-
-      // 실제 구현 시:
-      // 1. Stripe API로 구독 취소
-      // 2. 웹훅으로 구독 상태 업데이트
-      // 3. 사용자에게 확인 메시지 표시
-
-      // 제한 초과 시 추가 안내
-      if (!bookmarkLimit.allowed || !collectionLimit.allowed) {
-        setTimeout(() => {
-          toast(t("premium.cancelLimitExceeded"), {
-            duration: 6000,
-            icon: "⚠️",
-          });
-        }, 2000);
-      }
-    } catch (error) {
-      console.error("구독 취소 실패:", error);
-      toast.error(t("premium.cancelError"));
-    } finally {
-      setIsCanceling(false);
-    }
-  };
-
-  const handleUpgrade = () => {
-    navigate("/pricing");
-  };
-
-  const formatDate = (date: Date | Timestamp | null | undefined) => {
-    if (!date) return "-";
-    const d = toDate(date);
-    return d.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  const user = useAuthStore((s) => s.user);
+  const [cycle, setCycle] = useState<BillingCycle>("monthly");
+  const premium = PREMIUM_PRICING[cycle];
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header />
+    <Drawer>
+      <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+          <Link
+            to="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            대시보드로
+          </Link>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* 뒤로가기 버튼 */}
-        <Link
-          to="/dashboard"
-          className="inline-flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-8 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>{t("common.back")}</span>
-        </Link>
-
-        {/* 헤더 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-            {t("premium.subscriptionManagement")}
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            {t("premium.manageYourSubscription")}
-          </p>
-        </div>
-
-        {/* 현재 구독 상태 */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                {plan === "premium"
-                  ? t("premium.premiumPlan")
-                  : t("premium.freePlan")}
-              </h2>
-              <p className="text-gray-600 dark:text-gray-400">
-                {plan === "premium"
-                  ? t("premium.activeSubscription")
-                  : t("premium.freeAccount")}
-              </p>
+          <header className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-violet-100 dark:bg-violet-500/15 mb-4">
+              <Crown className="w-7 h-7 text-violet-600 dark:text-violet-400" />
             </div>
-            <div
-              className={`px-4 py-2 rounded-full text-sm font-medium ${
-                isPremium
-                  ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                  : "bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
-              }`}
-            >
-              {isPremium ? t("premium.active") : t("premium.free")}
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              북마클 프리미엄
+            </h1>
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+              북마클이 정식 오픈했습니다. 더 강력한 기능으로 북마크 관리를 한층 업그레이드하세요.
+            </p>
+          </header>
+
+          {/* 결제 주기 토글 */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex p-1 rounded-xl bg-gray-100 dark:bg-white/[0.05]">
+              {CYCLES.map((c) => {
+                const active = cycle === c;
+                const info = PREMIUM_PRICING[c];
+                return (
+                  <button
+                    key={c}
+                    onClick={() => setCycle(c)}
+                    className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-white dark:bg-white/[0.12] text-violet-600 dark:text-violet-400 shadow-sm"
+                        : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                    }`}
+                  >
+                    {info.label}
+                    {info.badge && (
+                      <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400">
+                        {info.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {subscription && plan === "premium" && (
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div className="flex items-start space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {t("premium.billingCycle")}
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {subscription.billingCycle === "monthly"
-                      ? t("premium.monthly")
-                      : t("premium.yearly")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start space-x-3">
-                <Calendar className="w-5 h-5 text-gray-400 mt-0.5" />
-                <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    {subscription.cancelAtPeriodEnd
-                      ? t("premium.cancelsOn")
-                      : t("premium.renewsOn")}
-                  </p>
-                  <p className="font-semibold text-gray-900 dark:text-white">
-                    {formatDate(subscription.endDate)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          <div className="mb-8">
+            <EarlyUserBenefits user={user} />
+          </div>
 
-          {/* 사용량 표시 */}
-          <div className="border-t border-gray-200 dark:border-gray-700 pt-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">
-              {t("premium.currentUsage")}
-            </h3>
-            <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <PlanCard
+              name="무료"
+              price="₩0"
+              period="/월"
+              features={FREE_PLAN_FEATURES}
+              cta="현재 플랜"
+              ctaDisabled
+            />
+            <PlanCard
+              highlighted
+              name="프리미엄"
+              price={formatKRW(premium.amount)}
+              period={premium.periodLabel}
+              priceSubtext={
+                cycle === "yearly"
+                  ? `월 ${formatKRW(premium.perMonth)} 상당`
+                  : undefined
+              }
+              features={PREMIUM_PLAN_FEATURES}
+              cta="결제 시스템 준비 중"
+              ctaDisabled
+            />
+          </div>
+
+          <div className="mt-10 p-5 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
+            <div className="flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
               <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("premium.bookmarks")}
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-medium">
-                    {limits.maxBookmarks === Infinity
-                      ? `∞ (${rawBookmarks.length}${t("common.countUnit", {
-                          defaultValue: "개",
-                        })})`
-                      : `${rawBookmarks.length} / ${limits.maxBookmarks}`}
-                  </span>
-                </div>
-                {limits.maxBookmarks !== Infinity && (
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        rawBookmarks.length > limits.maxBookmarks
-                          ? "bg-red-500"
-                          : "bg-brand-500"
-                      }`}
-                      style={{
-                        width: `${Math.min(
-                          (rawBookmarks.length / limits.maxBookmarks) * 100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                )}
-                {limits.maxBookmarks !== Infinity &&
-                  rawBookmarks.length > limits.maxBookmarks && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                      {t("premium.limitExceeded", {
-                        current: rawBookmarks.length,
-                        limit: limits.maxBookmarks,
-                      })}
-                    </p>
-                  )}
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600 dark:text-gray-400">
-                    {t("premium.collections")}
-                  </span>
-                  <span className="text-gray-900 dark:text-white font-medium">
-                    {limits.maxCollections === Infinity
-                      ? `∞ (${collections.length}${t("common.countUnit", {
-                          defaultValue: "개",
-                        })})`
-                      : `${collections.length} / ${limits.maxCollections}`}
-                  </span>
-                </div>
-                {limits.maxCollections !== Infinity && (
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        collections.length > limits.maxCollections
-                          ? "bg-red-500"
-                          : "bg-brand-500"
-                      }`}
-                      style={{
-                        width: `${Math.min(
-                          (collections.length / limits.maxCollections) * 100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                )}
-                {limits.maxCollections !== Infinity &&
-                  collections.length > limits.maxCollections && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                      {t("premium.limitExceeded", {
-                        current: collections.length,
-                        limit: limits.maxCollections,
-                      })}
-                    </p>
-                  )}
+                <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-1">
+                  결제 시스템 준비 중
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
+                  현재 결제 시스템을 준비하고 있습니다. 정식 결제 오픈 시 이메일로 안내드릴 예정이며,
+                  베타 기간 동안 가입하신 얼리 유저는 평생 무료로 프리미엄 기능을 이용하실 수 있습니다.
+                </p>
               </div>
             </div>
           </div>
         </div>
+      </div>
+    </Drawer>
+  );
+};
 
-        {/* 액션 버튼 */}
-        <div className="space-y-4">
-          {plan === "free" ? (
-            <button
-              onClick={handleUpgrade}
-              className="w-full px-6 py-4 bg-gradient-to-r from-brand-500 to-accent-500 text-white rounded-xl font-medium hover:from-brand-600 hover:to-accent-600 transition-all shadow-lg hover:shadow-xl"
-            >
-              {t("premium.upgradeToPremium")}
-            </button>
-          ) : (
-            <>
-              {subscription?.cancelAtPeriodEnd ? (
-                <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-4">
-                  <div className="flex items-start space-x-3">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-yellow-900 dark:text-yellow-100">
-                        {t("premium.cancellationScheduled")}
-                      </p>
-                      <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                        {t("premium.cancellationMessage", {
-                          date: formatDate(subscription.endDate),
-                        })}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={handleCancelSubscription}
-                  disabled={isCanceling}
-                  className="w-full px-6 py-4 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
-                >
-                  {isCanceling
-                    ? t("common.processing")
-                    : t("premium.cancelSubscription")}
-                </button>
-              )}
-              <Link
-                to="/pricing"
-                className="block w-full px-6 py-4 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-all text-center"
-              >
-                {t("premium.changePlan")}
-              </Link>
-            </>
-          )}
-        </div>
+interface PlanCardProps {
+  name: string;
+  price: string;
+  period: string;
+  priceSubtext?: string;
+  features: string[];
+  cta: string;
+  ctaDisabled?: boolean;
+  highlighted?: boolean;
+}
 
-        {/* 프리미엄 기능 목록 */}
-        {plan === "premium" && (
-          <div className="mt-8 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-8">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              {t("premium.premiumFeatures")}
-            </h3>
-            <div className="grid md:grid-cols-2 gap-3">
-              {[
-                t("premium.features.unlimitedBookmarks"),
-                t("premium.features.unlimitedCollections"),
-                t("premium.features.advancedSearch"),
-                t("premium.features.bookmarkStats"),
-                t("premium.features.exportData"),
-                t("premium.features.customTheme"),
-                t("premium.features.restoreDeleted"),
-                t("premium.features.shareBookmarks"),
-              ].map((feature, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <Check className="w-4 h-4 text-green-500" />
-                  <span className="text-gray-700 dark:text-gray-300 text-sm">
-                    {feature}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+const PlanCard: React.FC<PlanCardProps> = ({
+  name,
+  price,
+  period,
+  priceSubtext,
+  features,
+  cta,
+  ctaDisabled,
+  highlighted,
+}) => {
+  return (
+    <div
+      className={`rounded-2xl p-6 border ${
+        highlighted
+          ? "bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-500/10 dark:to-indigo-500/10 border-violet-200 dark:border-violet-500/30"
+          : "bg-white dark:bg-[#111113] border-gray-200 dark:border-white/[0.06]"
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          {name}
+        </h2>
+        {highlighted && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-violet-100 dark:bg-violet-500/20 text-violet-700 dark:text-violet-300">
+            추천
+          </span>
         )}
       </div>
+
+      <div className="mb-5">
+        <div className="flex items-baseline gap-1">
+          <span className="text-3xl font-bold text-gray-900 dark:text-white">
+            {price}
+          </span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{period}</span>
+        </div>
+        {priceSubtext && (
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {priceSubtext}
+          </p>
+        )}
+      </div>
+
+      <ul className="space-y-2.5 mb-6">
+        {features.map((feature) => (
+          <li
+            key={feature}
+            className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300"
+          >
+            <Check
+              className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+                highlighted
+                  ? "text-violet-600 dark:text-violet-400"
+                  : "text-gray-400 dark:text-gray-500"
+              }`}
+            />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+
+      <button
+        disabled={ctaDisabled}
+        className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium transition-colors disabled:cursor-not-allowed ${
+          highlighted
+            ? "bg-violet-600 hover:bg-violet-700 text-white disabled:bg-violet-300 dark:disabled:bg-violet-500/40"
+            : "bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 disabled:opacity-60"
+        }`}
+      >
+        {cta}
+      </button>
     </div>
   );
 };

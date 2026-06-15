@@ -13,6 +13,7 @@ import {
   Menu,
 } from "lucide-react";
 import { CollectionList } from "../collections/CollectionList";
+import { SubscriptionAnnouncementBanner } from "../subscription/SubscriptionAnnouncementBanner";
 import type { Collection } from "../../types";
 import { useTranslation } from "react-i18next";
 
@@ -278,6 +279,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             transition: "padding-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
           }}
         >
+          <SubscriptionAnnouncementBanner />
           {children}
         </main>
       </div>

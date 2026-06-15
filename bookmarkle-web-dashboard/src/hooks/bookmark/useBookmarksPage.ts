@@ -6,7 +6,6 @@ import {
   useAuthStore,
   useBookmarkStore,
   useCollectionStore,
-  useSubscriptionStore,
 } from "../../stores";
 import type {
   Bookmark,
@@ -15,9 +14,13 @@ import type {
   SortOption,
 } from "../../types";
 import { auth } from "../../firebase";
-import { checkBookmarkLimit, checkCollectionLimit } from "../../utils/subscriptionLimits";
 import { usePasteBookmark } from "./usePasteBookmark";
 import { useFilteredBookmarks } from "./useFilteredBookmarks";
+import {
+  gateAddBookmark,
+  gateAddSubCollection,
+  showLimitToast,
+} from "../../utils/planAccess";
 
 export const useBookmarksPage = () => {
   const { user, isActive, loading: authLoading, hasCachedSession } = useAuthStore(
@@ -28,16 +31,9 @@ export const useBookmarksPage = () => {
       hasCachedSession: state.hasCachedSession,
     }))
   );
-  const { plan, limits } = useSubscriptionStore(
-    useShallow((state) => ({ plan: state.plan, limits: state.limits }))
-  );
   const { t } = useTranslation();
 
   const [selectedCollection, setSelectedCollection] = useState("all");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-  const [upgradeReason, setUpgradeReason] = useState<
-    "bookmark_limit" | "collection_limit" | "premium_feature"
-  >("bookmark_limit");
   const [currentSort, setCurrentSort] = useState<SortOption>({
     field: "order",
     direction: "asc",
@@ -217,10 +213,9 @@ export const useBookmarksPage = () => {
       toast.error(t("collections.maxDepthExceeded"));
       return;
     }
-    const limit = checkCollectionLimit(collections.length, plan);
-    if (!limit.allowed) {
-      setUpgradeReason("collection_limit");
-      setShowUpgradeModal(true);
+    const gate = gateAddSubCollection(user, parentId ?? null, collections);
+    if (!gate.ok) {
+      showLimitToast(gate.reason);
       return;
     }
     try {
@@ -237,10 +232,9 @@ export const useBookmarksPage = () => {
   };
 
   const handleAddBookmark = async (bookmarkData: BookmarkFormData) => {
-    const limit = checkBookmarkLimit(bookmarks.length, plan);
-    if (!limit.allowed) {
-      setUpgradeReason("bookmark_limit");
-      setShowUpgradeModal(true);
+    const gate = gateAddBookmark(user, useBookmarkStore.getState().rawBookmarks.length);
+    if (!gate.ok) {
+      showLimitToast(gate.reason);
       return;
     }
     try {
@@ -410,8 +404,6 @@ export const useBookmarksPage = () => {
     isActive,
     collections,
     bookmarks,
-    limits,
-    plan,
     deferredLoading,
     isAuthPrefetching,
     selectedCollection,
@@ -445,9 +437,6 @@ export const useBookmarksPage = () => {
     setIsAddSubCollectionModalOpen,
     subCollectionParentId,
     setSubCollectionParentId,
-    showUpgradeModal,
-    setShowUpgradeModal,
-    upgradeReason,
     filteredBookmarksData,
     bookmarksToDisplay,
     visibleTags,

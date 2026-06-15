@@ -34,6 +34,7 @@ import {
   parseChromeBookmarks,
   convertChromeBookmarksToAppFormat,
 } from "../../utils/chromeBookmarks";
+import { canBackup, showLimitToast } from "../../utils/planAccess";
 import type { Bookmark, Collection } from "../../types";
 
 export interface ImportPreviewData {
@@ -410,8 +411,13 @@ export const useSettings = ({
 
   // 자동 백업 토글 핸들러
   const handleAutoBackupToggle = async () => {
+    const enabling = !loadBackupSettings().enabled;
+    // 활성화 요청인데 백업 권한이 없으면 차단
+    if (enabling && !canBackup(user)) {
+      showLimitToast("백업은 프리미엄 기능입니다.");
+      return;
+    }
     const current = loadBackupSettings();
-    const enabling = !current.enabled;
     const newSettings = { ...current, enabled: enabling };
     setBackupSettings(newSettings);
     saveBackupSettings(newSettings);
@@ -443,6 +449,10 @@ export const useSettings = ({
 
   // 수동 백업 핸들러
   const handleManualBackup = async () => {
+    if (!canBackup(user)) {
+      showLimitToast("백업은 프리미엄 기능입니다.");
+      return;
+    }
     if (!user?.uid || (!rawBookmarks?.length && !collections?.length)) {
       toast.error("백업할 데이터가 없습니다.");
       return;
@@ -481,8 +491,12 @@ export const useSettings = ({
         toast.error("복원 핸들러가 없습니다. 관리자에게 문의하세요.");
         return;
       }
-      // 복원 전 현재 상태를 자동 스냅샷
-      if (user?.uid && (rawBookmarks?.length || collections?.length)) {
+      // 복원 전 현재 상태를 자동 스냅샷 (프리미엄만)
+      if (
+        user?.uid &&
+        canBackup(user) &&
+        (rawBookmarks?.length || collections?.length)
+      ) {
         await performBackup(rawBookmarks, collections, user.uid, "pre-restore");
       }
       await onRestoreBackup(backupItem.data);

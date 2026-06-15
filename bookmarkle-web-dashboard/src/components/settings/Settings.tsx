@@ -4,6 +4,7 @@ import {
   useBookmarkStore,
   useCollectionStore,
   useThemeStore,
+  useFeatureFlagsStore,
 } from "../../stores";
 import { useTranslation } from "react-i18next";
 import {
@@ -14,21 +15,19 @@ import {
   User,
   Palette,
   Bell,
-  Crown,
   Trash2,
+  Crown,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../../hooks/settings/useSettings";
-import { useFeatureFlagsStore } from "../../stores";
 import { GeneralSettings } from "./GeneralSettings";
 import { AccountSettings } from "./AccountSettings";
 import { AppearanceSettings } from "./AppearanceSettings";
 import { NotificationSettings } from "./NotificationSettings";
 import { StatsSettings } from "./StatsSettings";
 import { BackupSettingsComponent } from "./BackupSettings";
-import { SubscriptionSettings } from "./SubscriptionSettings";
 import { TrashSettings } from "./TrashSettings";
+import { SubscriptionSettings } from "./SubscriptionSettings";
 import { getUserDefaultPage, auth } from "../../firebase";
-import { isBetaPeriod } from "../../utils/betaFlags";
 import { calcChecksum } from "../../utils/backup";
 import type { Bookmark, Collection } from "../../types";
 
@@ -49,7 +48,7 @@ export const Settings: React.FC<SettingsProps> = ({
   isRestoring = false,
 }) => {
   const { user, logout } = useAuthStore();
-  useFeatureFlagsStore((s) => s.flags);
+  const beta = useFeatureFlagsStore((s) => s.flags.beta);
   const { rawBookmarks } = useBookmarkStore();
   const { collections } = useCollectionStore();
   const { theme, setTheme } = useThemeStore();
@@ -130,11 +129,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const tabs = [
     { id: "general",       label: t("settings.general"),          icon: SettingsIcon },
-    ...(!isBetaPeriod() ? [{ id: "subscription", label: t("premium.subscriptionLabel"), icon: Crown }] : []),
     { id: "stats",         label: t("settings.statistics"),       icon: BarChart3 },
     { id: "backup",        label: t("settings.backup"),           icon: Download },
     { id: "trash",         label: t("settings.trash"),            icon: Trash2 },
     { id: "account",       label: t("settings.account"),          icon: User },
+    // 베타 모드 OFF 일 때만 구독 관리 노출
+    ...(!beta
+      ? [{ id: "subscription", label: "구독 관리", icon: Crown }]
+      : []),
     { id: "appearance",    label: t("settings.appearance"),       icon: Palette },
     { id: "notifications", label: t("settings.notifications"),    icon: Bell },
   ];
@@ -152,7 +154,6 @@ export const Settings: React.FC<SettingsProps> = ({
             onImportChromeBookmarks={handleImportChromeBookmarks}
           />
         );
-      case "subscription": return <SubscriptionSettings />;
       case "stats":        return <StatsSettings bookmarks={rawBookmarks} collections={collections} />;
       case "backup":
         return (
@@ -194,6 +195,8 @@ export const Settings: React.FC<SettingsProps> = ({
           />
         );
       case "trash":   return <TrashSettings />;
+      case "subscription":
+        return !beta ? <SubscriptionSettings user={user} /> : null;
       default:
         return (
           <GeneralSettings

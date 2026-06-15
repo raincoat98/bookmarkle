@@ -9,11 +9,15 @@ import { EditBookmarkModal } from "../../components/bookmarks/modals/EditBookmar
 import { DeleteBookmarkModal } from "../../components/bookmarks/modals/DeleteBookmarkModal";
 import { AddCollectionModal } from "../../components/collections/modals/AddCollectionModal";
 import { Drawer } from "../../components/layout/Drawer";
-import { UpgradeBanner } from "../../components/subscription/UpgradeBanner";
 import { useTranslation } from "react-i18next";
 import { usePasteBookmark } from "../../hooks/bookmark/usePasteBookmark";
 import { useShallow } from "zustand/react/shallow";
 import { auth } from "../../firebase";
+import {
+  gateAddBookmark,
+  gateAddSubCollection,
+  showLimitToast,
+} from "../../utils/planAccess";
 
 export const DashboardPage: React.FC = () => {
   const { user, isActive, loading: authLoading, hasCachedSession } = useAuthStore(
@@ -104,6 +108,11 @@ export const DashboardPage: React.FC = () => {
 
   // 북마크 추가
   const handleAddBookmark = async (data: BookmarkFormData) => {
+    const gate = gateAddBookmark(user, useBookmarkStore.getState().rawBookmarks.length);
+    if (!gate.ok) {
+      showLimitToast(gate.reason);
+      return;
+    }
     try {
       console.log("DashboardPage - 북마크 추가 시도:", data);
 
@@ -201,6 +210,11 @@ export const DashboardPage: React.FC = () => {
     icon: string,
     parentId?: string | null
   ) => {
+    const gate = gateAddSubCollection(user, parentId ?? null, collections);
+    if (!gate.ok) {
+      showLimitToast(gate.reason);
+      return;
+    }
     try {
       await addCollection(
         {
@@ -246,7 +260,6 @@ export const DashboardPage: React.FC = () => {
     <Drawer>
       <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10]">
         <div className="p-4 lg:p-6">
-          <UpgradeBanner />
           <DashboardOverview
             bookmarks={bookmarks}
             collections={collections}

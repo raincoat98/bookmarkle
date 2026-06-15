@@ -3,18 +3,21 @@ import { doc, onSnapshot, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "../../firebase";
 
 export interface FeatureFlags {
-  IS_BETA: boolean;
-  SHOW_SUBSCRIPTION_BANNER: boolean;
-  SHOW_SUBSCRIPTION_MODAL: boolean;
-  SHOW_EARLY_USER_BENEFITS: boolean;
+  // 베타 모드. true면 가격·구독 관련 UI(배너/모달/얼리유저 카드)를 모두 숨김
+  beta: boolean;
+  // 상단 가로 안내 배너 (beta === false일 때만 적용)
+  showAnnouncementBanner: boolean;
+  // 정식 오픈 안내 팝업 (beta === false일 때만 적용)
+  showAnnouncementModal: boolean;
+  // 얼리 유저 혜택 카드 (beta === false일 때만 적용)
+  showEarlyUserBenefits: boolean;
 }
 
-// Firestore 로드 전까지의 폴백 — 안전한 기본값(모두 false)
 const DEFAULT_FLAGS: FeatureFlags = {
-  IS_BETA: false,
-  SHOW_SUBSCRIPTION_BANNER: false,
-  SHOW_SUBSCRIPTION_MODAL: false,
-  SHOW_EARLY_USER_BENEFITS: false,
+  beta: true,
+  showAnnouncementBanner: false,
+  showAnnouncementModal: false,
+  showEarlyUserBenefits: false,
 };
 
 const FLAGS_DOC_PATH = ["config", "featureFlags"] as const;
@@ -39,7 +42,7 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>((set, get) => ({
   unsubscribe: null,
 
   subscribe: () => {
-    if (get().unsubscribe) return; // 이미 구독 중
+    if (get().unsubscribe) return;
 
     set({ loading: true });
     const ref = doc(db, ...FLAGS_DOC_PATH);
@@ -51,24 +54,22 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>((set, get) => ({
           const data = snap.data() as Partial<FeatureFlags>;
           set({
             flags: {
-              IS_BETA: data.IS_BETA ?? DEFAULT_FLAGS.IS_BETA,
-              SHOW_SUBSCRIPTION_BANNER:
-                data.SHOW_SUBSCRIPTION_BANNER ?? DEFAULT_FLAGS.SHOW_SUBSCRIPTION_BANNER,
-              SHOW_SUBSCRIPTION_MODAL:
-                data.SHOW_SUBSCRIPTION_MODAL ?? DEFAULT_FLAGS.SHOW_SUBSCRIPTION_MODAL,
-              SHOW_EARLY_USER_BENEFITS:
-                data.SHOW_EARLY_USER_BENEFITS ?? DEFAULT_FLAGS.SHOW_EARLY_USER_BENEFITS,
+              beta: data.beta ?? DEFAULT_FLAGS.beta,
+              showAnnouncementBanner:
+                data.showAnnouncementBanner ?? DEFAULT_FLAGS.showAnnouncementBanner,
+              showAnnouncementModal:
+                data.showAnnouncementModal ?? DEFAULT_FLAGS.showAnnouncementModal,
+              showEarlyUserBenefits:
+                data.showEarlyUserBenefits ?? DEFAULT_FLAGS.showEarlyUserBenefits,
             },
             loaded: true,
             loading: false,
           });
         } else {
-          // 문서가 없으면 기본값 유지
           set({ loaded: true, loading: false });
         }
       },
       (err) => {
-        // 권한 없거나 미인증이면 기본값 유지
         const e = err as { code?: string };
         if (e?.code === "permission-denied" || e?.code === "unauthenticated") {
           set({ loaded: true, loading: false });
@@ -86,10 +87,7 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>((set, get) => ({
     const ref = doc(db, ...FLAGS_DOC_PATH);
     await setDoc(
       ref,
-      {
-        [key]: value,
-        updatedAt: serverTimestamp(),
-      },
+      { [key]: value, updatedAt: serverTimestamp() },
       { merge: true }
     );
   },
@@ -98,15 +96,14 @@ export const useFeatureFlagsStore = create<FeatureFlagsState>((set, get) => ({
     const ref = doc(db, ...FLAGS_DOC_PATH);
     await setDoc(
       ref,
-      {
-        ...partial,
-        updatedAt: serverTimestamp(),
-      },
+      { ...partial, updatedAt: serverTimestamp() },
       { merge: true }
     );
   },
 }));
 
-// 동기 접근용 헬퍼 (legacy 호환 — betaUtils 내부에서 사용)
+// 동기 접근용 헬퍼
 export const getCurrentFlags = (): FeatureFlags =>
   useFeatureFlagsStore.getState().flags;
+
+export const isBetaMode = (): boolean => getCurrentFlags().beta;

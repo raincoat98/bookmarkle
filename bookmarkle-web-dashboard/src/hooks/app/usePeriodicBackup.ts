@@ -5,6 +5,7 @@ import {
   performBackup,
   loadBackupSettings,
 } from "../../utils/backup";
+import { canBackup } from "../../utils/planAccess";
 
 const ONE_DAY_MS = 1000 * 60 * 60 * 24;
 const ONE_WEEK_MS = ONE_DAY_MS * 7;
@@ -34,6 +35,7 @@ export function usePeriodicBackup() {
     const shouldSetup =
       user?.uid &&
       settings.enabled &&
+      canBackup(user) &&
       rawBookmarks?.length > 0 &&
       collections?.length > 0;
 
@@ -54,5 +56,5 @@ export function usePeriodicBackup() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [user?.uid, rawBookmarks, collections]);
+  }, [user, rawBookmarks, collections]);
 }
