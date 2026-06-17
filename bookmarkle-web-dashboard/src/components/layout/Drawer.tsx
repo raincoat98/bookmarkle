@@ -147,7 +147,7 @@ export const Drawer: React.FC<DrawerProps> = ({
               }`}
             >
               <Link
-                to="/about"
+                to="/dashboard"
                 className={`flex items-center ${isDrawerCollapsed ? "justify-center" : "gap-2.5"}`}
               >
                 <div

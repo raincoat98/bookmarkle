@@ -293,6 +293,7 @@
   },
   "settings": {
     "title": "설정",
+    "landingPage": "서비스 소개",
     "general": "일반",
     "appearance": "외관",
     "account": "계정",

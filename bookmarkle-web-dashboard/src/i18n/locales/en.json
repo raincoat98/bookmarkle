@@ -280,6 +280,7 @@
   },
   "settings": {
     "title": "Settings",
+    "landingPage": "About",
     "general": "General",
     "appearance": "Appearance",
     "account": "Account",

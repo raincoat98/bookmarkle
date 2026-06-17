@@ -280,6 +280,7 @@
   },
   "settings": {
     "title": "設定",
+    "landingPage": "サービス紹介",
     "general": "一般",
     "appearance": "外観",
     "account": "アカウント",

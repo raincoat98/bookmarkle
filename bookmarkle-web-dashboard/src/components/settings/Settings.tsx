@@ -7,6 +7,7 @@ import {
   useFeatureFlagsStore,
 } from "../../stores";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import {
   Settings as SettingsIcon,
   X,
@@ -17,6 +18,7 @@ import {
   Bell,
   Trash2,
   Crown,
+  Globe,
 } from "lucide-react";
 import { useSettings, type ImportPreviewData } from "../../hooks/settings/useSettings";
 import { GeneralSettings } from "./GeneralSettings";
@@ -257,6 +259,13 @@ export const Settings: React.FC<SettingsProps> = ({
                     </button>
                   );
                 })}
+                <Link
+                  to="/about"
+                  className="flex flex-col items-center gap-1 px-3 py-2 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors flex-shrink-0"
+                >
+                  <Globe className="w-4 h-4" />
+                  <span className="text-[10px] font-medium whitespace-nowrap">{t("settings.landingPage")}</span>
+                </Link>
               </div>
             </nav>
 
@@ -280,6 +289,14 @@ export const Settings: React.FC<SettingsProps> = ({
                   </button>
                 );
               })}
+              <div className="my-2 border-t border-gray-100 dark:border-white/[0.06]" />
+              <Link
+                to="/about"
+                className="w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04] hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+              >
+                <Globe className="w-4 h-4 shrink-0" />
+                <span className="text-sm font-medium">{t("settings.landingPage")}</span>
+              </Link>
             </nav>
           </div>
 
