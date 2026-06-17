@@ -49,7 +49,7 @@ export async function loginWithGoogle() {
     const result = await signInWithPopup(auth, googleProvider);
 
     console.log("✅ Login successful:", result.user.email);
-    await saveUserToFirestore(result.user, false);
+    await saveUserToFirestore(result.user);
 
     return result;
   } catch (error: unknown) {
@@ -70,7 +70,7 @@ export async function loginWithEmail(email: string, password: string) {
   await setPersistence(auth, browserLocalPersistence);
   const result = await signInWithEmailAndPassword(auth, email, password);
 
-  await saveUserToFirestore(result.user, false);
+  await saveUserToFirestore(result.user);
 
   return result;
 }
@@ -91,7 +91,7 @@ export async function signupWithEmail(
     await updateProfile(userCredential.user, { displayName });
   }
 
-  await saveUserToFirestore(userCredential.user, true);
+  await saveUserToFirestore(userCredential.user);
 
   return userCredential;
 }
