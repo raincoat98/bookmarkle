@@ -43,6 +43,7 @@ export const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
       <AdminUserList
         users={users}
         loading={loading}
+        onRefetch={onRefetch}
         onToggleUserStatus={onToggleUserStatus}
       />
     </div>

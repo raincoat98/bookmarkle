@@ -20,11 +20,16 @@ import {
   XCircle,
   Eye,
   Filter,
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  ChevronsUpDown,
 } from "lucide-react";
 
 interface AdminUserListProps {
   users: AdminUser[];
   loading: boolean;
+  onRefetch: () => void | Promise<void>;
   onToggleUserStatus: (uid: string, isActive: boolean) => void;
 }
 
@@ -34,12 +39,37 @@ const formatDate = (date: Date | Timestamp): string => {
 };
 
 type StatusFilter = "all" | "active" | "inactive" | "premium" | "early";
+type SortField = "name" | "bookmarks" | "collections" | "createdAt" | "status";
+type SortDir = "asc" | "desc";
 
-export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserListProps) {
+export function AdminUserList({ users, loading, onRefetch, onToggleUserStatus }: AdminUserListProps) {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  const [confirmUser, setConfirmUser] = useState<AdminUser | null>(null);
+  const [sortField, setSortField] = useState<SortField>("createdAt");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [refreshing, setRefreshing] = useState(false);
+
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortField(field);
+      // 이름은 오름차순, 숫자·날짜는 내림차순을 기본으로 둔다.
+      setSortDir(field === "name" ? "asc" : "desc");
+    }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefetch();
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // 통계 계산
   const stats = useMemo(() => {
@@ -109,7 +139,33 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
     return filtered;
   }, [users, searchTerm, statusFilter]);
 
-  if (loading) {
+  // 정렬
+  const sortedUsers = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filteredUsers].sort((a, b) => {
+      switch (sortField) {
+        case "name": {
+          const an = (a.displayName || a.email || "").toLowerCase();
+          const bn = (b.displayName || b.email || "").toLowerCase();
+          return an.localeCompare(bn) * dir;
+        }
+        case "bookmarks":
+          return (a.bookmarkCount - b.bookmarkCount) * dir;
+        case "collections":
+          return (a.collectionCount - b.collectionCount) * dir;
+        case "createdAt":
+          return (a.createdAt.getTime() - b.createdAt.getTime()) * dir;
+        case "status":
+          return (Number(a.isActive) - Number(b.isActive)) * dir;
+        default:
+          return 0;
+      }
+    });
+  }, [filteredUsers, sortField, sortDir]);
+
+  // 최초 로드(데이터 없음)에만 전체 스피너를 띄우고,
+  // 새로고침 중에는 테이블을 유지한 채 새로고침 버튼만 회전시킨다.
+  if (loading && users.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="w-7 h-7 border-2 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
@@ -216,38 +272,49 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
           />
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
-          <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
-            <Filter className="w-3 h-3" />
-            <span>필터</span>
-          </div>
-          <div className="flex gap-1">
-            {FILTERS.map(({ key, label, count }) => {
-              const active = statusFilter === key;
-              return (
-                <button
-                  key={key}
-                  onClick={() => setStatusFilter(key)}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
-                    active
-                      ? "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300"
-                      : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
-                  }`}
-                >
-                  {label}
-                  <span
-                    className={`px-1.5 py-px rounded text-[10px] tabular-nums ${
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide flex-1 min-w-0">
+            <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+              <Filter className="w-3 h-3" />
+              <span>필터</span>
+            </div>
+            <div className="flex gap-1">
+              {FILTERS.map(({ key, label, count }) => {
+                const active = statusFilter === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setStatusFilter(key)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors flex-shrink-0 ${
                       active
-                        ? "bg-white/60 dark:bg-violet-900/40"
-                        : "bg-gray-100 dark:bg-white/[0.06]"
+                        ? "bg-violet-100 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300"
+                        : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04]"
                     }`}
                   >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+                    {label}
+                    <span
+                      className={`px-1.5 py-px rounded text-[10px] tabular-nums ${
+                        active
+                          ? "bg-white/60 dark:bg-violet-900/40"
+                          : "bg-gray-100 dark:bg-white/[0.06]"
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            title="새로고침"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors flex-shrink-0 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">새로고침</span>
+          </button>
         </div>
       </div>
 
@@ -257,28 +324,20 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
           <table className="min-w-full">
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/[0.06]">
-                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  사용자
-                </th>
-                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  활동
-                </th>
+                <SortableHeader field="name" label="사용자" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+                <SortableHeader field="bookmarks" label="활동" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   구독
                 </th>
-                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  가입일
-                </th>
-                <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                  상태
-                </th>
+                <SortableHeader field="createdAt" label="가입일" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
+                <SortableHeader field="status" label="상태" sortField={sortField} sortDir={sortDir} onSort={toggleSort} />
                 <th className="px-5 py-3 text-right text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                   작업
                 </th>
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.length === 0 ? (
+              {sortedUsers.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-5 py-12 text-center">
                     <div className="flex flex-col items-center gap-2">
@@ -294,7 +353,7 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
                   </td>
                 </tr>
               ) : (
-                filteredUsers.map((user) => {
+                sortedUsers.map((user) => {
                   const isPremium =
                     user.subscription?.plan === "premium" &&
                     (user.subscription.status === "active" ||
@@ -385,7 +444,7 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            onClick={() => onToggleUserStatus(user.uid, !user.isActive)}
+                            onClick={() => setConfirmUser(user)}
                             className={`p-1.5 rounded-lg transition-colors ${
                               user.isActive
                                 ? "text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
@@ -409,10 +468,10 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
           </table>
         </div>
 
-        {filteredUsers.length > 0 && (
+        {sortedUsers.length > 0 && (
           <div className="px-5 py-3 border-t border-gray-50 dark:border-white/[0.04] flex items-center justify-between">
             <p className="text-xs text-gray-400 dark:text-gray-500">
-              총 <span className="font-semibold text-gray-700 dark:text-gray-300">{filteredUsers.length}</span>명 표시 중
+              총 <span className="font-semibold text-gray-700 dark:text-gray-300">{sortedUsers.length}</span>명 표시 중
             </p>
             <div className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
               <TrendingUp className="w-3 h-3" />
@@ -554,10 +613,7 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
 
             <div className="px-5 py-3 border-t border-gray-100 dark:border-white/[0.06] flex gap-2">
               <button
-                onClick={() => {
-                  onToggleUserStatus(selectedUser.uid, !selectedUser.isActive);
-                  setSelectedUser(null);
-                }}
+                onClick={() => setConfirmUser(selectedUser)}
                 className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
                   selectedUser.isActive
                     ? "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/20"
@@ -576,6 +632,103 @@ export function AdminUserList({ users, loading, onToggleUserStatus }: AdminUserL
           </div>
         </div>
       )}
+
+      {/* 활성/비활성 확인 모달 */}
+      {confirmUser && (
+        <div
+          className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+          onClick={() => setConfirmUser(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#111113] rounded-2xl shadow-2xl border border-gray-100 dark:border-white/[0.06] max-w-sm w-full p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  confirmUser.isActive
+                    ? "bg-red-50 dark:bg-red-500/10"
+                    : "bg-emerald-50 dark:bg-emerald-500/10"
+                }`}
+              >
+                {confirmUser.isActive ? (
+                  <UserX className="w-5 h-5 text-red-600 dark:text-red-400" />
+                ) : (
+                  <UserCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                )}
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                {confirmUser.isActive ? "사용자 비활성화" : "사용자 활성화"}
+              </h3>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-5">
+              <span className="font-medium text-gray-900 dark:text-white">
+                {confirmUser.displayName || confirmUser.email || t("admin.noName")}
+              </span>
+              {confirmUser.isActive
+                ? " 님을 비활성화할까요? 비활성화된 사용자는 서비스를 이용할 수 없습니다."
+                : " 님을 다시 활성화할까요?"}
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmUser(null)}
+                className="flex-1 py-2 rounded-xl text-sm font-medium bg-gray-100 dark:bg-white/[0.06] text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-white/[0.10] transition-colors"
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                onClick={() => {
+                  onToggleUserStatus(confirmUser.uid, !confirmUser.isActive);
+                  setConfirmUser(null);
+                  setSelectedUser(null);
+                }}
+                className={`flex-1 py-2 rounded-xl text-sm font-medium text-white transition-colors ${
+                  confirmUser.isActive
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
+              >
+                {confirmUser.isActive ? "비활성화" : "활성화"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+interface SortableHeaderProps {
+  field: SortField;
+  label: string;
+  sortField: SortField;
+  sortDir: SortDir;
+  onSort: (field: SortField) => void;
+}
+
+function SortableHeader({ field, label, sortField, sortDir, onSort }: SortableHeaderProps) {
+  const active = sortField === field;
+  return (
+    <th className="px-5 py-3 text-left text-[10px] font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+      <button
+        onClick={() => onSort(field)}
+        className={`group inline-flex items-center gap-1 uppercase tracking-wider transition-colors ${
+          active
+            ? "text-violet-600 dark:text-violet-400"
+            : "hover:text-gray-600 dark:hover:text-gray-300"
+        }`}
+      >
+        {label}
+        {active ? (
+          sortDir === "asc" ? (
+            <ArrowUp className="w-3 h-3" />
+          ) : (
+            <ArrowDown className="w-3 h-3" />
+          )
+        ) : (
+          <ChevronsUpDown className="w-3 h-3 opacity-0 group-hover:opacity-50 transition-opacity" />
+        )}
+      </button>
+    </th>
   );
 }
