@@ -12,21 +12,29 @@ export function AdminProtected({ children }: AdminProtectedProps) {
   const { t } = useTranslation();
   const { user, loading } = useAuthStore();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [adminLoading, setAdminLoading] = useState(true);
+  // 관리자 여부를 확인 완료한 사용자의 uid. 현재 user.uid와 다르면
+  // 아직 검사 중이므로 리다이렉트하지 않고 로딩을 유지한다.
+  const [checkedUid, setCheckedUid] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     if (user) {
       isAdminUser(user).then((admin: boolean) => {
+        if (cancelled) return;
         setIsAdmin(admin);
-        setAdminLoading(false);
+        setCheckedUid(user.uid);
       });
     } else {
       setIsAdmin(false);
-      setAdminLoading(false);
+      setCheckedUid(null);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
 
-  if (loading || adminLoading) {
+  // 인증 복원 중이거나, 현재 사용자의 관리자 검사가 끝나기 전에는 로딩을 보여준다.
+  if (loading || (user && checkedUid !== user.uid)) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-[#0d0d10] flex items-center justify-center">
         <div className="text-center">
