@@ -261,7 +261,7 @@ export const Drawer: React.FC<DrawerProps> = ({
       {/* 메인 콘텐츠 */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* 모바일 헤더 */}
-        <div className="lg:hidden h-14 px-2 border-b border-gray-200/70 dark:border-white/[0.06] bg-white dark:bg-[#111113] flex items-center">
+        <div className="lg:hidden relative h-14 px-2 border-b border-gray-200/70 dark:border-white/[0.06] bg-white dark:bg-[#111113] flex items-center">
           <button
             onClick={() => setIsDrawerOpen(true)}
             className="flex items-center justify-center w-11 h-11 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors active:bg-gray-200 dark:active:bg-white/[0.12] touch-manipulation"
@@ -269,6 +269,21 @@ export const Drawer: React.FC<DrawerProps> = ({
           >
             <Menu className="w-5 h-5" />
           </button>
+
+          {/* 가운데 로고 (설정 페이지에서는 자체 헤더가 있어 숨김) */}
+          {location.pathname !== "/settings" && (
+            <Link
+              to="/dashboard"
+              className="absolute left-1/2 -translate-x-1/2 flex items-center gap-2"
+            >
+              <div className="w-7 h-7 bg-violet-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                <BookOpen className="w-3.5 h-3.5 text-white" />
+              </div>
+              <span className="text-sm font-semibold text-gray-900 dark:text-white tracking-tight">
+                북마클
+              </span>
+            </Link>
+          )}
         </div>
 
         {/* 콘텐츠 영역 */}
